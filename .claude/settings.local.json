@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"/c/Program Files/nodejs:$PATH\")",
+      "Bash(npm --version)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma:*)",
+      "Bash(mkdir -p \"src/app/api/auth/[...nextauth]\" src/app/api/merchants src/app/api/programs src/app/api/cards src/app/api/transactions src/app/api/campaigns src/app/api/wallet)",
+      "Bash(mkdir -p \"src/app/join/[programId]\" \"src/app/stamp/[serialNumber]\" public/wallet-assets)",
+      "Bash(npx next:*)",
+      "Bash(ls src/generated/prisma/index*)",
+      "Bash(where psql:*)",
+      "Bash(where docker:*)",
+      "Bash(where pg_isready)",
+      "Bash(export PGPASSWORD=postgres)",
+      "Bash(PGSSLMODE=disable \"/c/Program Files/nodejs/npx.cmd\" --yes pg-connection-string)",
+      "Bash(npx --yes node-pg-migrate --help)",
+      "Bash(node -e \"const {Client} = require\\('pg'\\); const c = new Client\\({host:'localhost',port:51214,user:'postgres',password:'postgres',database:'template1',ssl:false}\\); c.connect\\(\\).then\\(\\(\\) => {console.log\\('CONNECTED'\\); return c.query\\('SELECT 1'\\)}\\).then\\(r => {console.log\\('OK', r.rows\\); c.end\\(\\)}\\).catch\\(e => console.error\\('FAIL', e.message\\)\\)\")",
+      "Bash(node -e ':*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(taskkill /PID 4876 /F)",
+      "Bash(taskkill //PID 4876 //F)",
+      "Bash(gh auth:*)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH:/c/Program Files \\(x86\\)/GitHub CLI\")",
+      "Bash(gh --version)",
+      "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}

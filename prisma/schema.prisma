@@ -1,0 +1,450 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================
+// AUTHENTIFICATION (NextAuth)
+// =============================================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// =============================================
+// COMMERCANTS (Users)
+// =============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  phone         String?
+  language      String    @default("fr") // fr, de, it, en
+  currency      String    @default("CHF")
+  plan          Plan      @default(FREE)
+
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
+  accounts       Account[]
+  sessions       Session[]
+  establishments Establishment[]
+  programs       LoyaltyProgram[]
+  campaigns      NotificationCampaign[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+// =============================================
+// ETABLISSEMENTS
+// =============================================
+
+model Establishment {
+  id            String  @id @default(cuid())
+  merchantId    String
+  name          String
+  address       String?
+  latitude      Float?
+  longitude     Float?
+  phone         String?
+  googlePlaceId String?
+  website       String?
+  openingHours  Json?   // {"mon": "08:00-18:00", ...}
+
+  merchant     User          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  programs     LoyaltyProgram[]
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([merchantId])
+}
+
+// =============================================
+// PROGRAMMES DE FIDELITE
+// =============================================
+
+model LoyaltyProgram {
+  id              String      @id @default(cuid())
+  merchantId      String
+  establishmentId String?
+  name            String
+  type            ProgramType
+  isActive        Boolean     @default(true)
+
+  // Config du programme (JSON flexible)
+  // stamps:   {"maxStamps": 10, "reward": "1 café offert"}
+  // points:   {"pointsPerChf": 1, "tiers": [{"points": 100, "reward": "5 CHF"}, ...]}
+  // cashback: {"percentage": 5, "minSpend": 10}
+  config Json
+
+  // Design de la carte wallet
+  // {"logoUrl": "...", "bgColor": "#1a1a2e", "textColor": "#fff", "stripUrl": "...", "description": "..."}
+  cardDesign Json
+
+  // Paramètres Google Review
+  googleReviewEnabled    Boolean @default(false)
+  googleReviewBonus      Int     @default(0) // tampons/points bonus
+  googleReviewMinVisits  Int     @default(3) // nb visites avant de proposer
+
+  merchant      User           @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  establishment Establishment? @relation(fields: [establishmentId], references: [id])
+  cards         LoyaltyCard[]
+  rewards       Reward[]
+  campaigns     NotificationCampaign[]
+  referralLinks ReferralLink[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([merchantId])
+}
+
+enum ProgramType {
+  STAMPS
+  POINTS
+  CASHBACK
+  HYBRID
+}
+
+// =============================================
+// RECOMPENSES
+// =============================================
+
+model Reward {
+  id          String     @id @default(cuid())
+  programId   String
+  name        String
+  description String?
+  threshold   Int        // nb tampons ou points requis
+  rewardType  RewardType
+  rewardValue Float?     // montant ou pourcentage
+  isActive    Boolean    @default(true)
+
+  program LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  claims  RewardClaim[]
+
+  createdAt DateTime @default(now())
+}
+
+enum RewardType {
+  FREE_ITEM
+  DISCOUNT_CHF
+  DISCOUNT_PCT
+  CUSTOM
+}
+
+// =============================================
+// CLIENTS
+// =============================================
+
+model Client {
+  id            String  @id @default(cuid())
+  firstName     String
+  email         String?
+  phone         String?
+  preferredLang String  @default("fr")
+  referredById  String? // client qui l'a parrainé
+
+  referredBy Client?  @relation("Referrals", fields: [referredById], references: [id])
+  referrals  Client[] @relation("Referrals")
+
+  cards         LoyaltyCard[]
+  referralLinks ReferralLink[]
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([phone])
+}
+
+// =============================================
+// CARTES DE FIDELITE
+// =============================================
+
+model LoyaltyCard {
+  id             String @id @default(cuid())
+  clientId       String
+  programId      String
+  serialNumber   String @unique // identifiant unique du pass wallet
+  currentStamps  Int    @default(0)
+  currentPoints  Float  @default(0)
+  cashbackBalance Float @default(0)
+  totalVisits    Int    @default(0)
+  totalSpent     Float  @default(0)
+  status         CardStatus @default(ACTIVE)
+  lastVisitAt    DateTime?
+
+  client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  program       LoyaltyProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)
+  registrations PassRegistration[]
+  transactions  Transaction[]
+  rewardClaims  RewardClaim[]
+  reviewRequests GoogleReviewRequest[]
+  notifications  NotificationLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, programId])
+  @@index([programId])
+  @@index([status])
+}
+
+enum CardStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  REVOKED
+}
+
+// =============================================
+// ENREGISTREMENT DES DEVICES (Push)
+// =============================================
+
+model PassRegistration {
+  id              String   @id @default(cuid())
+  cardId          String
+  deviceLibraryId String
+  pushToken       String
+  platform        Platform
+
+  card LoyaltyCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  registeredAt DateTime @default(now())
+
+  @@unique([cardId, deviceLibraryId])
+  @@index([cardId])
+}
+
+enum Platform {
+  APPLE
+  GOOGLE
+}
+
+// =============================================
+// TRANSACTIONS & HISTORIQUE
+// =============================================
+
+model Transaction {
+  id              String          @id @default(cuid())
+  cardId          String
+  establishmentId String?
+  type            TransactionType
+  value           Float           // nb de tampons/points ajoutés ou retirés
+  amountSpent     Float?          // montant de l'achat (optionnel)
+  notes           String?
+
+  card          LoyaltyCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  establishment Establishment? @relation(fields: [establishmentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([cardId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+enum TransactionType {
+  STAMP
+  POINTS_EARN
+  POINTS_SPEND
+  REWARD_CLAIM
+  CASHBACK_EARN
+  CASHBACK_SPEND
+  REFERRAL_BONUS
+  GOOGLE_REVIEW_BONUS
+}
+
+// =============================================
+// RECLAMATION RECOMPENSES
+// =============================================
+
+model RewardClaim {
+  id         String      @id @default(cuid())
+  cardId     String
+  rewardId   String
+  status     ClaimStatus @default(CLAIMED)
+  claimedAt  DateTime    @default(now())
+  redeemedAt DateTime?
+
+  card   LoyaltyCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  reward Reward      @relation(fields: [rewardId], references: [id])
+
+  @@index([cardId])
+}
+
+enum ClaimStatus {
+  CLAIMED
+  REDEEMED
+  EXPIRED
+}
+
+// =============================================
+// AVIS GOOGLE
+// =============================================
+
+model GoogleReviewRequest {
+  id          String       @id @default(cuid())
+  cardId      String
+  bonusStamps Int          @default(0)
+  bonusPoints Float        @default(0)
+  status      ReviewStatus @default(SENT)
+  confirmedAt DateTime?
+
+  card LoyaltyCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  sentAt DateTime @default(now())
+
+  @@index([cardId])
+}
+
+enum ReviewStatus {
+  SENT
+  CONFIRMED
+  EXPIRED
+}
+
+// =============================================
+// NOTIFICATIONS & CAMPAGNES
+// =============================================
+
+model NotificationCampaign {
+  id         String      @id @default(cuid())
+  merchantId String
+  programId  String?
+  name       String
+  message    String
+  triggerType TriggerType
+  // scheduled:   {"sendAt": "2026-04-20T17:00:00Z"}
+  // geofence:    {"radiusM": 500, "message": "À 2 pas..."}
+  // inactivity:  {"daysInactive": 30}
+  // postStamp:   {"delayHours": 48}
+  // milestone:   {"stampsReached": 5}
+  triggerConfig  Json
+  targetSegment  Segment @default(ALL)
+  status         CampaignStatus @default(DRAFT)
+  sentCount      Int     @default(0)
+  scheduledAt    DateTime?
+  sentAt         DateTime?
+
+  merchant User            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  program  LoyaltyProgram? @relation(fields: [programId], references: [id])
+  logs     NotificationLog[]
+
+  createdAt DateTime @default(now())
+
+  @@index([merchantId])
+  @@index([status])
+}
+
+enum TriggerType {
+  IMMEDIATE
+  SCHEDULED
+  GEOFENCE
+  INACTIVITY
+  POST_STAMP
+  MILESTONE
+}
+
+enum Segment {
+  ALL
+  ACTIVE
+  DORMANT
+  NEW
+  VIP
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  CANCELLED
+}
+
+model NotificationLog {
+  id          String   @id @default(cuid())
+  campaignId  String?
+  cardId      String
+  delivered   Boolean  @default(false)
+  deliveredAt DateTime?
+
+  campaign NotificationCampaign? @relation(fields: [campaignId], references: [id])
+  card     LoyaltyCard           @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([campaignId])
+  @@index([cardId])
+}
+
+// =============================================
+// PARRAINAGE
+// =============================================
+
+model ReferralLink {
+  id            String @id @default(cuid())
+  cardId        String?
+  clientId      String
+  programId     String
+  code          String @unique
+  uses          Int    @default(0)
+  maxUses       Int    @default(10)
+  bonusReferrer Int    @default(1)
+  bonusReferee  Int    @default(1)
+
+  client  Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  program LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([code])
+}
