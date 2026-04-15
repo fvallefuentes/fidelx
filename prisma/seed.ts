@@ -3,7 +3,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const dbUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL!;
+const dbUrl = process.env.NEON_URL || process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL!;
 console.log("Connecting to:", dbUrl.replace(/\/\/.*@/, "//***@"));
 const adapter = new PrismaPg(dbUrl);
 const prisma = new PrismaClient({ adapter });
