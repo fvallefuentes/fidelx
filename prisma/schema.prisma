@@ -130,6 +130,13 @@ model LoyaltyProgram {
   // {"logoUrl": "...", "bgColor": "#1a1a2e", "textColor": "#fff", "stripUrl": "...", "description": "..."}
   cardDesign Json
 
+  // Personnalisation avancée de la carte
+  templateId   String? @default("classique")
+  logoBlobKey  String?
+  stripBlobKey String?
+  iconBlobKey  String?
+  backFields   Json?
+
   // Paramètres Google Review
   googleReviewEnabled    Boolean @default(false)
   googleReviewBonus      Int     @default(0) // tampons/points bonus
