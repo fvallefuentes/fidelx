@@ -21,6 +21,7 @@ interface PassData {
   bgColor: string;
   textColor: string;
   description: string;
+  lastMessage?: string;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -54,6 +55,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     bgColor: (design.bgColor as string) || "#1a1a2e",
     textColor: (design.textColor as string) || "#ffffff",
     description: (design.description as string) || card.program.name,
+    lastMessage: (card as Record<string, unknown>).lastMessage as string | undefined,
     locations: card.program.establishment
       ? [
           {
@@ -140,6 +142,14 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     key: "program",
     label: "PROGRAMME",
     value: passData.programName,
+  });
+
+  // Champ offre — mis à jour par les campagnes, le changeMessage s'affiche en notification
+  pass.headerFields.push({
+    key: "offer",
+    label: "OFFRE",
+    value: passData.lastMessage || "",
+    changeMessage: "%@",
   });
 
   // Champs verso
