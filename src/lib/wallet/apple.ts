@@ -66,12 +66,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
   };
 
   // En production, utiliser passkit-generator avec les vrais certificats
-  if (
-    process.env.APPLE_PASS_TYPE_ID &&
-    process.env.APPLE_SIGNER_CERT_PATH &&
-    process.env.APPLE_SIGNER_KEY_PATH &&
-    process.env.APPLE_WWDR_CERT_PATH
-  ) {
+  if (process.env.APPLE_PASS_TYPE_ID) {
     return generateSignedPass(passData);
   }
 
@@ -107,12 +102,14 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     authenticationToken: passData.serialNumber,
   };
 
+  const { APPLE_CERTS } = await import("./certs");
+
   const pass = new PKPass(
     {},
     {
-      wwdr: fs.readFileSync(process.env.APPLE_WWDR_CERT_PATH!),
-      signerCert: fs.readFileSync(process.env.APPLE_SIGNER_CERT_PATH!),
-      signerKey: fs.readFileSync(process.env.APPLE_SIGNER_KEY_PATH!),
+      wwdr: APPLE_CERTS.wwdr,
+      signerCert: APPLE_CERTS.signerCert,
+      signerKey: APPLE_CERTS.signerKey,
       signerKeyPassphrase: process.env.APPLE_SIGNER_KEY_PASSPHRASE,
     },
     passProps
