@@ -15,6 +15,11 @@ export async function GET() {
       rewards: true,
       establishment: true,
       _count: { select: { cards: true } },
+      cards: {
+        select: { serialNumber: true, client: { select: { firstName: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      },
     },
     orderBy: { createdAt: "desc" },
   });
