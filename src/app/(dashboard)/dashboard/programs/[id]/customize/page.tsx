@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, Plus, Trash2, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { CardPreview } from "@/components/card-preview/CardPreview";
+import { LogoUploader } from "@/components/card-preview/LogoUploader";
 import { templates } from "@/lib/wallet/templates";
 import { STRIP_LIBRARY } from "@/lib/wallet/strip-library";
 
@@ -24,8 +25,6 @@ type Program = {
   merchant?: { name: string | null; email: string } | null;
 };
 
-const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
-const MAX_UPLOAD_SIZE = 5 * 1024 * 1024;
 const MAX_BACK_FIELDS = 6;
 const BACK_FIELD_SUGGESTIONS = ["Contact", "Horaires", "Site web"];
 
@@ -141,32 +140,7 @@ export default function CustomizeProgramPage() {
     await patchProgram({ templateId: id });
   }
 
-  async function handleLogoUpload(file: File) {
-    if (!programId) return;
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      alert("Format invalide (PNG, JPEG ou WEBP).");
-      return;
-    }
-    if (file.size > MAX_UPLOAD_SIZE) {
-      alert("Fichier trop volumineux (max 5 Mo).");
-      return;
-    }
-    const form = new FormData();
-    form.set("file", file);
-    form.set("type", "logo");
-    const res = await fetch(`/api/programs/${programId}/upload-image`, {
-      method: "POST",
-      body: form,
-    });
-    if (!res.ok) {
-      alert("Upload échoué.");
-      return;
-    }
-    const data: unknown = await res.json();
-    const key =
-      data && typeof data === "object" && typeof (data as { blobKey?: unknown }).blobKey === "string"
-        ? (data as { blobKey: string }).blobKey
-        : `program-${programId}/logo.png`;
+  function handleLogoUploaded(key: string) {
     setLogoBlobKey(key);
     setLogoVersion(Date.now());
     flashSaved();
@@ -336,9 +310,10 @@ export default function CustomizeProgramPage() {
             open={openSections.logo}
             onToggle={() => setOpenSections((s) => ({ ...s, logo: !s.logo }))}
           >
-            <LogoSection
-              currentUrl={logoUrl}
-              onUpload={handleLogoUpload}
+            <LogoUploader
+              programId={programId ?? ""}
+              currentLogoUrl={logoUrl}
+              onUploaded={handleLogoUploaded}
             />
           </Section>
 
@@ -482,58 +457,3 @@ function Section({
   );
 }
 
-function LogoSection({
-  currentUrl,
-  onUpload,
-}: {
-  currentUrl: string | null;
-  onUpload: (file: File) => void | Promise<void>;
-}) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setBusy(true);
-    try {
-      await onUpload(file);
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  }
-
-  return (
-    <div className="flex items-center gap-4">
-      <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-        {currentUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={currentUrl} alt="logo" className="max-h-full max-w-full object-contain" />
-        ) : (
-          <span className="text-xs text-gray-400">Aucun</span>
-        )}
-      </div>
-      <div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={handleChange}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={busy}
-          onClick={() => inputRef.current?.click()}
-        >
-          <Upload className="mr-2 h-4 w-4" />
-          {busy ? "Envoi..." : currentUrl ? "Remplacer" : "Uploader un logo"}
-        </Button>
-        <p className="mt-1 text-xs text-gray-500">PNG, JPEG ou WEBP — 5 Mo max.</p>
-      </div>
-    </div>
-  );
-}
