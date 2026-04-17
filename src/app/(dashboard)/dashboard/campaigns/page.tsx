@@ -14,6 +14,7 @@ import {
   UserMinus,
   Target,
   Milestone,
+  Trash2,
 } from "lucide-react";
 
 interface Campaign {
@@ -89,6 +90,11 @@ export default function CampaignsPage() {
   async function fetchCampaigns() {
     const res = await fetch("/api/campaigns");
     setCampaigns(await res.json());
+  }
+
+  async function deleteCampaign(id: string) {
+    await fetch(`/api/campaigns/${id}`, { method: "DELETE" });
+    fetchCampaigns();
   }
 
   if (loading) {
@@ -179,6 +185,14 @@ export default function CampaignsPage() {
                               ? "Brouillon"
                               : campaign.status}
                       </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteCampaign(campaign.id)}
+                        className="text-red-500 hover:text-red-700 hover:border-red-300"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

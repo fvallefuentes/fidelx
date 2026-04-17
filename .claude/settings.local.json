@@ -31,7 +31,19 @@
       "Bash(export PATH=\"/c/Program Files/GitHub CLI:$PATH\")",
       "Bash(git init:*)",
       "Bash(git branch:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(mv \"C:/Users/lpave/.claude/projets/C--Projet-prog-Carte-fedlix/memory/project_fidelx.md\" \"C:/Users/lpave/.claude/projects/C--Projet-prog-Carte-fedlix/memory/project_fidelx.md\")",
+      "Bash(rm -rf \"C:/Users/lpave/.claude/projets\")",
+      "mcp__92996cd1-7f9b-46d0-9a93-b8711e47fa20__netlify-project-services-reader",
+      "Bash(./node_modules/.bin/netlify login *)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__find",
+      "mcp__Claude_in_Chrome__computer",
+      "Bash(export DATABASE_URL=\"postgresql://neondb_owner:npg_0cG1BqJwiYes@ep-misty-cherry-amp8e419.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require\")",
+      "Bash(git commit -m ' *)",
+      "Bash(npm list *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

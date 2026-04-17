@@ -1,0 +1,10 @@
+var R=require("../../../../../chunks/[turbopack]_runtime.js")("server/app/api/wallet/apple/[serialNumber]/route.js")
+R.c("server/chunks/[root-of-the-server]__0fpxdow._.js")
+R.c("server/chunks/node_modules_next_dist_12gp6q5._.js")
+R.c("server/chunks/[root-of-the-server]__0m~tlvv._.js")
+R.c("server/chunks/[root-of-the-server]__0s7s339._.js")
+R.c("server/chunks/[root-of-the-server]__13ax-o.._.js")
+R.c("server/chunks/node_modules_next_11synfn._.js")
+R.c("server/chunks/_next-internal_server_app_api_wallet_apple_[serialNumber]_route_actions_06-0-i9.js")
+R.m(98083)
+module.exports=R.m(98083).exports

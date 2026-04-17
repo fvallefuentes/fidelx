@@ -36,6 +36,7 @@ interface PassData {
   bgColor: string;
   textColor: string;
   description: string;
+  lastMessage?: string;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -69,6 +70,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     bgColor: (design.bgColor as string) || "#1a1a2e",
     textColor: (design.textColor as string) || "#ffffff",
     description: (design.description as string) || card.program.name,
+    lastMessage: (card as Record<string, unknown>).lastMessage as string | undefined,
     locations: card.program.establishment
       ? [
           {
@@ -206,7 +208,13 @@ async function generateSignedPass(
     value: passData.programName,
   });
 
-  // Champs verso — dynamiques via program.backFields, fallback sur les défauts
+  pass.headerFields.push({
+    key: "offer",
+    label: "OFFRE",
+    value: passData.lastMessage || "",
+    changeMessage: "%@",
+  });
+
   const customBackFields = parseBackFields(program.backFields);
   if (customBackFields) {
     const usedKeys = new Set<string>();

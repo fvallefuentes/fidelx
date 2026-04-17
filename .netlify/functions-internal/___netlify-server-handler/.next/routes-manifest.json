@@ -1,0 +1,252 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/auth/[...nextauth]",
+      "regex": "^/api/auth/(.+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPnextauth": "nxtPnextauth"
+      },
+      "namedRegex": "^/api/auth/(?<nxtPnextauth>.+?)(?:/)?$"
+    },
+    {
+      "page": "/api/blob/[...path]",
+      "regex": "^/api/blob/(.+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPpath": "nxtPpath"
+      },
+      "namedRegex": "^/api/blob/(?<nxtPpath>.+?)(?:/)?$"
+    },
+    {
+      "page": "/api/programs/[programId]",
+      "regex": "^/api/programs/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPprogramId": "nxtPprogramId"
+      },
+      "namedRegex": "^/api/programs/(?<nxtPprogramId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/api/programs/[programId]/join",
+      "regex": "^/api/programs/([^/]+?)/join(?:/)?$",
+      "routeKeys": {
+        "nxtPprogramId": "nxtPprogramId"
+      },
+      "namedRegex": "^/api/programs/(?<nxtPprogramId>[^/]+?)/join(?:/)?$"
+    },
+    {
+      "page": "/api/programs/[programId]/public",
+      "regex": "^/api/programs/([^/]+?)/public(?:/)?$",
+      "routeKeys": {
+        "nxtPprogramId": "nxtPprogramId"
+      },
+      "namedRegex": "^/api/programs/(?<nxtPprogramId>[^/]+?)/public(?:/)?$"
+    },
+    {
+      "page": "/api/programs/[programId]/upload-image",
+      "regex": "^/api/programs/([^/]+?)/upload\\-image(?:/)?$",
+      "routeKeys": {
+        "nxtPprogramId": "nxtPprogramId"
+      },
+      "namedRegex": "^/api/programs/(?<nxtPprogramId>[^/]+?)/upload\\-image(?:/)?$"
+    },
+    {
+      "page": "/api/wallet/apple/[serialNumber]",
+      "regex": "^/api/wallet/apple/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPserialNumber": "nxtPserialNumber"
+      },
+      "namedRegex": "^/api/wallet/apple/(?<nxtPserialNumber>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/dashboard/programs/[id]/customize",
+      "regex": "^/dashboard/programs/([^/]+?)/customize(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/dashboard/programs/(?<nxtPid>[^/]+?)/customize(?:/)?$"
+    },
+    {
+      "page": "/join/[programId]",
+      "regex": "^/join/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPprogramId": "nxtPprogramId"
+      },
+      "namedRegex": "^/join/(?<nxtPprogramId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/stamp/[serialNumber]",
+      "regex": "^/stamp/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPserialNumber": "nxtPserialNumber"
+      },
+      "namedRegex": "^/stamp/(?<nxtPserialNumber>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/api/auth/register",
+      "regex": "^/api/auth/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/auth/register(?:/)?$"
+    },
+    {
+      "page": "/api/campaigns",
+      "regex": "^/api/campaigns(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/campaigns(?:/)?$"
+    },
+    {
+      "page": "/api/cards",
+      "regex": "^/api/cards(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/cards(?:/)?$"
+    },
+    {
+      "page": "/api/health",
+      "regex": "^/api/health(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/health(?:/)?$"
+    },
+    {
+      "page": "/api/merchants/establishments",
+      "regex": "^/api/merchants/establishments(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/merchants/establishments(?:/)?$"
+    },
+    {
+      "page": "/api/merchants/settings",
+      "regex": "^/api/merchants/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/merchants/settings(?:/)?$"
+    },
+    {
+      "page": "/api/merchants/stats",
+      "regex": "^/api/merchants/stats(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/merchants/stats(?:/)?$"
+    },
+    {
+      "page": "/api/programs",
+      "regex": "^/api/programs(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/programs(?:/)?$"
+    },
+    {
+      "page": "/api/transactions/stamp",
+      "regex": "^/api/transactions/stamp(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/api/transactions/stamp(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/campaigns",
+      "regex": "^/dashboard/campaigns(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/campaigns(?:/)?$"
+    },
+    {
+      "page": "/dashboard/clients",
+      "regex": "^/dashboard/clients(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/clients(?:/)?$"
+    },
+    {
+      "page": "/dashboard/programs",
+      "regex": "^/dashboard/programs(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/programs(?:/)?$"
+    },
+    {
+      "page": "/dashboard/qrcode",
+      "regex": "^/dashboard/qrcode(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/qrcode(?:/)?$"
+    },
+    {
+      "page": "/dashboard/settings",
+      "regex": "^/dashboard/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/settings(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/register",
+      "regex": "^/register(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/register(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
