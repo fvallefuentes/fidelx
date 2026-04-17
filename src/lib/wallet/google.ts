@@ -9,6 +9,7 @@
 
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
+import { getTemplate } from "@/lib/wallet/templates";
 
 const GOOGLE_WALLET_ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || "";
 const GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL =
@@ -22,6 +23,32 @@ interface LoyaltyClassData {
   merchantName: string;
   bgColor: string;
   logoUrl?: string;
+  heroImageUrl?: string;
+}
+
+interface BackFieldEntry {
+  label: string;
+  value: string;
+}
+
+function isBackFieldArray(value: unknown): value is BackFieldEntry[] {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  return value.every(
+    (item) =>
+      typeof item === "object" &&
+      item !== null &&
+      typeof (item as Record<string, unknown>).label === "string" &&
+      typeof (item as Record<string, unknown>).value === "string"
+  );
+}
+
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "field";
 }
 
 interface LoyaltyObjectData {
@@ -48,6 +75,14 @@ export function buildLoyaltyClass(data: LoyaltyClassData) {
     programLogo: data.logoUrl
       ? {
           sourceUri: { uri: data.logoUrl },
+          contentDescription: {
+            defaultValue: { language: "fr", value: data.programName },
+          },
+        }
+      : undefined,
+    heroImage: data.heroImageUrl
+      ? {
+          sourceUri: { uri: data.heroImageUrl },
           contentDescription: {
             defaultValue: { language: "fr", value: data.programName },
           },
@@ -116,14 +151,26 @@ export async function generateGoogleWalletLink(
 
   const config = card.program.config as Record<string, unknown>;
   const design = card.program.cardDesign as Record<string, unknown>;
+  const template = getTemplate(card.program.templateId);
 
   const classId = `${GOOGLE_WALLET_ISSUER_ID}.${card.program.id}`;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const logoUrl = card.program.logoBlobKey
+    ? `${appUrl}/api/blob/${card.program.logoBlobKey}`
+    : undefined;
+  const heroImageUrl = card.program.stripBlobKey
+    ? `${appUrl}/api/blob/${card.program.stripBlobKey}`
+    : undefined;
 
   const loyaltyClass = buildLoyaltyClass({
     programId: card.program.id,
     programName: card.program.name,
     merchantName: card.program.merchant.name || "Commerce",
-    bgColor: (design.bgColor as string) || "#1a1a2e",
+    bgColor:
+      (design.bgColor as string) || template.bgColor || "#1a1a2e",
+    logoUrl,
+    heroImageUrl,
   });
 
   const loyaltyObject = buildLoyaltyObject({
@@ -135,6 +182,14 @@ export async function generateGoogleWalletLink(
     currentPoints: card.currentPoints,
     programType: card.program.type,
   });
+
+  if (isBackFieldArray(card.program.backFields)) {
+    loyaltyObject.textModulesData = card.program.backFields.map((f) => ({
+      id: slugify(f.label),
+      header: f.label,
+      body: f.value,
+    }));
+  }
 
   // Créer le JWT
   const claims = {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ const typeLabels: Record<string, { label: string; icon: typeof Stamp }> = {
 };
 
 export default function ProgramsPage() {
+  const router = useRouter();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -79,9 +81,13 @@ export default function ProgramsPage() {
 
       {showForm && (
         <CreateProgramForm
-          onSuccess={() => {
+          onSuccess={(programId) => {
             setShowForm(false);
-            fetchPrograms();
+            if (programId) {
+              router.push(`/dashboard/programs/${programId}/customize?wizard=true`);
+            } else {
+              fetchPrograms();
+            }
           }}
           onCancel={() => setShowForm(false)}
         />
@@ -190,7 +196,7 @@ function CreateProgramForm({
   onSuccess,
   onCancel,
 }: {
-  onSuccess: () => void;
+  onSuccess: (programId?: string) => void;
   onCancel: () => void;
 }) {
   const [name, setName] = useState("");
@@ -252,7 +258,12 @@ function CreateProgramForm({
       return;
     }
 
-    onSuccess();
+    const created = await res.json().catch(() => null);
+    const newId =
+      created && typeof created === "object" && typeof (created as { id?: unknown }).id === "string"
+        ? (created as { id: string }).id
+        : undefined;
+    onSuccess(newId);
   }
 
   return (
