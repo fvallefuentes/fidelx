@@ -76,8 +76,6 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
 
 async function generateSignedPass(passData: PassData): Promise<Buffer> {
   const { PKPass } = await import("passkit-generator");
-  const fs = await import("fs");
-  const path = await import("path");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const passProps: any = {
@@ -164,18 +162,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     }
   );
 
-  // Ajouter le logo si disponible
-  const logoPath = path.join(process.cwd(), "public", "wallet-assets", "logo.png");
-  if (fs.existsSync(logoPath)) {
-    pass.addBuffer("logo.png", fs.readFileSync(logoPath));
-    pass.addBuffer("logo@2x.png", fs.readFileSync(logoPath));
-  }
-
-  const iconPath = path.join(process.cwd(), "public", "wallet-assets", "icon.png");
-  if (fs.existsSync(iconPath)) {
-    pass.addBuffer("icon.png", fs.readFileSync(iconPath));
-    pass.addBuffer("icon@2x.png", fs.readFileSync(iconPath));
-  }
+  const { DEFAULT_ICON_29, DEFAULT_ICON_58, DEFAULT_ICON_87 } = await import("./certs");
+  pass.addBuffer("icon.png", DEFAULT_ICON_29);
+  pass.addBuffer("icon@2x.png", DEFAULT_ICON_58);
+  pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
 
   return pass.getAsBuffer();
 }
