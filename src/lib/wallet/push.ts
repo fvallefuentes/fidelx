@@ -30,11 +30,17 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
   const host = "api.push.apple.com";
   const passTypeId = process.env.APPLE_PASS_TYPE_ID!;
 
+  // Chaîne complète : cert signataire + WWDR (intermédiaire Apple)
+  const certChain = Buffer.concat([
+    APPLE_CERTS.signerCert,
+    Buffer.from("\n"),
+    APPLE_CERTS.wwdr,
+  ]);
+
   return new Promise((resolve) => {
     const client = http2.connect(`https://${host}`, {
       key: APPLE_CERTS.signerKey,
-      cert: APPLE_CERTS.signerCert,
-      ca: APPLE_CERTS.wwdr,
+      cert: certChain,
     });
 
     client.on("error", (err) => {
