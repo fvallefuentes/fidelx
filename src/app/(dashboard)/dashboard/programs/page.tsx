@@ -136,7 +136,7 @@ export default function ProgramsPage() {
                         <div key={card.serialNumber} className="flex items-center justify-between text-xs">
                           <span className="text-gray-600 font-mono">{card.client.firstName} · {card.serialNumber}</span>
                           <a
-                            href={`/api/wallet/apple/${card.serialNumber}`}
+                            href={`/api/wallet/apple/${card.serialNumber}.pkpass`}
                             target="_blank"
                             className="flex items-center gap-1 text-blue-600 hover:underline"
                           >

@@ -147,7 +147,7 @@ export async function POST(
   }
 
   // URL pour le pass wallet (sera implémenté dans la route wallet)
-  const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple/${card.serialNumber}`;
+  const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple/${card.serialNumber}.pkpass`;
 
   return NextResponse.json(
     {

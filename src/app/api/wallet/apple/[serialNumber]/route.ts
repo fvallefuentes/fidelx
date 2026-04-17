@@ -10,7 +10,8 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ serialNumber: string }> }
 ) {
-  const { serialNumber } = await params;
+  const raw = (await params).serialNumber;
+  const serialNumber = raw.replace(/\.pkpass$/i, "");
 
   const card = await prisma.loyaltyCard.findUnique({
     where: { serialNumber },
@@ -42,7 +43,9 @@ export async function GET(
     return new NextResponse(new Uint8Array(passBuffer), {
       headers: {
         "Content-Type": "application/vnd.apple.pkpass",
-        "Content-Disposition": `inline; filename="${serialNumber}.pkpass"`,
+        "Content-Length": String(passBuffer.length),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
       },
     });
   }
