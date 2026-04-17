@@ -22,10 +22,12 @@
 
 # misc
 .DS_Store
-*.pem
+# Clés privées et certificats binaires — jamais en git
 *.p12
-*.cer
-/certificates/
+# Les .pem dans /certificates/ sont committés (repo privé, nécessaire pour Netlify)
+# Les .pem ailleurs restent exclus
+*.pem
+!/certificates/*.pem
 
 # debug
 npm-debug.log*
