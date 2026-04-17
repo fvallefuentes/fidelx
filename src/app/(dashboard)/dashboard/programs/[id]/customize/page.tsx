@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,6 +27,7 @@ type Program = {
 
 const MAX_BACK_FIELDS = 6;
 const BACK_FIELD_SUGGESTIONS = ["Contact", "Horaires", "Site web"];
+const WIZARD_STEPS = 4;
 
 function isBackFieldArray(x: unknown): x is BackField[] {
   return (
@@ -42,8 +43,25 @@ function isBackFieldArray(x: unknown): x is BackField[] {
 }
 
 export default function CustomizeProgramPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        </div>
+      }
+    >
+      <CustomizeProgramInner />
+    </Suspense>
+  );
+}
+
+function CustomizeProgramInner() {
   const params = useParams<{ id: string }>();
   const programId = params?.id;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const wizard = searchParams.get("wizard") === "true";
 
   const [program, setProgram] = useState<Program | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +74,8 @@ export default function CustomizeProgramPage() {
   const [stripBlobKey, setStripBlobKey] = useState<string | null>(null);
   const [stripVersion, setStripVersion] = useState(Date.now());
   const [backFields, setBackFields] = useState<BackField[]>([]);
+
+  const [step, setStep] = useState(1);
 
   const [openSections, setOpenSections] = useState({
     template: true,
@@ -245,6 +265,166 @@ export default function CustomizeProgramPage() {
   const stripUrl = stripBlobKey ? `/api/blob/${stripBlobKey}?v=${stripVersion}` : null;
   const merchantName = program.merchant?.name || program.merchant?.email || "Mon enseigne";
 
+  const showTemplate = !wizard || step === 1;
+  const showLogo = !wizard || step === 2;
+  const showStrip = !wizard || step === 3;
+  const showBack = !wizard || step === 4;
+
+  const templateContent = (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {templates.map((t) => {
+        const selected = t.id === templateId;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => handleTemplateSelect(t.id)}
+            className={`group rounded-xl border p-2 text-left transition ${
+              selected
+                ? "border-blue-500 ring-2 ring-blue-500"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <div
+              className="mb-2 flex h-16 items-end justify-between rounded-lg p-2"
+              style={{ backgroundColor: t.bgColor, color: t.textColor }}
+            >
+              <span className="text-[10px] font-semibold">Aa</span>
+              <span className="text-[10px]" style={{ color: t.labelColor }}>
+                Label
+              </span>
+            </div>
+            <p className="text-sm font-medium">{t.name}</p>
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const logoContent = (
+    <LogoUploader
+      programId={programId ?? ""}
+      currentLogoUrl={logoUrl}
+      onUploaded={handleLogoUploaded}
+    />
+  );
+
+  const stripContent = (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      <button
+        type="button"
+        onClick={handleStripClear}
+        className={`flex h-20 items-center justify-center rounded-lg border-2 border-dashed text-sm font-medium transition ${
+          !stripBlobKey
+            ? "border-blue-500 bg-blue-50 text-blue-700"
+            : "border-gray-300 text-gray-500 hover:border-gray-400"
+        }`}
+      >
+        Aucun
+      </button>
+      {STRIP_LIBRARY.map((entry) => (
+        <button
+          key={entry.id}
+          type="button"
+          onClick={() => handleStripLibrarySelect(entry.id)}
+          className="overflow-hidden rounded-lg border border-gray-200 transition hover:border-gray-400"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={entry.path}
+            alt={entry.label}
+            className="h-20 w-full object-cover"
+          />
+          <p className="px-2 py-1 text-xs font-medium text-gray-700">
+            {entry.label}
+          </p>
+        </button>
+      ))}
+    </div>
+  );
+
+  const backContent = (
+    <div className="space-y-3">
+      {backFields.map((field, i) => (
+        <div key={i} className="flex items-start gap-2">
+          <div className="flex-1 space-y-2">
+            <Input
+              placeholder={BACK_FIELD_SUGGESTIONS[i] ?? "Intitulé"}
+              value={field.label}
+              onChange={(e) => updateBackField(i, { label: e.target.value })}
+              onBlur={saveBackFields}
+            />
+            <Input
+              placeholder="Valeur"
+              value={field.value}
+              onChange={(e) => updateBackField(i, { value: e.target.value })}
+              onBlur={saveBackFields}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => removeBackField(i)}
+            className="mt-2 rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-red-600"
+            aria-label="Supprimer"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+      ))}
+      {backFields.length < MAX_BACK_FIELDS && (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addBackField}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          Ajouter un champ
+        </Button>
+      )}
+    </div>
+  );
+
+  function renderSection(
+    key: keyof typeof openSections,
+    title: string,
+    content: React.ReactNode
+  ) {
+    if (wizard) {
+      return (
+        <Card>
+          <div className="px-6 py-4">
+            <span className="text-base font-semibold text-gray-900">{title}</span>
+          </div>
+          <CardContent className="pt-0">{content}</CardContent>
+        </Card>
+      );
+    }
+    return (
+      <Section
+        title={title}
+        open={openSections[key]}
+        onToggle={() =>
+          setOpenSections((s) => ({ ...s, [key]: !s[key] }))
+        }
+      >
+        {content}
+      </Section>
+    );
+  }
+
+  function handleNext() {
+    if (step >= WIZARD_STEPS) {
+      router.push("/dashboard/programs");
+      return;
+    }
+    setStep((s) => Math.min(WIZARD_STEPS, s + 1));
+  }
+
+  function handlePrev() {
+    setStep((s) => Math.max(1, s - 1));
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
@@ -266,146 +446,47 @@ export default function CustomizeProgramPage() {
         )}
       </div>
 
+      {wizard && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-medium text-gray-500">
+            <span>
+              Étape {step} sur {WIZARD_STEPS}
+            </span>
+            <span>{Math.round((step / WIZARD_STEPS) * 100)}%</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full bg-blue-600 transition-all"
+              style={{ width: `${(step / WIZARD_STEPS) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,380px)]">
         <div className="space-y-4">
-          <Section
-            title="Template"
-            open={openSections.template}
-            onToggle={() =>
-              setOpenSections((s) => ({ ...s, template: !s.template }))
-            }
-          >
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {templates.map((t) => {
-                const selected = t.id === templateId;
-                return (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => handleTemplateSelect(t.id)}
-                    className={`group rounded-xl border p-2 text-left transition ${
-                      selected
-                        ? "border-blue-500 ring-2 ring-blue-500"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <div
-                      className="mb-2 flex h-16 items-end justify-between rounded-lg p-2"
-                      style={{ backgroundColor: t.bgColor, color: t.textColor }}
-                    >
-                      <span className="text-[10px] font-semibold">Aa</span>
-                      <span className="text-[10px]" style={{ color: t.labelColor }}>
-                        Label
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium">{t.name}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
+          {showTemplate &&
+            renderSection("template", "Choisir un template", templateContent)}
+          {showLogo && renderSection("logo", "Upload du logo", logoContent)}
+          {showStrip &&
+            renderSection("strip", "Choisir un bandeau", stripContent)}
+          {showBack && renderSection("back", "Textes verso", backContent)}
 
-          <Section
-            title="Logo"
-            open={openSections.logo}
-            onToggle={() => setOpenSections((s) => ({ ...s, logo: !s.logo }))}
-          >
-            <LogoUploader
-              programId={programId ?? ""}
-              currentLogoUrl={logoUrl}
-              onUploaded={handleLogoUploaded}
-            />
-          </Section>
-
-          <Section
-            title="Bandeau"
-            open={openSections.strip}
-            onToggle={() => setOpenSections((s) => ({ ...s, strip: !s.strip }))}
-          >
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              <button
+          {wizard && (
+            <div className="flex items-center justify-between pt-2">
+              <Button
                 type="button"
-                onClick={handleStripClear}
-                className={`flex h-20 items-center justify-center rounded-lg border-2 border-dashed text-sm font-medium transition ${
-                  !stripBlobKey
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-300 text-gray-500 hover:border-gray-400"
-                }`}
+                variant="outline"
+                onClick={handlePrev}
+                disabled={step === 1}
               >
-                Aucun
-              </button>
-              {STRIP_LIBRARY.map((entry) => (
-                <button
-                  key={entry.id}
-                  type="button"
-                  onClick={() => handleStripLibrarySelect(entry.id)}
-                  className="overflow-hidden rounded-lg border border-gray-200 transition hover:border-gray-400"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={entry.path}
-                    alt={entry.label}
-                    className="h-20 w-full object-cover"
-                  />
-                  <p className="px-2 py-1 text-xs font-medium text-gray-700">
-                    {entry.label}
-                  </p>
-                </button>
-              ))}
+                Précédent
+              </Button>
+              <Button type="button" onClick={handleNext}>
+                {step === WIZARD_STEPS ? "Terminer" : "Suivant"}
+              </Button>
             </div>
-          </Section>
-
-          <Section
-            title="Textes verso"
-            open={openSections.back}
-            onToggle={() => setOpenSections((s) => ({ ...s, back: !s.back }))}
-          >
-            <div className="space-y-3">
-              {backFields.map((field, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <div className="flex-1 space-y-2">
-                    <Input
-                      placeholder={
-                        BACK_FIELD_SUGGESTIONS[i] ?? "Intitulé"
-                      }
-                      value={field.label}
-                      onChange={(e) =>
-                        updateBackField(i, { label: e.target.value })
-                      }
-                      onBlur={saveBackFields}
-                    />
-                    <Input
-                      placeholder="Valeur"
-                      value={field.value}
-                      onChange={(e) =>
-                        updateBackField(i, { value: e.target.value })
-                      }
-                      onBlur={saveBackFields}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeBackField(i)}
-                    className="mt-2 rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-red-600"
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-              {backFields.length < MAX_BACK_FIELDS && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addBackField}
-                >
-                  <Plus className="mr-1 h-4 w-4" />
-                  Ajouter un champ
-                </Button>
-              )}
-            </div>
-          </Section>
+          )}
         </div>
 
         <div className="lg:sticky lg:top-6 lg:self-start">
@@ -456,4 +537,3 @@ function Section({
     </Card>
   );
 }
-
