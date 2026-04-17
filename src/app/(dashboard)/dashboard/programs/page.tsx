@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, ExternalLink } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, ExternalLink, Bell, CheckCircle, AlertCircle } from "lucide-react";
 
 interface Program {
   id: string;
@@ -31,6 +31,19 @@ export default function ProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [pushStatus, setPushStatus] = useState<Record<string, "idle" | "loading" | "ok" | "error">>({});
+
+  async function testPush(serialNumber: string) {
+    setPushStatus((s) => ({ ...s, [serialNumber]: "loading" }));
+    const res = await fetch("/api/debug/wallet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ serialNumber }),
+    });
+    const data = await res.json();
+    setPushStatus((s) => ({ ...s, [serialNumber]: data.sent > 0 ? "ok" : "error" }));
+    setTimeout(() => setPushStatus((s) => ({ ...s, [serialNumber]: "idle" })), 4000);
+  }
 
   useEffect(() => {
     fetchPrograms();
@@ -132,19 +145,35 @@ export default function ProgramsPage() {
                   {program.cards.length > 0 && (
                     <div className="mt-4 border-t pt-3 space-y-1">
                       <p className="text-xs font-medium text-gray-400 uppercase">Cartes — tester Wallet</p>
-                      {program.cards.map((card) => (
-                        <div key={card.serialNumber} className="flex items-center justify-between text-xs">
-                          <span className="text-gray-600 font-mono">{card.client.firstName} · {card.serialNumber}</span>
-                          <a
-                            href={`/api/wallet/apple/${card.serialNumber}.pkpass`}
-                            target="_blank"
-                            className="flex items-center gap-1 text-blue-600 hover:underline"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            Wallet
-                          </a>
-                        </div>
-                      ))}
+                      {program.cards.map((card) => {
+                        const status = pushStatus[card.serialNumber] || "idle";
+                        return (
+                          <div key={card.serialNumber} className="flex items-center justify-between text-xs">
+                            <span className="text-gray-600 font-mono">{card.client.firstName} · {card.serialNumber}</span>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`/api/wallet/apple/${card.serialNumber}.pkpass`}
+                                target="_blank"
+                                className="flex items-center gap-1 text-blue-600 hover:underline"
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                                Wallet
+                              </a>
+                              <button
+                                onClick={() => testPush(card.serialNumber)}
+                                disabled={status === "loading"}
+                                className="flex items-center gap-1 text-purple-600 hover:underline disabled:opacity-50"
+                              >
+                                {status === "loading" && <span className="h-3 w-3 animate-spin rounded-full border-2 border-purple-600 border-t-transparent inline-block" />}
+                                {status === "ok" && <CheckCircle className="h-3 w-3 text-green-600" />}
+                                {status === "error" && <AlertCircle className="h-3 w-3 text-red-500" />}
+                                {status === "idle" && <Bell className="h-3 w-3" />}
+                                {status === "ok" ? "Envoyé !" : status === "error" ? "Échec" : "Push"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </CardContent>
