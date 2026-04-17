@@ -120,3 +120,27 @@ export async function PATCH(
 
   return NextResponse.json(updated);
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ programId: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const { programId } = await params;
+  const existing = await prisma.loyaltyProgram.findUnique({
+    where: { id: programId },
+  });
+  if (!existing || existing.merchantId !== session.user.id) {
+    return NextResponse.json(
+      { error: "Programme introuvable" },
+      { status: 404 }
+    );
+  }
+
+  await prisma.loyaltyProgram.delete({ where: { id: programId } });
+  return NextResponse.json({ ok: true });
+}

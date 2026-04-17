@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, ExternalLink, Bell, CheckCircle, AlertCircle } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, ExternalLink, Bell, CheckCircle, AlertCircle, Trash2 } from "lucide-react";
 
 interface Program {
   id: string;
@@ -56,6 +56,19 @@ export default function ProgramsPage() {
     const data = await res.json();
     setPrograms(data);
     setLoading(false);
+  }
+
+  async function deleteProgram(programId: string, programName: string) {
+    if (!confirm(`Supprimer "${programName}" ? Cette action est irréversible et supprimera aussi toutes les cartes clients et récompenses associées.`)) {
+      return;
+    }
+    const res = await fetch(`/api/programs/${programId}`, { method: "DELETE" });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(`Erreur: ${data.error || "Échec de la suppression"}`);
+      return;
+    }
+    fetchPrograms();
   }
 
   if (loading) {
@@ -116,9 +129,18 @@ export default function ProgramsPage() {
               <Card key={program.id}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-lg">{program.name}</CardTitle>
-                  <Badge variant={program.isActive ? "success" : "secondary"}>
-                    {program.isActive ? "Actif" : "Inactif"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={program.isActive ? "success" : "secondary"}>
+                      {program.isActive ? "Actif" : "Inactif"}
+                    </Badge>
+                    <button
+                      onClick={() => deleteProgram(program.id, program.name)}
+                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      title="Supprimer le programme"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
