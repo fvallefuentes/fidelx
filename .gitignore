@@ -17,6 +17,12 @@
 /.next/
 /out/
 
+# netlify local build cache
+/.netlify/
+
+# logs locaux
+*.log
+
 # production
 /build
 
