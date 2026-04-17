@@ -99,7 +99,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     ],
     locations: passData.locations?.filter((l) => l.latitude !== 0) || [],
     webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple`,
-    authenticationToken: passData.serialNumber,
+    authenticationToken: passData.serialNumber.replace(/-/g, "") + "0000",
   };
 
   const { APPLE_CERTS } = await import("./certs");
