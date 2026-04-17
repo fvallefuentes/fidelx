@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, ExternalLink } from "lucide-react";
 
 interface Program {
   id: string;
@@ -16,6 +16,7 @@ interface Program {
   cardDesign: Record<string, unknown>;
   googleReviewEnabled: boolean;
   rewards: { id: string; name: string; threshold: number; rewardType: string }[];
+  cards: { serialNumber: string; client: { firstName: string } }[];
   _count: { cards: number };
 }
 
@@ -125,6 +126,25 @@ export default function ProgramsPage() {
                     <div className="mt-3 flex items-center gap-1 text-xs text-green-600">
                       <Award className="h-3 w-3" />
                       Bonus avis Google activé
+                    </div>
+                  )}
+
+                  {program.cards.length > 0 && (
+                    <div className="mt-4 border-t pt-3 space-y-1">
+                      <p className="text-xs font-medium text-gray-400 uppercase">Cartes — tester Wallet</p>
+                      {program.cards.map((card) => (
+                        <div key={card.serialNumber} className="flex items-center justify-between text-xs">
+                          <span className="text-gray-600 font-mono">{card.client.firstName} · {card.serialNumber}</span>
+                          <a
+                            href={`/api/wallet/apple/${card.serialNumber}.pkpass`}
+                            target="_blank"
+                            className="flex items-center gap-1 text-blue-600 hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            Wallet
+                          </a>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </CardContent>

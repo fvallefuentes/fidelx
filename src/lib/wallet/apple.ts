@@ -66,12 +66,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
   };
 
   // En production, utiliser passkit-generator avec les vrais certificats
-  if (
-    process.env.APPLE_PASS_TYPE_ID &&
-    process.env.APPLE_SIGNER_CERT_PATH &&
-    process.env.APPLE_SIGNER_KEY_PATH &&
-    process.env.APPLE_WWDR_CERT_PATH
-  ) {
+  if (process.env.APPLE_PASS_TYPE_ID) {
     return generateSignedPass(passData);
   }
 
@@ -80,10 +75,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
 }
 
 async function generateSignedPass(passData: PassData): Promise<Buffer> {
-  // Import dynamique pour éviter l'erreur si les certs ne sont pas configurés
   const { PKPass } = await import("passkit-generator");
-  const fs = await import("fs");
-  const path = await import("path");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const passProps: any = {
@@ -105,15 +97,17 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     ],
     locations: passData.locations?.filter((l) => l.latitude !== 0) || [],
     webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple`,
-    authenticationToken: passData.serialNumber,
+    authenticationToken: passData.serialNumber.replace(/-/g, "") + "0000",
   };
+
+  const { APPLE_CERTS } = await import("./certs");
 
   const pass = new PKPass(
     {},
     {
-      wwdr: fs.readFileSync(process.env.APPLE_WWDR_CERT_PATH!),
-      signerCert: fs.readFileSync(process.env.APPLE_SIGNER_CERT_PATH!),
-      signerKey: fs.readFileSync(process.env.APPLE_SIGNER_KEY_PATH!),
+      wwdr: APPLE_CERTS.wwdr,
+      signerCert: APPLE_CERTS.signerCert,
+      signerKey: APPLE_CERTS.signerKey,
       signerKeyPassphrase: process.env.APPLE_SIGNER_KEY_PASSPHRASE,
     },
     passProps
@@ -168,18 +162,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     }
   );
 
-  // Ajouter le logo si disponible
-  const logoPath = path.join(process.cwd(), "public", "wallet-assets", "logo.png");
-  if (fs.existsSync(logoPath)) {
-    pass.addBuffer("logo.png", fs.readFileSync(logoPath));
-    pass.addBuffer("logo@2x.png", fs.readFileSync(logoPath));
-  }
-
-  const iconPath = path.join(process.cwd(), "public", "wallet-assets", "icon.png");
-  if (fs.existsSync(iconPath)) {
-    pass.addBuffer("icon.png", fs.readFileSync(iconPath));
-    pass.addBuffer("icon@2x.png", fs.readFileSync(iconPath));
-  }
+  const { DEFAULT_ICON_29, DEFAULT_ICON_58, DEFAULT_ICON_87 } = await import("./certs");
+  pass.addBuffer("icon.png", DEFAULT_ICON_29);
+  pass.addBuffer("icon@2x.png", DEFAULT_ICON_58);
+  pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
 
   return pass.getAsBuffer();
 }
