@@ -42,7 +42,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(passBuffer), {
       headers: {
         "Content-Type": "application/vnd.apple.pkpass",
-        "Content-Disposition": `attachment; filename="${serialNumber}.pkpass"`,
+        "Content-Disposition": `inline; filename="${serialNumber}.pkpass"`,
       },
     });
   }
