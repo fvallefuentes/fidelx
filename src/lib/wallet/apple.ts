@@ -66,12 +66,19 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
   };
 
   // En production, utiliser passkit-generator avec les vrais certificats
-  if (
+  const hasCertFiles =
     process.env.APPLE_PASS_TYPE_ID &&
     process.env.APPLE_SIGNER_CERT_PATH &&
     process.env.APPLE_SIGNER_KEY_PATH &&
-    process.env.APPLE_WWDR_CERT_PATH
-  ) {
+    process.env.APPLE_WWDR_CERT_PATH;
+
+  const hasCertB64 =
+    process.env.APPLE_PASS_TYPE_ID &&
+    process.env.APPLE_SIGNER_CERT_B64 &&
+    process.env.APPLE_SIGNER_KEY_B64 &&
+    process.env.APPLE_WWDR_CERT_B64;
+
+  if (hasCertFiles || hasCertB64) {
     return generateSignedPass(passData);
   }
 
@@ -79,8 +86,15 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
   return Buffer.from(JSON.stringify(passData, null, 2));
 }
 
+function loadCert(b64EnvVar: string, filePathEnvVar: string): Buffer {
+  if (process.env[b64EnvVar]) {
+    return Buffer.from(process.env[b64EnvVar]!, "base64");
+  }
+  const fs = require("fs");
+  return fs.readFileSync(process.env[filePathEnvVar]!);
+}
+
 async function generateSignedPass(passData: PassData): Promise<Buffer> {
-  // Import dynamique pour éviter l'erreur si les certs ne sont pas configurés
   const { PKPass } = await import("passkit-generator");
   const fs = await import("fs");
   const path = await import("path");
@@ -111,9 +125,9 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   const pass = new PKPass(
     {},
     {
-      wwdr: fs.readFileSync(process.env.APPLE_WWDR_CERT_PATH!),
-      signerCert: fs.readFileSync(process.env.APPLE_SIGNER_CERT_PATH!),
-      signerKey: fs.readFileSync(process.env.APPLE_SIGNER_KEY_PATH!),
+      wwdr: loadCert("APPLE_WWDR_CERT_B64", "APPLE_WWDR_CERT_PATH"),
+      signerCert: loadCert("APPLE_SIGNER_CERT_B64", "APPLE_SIGNER_CERT_PATH"),
+      signerKey: loadCert("APPLE_SIGNER_KEY_B64", "APPLE_SIGNER_KEY_PATH"),
       signerKeyPassphrase: process.env.APPLE_SIGNER_KEY_PASSPHRASE,
     },
     passProps
