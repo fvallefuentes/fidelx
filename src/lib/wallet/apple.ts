@@ -9,6 +9,21 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { getBlob } from "@/lib/blob-store";
+import fs from "fs";
+import path from "path";
+
+interface ProgramAssets {
+  logoBlobKey: string | null;
+  stripBlobKey: string | null;
+  iconBlobKey: string | null;
+  backFields: unknown;
+}
+
+interface BackField {
+  label: string;
+  value: string;
+}
 
 interface PassData {
   serialNumber: string;
@@ -65,16 +80,65 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
       : undefined,
   };
 
+  const programAssets: ProgramAssets = {
+    logoBlobKey: card.program.logoBlobKey ?? null,
+    stripBlobKey: card.program.stripBlobKey ?? null,
+    iconBlobKey: card.program.iconBlobKey ?? null,
+    backFields: card.program.backFields ?? null,
+  };
+
   // En production, utiliser passkit-generator avec les vrais certificats
   if (process.env.APPLE_PASS_TYPE_ID) {
-    return generateSignedPass(passData);
+    return generateSignedPass(passData, programAssets);
   }
 
   // Mode dev: retourner les données du pass en JSON (pour debug)
   return Buffer.from(JSON.stringify(passData, null, 2));
 }
 
-async function generateSignedPass(passData: PassData): Promise<Buffer> {
+function parseBackFields(raw: unknown): BackField[] | null {
+  if (!Array.isArray(raw) || raw.length === 0) return null;
+  const out: BackField[] = [];
+  for (const item of raw) {
+    if (
+      item &&
+      typeof item === "object" &&
+      typeof (item as { label?: unknown }).label === "string" &&
+      typeof (item as { value?: unknown }).value === "string"
+    ) {
+      const it = item as { label: string; value: string };
+      out.push({ label: it.label, value: it.value });
+    }
+  }
+  return out.length > 0 ? out : null;
+}
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 32);
+}
+
+async function tryReadLocalAsset(relPath: string): Promise<Buffer | null> {
+  try {
+    const full = path.join(process.cwd(), "public", "wallet-assets", relPath);
+    if (fs.existsSync(full)) {
+      return await fs.promises.readFile(full);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+async function generateSignedPass(
+  passData: PassData,
+  program: ProgramAssets
+): Promise<Buffer> {
   const { PKPass } = await import("passkit-generator");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -142,30 +206,83 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     value: passData.programName,
   });
 
-  // Champs verso
-  pass.backFields.push(
-    {
-      key: "merchant",
-      label: "Commerce",
-      value: passData.merchantName,
-    },
-    {
-      key: "info",
-      label: "Information",
-      value: "Carte de fidélité digitale propulsée par FidelX",
-    },
-    {
-      key: "privacy",
-      label: "Confidentialité",
-      value:
-        "Vos données sont hébergées en Suisse et traitées conformément à la LPD. Vous pouvez demander la suppression de vos données à tout moment.",
-    }
-  );
+  // Champs verso — dynamiques via program.backFields, fallback sur les défauts
+  const customBackFields = parseBackFields(program.backFields);
+  if (customBackFields) {
+    const usedKeys = new Set<string>();
+    customBackFields.forEach((bf, i) => {
+      let key = slugify(bf.label) || `back_${i}`;
+      if (usedKeys.has(key)) key = `${key}_${i}`;
+      usedKeys.add(key);
+      pass.backFields.push({
+        key,
+        label: bf.label,
+        value: bf.value,
+      });
+    });
+  } else {
+    pass.backFields.push(
+      {
+        key: "merchant",
+        label: "Commerce",
+        value: passData.merchantName,
+      },
+      {
+        key: "info",
+        label: "Information",
+        value: "Carte de fidélité digitale propulsée par FidelX",
+      },
+      {
+        key: "privacy",
+        label: "Confidentialité",
+        value:
+          "Vos données sont hébergées en Suisse et traitées conformément à la LPD. Vous pouvez demander la suppression de vos données à tout moment.",
+      }
+    );
+  }
 
-  const { DEFAULT_ICON_29, DEFAULT_ICON_58, DEFAULT_ICON_87 } = await import("./certs");
-  pass.addBuffer("icon.png", DEFAULT_ICON_29);
-  pass.addBuffer("icon@2x.png", DEFAULT_ICON_58);
-  pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
+  // Logo : blob uploadé → fichier local → rien
+  let logoBuf: Buffer | null = null;
+  if (program.logoBlobKey) {
+    logoBuf = await getBlob(program.logoBlobKey);
+  }
+  if (!logoBuf) {
+    logoBuf = await tryReadLocalAsset("logo.png");
+  }
+  if (logoBuf) {
+    pass.addBuffer("logo.png", logoBuf);
+    pass.addBuffer("logo@2x.png", logoBuf);
+  }
+
+  // Strip : blob uploadé → rien
+  if (program.stripBlobKey) {
+    const stripBuf = await getBlob(program.stripBlobKey);
+    if (stripBuf) {
+      pass.addBuffer("strip.png", stripBuf);
+      pass.addBuffer("strip@2x.png", stripBuf);
+    }
+  }
+
+  // Icon : blob uploadé → fichier local → défauts inlined (base64)
+  let iconBuf: Buffer | null = null;
+  if (program.iconBlobKey) {
+    iconBuf = await getBlob(program.iconBlobKey);
+  }
+  if (!iconBuf) {
+    iconBuf = await tryReadLocalAsset("icon.png");
+  }
+  if (iconBuf) {
+    pass.addBuffer("icon.png", iconBuf);
+    pass.addBuffer("icon@2x.png", iconBuf);
+    pass.addBuffer("icon@3x.png", iconBuf);
+  } else {
+    const { DEFAULT_ICON_29, DEFAULT_ICON_58, DEFAULT_ICON_87 } = await import(
+      "./certs"
+    );
+    pass.addBuffer("icon.png", DEFAULT_ICON_29);
+    pass.addBuffer("icon@2x.png", DEFAULT_ICON_58);
+    pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
+  }
 
   return pass.getAsBuffer();
 }
