@@ -114,7 +114,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       wwdr: fs.readFileSync(process.env.APPLE_WWDR_CERT_PATH!),
       signerCert: fs.readFileSync(process.env.APPLE_SIGNER_CERT_PATH!),
       signerKey: fs.readFileSync(process.env.APPLE_SIGNER_KEY_PATH!),
-      signerKeyPassphrase: process.env.APPLE_SIGNER_KEY_PASSPHRASE,
+      signerKeyPassphrase: process.env.APPLE_SIGNER_KEY_PASSPHRASE || undefined,
     },
     passProps
   );
