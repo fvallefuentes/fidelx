@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink } from "lucide-react";
 
 interface Program {
   id: string;
@@ -30,10 +30,25 @@ export default function ProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPrograms();
   }, []);
+
+  async function deleteProgram(id: string) {
+    setDeletingId(id);
+    const res = await fetch(`/api/programs/${id}`, { method: "DELETE" });
+    setDeletingId(null);
+    setConfirmDeleteId(null);
+    if (res.ok) {
+      fetchPrograms();
+    } else {
+      const data = await res.json();
+      alert(data.error || "Erreur lors de la suppression");
+    }
+  }
 
   async function fetchPrograms() {
     const res = await fetch("/api/programs");
@@ -127,6 +142,49 @@ export default function ProgramsPage() {
                       Bonus avis Google activé
                     </div>
                   )}
+                  <div className="mt-4 flex gap-2">
+                    <a
+                      href={`/join/${program.id}`}
+                      target="_blank"
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Lien client
+                    </a>
+                    <div className="flex-1" />
+                    {confirmDeleteId === program.id ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Confirmer ?</span>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => deleteProgram(program.id)}
+                          disabled={deletingId === program.id}
+                          className="h-7 px-2 text-xs"
+                        >
+                          {deletingId === program.id ? "..." : "Oui, supprimer"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="h-7 px-2 text-xs"
+                        >
+                          Annuler
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setConfirmDeleteId(program.id)}
+                        className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Supprimer
+                      </Button>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

@@ -9,16 +9,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { serialNumber, establishmentId, amountSpent } = await req.json();
+  const { serialNumber, establishmentId, amountSpent, count } = await req.json();
+  const stampCount = Math.max(1, Math.min(20, parseInt(count) || 1));
 
   if (!serialNumber) {
-    return NextResponse.json(
-      { error: "Numéro de série requis" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Numéro de série requis" }, { status: 400 });
   }
 
-  // Trouver la carte
   const card = await prisma.loyaltyCard.findUnique({
     where: { serialNumber },
     include: {
@@ -28,103 +25,71 @@ export async function POST(req: Request) {
           rewards: { where: { isActive: true }, orderBy: { threshold: "asc" } },
         },
       },
-      client: { select: { firstName: true, email: true } },
+      client: { select: { firstName: true } },
     },
   });
 
-  if (!card) {
-    return NextResponse.json(
-      { error: "Carte introuvable" },
-      { status: 404 }
-    );
-  }
-
-  // Vérifier que le commerçant est bien le propriétaire du programme
+  if (!card) return NextResponse.json({ error: "Carte introuvable" }, { status: 404 });
   if (card.program.merchant.id !== session.user.id) {
-    return NextResponse.json(
-      { error: "Ce programme ne vous appartient pas" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Ce programme ne vous appartient pas" }, { status: 403 });
   }
-
-  if (card.status !== "ACTIVE") {
-    return NextResponse.json(
-      { error: "Cette carte n'est plus active" },
-      { status: 400 }
-    );
+  if (card.status === "REVOKED" || card.status === "EXPIRED") {
+    return NextResponse.json({ error: "Cette carte n'est plus active" }, { status: 400 });
+  }
+  if (card.status === "REWARD_PENDING") {
+    return NextResponse.json({ error: "Une récompense est en attente de validation pour cette carte" }, { status: 400 });
   }
 
   const config = card.program.config as Record<string, unknown>;
-  let stampValue = 1;
-  let pointsValue = 0;
   let rewardUnlocked = null;
 
   if (card.program.type === "STAMPS" || card.program.type === "HYBRID") {
     const maxStamps = (config.maxStamps as number) || 10;
-    const newStamps = card.currentStamps + stampValue;
+    const newStamps = card.currentStamps + stampCount;
+    const reachedMax = newStamps >= maxStamps;
 
-    // Vérifier si une récompense est atteinte
+    // Check reward threshold
     const reward = card.program.rewards.find(
       (r) => newStamps >= r.threshold && card.currentStamps < r.threshold
     );
-
     if (reward) {
-      rewardUnlocked = {
-        id: reward.id,
-        name: reward.name,
-        threshold: reward.threshold,
-      };
-
-      // Créer le claim
-      await prisma.rewardClaim.create({
-        data: {
-          cardId: card.id,
-          rewardId: reward.id,
-        },
-      });
+      rewardUnlocked = { id: reward.id, name: reward.name };
+      await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: reward.id } });
     }
-
-    // Si la carte est complète, remettre à zéro
-    const finalStamps = newStamps >= maxStamps ? 0 : newStamps;
-    const newStatus = newStamps >= maxStamps ? "ACTIVE" : card.status; // reste active, reset des tampons
 
     await prisma.loyaltyCard.update({
       where: { id: card.id },
       data: {
-        currentStamps: finalStamps,
+        // Cap at maxStamps, don't reset — wait for merchant to validate
+        currentStamps: reachedMax ? maxStamps : newStamps,
+        status: reachedMax ? "REWARD_PENDING" : "ACTIVE",
         totalVisits: { increment: 1 },
-        totalSpent: amountSpent
-          ? { increment: amountSpent }
-          : undefined,
+        totalSpent: amountSpent ? { increment: amountSpent } : undefined,
         lastVisitAt: new Date(),
-        status: newStatus,
       },
     });
 
-    stampValue = 1;
+    if (reachedMax && !rewardUnlocked) {
+      // Auto-create reward claim if no specific reward threshold matched
+      const defaultReward = card.program.rewards[0];
+      if (defaultReward) {
+        rewardUnlocked = { id: defaultReward.id, name: defaultReward.name };
+        await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: defaultReward.id } });
+      }
+    }
   }
 
   if (card.program.type === "POINTS" || card.program.type === "HYBRID") {
     const pointsPerChf = (config.pointsPerChf as number) || 1;
-    pointsValue = amountSpent ? amountSpent * pointsPerChf : pointsPerChf;
-
+    const pointsValue = amountSpent ? amountSpent * pointsPerChf : pointsPerChf;
     const newPoints = card.currentPoints + pointsValue;
 
-    // Vérifier les paliers
     const reward = card.program.rewards.find(
       (r) => newPoints >= r.threshold && card.currentPoints < r.threshold
     );
-
     if (reward) {
-      rewardUnlocked = {
-        id: reward.id,
-        name: reward.name,
-        threshold: reward.threshold,
-      };
-
-      await prisma.rewardClaim.create({
-        data: { cardId: card.id, rewardId: reward.id },
-      });
+      rewardUnlocked = { id: reward.id, name: reward.name };
+      await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: reward.id } });
     }
 
     await prisma.loyaltyCard.update({
@@ -141,7 +106,6 @@ export async function POST(req: Request) {
   if (card.program.type === "CASHBACK") {
     const percentage = (config.percentage as number) || 5;
     const cashback = amountSpent ? (amountSpent * percentage) / 100 : 0;
-
     await prisma.loyaltyCard.update({
       where: { id: card.id },
       data: {
@@ -153,33 +117,36 @@ export async function POST(req: Request) {
     });
   }
 
-  // Créer la transaction
-  const transaction = await prisma.transaction.create({
+  await prisma.transaction.create({
     data: {
       cardId: card.id,
       establishmentId: establishmentId || undefined,
       type: card.program.type === "POINTS" ? "POINTS_EARN" : "STAMP",
-      value: card.program.type === "POINTS" ? pointsValue : stampValue,
+      value: stampCount,
       amountSpent: amountSpent || undefined,
     },
   });
 
-  // Récupérer la carte mise à jour
+  try {
+    const { notifyPassUpdate } = await import("@/lib/wallet/push");
+    await notifyPassUpdate(card.id);
+  } catch { /* non bloquant */ }
+
+  try {
+    const { updateGoogleWalletObject } = await import("@/lib/wallet/google");
+    await updateGoogleWalletObject(card.id);
+  } catch { /* non bloquant */ }
+
   const updatedCard = await prisma.loyaltyCard.findUnique({
     where: { id: card.id },
-    select: {
-      currentStamps: true,
-      currentPoints: true,
-      cashbackBalance: true,
-      totalVisits: true,
-    },
+    select: { currentStamps: true, currentPoints: true, cashbackBalance: true, totalVisits: true, status: true },
   });
 
   return NextResponse.json({
     success: true,
-    transaction: transaction.id,
     card: updatedCard,
     client: { firstName: card.client.firstName },
     rewardUnlocked,
+    rewardPending: updatedCard?.status === "REWARD_PENDING",
   });
 }

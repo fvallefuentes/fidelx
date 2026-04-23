@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateSerialNumber } from "@/lib/utils";
+import { generateGoogleWalletLink } from "@/lib/wallet/google";
 
 export async function POST(
   req: Request,
@@ -146,14 +147,18 @@ export async function POST(
     });
   }
 
-  // URL pour le pass wallet (sera implémenté dans la route wallet)
+  // Apple Wallet URL
   const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple/${card.serialNumber}`;
+
+  // Google Wallet URL
+  const googleWalletUrl = await generateGoogleWalletLink(card.id);
 
   return NextResponse.json(
     {
       cardId: card.id,
       serialNumber: card.serialNumber,
       walletUrl,
+      googleWalletUrl,
     },
     { status: 201 }
   );

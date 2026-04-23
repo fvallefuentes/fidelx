@@ -13,8 +13,10 @@ import jwt from "jsonwebtoken";
 const GOOGLE_WALLET_ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || "";
 const GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL =
   process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL || "";
-const GOOGLE_WALLET_SERVICE_ACCOUNT_KEY =
-  process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || "";
+// Remplace les \n littéraux par de vrais sauts de ligne (nécessaire pour RS256)
+const GOOGLE_WALLET_SERVICE_ACCOUNT_KEY = (
+  process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || ""
+).replace(/\\n/g, "\n");
 
 interface LoyaltyClassData {
   programId: string;
