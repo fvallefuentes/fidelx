@@ -58,8 +58,13 @@ body {
   color: var(--ink);
   font-family: var(--font-geist-sans, "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
   font-feature-settings: "ss01", "cv11";
-  overflow-x: hidden;
+  /* NO overflow-x: hidden here — it kills position: sticky on descendants
+     (e.g. .journey-sticky, .hcc-sticky). Apply to body instead. */
 }
+
+/* Hide horizontal overflow on the page root, NOT on .landing,
+   so sticky positioning still works inside .landing. */
+html, body { overflow-x: clip; }
 
 .landing *, .landing *::before, .landing *::after { box-sizing: border-box; }
 .landing a { color: inherit; text-decoration: none; }
