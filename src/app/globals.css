@@ -157,12 +157,12 @@ html, body { overflow-x: clip; }
   background: rgba(7,7,7,0.6); border-bottom: 1px solid var(--line);
 }
 .landing .nav-inner {
-  display: flex; align-items: center; justify-content: space-between; height: 68px;
+  display: flex; align-items: center; justify-content: space-between; height: 76px;
 }
 .landing .brand {
-  display: flex; align-items: center; gap: 10px;
-  font-family: var(--font-geist-mono, monospace);
-  font-weight: 600; font-size: 15px; letter-spacing: 0.08em;
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--font-jetbrains-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-weight: 700; font-size: 19px; letter-spacing: 0.04em;
 }
 .landing .brand-glyph {
   width: 28px; height: 22px; border-radius: 5px;

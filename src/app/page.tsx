@@ -77,7 +77,7 @@ function Nav() {
       <div className="wrap">
         <div className="nav-inner">
           <Link href="/" className="brand">
-            <LogoMark size={28} />
+            <LogoMark size={40} />
             <span>FIDLIFY</span>
           </Link>
           <div className="nav-links">
@@ -635,7 +635,7 @@ function Footer() {
           <div className="footer-top">
             <div>
               <div className="brand" style={{ marginBottom: 16 }}>
-                <LogoMark size={28} />
+                <LogoMark size={40} />
                 <span>FIDLIFY</span>
               </div>
               <p style={{ color: "var(--ink-3)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: 0 }}>
