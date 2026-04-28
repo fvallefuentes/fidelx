@@ -147,8 +147,9 @@ export async function POST(
     });
   }
 
-  // Apple Wallet URL
-  const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple/${card.serialNumber}`;
+  // Apple Wallet URL — l'extension .pkpass est requise pour que iOS Safari
+  // reconnaisse la réponse comme un pass Wallet (sinon page blanche).
+  const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple/${card.serialNumber}.pkpass`;
 
   // Google Wallet URL
   const googleWalletUrl = await generateGoogleWalletLink(card.id);
