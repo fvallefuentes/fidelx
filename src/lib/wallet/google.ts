@@ -158,6 +158,64 @@ export async function generateGoogleWalletLink(
 }
 
 /**
+ * Pousse un message visible (notification Android) sur un objet Google Wallet
+ * via l'endpoint /addMessage. C'est la méthode officielle Google pour envoyer
+ * des notifs aux utilisateurs qui ont enregistré le pass.
+ *
+ * @returns true si le message a été accepté par Google
+ */
+export async function sendGoogleWalletMessage(
+  serialNumber: string,
+  header: string,
+  body: string
+): Promise<boolean> {
+  if (!GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || !GOOGLE_WALLET_ISSUER_ID) {
+    console.log("[Google Wallet] addMessage skipped — credentials not set");
+    return false;
+  }
+
+  const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${serialNumber}`;
+
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if (!accessToken) return false;
+
+    const res = await fetch(
+      `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(
+        objectId
+      )}/addMessage`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: {
+            header: header.slice(0, 60),
+            body: body.slice(0, 350),
+            // Affiche dans les détails ET pousse une notif si le device est enregistré
+            messageType: "TEXT_AND_NOTIFY",
+          },
+        }),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn(
+        `[Google Wallet] addMessage ${objectId} → ${res.status} ${text}`
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[Google Wallet] addMessage error:", err);
+    return false;
+  }
+}
+
+/**
  * Met à jour un objet Google Wallet existant via l'API REST
  */
 export async function updateGoogleWalletObject(

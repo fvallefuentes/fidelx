@@ -222,6 +222,8 @@ model LoyaltyCard {
   totalSpent     Float  @default(0)
   status         CardStatus @default(ACTIVE)
   lastVisitAt    DateTime?
+  lastMessage    String?    // dernière notification reçue (campagne) — affichée au verso du pass
+  lastMessageAt  DateTime?
 
   client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   program       LoyaltyProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)

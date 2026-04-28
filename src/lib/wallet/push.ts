@@ -1,102 +1,96 @@
 /**
- * Push Notifications pour Apple Wallet
+ * Push Notifications pour Apple Wallet + Google Wallet
  *
- * Quand un pass est mis à jour (tampon ajouté, nouvelle offre, etc.),
- * on envoie une notification push silencieuse à l'appareil du client.
- * Le wallet télécharge ensuite automatiquement la version à jour du pass.
+ * Apple : envoie un push silencieux APNs (HTTP/2 mTLS) qui demande
+ *         à l'appareil de re-télécharger le pass. Le pass nouvellement
+ *         généré contient le `lastMessage` au verso avec un
+ *         `changeMessage` → iOS affiche la notif.
  *
- * Pour Google Wallet, la mise à jour se fait via l'API REST (PATCH).
+ * Google : utilise l'endpoint dédié `addMessage` qui pousse une vraie
+ *          notification visible sur Android.
  */
 
 import { prisma } from "@/lib/prisma";
-import { updateGoogleWalletObject } from "./google";
+import { updateGoogleWalletObject, sendGoogleWalletMessage } from "./google";
+import * as fs from "fs";
+import * as http2 from "http2";
+
+/* ──────────────────────────────────────────────────────────
+   Public API
+   ────────────────────────────────────────────────────────── */
 
 /**
- * Notifie tous les devices enregistrés pour un pass donné
+ * Notifie tous les devices enregistrés pour un pass.
+ * Si `message` est fourni, il est sauvegardé sur la carte (visible
+ * dans le pass après refresh) et envoyé en notif Google addMessage.
  */
-export async function notifyPassUpdate(cardId: string) {
-  const registrations = await prisma.passRegistration.findMany({
-    where: { cardId },
+export async function notifyPassUpdate(cardId: string, message?: string) {
+  // 1. Sauvegarder le message sur la carte si fourni — il sera affiché
+  //    au verso du pass Apple lors du re-fetch et déclenchera la notif iOS
+  if (message) {
+    await prisma.loyaltyCard.update({
+      where: { id: cardId },
+      data: { lastMessage: message, lastMessageAt: new Date() },
+    });
+  }
+
+  const card = await prisma.loyaltyCard.findUnique({
+    where: { id: cardId },
+    select: {
+      serialNumber: true,
+      registrations: { select: { platform: true, pushToken: true } },
+      program: { select: { name: true } },
+    },
+  });
+  if (!card) return [];
+
+  const tasks = card.registrations.map(async (reg) => {
+    if (reg.platform === "APPLE") {
+      return sendApplePushNotification(reg.pushToken);
+    }
+    if (reg.platform === "GOOGLE") {
+      // 1. Patch the loyalty object so the latest stamps/points are visible
+      await updateGoogleWalletObject(card.serialNumber);
+      // 2. If there is a campaign message, push it as an Android notification
+      if (message) {
+        return sendGoogleWalletMessage(
+          card.serialNumber,
+          card.program.name,
+          message
+        );
+      }
+      return true;
+    }
   });
 
-  const results = await Promise.allSettled(
-    registrations.map(async (reg) => {
-      if (reg.platform === "APPLE") {
-        return sendApplePushNotification(reg.pushToken);
-      } else if (reg.platform === "GOOGLE") {
-        const card = await prisma.loyaltyCard.findUnique({
-          where: { id: cardId },
-          select: { serialNumber: true },
-        });
-        if (card) {
-          return updateGoogleWalletObject(card.serialNumber);
-        }
-      }
-    })
-  );
-
-  return results;
+  return Promise.allSettled(tasks);
 }
 
 /**
- * Envoie une push notification APNs (Apple Push Notification service)
- * pour déclencher la mise à jour du pass sur l'appareil
- */
-async function sendApplePushNotification(pushToken: string): Promise<boolean> {
-  // Vérifier que les certificats sont configurés
-  if (!process.env.APPLE_SIGNER_CERT_PATH || !process.env.APPLE_SIGNER_KEY_PATH) {
-    console.log("[DEV] Apple push notification skipped (no certs):", pushToken);
-    return false;
-  }
-
-  try {
-    // En production, utiliser http2 pour se connecter à APNs
-    // Le payload est vide — c'est une notification silencieuse
-    // qui dit juste au wallet de re-télécharger le pass
-    const apnsUrl = process.env.NODE_ENV === "production"
-      ? "https://api.push.apple.com"
-      : "https://api.sandbox.push.apple.com";
-
-    // Note: Node.js n'a pas de client http2 natif facilement utilisable
-    // En production, utiliser la librairie 'apn' ou 'node-apn'
-    console.log(`[PUSH] Would send to APNs: ${apnsUrl}/3/device/${pushToken}`);
-
-    return true;
-  } catch (error) {
-    console.error("APNs push error:", error);
-    return false;
-  }
-}
-
-/**
- * Envoie une notification à tous les clients d'un programme
- * (utilisé pour les campagnes de notifications)
+ * Envoie une campagne à tous les clients d'un programme.
  */
 export async function notifyAllCardsInProgram(
   programId: string,
   message: string,
   segment?: string
 ) {
-  // Construire le filtre selon le segment
   const where: Record<string, unknown> = {
     programId,
     status: "ACTIVE",
   };
 
+  const now = Date.now();
+  const day = 24 * 60 * 60 * 1000;
   if (segment === "ACTIVE") {
-    // Clients actifs: visite dans les 30 derniers jours
-    where.lastVisitAt = { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+    where.lastVisitAt = { gte: new Date(now - 30 * day) };
   } else if (segment === "DORMANT") {
-    // Clients dormants: pas de visite depuis 30+ jours
     where.OR = [
-      { lastVisitAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
+      { lastVisitAt: { lt: new Date(now - 30 * day) } },
       { lastVisitAt: null },
     ];
   } else if (segment === "NEW") {
-    // Nouveaux: inscrits dans les 7 derniers jours
-    where.createdAt = { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
+    where.createdAt = { gte: new Date(now - 7 * day) };
   } else if (segment === "VIP") {
-    // VIP: 10+ visites
     where.totalVisits = { gte: 10 };
   }
 
@@ -105,12 +99,133 @@ export async function notifyAllCardsInProgram(
     select: { id: true },
   });
 
-  const results = await Promise.allSettled(
-    cards.map((card) => notifyPassUpdate(card.id))
-  );
+  // Push en parallèle, par batch de 25 pour éviter de saturer APNs
+  const batchSize = 25;
+  let sent = 0;
+  for (let i = 0; i < cards.length; i += batchSize) {
+    const batch = cards.slice(i, i + batchSize);
+    const results = await Promise.allSettled(
+      batch.map((c) => notifyPassUpdate(c.id, message))
+    );
+    sent += results.filter((r) => r.status === "fulfilled").length;
+  }
 
-  return {
-    total: cards.length,
-    sent: results.filter((r) => r.status === "fulfilled").length,
-  };
+  return { total: cards.length, sent };
+}
+
+/* ──────────────────────────────────────────────────────────
+   Apple Push Notification service (APNs) — HTTP/2 + mTLS
+   ────────────────────────────────────────────────────────── */
+
+let apnsClient: http2.ClientHttp2Session | null = null;
+let apnsClientConfigError: string | null = null;
+
+/**
+ * Crée (ou réutilise) une session HTTP/2 vers APNs avec mTLS.
+ * Apple recommande de garder une connexion ouverte pour envoyer
+ * plusieurs notifications.
+ */
+function getApnsClient(): http2.ClientHttp2Session | null {
+  if (apnsClient && !apnsClient.closed && !apnsClient.destroyed) {
+    return apnsClient;
+  }
+  apnsClient = null;
+
+  const certPath = process.env.APPLE_SIGNER_CERT_PATH;
+  const keyPath = process.env.APPLE_SIGNER_KEY_PATH;
+  const passphrase = process.env.APPLE_SIGNER_KEY_PASSPHRASE || undefined;
+
+  if (!certPath || !keyPath) {
+    apnsClientConfigError = "Apple signer cert/key paths not configured";
+    return null;
+  }
+  if (!fs.existsSync(certPath) || !fs.existsSync(keyPath)) {
+    apnsClientConfigError = `Apple cert/key files not found at ${certPath} / ${keyPath}`;
+    return null;
+  }
+
+  const apnsHost =
+    process.env.NODE_ENV === "production"
+      ? "https://api.push.apple.com"
+      : "https://api.sandbox.push.apple.com";
+
+  try {
+    apnsClient = http2.connect(apnsHost, {
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(keyPath),
+      passphrase,
+    });
+    apnsClient.on("error", (err) => {
+      console.error("[APNs] connection error:", err.message);
+      apnsClient = null;
+    });
+    apnsClient.on("close", () => {
+      apnsClient = null;
+    });
+    apnsClientConfigError = null;
+    return apnsClient;
+  } catch (err) {
+    apnsClientConfigError = `Failed to connect to APNs: ${
+      err instanceof Error ? err.message : String(err)
+    }`;
+    apnsClient = null;
+    return null;
+  }
+}
+
+/**
+ * Envoie une notif APNs silencieuse pour qu'iOS re-télécharge le pass.
+ * Le payload est `{}` — pour les passes wallet, il n'y a pas d'alerte
+ * à fournir; iOS gère lui-même l'affichage si un champ a un changeMessage.
+ */
+async function sendApplePushNotification(pushToken: string): Promise<boolean> {
+  const client = getApnsClient();
+  if (!client) {
+    console.log(
+      `[APNs] skipped (${apnsClientConfigError || "no client"}) for token ${pushToken.slice(0, 8)}…`
+    );
+    return false;
+  }
+
+  const topic = process.env.APPLE_PASS_TYPE_ID;
+  if (!topic) {
+    console.log("[APNs] APPLE_PASS_TYPE_ID not set");
+    return false;
+  }
+
+  return new Promise<boolean>((resolve) => {
+    const req = client.request({
+      ":method": "POST",
+      ":path": `/3/device/${pushToken}`,
+      "apns-topic": topic, // doit matcher le passTypeIdentifier
+      "apns-push-type": "background",
+      "apns-priority": "5",
+      "content-type": "application/json",
+    });
+
+    let status = 0;
+    let body = "";
+    req.on("response", (headers) => {
+      status = Number(headers[":status"] || 0);
+    });
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+    req.on("end", () => {
+      if (status >= 200 && status < 300) {
+        resolve(true);
+      } else {
+        console.warn(
+          `[APNs] device ${pushToken.slice(0, 8)}… → status ${status} ${body}`
+        );
+        resolve(false);
+      }
+    });
+    req.on("error", (err) => {
+      console.error("[APNs] request error:", err.message);
+      resolve(false);
+    });
+
+    req.end(JSON.stringify({})); // payload vide = silent push
+  });
 }

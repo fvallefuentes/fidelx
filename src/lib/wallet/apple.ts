@@ -21,6 +21,7 @@ interface PassData {
   bgColor: string;
   textColor: string;
   description: string;
+  lastMessage?: string | null;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -54,6 +55,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     bgColor: (design.bgColor as string) || "#1a1a2e",
     textColor: (design.textColor as string) || "#ffffff",
     description: (design.description as string) || card.program.name,
+    lastMessage: card.lastMessage,
     locations: card.program.establishment
       ? [
           {
@@ -154,6 +156,14 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       key: "merchant",
       label: "Commerce",
       value: passData.merchantName,
+    },
+    // Dernière offre — la valeur change à chaque campagne, et le
+    // changeMessage déclenche une notification iOS lors du refresh
+    {
+      key: "lastMessage",
+      label: "Dernière offre",
+      value: passData.lastMessage || "Aucune offre récente",
+      changeMessage: "%@",
     },
     {
       key: "info",
