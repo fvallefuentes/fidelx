@@ -2045,10 +2045,85 @@ html, body { overflow-x: clip; }
 }
 
 /* Spinner replacement */
-.dashboard .border-blue-600.border-t-transparent {
+.dashboard .border-blue-600.border-t-transparent,
+.dashboard .border-white.border-t-transparent {
   border-color: rgba(212,255,78,0.15) !important;
   border-top-color: var(--accent) !important;
 }
+
+/* ─── Scan page extra colour overrides ──────────────────── */
+.dashboard .text-blue-700,
+.dashboard .text-blue-500 { color: var(--accent) !important; }
+.dashboard .bg-blue-50,
+.dashboard .bg-blue-100 { background: rgba(212,255,78,0.08) !important; }
+.dashboard .border-blue-100,
+.dashboard .border-blue-400,
+.dashboard .border-blue-500 { border-color: rgba(212,255,78,0.3) !important; }
+
+.dashboard .text-yellow-700,
+.dashboard .text-yellow-800,
+.dashboard .text-amber-700 { color: var(--warn) !important; }
+.dashboard .bg-yellow-50,
+.dashboard .bg-amber-50 {
+  background: rgba(255,214,107,0.06) !important;
+  border-color: rgba(255,214,107,0.25) !important;
+}
+.dashboard .border-yellow-200,
+.dashboard .border-amber-200 { border-color: rgba(255,214,107,0.25) !important; }
+.dashboard .bg-yellow-100 { background: rgba(255,214,107,0.12) !important; }
+
+.dashboard .text-green-600 { color: var(--accent) !important; }
+.dashboard .bg-green-100 {
+  background: rgba(212,255,78,0.12) !important;
+  color: var(--accent) !important;
+}
+
+.dashboard .text-red-500 { color: var(--danger) !important; }
+.dashboard .text-red-700 { color: var(--danger) !important; }
+.dashboard .bg-red-100 { background: rgba(255,122,107,0.12) !important; }
+
+/* Reward gradient banner — keep gold/orange but glow more */
+.dashboard .from-yellow-400.to-orange-500 {
+  background-image: linear-gradient(135deg, #ffd66b, #ff7a3a) !important;
+  color: #1a1408 !important;
+  box-shadow:
+    0 0 0 1px rgba(255,214,107,0.4),
+    0 30px 60px -20px rgba(255,140,40,0.5),
+    0 0 60px rgba(255,214,107,0.25) !important;
+}
+.dashboard .from-yellow-400.to-orange-500 *,
+.dashboard .from-yellow-500.to-orange-500 * { color: inherit !important; }
+.dashboard .from-yellow-500.to-orange-500 {
+  background-image: linear-gradient(135deg, #ffd66b, #ff8a3a) !important;
+  color: #1a1408 !important;
+}
+.dashboard .hover\:from-yellow-600:hover { background-image: linear-gradient(135deg, #f5c34d, #f57a2c) !important; }
+
+/* Scanner viewport */
+.dashboard video { background: #000; }
+.dashboard .animate-scan-line {
+  animation: dx-scan-line 2.4s ease-in-out infinite;
+}
+@keyframes dx-scan-line {
+  0%   { transform: translateY(0%);   opacity: 0; }
+  10%  { opacity: 1; }
+  50%  { transform: translateY(220px); opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateY(0%);   opacity: 0; }
+}
+
+/* Scanner corner brackets — make them lime */
+.dashboard .border-white.border-t-4,
+.dashboard .border-white.border-b-4,
+.dashboard .border-white.border-l-4,
+.dashboard .border-white.border-r-4 {
+  border-color: var(--accent) !important;
+  filter: drop-shadow(0 0 12px rgba(212,255,78,0.5));
+}
+.dashboard .bg-blue-400 { background: var(--accent) !important; box-shadow: 0 0 12px var(--accent-glow); }
+
+/* Translucent dark overlay on camera */
+.dashboard .bg-black\/30 { background: rgba(0,0,0,0.55) !important; }
 
 /* ─── Program card preview (programs page) ────────────── */
 .dashboard .program-preview {

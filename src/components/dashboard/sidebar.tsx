@@ -9,6 +9,7 @@ import {
   Users,
   Bell,
   QrCode,
+  ScanLine,
   Settings,
   LogOut,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import LogoMark from "@/components/landing/LogoMark";
 const navigation = [
   { name: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { name: "Programme", href: "/dashboard/programs", icon: CreditCard },
+  { name: "Scanner", href: "/dashboard/scan", icon: ScanLine },
   { name: "Clients", href: "/dashboard/clients", icon: Users },
   { name: "Campagnes", href: "/dashboard/campaigns", icon: Bell },
   { name: "QR Code", href: "/dashboard/qrcode", icon: QrCode },
