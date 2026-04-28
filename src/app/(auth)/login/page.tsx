@@ -4,10 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Star } from "lucide-react";
+import LogoMark from "@/components/landing/LogoMark";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,62 +33,73 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-2">
-            <Star className="h-10 w-10 text-blue-600" />
+    <div className="landing auth-shell">
+      <div className="ambient" />
+      <div className="grid-overlay" />
+
+      <Link href="/" className="auth-back">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
+        </svg>
+        Accueil
+      </Link>
+
+      <div className="auth-card">
+        <div className="auth-head">
+          <Link href="/" className="auth-brand">
+            <LogoMark size={36} />
+            <span>FIDLIFY</span>
+          </Link>
+          <h1 className="auth-title">Connexion</h1>
+          <p className="auth-desc">Accédez à votre tableau de bord Fidlify</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          {error && <div className="auth-error">{error}</div>}
+
+          <div className="auth-field">
+            <label htmlFor="email" className="auth-label">Email</label>
+            <input
+              id="email"
+              type="email"
+              className="auth-input"
+              placeholder="votre@email.ch"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
           </div>
-          <CardTitle className="text-2xl">Connexion</CardTitle>
-          <CardDescription>
-            Accédez à votre tableau de bord Fidlify
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-                {error}
-              </div>
+
+          <div className="auth-field">
+            <label htmlFor="password" className="auth-label">Mot de passe</label>
+            <input
+              id="password"
+              type="password"
+              className="auth-input"
+              placeholder="Votre mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+          </div>
+
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading ? "Connexion..." : "Se connecter"}
+            {!loading && (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0d04" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14"/><path d="m13 5 7 7-7 7"/>
+              </svg>
             )}
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="votre@email.ch"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Mot de passe
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Votre mot de passe"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Connexion..." : "Se connecter"}
-            </Button>
-          </form>
-          <p className="mt-4 text-center text-sm text-gray-500">
-            Pas encore de compte ?{" "}
-            <Link href="/register" className="text-blue-600 hover:underline">
-              Créer un compte
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+          </button>
+        </form>
+
+        <div className="auth-foot">
+          Pas encore de compte ?{" "}
+          <Link href="/register">Créer un compte</Link>
+        </div>
+      </div>
     </div>
   );
 }
