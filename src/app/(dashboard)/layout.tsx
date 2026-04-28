@@ -14,8 +14,8 @@ export default function DashboardLayout({
 
   if (status === "loading") {
     return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+      <div className="dx-loading">
+        <div className="dx-spinner" />
       </div>
     );
   }
@@ -25,13 +25,13 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
-          {children}
-        </main>
+    <div className="dashboard">
+      <div className="dx-shell">
+        <Sidebar />
+        <div className="dx-main">
+          <Header />
+          <main className="dx-content">{children}</main>
+        </div>
       </div>
     </div>
   );

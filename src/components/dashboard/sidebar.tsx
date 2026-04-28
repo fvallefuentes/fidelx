@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   CreditCard,
@@ -12,11 +11,11 @@ import {
   QrCode,
   Settings,
   LogOut,
-  Star,
 } from "lucide-react";
+import LogoMark from "@/components/landing/LogoMark";
 
 const navigation = [
-  { name: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, exact: true },
   { name: "Programme", href: "/dashboard/programs", icon: CreditCard },
   { name: "Clients", href: "/dashboard/clients", icon: Users },
   { name: "Campagnes", href: "/dashboard/campaigns", icon: Bell },
@@ -28,47 +27,44 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full w-64 flex-col bg-gray-950 text-white">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-2 px-6 border-b border-gray-800">
-        <Star className="h-6 w-6 text-blue-400" />
-        <span className="text-xl font-bold">Fidlify</span>
-      </div>
+    <aside className="dx-sidebar">
+      {/* Brand */}
+      <Link href="/" className="dx-brand">
+        <LogoMark size={36} />
+        <span>FIDLIFY</span>
+      </Link>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="dx-nav">
         {navigation.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+          const isActive = item.exact
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
               key={item.name}
               href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
-              )}
+              className={`dx-nav-item${isActive ? " active" : ""}`}
             >
-              <item.icon className="h-5 w-5" />
-              {item.name}
+              <item.icon className="h-[18px] w-[18px]" />
+              <span>{item.name}</span>
+              {isActive && <span className="dx-nav-tick" />}
             </Link>
           );
         })}
       </nav>
 
       {/* Footer */}
-      <div className="border-t border-gray-800 p-3">
+      <div className="dx-sidebar-foot">
         <button
+          type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
+          className="dx-nav-item dx-logout"
         >
-          <LogOut className="h-5 w-5" />
-          Déconnexion
+          <LogOut className="h-[18px] w-[18px]" />
+          <span>Déconnexion</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 }
