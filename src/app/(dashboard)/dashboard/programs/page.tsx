@@ -19,6 +19,90 @@ interface Program {
   _count: { cards: number };
 }
 
+/* ─── Read-only wallet card preview ──────────────────────── */
+function ProgramCardPreview({ program }: { program: Program }) {
+  const design = program.cardDesign || {};
+  const bg = (design.bgColor as string) || "#0e110b";
+  const fg = (design.textColor as string) || "#f4f5f1";
+  const config = program.config || {};
+  const max =
+    (config.maxStamps as number) ||
+    ((config.tiers as { points: number }[])?.[0]?.points) ||
+    10;
+  const reward =
+    program.rewards[0]?.name ||
+    (config.reward as string) ||
+    "1 récompense offerte";
+  const sampleStamps = Math.min(6, max);
+
+  // Detect if bg is bright to pick contrast for stamps
+  const isDarkBg = isDark(bg);
+  const stampOn = "#d4ff4e";
+  const stampOff = isDarkBg ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)";
+  const dim = isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)";
+
+  return (
+    <div className="program-preview" style={{ background: bg, color: fg }}>
+      <div className="program-preview-shine" />
+
+      <div className="program-preview-head">
+        <span className="program-preview-brand" style={{ color: stampOn }}>
+          FIDLIFY · WALLET
+        </span>
+        <span className="program-preview-chip" style={{ background: stampOn }} />
+      </div>
+
+      <div className="program-preview-name" style={{ color: dim }}>
+        Carte de fidélité
+      </div>
+      <div className="program-preview-shop">{program.name}</div>
+
+      <div className="program-preview-stamps">
+        {Array.from({ length: max }).map((_, i) => {
+          const filled = i < sampleStamps;
+          return (
+            <span
+              key={i}
+              className={`program-preview-stamp${filled ? " full" : ""}`}
+              style={{
+                background: filled ? stampOn : "transparent",
+                borderColor: filled ? stampOn : stampOff,
+                color: filled ? "#0a0d04" : "transparent",
+              }}
+            >
+              {filled ? "★" : ""}
+            </span>
+          );
+        })}
+      </div>
+
+      <div className="program-preview-foot">
+        <span className="program-preview-progress" style={{ color: dim }}>
+          <strong style={{ color: fg }}>
+            {sampleStamps}
+          </strong>
+          /{max} · {reward}
+        </span>
+        <span className="program-preview-qr" />
+      </div>
+
+      <div className="program-preview-tag">APERÇU</div>
+    </div>
+  );
+}
+
+function isDark(hex: string) {
+  const m = hex.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!m) return true;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  // perceived luminance
+  return (0.299 * r + 0.587 * g + 0.114 * b) < 140;
+}
+
 const typeLabels: Record<string, { label: string; icon: typeof Stamp }> = {
   STAMPS: { label: "Tampons", icon: Stamp },
   POINTS: { label: "Points", icon: Award },
@@ -116,7 +200,10 @@ export default function ProgramsPage() {
                   </Badge>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                  {/* Live wallet card preview (read-only) */}
+                  <ProgramCardPreview program={program} />
+
+                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-3 mt-4">
                     <Icon className="h-4 w-4" />
                     <span>{typeInfo.label}</span>
                     <span className="mx-1">|</span>
