@@ -36,7 +36,7 @@ export async function POST(req: Request) {
   if (card.status === "REVOKED" || card.status === "EXPIRED") {
     return NextResponse.json({ error: "Cette carte n'est plus active" }, { status: 400 });
   }
-  if (card.status === "REWARD_PENDING") {
+  if ((card.status as string) === "REWARD_PENDING") {
     return NextResponse.json({ error: "Une récompense est en attente de validation pour cette carte" }, { status: 400 });
   }
 

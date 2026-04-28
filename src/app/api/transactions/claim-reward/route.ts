@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   if (card.program.merchant.id !== session.user.id) {
     return NextResponse.json({ error: "Ce programme ne vous appartient pas" }, { status: 403 });
   }
-  if (card.status !== "REWARD_PENDING") {
+  if ((card.status as string) !== "REWARD_PENDING") {
     return NextResponse.json({ error: "Aucune récompense en attente sur cette carte" }, { status: 400 });
   }
 

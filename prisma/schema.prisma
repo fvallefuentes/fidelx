@@ -244,6 +244,7 @@ enum CardStatus {
   COMPLETED
   EXPIRED
   REVOKED
+  REWARD_PENDING
 }
 
 // =============================================
