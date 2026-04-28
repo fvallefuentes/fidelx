@@ -4,6 +4,7 @@ import JourneySection from "@/components/landing/JourneySection";
 import FAQSection from "@/components/landing/FAQSection";
 import SectionDemo from "@/components/landing/SectionDemo";
 import RevealInit from "@/components/landing/RevealInit";
+import LogoMark from "@/components/landing/LogoMark";
 
 /* ─── Tiny SVG icon helper ────────────────────────────────── */
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
@@ -47,7 +48,7 @@ function LoyaltyCard({
   return (
     <div className="loy-card">
       <div className="loy-head">
-        <div className="loy-brand">FIDELX · WALLET</div>
+        <div className="loy-brand">FIDLIFY · WALLET</div>
         <div className="loy-icon" />
       </div>
       <div className="loy-name">Carte de fidélité</div>
@@ -76,8 +77,8 @@ function Nav() {
       <div className="wrap">
         <div className="nav-inner">
           <Link href="/" className="brand">
-            <span className="brand-glyph" />
-            <span>FIDELX</span>
+            <LogoMark size={28} />
+            <span>FIDLIFY</span>
           </Link>
           <div className="nav-links">
             <a href="#solution">Solution</a>
@@ -154,7 +155,7 @@ function SectionSolution() {
             <span className="accent">Plus de ventes.</span>
           </h2>
           <p className="lede">
-            FidelX remplace votre carte papier par une carte digitale dans le Wallet de vos clients —
+            Fidlify remplace votre carte papier par une carte digitale dans le Wallet de vos clients —
             et ouvre un canal direct vers eux.
           </p>
         </div>
@@ -398,7 +399,7 @@ function SectionForWho() {
 
 /* ─── Benefits ────────────────────────────────────────────── */
 const benefits = [
-  { num: "01", title: "Augmentez la fréquence d'achat.", body: "Un client fidèle revient 5x plus souvent qu'un nouveau. FidelX le déclenche." },
+  { num: "01", title: "Augmentez la fréquence d'achat.", body: "Un client fidèle revient 5x plus souvent qu'un nouveau. Fidlify le déclenche." },
   { num: "02", title: "Gardez le contact avec vos clients.", body: "Plus besoin d'attendre qu'ils repassent. Une notification suffit." },
   { num: "03", title: "Remplacez les cartes papier.", body: "Plus de tampons, plus d'oublis, plus de cartes perdues. Tout est dans le téléphone." },
   { num: "04", title: "Lancez des offres instantanément.", body: "Une promo de dernière minute ? 30 secondes pour la diffuser à toute votre base." },
@@ -474,7 +475,7 @@ function SectionCompare() {
         <div className="section-head reveal">
           <div className="eyebrow"><span className="dot" /><span>COMPARAISON</span></div>
           <h2 className="h-section">
-            Pourquoi <span className="accent">FidelX</span> et pas autre chose ?
+            Pourquoi <span className="accent">Fidlify</span> et pas autre chose ?
           </h2>
         </div>
         <div className="compare-table reveal">
@@ -482,7 +483,7 @@ function SectionCompare() {
             <div></div>
             <div>Carte papier</div>
             <div>App mobile dédiée</div>
-            <div className="col-fid">FIDELX</div>
+            <div className="col-fid">FIDLIFY</div>
           </div>
           {compareRows.map((r, i) => (
             <div className="compare-row" key={i}>
@@ -634,8 +635,8 @@ function Footer() {
           <div className="footer-top">
             <div>
               <div className="brand" style={{ marginBottom: 16 }}>
-                <span className="brand-glyph" />
-                <span>FIDELX</span>
+                <LogoMark size={28} />
+                <span>FIDLIFY</span>
               </div>
               <p style={{ color: "var(--ink-3)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: 0 }}>
                 La fidélité digitale pour les commerçants suisses.
@@ -670,7 +671,7 @@ function Footer() {
           </div>
 
           <div className="footer-bottom">
-            <span>© 2026 FIDELX · Made in Switzerland 🇨🇭</span>
+            <span>© 2026 FIDLIFY · Made in Switzerland 🇨🇭</span>
             <span style={{ color: "var(--ink-4)" }}>fidelx.balise.ch</span>
           </div>
         </div>

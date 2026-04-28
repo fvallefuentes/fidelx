@@ -245,7 +245,7 @@ export default function JourneySection() {
                 <div className="j-card">
                   <div className="j-card-shine" />
                   <div className="j-card-head">
-                    <span className="j-card-brand">FIDELX · WALLET</span>
+                    <span className="j-card-brand">FIDLIFY · WALLET</span>
                     <span className="j-card-icon" />
                   </div>
                   <div className="j-card-name">Carte de fidélité</div>

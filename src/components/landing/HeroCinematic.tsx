@@ -48,7 +48,7 @@ function PremiumCard() {
         <div className="hcc-card-head">
           <div className="hcc-card-mark">
             <span className="hcc-card-glyph" />
-            <span className="hcc-card-name">FIDELX</span>
+            <span className="hcc-card-name">FIDLIFY</span>
           </div>
           <div className="hcc-card-chip" />
         </div>
@@ -203,7 +203,7 @@ export default function HeroCinematic() {
                 <div className="hcc-notif-head">
                   <div className="hcc-notif-ic">F</div>
                   <div className="hcc-notif-meta">
-                    <div className="hcc-notif-app">FIDELX · CAFÉ LUMEN</div>
+                    <div className="hcc-notif-app">FIDLIFY · CAFÉ LUMEN</div>
                     <div className="hcc-notif-time">maintenant</div>
                   </div>
                 </div>

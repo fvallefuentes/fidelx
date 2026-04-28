@@ -158,7 +158,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     {
       key: "info",
       label: "Information",
-      value: "Carte de fidélité digitale propulsée par FidelX",
+      value: "Carte de fidélité digitale propulsée par Fidlify",
     },
     {
       key: "privacy",

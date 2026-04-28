@@ -6,11 +6,11 @@ import { Plus } from "lucide-react";
 const questions = [
   {
     q: "Est-ce que mes clients doivent télécharger une application ?",
-    a: "Non, jamais. La carte FidelX s'installe directement dans Apple Wallet ou Google Wallet — déjà présents sur 100% des smartphones modernes. Un simple tap depuis un QR code suffit.",
+    a: "Non, jamais. La carte Fidlify s'installe directement dans Apple Wallet ou Google Wallet — déjà présents sur 100% des smartphones modernes. Un simple tap depuis un QR code suffit.",
   },
   {
     q: "Est-ce compatible Apple Wallet ET Google Wallet ?",
-    a: "Oui, FidelX génère automatiquement la version compatible selon l'appareil de votre client. Aucune configuration de votre côté — la magie opère en arrière-plan.",
+    a: "Oui, Fidlify génère automatiquement la version compatible selon l'appareil de votre client. Aucune configuration de votre côté — la magie opère en arrière-plan.",
   },
   {
     q: "Puis-je envoyer des notifications à mes clients ?",
@@ -18,7 +18,7 @@ const questions = [
   },
   {
     q: "Puis-je personnaliser le design de la carte ?",
-    a: "Entièrement. Logo, couleurs, photo de fond, type de récompense (tampons, points, paliers), texte. Votre carte ressemble à votre commerce — pas à FidelX.",
+    a: "Entièrement. Logo, couleurs, photo de fond, type de récompense (tampons, points, paliers), texte. Votre carte ressemble à votre commerce — pas à Fidlify.",
   },
   {
     q: "Combien de temps pour créer une carte ?",
@@ -26,7 +26,7 @@ const questions = [
   },
   {
     q: "Est-ce adapté aux petits commerces ?",
-    a: "C'est précisément pour eux que FidelX existe. Notre offre Starter démarre à 19 CHF/mois, sans engagement. Aucune compétence technique nécessaire.",
+    a: "C'est précisément pour eux que Fidlify existe. Notre offre Starter démarre à 19 CHF/mois, sans engagement. Aucune compétence technique nécessaire.",
   },
   {
     q: "Puis-je utiliser un QR code en magasin ?",

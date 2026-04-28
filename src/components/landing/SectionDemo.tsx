@@ -15,7 +15,7 @@ function LoyaltyCard({
   return (
     <div className="loy-card">
       <div className="loy-head">
-        <div className="loy-brand">FIDELX · WALLET</div>
+        <div className="loy-brand">FIDLIFY · WALLET</div>
         <div className="loy-icon" />
       </div>
       <div className="loy-name">Carte de fidélité</div>

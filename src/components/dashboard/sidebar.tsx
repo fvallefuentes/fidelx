@@ -32,7 +32,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="flex h-16 items-center gap-2 px-6 border-b border-gray-800">
         <Star className="h-6 w-6 text-blue-400" />
-        <span className="text-xl font-bold">FidelX</span>
+        <span className="text-xl font-bold">Fidlify</span>
       </div>
 
       {/* Navigation */}

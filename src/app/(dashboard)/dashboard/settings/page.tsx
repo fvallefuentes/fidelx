@@ -224,7 +224,7 @@ export default function SettingsPage() {
                   <li>- Tous les systèmes de fidélité</li>
                   <li>- Notifications push illimitées</li>
                   <li>- Analytics de base</li>
-                  <li>- Sans branding FidelX</li>
+                  <li>- Sans branding Fidlify</li>
                 </ul>
                 <Button size="sm">Passer au Pro — 29 CHF/mois</Button>
               </div>

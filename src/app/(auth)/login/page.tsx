@@ -44,7 +44,7 @@ export default function LoginPage() {
           </div>
           <CardTitle className="text-2xl">Connexion</CardTitle>
           <CardDescription>
-            Accédez à votre tableau de bord FidelX
+            Accédez à votre tableau de bord Fidlify
           </CardDescription>
         </CardHeader>
         <CardContent>
