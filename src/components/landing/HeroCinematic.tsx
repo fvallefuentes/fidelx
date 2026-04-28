@@ -140,9 +140,9 @@ export default function HeroCinematic() {
             className="hcc-cta-row"
             style={{ opacity: ctaOpacity, transform: `translateY(${ctaY}px)` }}
           >
-            <Link href="/register" className="hcc-btn-primary">
+            <Link href="/register" className="hcc-btn-primary" style={{ color: "#0a0d04" }}>
               Créer ma carte fidélité
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0d04" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
             </Link>
             <Link href="#demo" className="hcc-btn-ghost">
               <span style={{ width: 22, height: 22, borderRadius: "50%", background: "rgba(212,255,78,0.15)", border: "1px solid rgba(212,255,78,0.4)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#d4ff4e" }}>
