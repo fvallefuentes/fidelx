@@ -5,7 +5,7 @@
  * Nécessite un compte Apple Developer ($99/an) et un certificat Pass Type ID.
  *
  * En mode développement, on génère un pass "mock" pour tester le flow.
- * En production, utilise passkit-generator pour signer les passes.
+ * En production, utilise passkit-generator avec les certs inline (certs.ts).
  */
 
 import { prisma } from "@/lib/prisma";
@@ -67,13 +67,8 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
       : undefined,
   };
 
-  // En production, utiliser passkit-generator avec les vrais certificats
-  if (
-    process.env.APPLE_PASS_TYPE_ID &&
-    process.env.APPLE_SIGNER_CERT_PATH &&
-    process.env.APPLE_SIGNER_KEY_PATH &&
-    process.env.APPLE_WWDR_CERT_PATH
-  ) {
+  // En production, utiliser passkit-generator avec les certs inlinés
+  if (process.env.APPLE_PASS_TYPE_ID) {
     return generateSignedPass(passData);
   }
 
@@ -82,10 +77,9 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
 }
 
 async function generateSignedPass(passData: PassData): Promise<Buffer> {
-  // Import dynamique pour éviter l'erreur si les certs ne sont pas configurés
   const { PKPass } = await import("passkit-generator");
-  const fs = await import("fs");
-  const path = await import("path");
+  const { APPLE_CERTS, DEFAULT_ICON_29, DEFAULT_ICON_58, DEFAULT_ICON_87 } =
+    await import("./certs");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const passProps: any = {
@@ -107,16 +101,21 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     ],
     locations: passData.locations?.filter((l) => l.latitude !== 0) || [],
     webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple`,
-    authenticationToken: passData.serialNumber,
+    authenticationToken: passData.serialNumber.replace(/-/g, "") + "0000",
   };
+
+  // Empty string passphrase → undefined (sinon node-forge throw
+  // "Length must be at least 16 characters long")
+  const passphrase = process.env.APPLE_SIGNER_KEY_PASSPHRASE;
+  const signerKeyPassphrase = passphrase && passphrase.length > 0 ? passphrase : undefined;
 
   const pass = new PKPass(
     {},
     {
-      wwdr: fs.readFileSync(process.env.APPLE_WWDR_CERT_PATH!),
-      signerCert: fs.readFileSync(process.env.APPLE_SIGNER_CERT_PATH!),
-      signerKey: fs.readFileSync(process.env.APPLE_SIGNER_KEY_PATH!),
-      signerKeyPassphrase: process.env.APPLE_SIGNER_KEY_PASSPHRASE || undefined,
+      wwdr: APPLE_CERTS.wwdr,
+      signerCert: APPLE_CERTS.signerCert,
+      signerKey: APPLE_CERTS.signerKey,
+      signerKeyPassphrase,
     },
     passProps
   );
@@ -150,20 +149,20 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     value: passData.programName,
   });
 
+  // Champ offre — mis à jour par les campagnes, le changeMessage déclenche la notif iOS
+  pass.headerFields.push({
+    key: "offer",
+    label: "OFFRE",
+    value: passData.lastMessage || "",
+    changeMessage: "%@",
+  });
+
   // Champs verso
   pass.backFields.push(
     {
       key: "merchant",
       label: "Commerce",
       value: passData.merchantName,
-    },
-    // Dernière offre — la valeur change à chaque campagne, et le
-    // changeMessage déclenche une notification iOS lors du refresh
-    {
-      key: "lastMessage",
-      label: "Dernière offre",
-      value: passData.lastMessage || "Aucune offre récente",
-      changeMessage: "%@",
     },
     {
       key: "info",
@@ -178,18 +177,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     }
   );
 
-  // Ajouter le logo si disponible
-  const logoPath = path.join(process.cwd(), "public", "wallet-assets", "logo.png");
-  if (fs.existsSync(logoPath)) {
-    pass.addBuffer("logo.png", fs.readFileSync(logoPath));
-    pass.addBuffer("logo@2x.png", fs.readFileSync(logoPath));
-  }
-
-  const iconPath = path.join(process.cwd(), "public", "wallet-assets", "icon.png");
-  if (fs.existsSync(iconPath)) {
-    pass.addBuffer("icon.png", fs.readFileSync(iconPath));
-    pass.addBuffer("icon@2x.png", fs.readFileSync(iconPath));
-  }
+  // Icônes par défaut bundlées (Apple Wallet rejette les passes sans icon.png)
+  pass.addBuffer("icon.png", DEFAULT_ICON_29);
+  pass.addBuffer("icon@2x.png", DEFAULT_ICON_58);
+  pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
 
   return pass.getAsBuffer();
 }
@@ -197,12 +188,6 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
 /**
  * Apple Wallet Web Service endpoints
  * Requis pour les notifications push et mises à jour
- *
- * POST /api/wallet/apple/v1/devices/{deviceLibraryId}/registrations/{passTypeId}/{serialNumber}
- * DELETE /api/wallet/apple/v1/devices/{deviceLibraryId}/registrations/{passTypeId}/{serialNumber}
- * GET /api/wallet/apple/v1/devices/{deviceLibraryId}/registrations/{passTypeId}
- * GET /api/wallet/apple/v1/passes/{passTypeId}/{serialNumber}
- * POST /api/wallet/apple/v1/log
  */
 export async function registerDevice(
   deviceLibraryId: string,
