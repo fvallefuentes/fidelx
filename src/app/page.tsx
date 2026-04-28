@@ -5,6 +5,7 @@ import FAQSection from "@/components/landing/FAQSection";
 import SectionDemo from "@/components/landing/SectionDemo";
 import RevealInit from "@/components/landing/RevealInit";
 import LogoMark from "@/components/landing/LogoMark";
+import Nav from "@/components/landing/Nav";
 
 /* ─── Tiny SVG icon helper ────────────────────────────────── */
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
@@ -70,36 +71,7 @@ function LoyaltyCard({
   );
 }
 
-/* ─── Nav ─────────────────────────────────────────────────── */
-function Nav() {
-  return (
-    <nav className="nav">
-      <div className="wrap">
-        <div className="nav-inner">
-          <Link href="/" className="brand">
-            <LogoMark size={40} />
-            <span>FIDLIFY</span>
-          </Link>
-          <div className="nav-links">
-            <a href="#solution">Solution</a>
-            <a href="#features">Fonctionnalités</a>
-            <a href="#demo">Démo</a>
-            <a href="#pricing">Tarifs</a>
-            <a href="#faq">FAQ</a>
-          </div>
-          <div className="nav-cta">
-            <Link href="/login" className="btn btn-ghost" style={{ height: 40, padding: "0 18px", fontSize: 14 }}>
-              Connexion
-            </Link>
-            <Link href="/register" className="btn btn-primary" style={{ height: 40, padding: "0 18px", fontSize: 14 }}>
-              Essayer gratuitement <Icon name="arrow" size={14} />
-            </Link>
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
-}
+/* ─── Nav is imported from components/landing/Nav.tsx (client) ──── */
 
 /* ─── Problem ─────────────────────────────────────────────── */
 const problems = [
