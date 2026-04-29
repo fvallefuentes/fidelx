@@ -116,11 +116,11 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     passProps
   );
 
-  // Type de pass: Generic — autorise 2 primary fields (storeCard n'en
-  // accepte qu'un seul, le 2ème est ignoré silencieusement, ce qui
-  // cassait l'affichage "TAMPONS REQUIS" + "PROGRAMME" côte à côte).
-  // Generic a aussi un strip plus haut (1125x432 au lieu de 1125x369).
-  pass.type = "generic";
+  // Type de pass: storeCard — c'est le seul (avec coupon) qui supporte
+  // un strip image visible côté iOS. generic et eventTicket ne l'affichent
+  // pas. storeCard limite à 1 primary field, donc on met PROGRAMME en
+  // secondaryField (qui rend à droite sous le strip).
+  pass.type = "storeCard";
 
   // QR code en bas avec serial visible — setBarcodes() est la vraie API
   // de passkit-generator (les passProps.barcodes ne suffisent pas)
@@ -131,26 +131,30 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     altText: passData.serialNumber,
   });
 
-  // Primary fields : "TAMPONS REQUIS POUR LA RÉCOMPENSE" + "PROGRAMME"
-  // (s'affichent en gros sous le strip, comme dans le design d'avant)
+  // Sous le strip : 1 primary (gauche) + 1 secondary (droite)
+  // = mise en page identique au design d'avant
   if (passData.maxStamps) {
     pass.primaryFields.push({
       key: "stamps_required",
       label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
       value: `${passData.maxStamps}`,
     });
-    pass.primaryFields.push({
+    pass.secondaryFields.push({
       key: "program",
       label: "PROGRAMME",
       value: passData.programName,
     });
   } else {
-    // Programmes en POINTS — afficher le total cumulé
     pass.primaryFields.push({
       key: "points",
       label: "POINTS",
       value: `${passData.currentPoints}`,
       changeMessage: "Vous avez maintenant %@ points !",
+    });
+    pass.secondaryFields.push({
+      key: "program",
+      label: "PROGRAMME",
+      value: passData.programName,
     });
   }
 

@@ -14,7 +14,7 @@ interface StripOptions {
   bgColor: string;
 }
 
-// Apple Wallet generic strip dimensions @3x
+// Apple Wallet storeCard strip dimensions @3x
 const STRIP_W = 1125;
 const STRIP_H = 432;
 
