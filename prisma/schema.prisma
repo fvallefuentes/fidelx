@@ -409,7 +409,9 @@ enum Segment {
 enum CampaignStatus {
   DRAFT
   SCHEDULED
+  SENDING
   SENT
+  FAILED
   CANCELLED
 }
 
