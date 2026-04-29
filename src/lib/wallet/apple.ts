@@ -131,10 +131,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     altText: passData.serialNumber,
   });
 
-  // Sous le strip : 1 primary (gauche) + 1 secondary (droite)
-  // = mise en page identique au design d'avant
+  // Sous le strip : 2 secondary fields côte à côte (gauche + droite)
+  // — pas de primary qui s'afficherait en gros et écraserait le strip
   if (passData.maxStamps) {
-    pass.primaryFields.push({
+    pass.secondaryFields.push({
       key: "stamps_required",
       label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
       value: `${passData.maxStamps}`,
@@ -143,9 +143,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       key: "program",
       label: "PROGRAMME",
       value: passData.programName,
+      textAlignment: "PKTextAlignmentRight",
     });
   } else {
-    pass.primaryFields.push({
+    pass.secondaryFields.push({
       key: "points",
       label: "POINTS",
       value: `${passData.currentPoints}`,
@@ -155,6 +156,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       key: "program",
       label: "PROGRAMME",
       value: passData.programName,
+      textAlignment: "PKTextAlignmentRight",
     });
   }
 
