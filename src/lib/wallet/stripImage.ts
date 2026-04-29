@@ -1,11 +1,9 @@
 /**
  * Génère le strip.png Apple Wallet avec les pastilles de tampons.
  *
- * Le strip image est la bande en haut du pass storeCard. On y dessine
- * les cercles de fidélité (remplis = lime, vides = contour).
- *
- * Dimensions Apple Wallet @3x: 1125 x 432 px (largeur fixe imposée par iOS).
- * On retourne une seule version @3x — Apple downscale automatiquement.
+ * Design : cercles BLANCS pleins avec un ✓ couleur du fond pour les
+ * tampons obtenus, cercles outline blanc transparent pour les restants.
+ * Le fond du strip = couleur du programme, donc se fond avec la carte.
  */
 
 import sharp from "sharp";
@@ -13,8 +11,7 @@ import sharp from "sharp";
 interface StripOptions {
   currentStamps: number;
   maxStamps: number;
-  bgColor: string; // ex: "#0e110b"
-  accentColor?: string; // pastille pleine — défaut lime
+  bgColor: string;
 }
 
 const STRIP_W = 1125;
@@ -24,59 +21,53 @@ export async function generateStripImage({
   currentStamps,
   maxStamps,
   bgColor,
-  accentColor = "#d4ff4e",
 }: StripOptions): Promise<Buffer> {
   const total = Math.max(1, Math.min(20, maxStamps));
   const filled = Math.max(0, Math.min(total, currentStamps));
 
-  // Layout: éventuellement 2 rangées si > 10 stamps, sinon 1 rangée
-  const rows = total > 10 ? 2 : 1;
+  // Layout : 1 ou 2 rangées selon le nombre de tampons
+  // Pour 10 par défaut → 2 rangées de 5 (comme dans les screenshots)
+  const rows = total <= 5 ? 1 : 2;
   const perRow = Math.ceil(total / rows);
 
   // Espacement
-  const padX = 80;
-  const availW = STRIP_W - padX * 2;
-  const gap = 18;
-  const dotSize = Math.min(
-    140,
-    Math.floor((availW - gap * (perRow - 1)) / perRow)
-  );
+  const padX = 90;
+  const padY = 40;
+  const gapX = 40;
+  const gapY = 40;
 
-  const totalRowW = dotSize * perRow + gap * (perRow - 1);
+  const availW = STRIP_W - padX * 2;
+  const availH = STRIP_H - padY * 2;
+
+  const dotByWidth = Math.floor((availW - gapX * (perRow - 1)) / perRow);
+  const dotByHeight = Math.floor((availH - gapY * (rows - 1)) / rows);
+  const dotSize = Math.min(dotByWidth, dotByHeight, 200);
+
+  const totalRowW = dotSize * perRow + gapX * (perRow - 1);
   const startX = (STRIP_W - totalRowW) / 2;
 
-  const totalH = dotSize * rows + (rows - 1) * gap;
+  const totalH = dotSize * rows + (rows - 1) * gapY;
   const startY = (STRIP_H - totalH) / 2;
-
-  // Détecter si le fond est sombre pour adapter le contraste
-  const dark = isDark(bgColor);
-  const emptyStroke = dark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.45)";
-  const emptyFill = dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)";
-  const filledStroke = accentColor;
-  const filledFill = accentColor;
-  const starColor = darkenForContrast(accentColor);
 
   const dots: string[] = [];
   for (let i = 0; i < total; i++) {
     const row = Math.floor(i / perRow);
     const col = i % perRow;
-    const cx = startX + col * (dotSize + gap) + dotSize / 2;
-    const cy = startY + row * (dotSize + gap) + dotSize / 2;
-    const r = dotSize / 2 - 6;
+    const cx = startX + col * (dotSize + gapX) + dotSize / 2;
+    const cy = startY + row * (dotSize + gapY) + dotSize / 2;
+    const r = dotSize / 2 - 4;
 
     const isFilled = i < filled;
     if (isFilled) {
-      // Cercle plein lime + étoile noire
+      // Cercle blanc plein avec ✓ couleur du fond
       dots.push(
-        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${filledFill}" stroke="${filledStroke}" stroke-width="3"/>`
+        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#ffffff"/>`
       );
-      // Étoile centrée (vraie ★ rendue avec une polyline en chemin SVG)
-      const starSize = r * 0.95;
-      dots.push(buildStarPath(cx, cy, starSize, starColor));
+      dots.push(buildCheckPath(cx, cy, dotSize * 0.45, bgColor));
     } else {
-      // Cercle vide en pointillé subtil
+      // Cercle outline blanc translucide
       dots.push(
-        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${emptyFill}" stroke="${emptyStroke}" stroke-width="3" stroke-dasharray="6 6"/>`
+        `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="6"/>`
       );
     }
   }
@@ -84,14 +75,6 @@ export async function generateStripImage({
   const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${STRIP_W}" height="${STRIP_H}" viewBox="0 0 ${STRIP_W} ${STRIP_H}">
   <rect width="${STRIP_W}" height="${STRIP_H}" fill="${bgColor}"/>
-  <!-- subtle radial highlight in top-right corner -->
-  <defs>
-    <radialGradient id="hl" cx="0.85" cy="0" r="0.6">
-      <stop offset="0%" stop-color="${accentColor}" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="${accentColor}" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <rect width="${STRIP_W}" height="${STRIP_H}" fill="url(#hl)"/>
   ${dots.join("\n  ")}
 </svg>`;
 
@@ -100,38 +83,27 @@ export async function generateStripImage({
 
 /* ─── Helpers ──────────────────────────────────────────────── */
 
-function isDark(hex: string): boolean {
-  const m = hex.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
-  if (!m) return true;
-  let h = m[1];
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return 0.299 * r + 0.587 * g + 0.114 * b < 140;
-}
-
-function darkenForContrast(hex: string): string {
-  // Pour le lime #d4ff4e on veut une étoile sombre lisible
-  return "#0a0d04";
-}
-
-function buildStarPath(
+/**
+ * Trace un ✓ centré en (cx, cy) avec une largeur d'environ `size`,
+ * en chemin SVG de couleur `color`. Strokes épais et arrondis pour
+ * un look "checkmark" iOS.
+ */
+function buildCheckPath(
   cx: number,
   cy: number,
   size: number,
   color: string
 ): string {
-  // Étoile à 5 branches centrée en (cx, cy)
-  const r1 = size / 2;
-  const r2 = r1 * 0.4;
-  const points: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const a = (Math.PI / 5) * i - Math.PI / 2;
-    const r = i % 2 === 0 ? r1 : r2;
-    const x = cx + Math.cos(a) * r;
-    const y = cy + Math.sin(a) * r;
-    points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
-  }
-  return `<polygon points="${points.join(" ")}" fill="${color}"/>`;
+  // Coordonnées relatives d'un ✓ propre
+  const w = size;
+  const x1 = cx - w * 0.42;
+  const y1 = cy + w * 0.04;
+  const x2 = cx - w * 0.08;
+  const y2 = cy + w * 0.34;
+  const x3 = cx + w * 0.46;
+  const y3 = cy - w * 0.32;
+
+  const stroke = Math.max(8, w * 0.16);
+
+  return `<path d="M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)} L ${x3.toFixed(1)} ${y3.toFixed(1)}" fill="none" stroke="${color}" stroke-width="${stroke.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`;
 }

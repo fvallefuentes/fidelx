@@ -124,33 +124,33 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   // Type de pass: Store Card (carte de fidélité)
   pass.type = "storeCard";
 
-  // Champs principaux
-  pass.primaryFields.push({
-    key: "stamps",
-    label: passData.maxStamps ? "TAMPONS" : "POINTS",
-    value: passData.maxStamps
-      ? `${passData.currentStamps}/${passData.maxStamps}`
-      : `${passData.currentPoints}`,
-    changeMessage: passData.maxStamps
-      ? "Vous avez maintenant %@ tampons !"
-      : "Vous avez maintenant %@ points !",
-  });
+  // PAS de primaryField — on laisse le strip image (cercles tampons)
+  // dominer l'espace du haut. La progression visuelle EST l'info
+  // principale. Pour les programmes Points, on garde un primary.
+  if (!passData.maxStamps) {
+    pass.primaryFields.push({
+      key: "points",
+      label: "POINTS",
+      value: `${passData.currentPoints}`,
+      changeMessage: "Vous avez maintenant %@ points !",
+    });
+  }
 
-  // Champs secondaires
+  // Champs sous le strip — exactement comme le design d'avant
   pass.secondaryFields.push({
-    key: "client",
-    label: "CLIENT",
-    value: passData.clientName,
+    key: "stamps_required",
+    label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
+    value: passData.maxStamps ? `${passData.maxStamps}` : "—",
+    changeMessage: "%@ tampons obtenus !",
   });
-
-  // Champs auxiliaires
-  pass.auxiliaryFields.push({
+  pass.secondaryFields.push({
     key: "program",
     label: "PROGRAMME",
     value: passData.programName,
   });
 
-  // Champ offre — mis à jour par les campagnes, le changeMessage déclenche la notif iOS
+  // Champ offre — header top-right, mis à jour par les campagnes,
+  // le changeMessage déclenche la notif iOS au refresh
   pass.headerFields.push({
     key: "offer",
     label: "OFFRE",
