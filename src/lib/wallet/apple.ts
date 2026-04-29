@@ -80,6 +80,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   const { PKPass } = await import("passkit-generator");
   const { APPLE_CERTS, DEFAULT_ICON_29, DEFAULT_ICON_58, DEFAULT_ICON_87 } =
     await import("./certs");
+  const { generateStripImage } = await import("./stripImage");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const passProps: any = {
@@ -181,6 +182,22 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   pass.addBuffer("icon.png", DEFAULT_ICON_29);
   pass.addBuffer("icon@2x.png", DEFAULT_ICON_58);
   pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
+
+  // Strip image — pastilles de tampons générées dynamiquement
+  if (passData.maxStamps && passData.maxStamps > 0) {
+    try {
+      const stripBuf = await generateStripImage({
+        currentStamps: passData.currentStamps,
+        maxStamps: passData.maxStamps,
+        bgColor: passData.bgColor,
+      });
+      pass.addBuffer("strip.png", stripBuf);
+      pass.addBuffer("strip@2x.png", stripBuf);
+      pass.addBuffer("strip@3x.png", stripBuf);
+    } catch (err) {
+      console.error("[apple] strip generation failed:", err);
+    }
+  }
 
   return pass.getAsBuffer();
 }
