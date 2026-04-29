@@ -93,23 +93,8 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     backgroundColor: passData.bgColor,
     foregroundColor: passData.textColor,
     labelColor: passData.textColor,
-    // Both `barcode` (legacy, iOS 8) and `barcodes` (iOS 9+) — sans le
-     // singulier, le QR ne s'affiche pas du tout sur certains iOS. altText
-     // affiche le serial sous le QR comme sur les screenshots.
-    barcode: {
-      format: "PKBarcodeFormatQR",
-      message: passData.serialNumber,
-      messageEncoding: "iso-8859-1",
-      altText: passData.serialNumber,
-    },
-    barcodes: [
-      {
-        format: "PKBarcodeFormatQR",
-        message: passData.serialNumber,
-        messageEncoding: "iso-8859-1",
-        altText: passData.serialNumber,
-      },
-    ],
+    // barcodes set via pass.setBarcodes() below — passkit-generator
+    // ne les prend pas toujours via passProps
     locations: passData.locations?.filter((l) => l.latitude !== 0) || [],
     webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple`,
     authenticationToken: passData.serialNumber.replace(/-/g, "") + "0000",
@@ -134,10 +119,30 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   // Type de pass: Store Card (carte de fidélité)
   pass.type = "storeCard";
 
-  // PAS de primaryField — on laisse le strip image (cercles tampons)
-  // dominer l'espace du haut. La progression visuelle EST l'info
-  // principale. Pour les programmes Points, on garde un primary.
-  if (!passData.maxStamps) {
+  // QR code en bas avec serial visible — setBarcodes() est la vraie API
+  // de passkit-generator (les passProps.barcodes ne suffisent pas)
+  pass.setBarcodes({
+    format: "PKBarcodeFormatQR",
+    message: passData.serialNumber,
+    messageEncoding: "iso-8859-1",
+    altText: passData.serialNumber,
+  });
+
+  // Primary fields : "TAMPONS REQUIS POUR LA RÉCOMPENSE" + "PROGRAMME"
+  // (s'affichent en gros sous le strip, comme dans le design d'avant)
+  if (passData.maxStamps) {
+    pass.primaryFields.push({
+      key: "stamps_required",
+      label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
+      value: `${passData.maxStamps}`,
+    });
+    pass.primaryFields.push({
+      key: "program",
+      label: "PROGRAMME",
+      value: passData.programName,
+    });
+  } else {
+    // Programmes en POINTS — afficher le total cumulé
     pass.primaryFields.push({
       key: "points",
       label: "POINTS",
@@ -145,19 +150,6 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       changeMessage: "Vous avez maintenant %@ points !",
     });
   }
-
-  // Champs sous le strip — exactement comme le design d'avant
-  pass.secondaryFields.push({
-    key: "stamps_required",
-    label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
-    value: passData.maxStamps ? `${passData.maxStamps}` : "—",
-    changeMessage: "%@ tampons obtenus !",
-  });
-  pass.secondaryFields.push({
-    key: "program",
-    label: "PROGRAMME",
-    value: passData.programName,
-  });
 
   // Champ offre — header top-right, mis à jour par les campagnes,
   // le changeMessage déclenche la notif iOS au refresh

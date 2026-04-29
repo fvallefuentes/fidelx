@@ -14,8 +14,9 @@ interface StripOptions {
   bgColor: string;
 }
 
+// Apple Wallet storeCard strip dimensions @3x
 const STRIP_W = 1125;
-const STRIP_H = 432;
+const STRIP_H = 369;
 
 export async function generateStripImage({
   currentStamps,
