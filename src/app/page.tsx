@@ -644,7 +644,7 @@ function Footer() {
 
           <div className="footer-bottom">
             <span>© 2026 FIDLIFY · Made in Switzerland 🇨🇭</span>
-            <span style={{ color: "var(--ink-4)" }}>fidelx.balise.ch</span>
+            <span style={{ color: "var(--ink-4)" }}>fidlify.com</span>
           </div>
         </div>
       </div>

@@ -12,7 +12,7 @@ export const runtime = "nodejs";
  * minutes :
  *
  *   * * * * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
- *       https://fidelx.balise.ch/api/cron/campaigns >/dev/null
+ *       https://fidlify.com/api/cron/campaigns >/dev/null
  *
  * Charge toutes les campagnes status=SCHEDULED dont scheduledAt <= now,
  * les envoie via APNs, met sentCount + sentAt + status=SENT.
