@@ -93,11 +93,21 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     backgroundColor: passData.bgColor,
     foregroundColor: passData.textColor,
     labelColor: passData.textColor,
+    // Both `barcode` (legacy, iOS 8) and `barcodes` (iOS 9+) — sans le
+     // singulier, le QR ne s'affiche pas du tout sur certains iOS. altText
+     // affiche le serial sous le QR comme sur les screenshots.
+    barcode: {
+      format: "PKBarcodeFormatQR",
+      message: passData.serialNumber,
+      messageEncoding: "iso-8859-1",
+      altText: passData.serialNumber,
+    },
     barcodes: [
       {
         format: "PKBarcodeFormatQR",
         message: passData.serialNumber,
         messageEncoding: "iso-8859-1",
+        altText: passData.serialNumber,
       },
     ],
     locations: passData.locations?.filter((l) => l.latitude !== 0) || [],
