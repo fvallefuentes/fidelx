@@ -116,8 +116,11 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     passProps
   );
 
-  // Type de pass: Store Card (carte de fidélité)
-  pass.type = "storeCard";
+  // Type de pass: Generic — autorise 2 primary fields (storeCard n'en
+  // accepte qu'un seul, le 2ème est ignoré silencieusement, ce qui
+  // cassait l'affichage "TAMPONS REQUIS" + "PROGRAMME" côte à côte).
+  // Generic a aussi un strip plus haut (1125x432 au lieu de 1125x369).
+  pass.type = "generic";
 
   // QR code en bas avec serial visible — setBarcodes() est la vraie API
   // de passkit-generator (les passProps.barcodes ne suffisent pas)
