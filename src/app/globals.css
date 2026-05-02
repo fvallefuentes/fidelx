@@ -2196,6 +2196,8 @@ html, body { overflow-x: clip; }
   border-radius: 50%;
   border: 1.5px solid;
   background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s, border-color .2s;
 }
 .dashboard .wcp-fields {
   display: grid; grid-template-columns: 1fr auto;

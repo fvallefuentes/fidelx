@@ -34,6 +34,10 @@ interface PassData {
   currentPoints: number;
   bgColor: string;
   textColor: string;
+  stampColor?: string;
+  stampCheckColor?: string;
+  stampEmptyColor?: string;
+  labelColor?: string;
   description: string;
   lastMessage?: string | null;
   logoData?: string | null; // data URL "data:image/png;base64,..."
@@ -69,6 +73,10 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     currentPoints: card.currentPoints,
     bgColor: (design.bgColor as string) || "#1a1a2e",
     textColor: (design.textColor as string) || "#ffffff",
+    stampColor: (design.stampColor as string) || undefined,
+    stampCheckColor: (design.stampCheckColor as string) || undefined,
+    stampEmptyColor: (design.stampEmptyColor as string) || undefined,
+    labelColor: (design.labelColor as string) || undefined,
     description: (design.description as string) || card.program.name,
     lastMessage: card.lastMessage,
     logoData: (design.logoData as string) || null,
@@ -108,7 +116,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     description: passData.description,
     backgroundColor: passData.bgColor,
     foregroundColor: passData.textColor,
-    labelColor: passData.textColor,
+    labelColor: passData.labelColor || passData.textColor,
     // barcodes set via pass.setBarcodes() below — passkit-generator
     // ne les prend pas toujours via passProps
     locations: passData.locations?.filter((l) => l.latitude !== 0) || [],
@@ -238,6 +246,9 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         currentStamps: passData.currentStamps,
         maxStamps: passData.maxStamps,
         bgColor: passData.bgColor,
+        stampColor: passData.stampColor,
+        stampCheckColor: passData.stampCheckColor,
+        stampEmptyColor: passData.stampEmptyColor,
       });
       pass.addBuffer("strip.png", stripBuf);
       pass.addBuffer("strip@2x.png", stripBuf);

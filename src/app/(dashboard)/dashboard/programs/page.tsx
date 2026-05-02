@@ -121,6 +121,90 @@ const typeLabels: Record<string, { label: string; icon: typeof Stamp }> = {
   HYBRID: { label: "Hybride", icon: Layers },
 };
 
+/* ─── Thèmes pré-configurés ─────────────────────────────── */
+const CARD_PRESETS = [
+  {
+    id: "midnight",
+    name: "Midnight",
+    bgColor: "#1a1a2e",
+    textColor: "#ffffff",
+    stampColor: "#ffffff",
+    stampCheckColor: "#1a1a2e",
+    stampEmptyColor: "#ffffff",
+    labelColor: "#a0a3aa",
+  },
+  {
+    id: "lime",
+    name: "Lime",
+    bgColor: "#0e110b",
+    textColor: "#f4f5f1",
+    stampColor: "#d4ff4e",
+    stampCheckColor: "#0a0d04",
+    stampEmptyColor: "#d4ff4e",
+    labelColor: "#8a8e84",
+  },
+  {
+    id: "coffee",
+    name: "Café",
+    bgColor: "#3b2415",
+    textColor: "#f6e9d8",
+    stampColor: "#f6e9d8",
+    stampCheckColor: "#3b2415",
+    stampEmptyColor: "#c8a778",
+    labelColor: "#c8a778",
+  },
+  {
+    id: "rose",
+    name: "Rose",
+    bgColor: "#f4d7d4",
+    textColor: "#3a1a1a",
+    stampColor: "#3a1a1a",
+    stampCheckColor: "#f4d7d4",
+    stampEmptyColor: "#a85a5a",
+    labelColor: "#7a3232",
+  },
+  {
+    id: "ocean",
+    name: "Océan",
+    bgColor: "#0e3a59",
+    textColor: "#ffffff",
+    stampColor: "#82d8ff",
+    stampCheckColor: "#0e3a59",
+    stampEmptyColor: "#82d8ff",
+    labelColor: "#9ec0d6",
+  },
+  {
+    id: "forest",
+    name: "Forêt",
+    bgColor: "#1f3d2b",
+    textColor: "#ecf5ec",
+    stampColor: "#aee087",
+    stampCheckColor: "#1f3d2b",
+    stampEmptyColor: "#aee087",
+    labelColor: "#9eb3a0",
+  },
+  {
+    id: "sunset",
+    name: "Sunset",
+    bgColor: "#ff5e3a",
+    textColor: "#fff",
+    stampColor: "#ffe27a",
+    stampCheckColor: "#ff5e3a",
+    stampEmptyColor: "#ffe27a",
+    labelColor: "#ffd0b8",
+  },
+  {
+    id: "minimal",
+    name: "Minimal",
+    bgColor: "#f5f5f5",
+    textColor: "#0a0a0a",
+    stampColor: "#0a0a0a",
+    stampCheckColor: "#f5f5f5",
+    stampEmptyColor: "#0a0a0a",
+    labelColor: "#7a7a7a",
+  },
+];
+
 export default function ProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
@@ -293,16 +377,50 @@ export default function ProgramsPage() {
   );
 }
 
+/* ─── Color picker compact ──────────────────────────────── */
+function ColorPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        type="color"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-12 cursor-pointer rounded border"
+      />
+      <div className="flex flex-col">
+        <span className="text-xs text-gray-500">{label}</span>
+        <span className="text-[10px] text-gray-400 font-mono">{value}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Aperçu live de la carte Apple Wallet (utilisé dans le formulaire) ─ */
 function WalletCardPreview({
   bgColor,
   textColor,
+  stampColor,
+  stampCheckColor,
+  stampEmptyColor,
+  labelColor,
   programName,
   maxStamps,
   logoData,
 }: {
   bgColor: string;
   textColor: string;
+  stampColor?: string;
+  stampCheckColor?: string;
+  stampEmptyColor?: string;
+  labelColor?: string;
   programName: string;
   maxStamps: number;
   logoData?: string;
@@ -311,55 +429,70 @@ function WalletCardPreview({
   const rows = total <= 5 ? 1 : 2;
   const perRow = Math.ceil(total / rows);
   const isDarkBg = isDark(bgColor);
-  const stampStroke = isDarkBg ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)";
-  const dim = isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)";
+
+  // Defaults intelligents
+  const sFill = stampColor || (isDarkBg ? "#ffffff" : "#0a0a0a");
+  const sCheck = stampCheckColor || bgColor;
+  const sEmpty = stampEmptyColor || sFill;
+  const lblColor = labelColor || (isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)");
+
+  // 3 tampons remplis pour donner une idée
+  const sampleFilled = Math.min(3, total);
 
   return (
-    <div
-      className="wcp"
-      style={{ background: bgColor, color: textColor }}
-    >
+    <div className="wcp" style={{ background: bgColor, color: textColor }}>
       {/* Header : logo top-left, OFFRE top-right */}
       <div className="wcp-head">
         {logoData ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoData} alt="Logo" className="wcp-logo" />
         ) : (
-          <span className="wcp-logo-empty" style={{ color: dim }}>
+          <span className="wcp-logo-empty" style={{ color: lblColor }}>
             Logo
           </span>
         )}
         <div className="wcp-offer">
-          <span style={{ color: dim }}>OFFRE</span>
+          <span style={{ color: lblColor }}>OFFRE</span>
         </div>
       </div>
 
       {/* Strip : 1 ou 2 rangées de cercles */}
       <div
         className="wcp-stamps"
-        style={{
-          gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`,
-        }}
+        style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}
       >
-        {Array.from({ length: total }).map((_, i) => (
-          <span
-            key={i}
-            className="wcp-stamp"
-            style={{ borderColor: stampStroke }}
-          />
-        ))}
+        {Array.from({ length: total }).map((_, i) => {
+          const filled = i < sampleFilled;
+          return (
+            <span
+              key={i}
+              className="wcp-stamp"
+              style={{
+                borderColor: filled ? sFill : sEmpty,
+                background: filled ? sFill : "transparent",
+                color: sCheck,
+              }}
+            >
+              {filled && (
+                <svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              )}
+            </span>
+          );
+        })}
       </div>
 
-      {/* Secondary fields : TAMPONS REQUIS (gauche) + PROGRAMME (droite) */}
+      {/* Secondary fields : TAMPONS REQUIS + PROGRAMME */}
       <div className="wcp-fields">
         <div className="wcp-field">
-          <span className="wcp-label" style={{ color: dim }}>
+          <span className="wcp-label" style={{ color: lblColor }}>
             TAMPONS REQUIS POUR LA RÉCOMPENSE
           </span>
           <span className="wcp-value">{maxStamps}</span>
         </div>
         <div className="wcp-field" style={{ textAlign: "right" }}>
-          <span className="wcp-label" style={{ color: dim }}>
+          <span className="wcp-label" style={{ color: lblColor }}>
             PROGRAMME
           </span>
           <span className="wcp-value">{programName || "—"}</span>
@@ -387,12 +520,25 @@ function CreateProgramForm({
   const [rewardName, setRewardName] = useState("");
   const [bgColor, setBgColor] = useState("#1a1a2e");
   const [textColor, setTextColor] = useState("#ffffff");
-  const [logoData, setLogoData] = useState<string>(""); // base64 data URL
+  const [stampColor, setStampColor] = useState("#ffffff"); // fill des cercles tampons obtenus
+  const [stampCheckColor, setStampCheckColor] = useState("#1a1a2e"); // ✓ à l'intérieur
+  const [stampEmptyColor, setStampEmptyColor] = useState("#ffffff"); // outline cercles vides
+  const [labelColor, setLabelColor] = useState("#a0a3aa"); // texte OFFRE / TAMPONS REQUIS
+  const [logoData, setLogoData] = useState<string>("");
   const [logoError, setLogoError] = useState<string>("");
   const [googleReviewEnabled, setGoogleReviewEnabled] = useState(false);
   const [googleReviewBonus, setGoogleReviewBonus] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  function applyPreset(p: typeof CARD_PRESETS[number]) {
+    setBgColor(p.bgColor);
+    setTextColor(p.textColor);
+    setStampColor(p.stampColor);
+    setStampCheckColor(p.stampCheckColor);
+    setStampEmptyColor(p.stampEmptyColor);
+    setLabelColor(p.labelColor);
+  }
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLogoError("");
@@ -439,6 +585,10 @@ function CreateProgramForm({
         cardDesign: {
           bgColor,
           textColor,
+          stampColor,
+          stampCheckColor,
+          stampEmptyColor,
+          labelColor,
           logoData: logoData || undefined,
           description: `Programme ${name}`,
         },
@@ -545,7 +695,7 @@ function CreateProgramForm({
           </div>
 
           {/* Card Design */}
-          <div className="space-y-3">
+          <div className="space-y-4">
             <label className="text-sm font-medium">Design de la carte</label>
 
             {/* Logo upload */}
@@ -561,12 +711,7 @@ function CreateProgramForm({
                       className="h-14 w-14 rounded-lg object-contain border"
                       style={{ background: bgColor }}
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setLogoData("")}
-                    >
+                    <Button type="button" variant="outline" size="sm" onClick={() => setLogoData("")}>
                       Retirer
                     </Button>
                   </div>
@@ -579,35 +724,62 @@ function CreateProgramForm({
                   />
                 )}
               </div>
-              {logoError && (
-                <p className="text-xs text-red-500">{logoError}</p>
-              )}
+              {logoError && <p className="text-xs text-red-500">{logoError}</p>}
             </div>
 
-            <div className="flex gap-4">
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500">Fond</label>
-                <input
-                  type="color"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="h-10 w-16 cursor-pointer rounded border"
-                />
+            {/* Presets */}
+            <div className="space-y-2">
+              <label className="text-xs text-gray-500">Thèmes prêts à l&apos;emploi</label>
+              <div className="flex flex-wrap gap-2">
+                {CARD_PRESETS.map((p) => {
+                  const active =
+                    p.bgColor === bgColor && p.stampColor === stampColor;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => applyPreset(p)}
+                      className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                        active
+                          ? "border-[var(--accent,#d4ff4e)]"
+                          : "border-gray-200 hover:border-gray-300"
+                      }`}
+                      title={p.name}
+                    >
+                      <span
+                        className="h-4 w-4 rounded-full border"
+                        style={{ background: p.bgColor, borderColor: p.stampEmptyColor }}
+                      />
+                      <span
+                        className="h-4 w-4 rounded-full"
+                        style={{ background: p.stampColor }}
+                      />
+                      {p.name}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500">Texte</label>
-                <input
-                  type="color"
-                  value={textColor}
-                  onChange={(e) => setTextColor(e.target.value)}
-                  className="h-10 w-16 cursor-pointer rounded border"
-                />
+            </div>
+
+            {/* Couleurs personnalisées + preview live */}
+            <div className="grid gap-4 lg:grid-cols-[auto_1fr]">
+              <div className="grid grid-cols-2 gap-3 content-start min-w-[260px]">
+                <ColorPicker label="Fond"          value={bgColor}          onChange={setBgColor} />
+                <ColorPicker label="Texte"         value={textColor}        onChange={setTextColor} />
+                <ColorPicker label="Tampon ✓"      value={stampColor}       onChange={setStampColor} />
+                <ColorPicker label="Coche du ✓"    value={stampCheckColor}  onChange={setStampCheckColor} />
+                <ColorPicker label="Cercle vide"   value={stampEmptyColor}  onChange={setStampEmptyColor} />
+                <ColorPicker label="Labels"        value={labelColor}       onChange={setLabelColor} />
               </div>
-              {/* Live preview = vraie carte Apple Wallet */}
-              <div className="flex-1 flex justify-center">
+
+              <div className="flex justify-center">
                 <WalletCardPreview
                   bgColor={bgColor}
                   textColor={textColor}
+                  stampColor={stampColor}
+                  stampCheckColor={stampCheckColor}
+                  stampEmptyColor={stampEmptyColor}
+                  labelColor={labelColor}
                   programName={name || "Mon programme"}
                   maxStamps={maxStamps}
                   logoData={logoData}
