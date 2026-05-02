@@ -12,6 +12,7 @@ import {
   ScanLine,
   Settings,
   LogOut,
+  X,
 } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
 
@@ -25,16 +26,32 @@ const navigation = [
   { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({
+  mobileOpen = false,
+  onCloseMobile,
+}: {
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
-    <aside className="dx-sidebar">
-      {/* Brand */}
-      <Link href="/" className="dx-brand">
-        <LogoMark size={36} />
-        <span>FIDLIFY</span>
-      </Link>
+    <aside className={`dx-sidebar${mobileOpen ? " mobile-open" : ""}`}>
+      {/* Brand row + close button (mobile only) */}
+      <div className="dx-sidebar-top">
+        <Link href="/" className="dx-brand" onClick={onCloseMobile}>
+          <LogoMark size={36} />
+          <span>FIDLIFY</span>
+        </Link>
+        <button
+          type="button"
+          className="dx-sidebar-close"
+          aria-label="Fermer le menu"
+          onClick={onCloseMobile}
+        >
+          <X className="h-[18px] w-[18px]" />
+        </button>
+      </div>
 
       {/* Navigation */}
       <nav className="dx-nav">
@@ -46,6 +63,7 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onCloseMobile}
               className={`dx-nav-item${isActive ? " active" : ""}`}
             >
               <item.icon className="h-[18px] w-[18px]" />
