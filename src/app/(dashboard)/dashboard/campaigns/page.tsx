@@ -201,16 +201,19 @@ function NotificationPreview({
   program,
   message,
   title,
+  customLogo,
   triggerType,
 }: {
   program?: Program;
   message: string;
   title?: string;
+  customLogo?: string;
   triggerType: string;
 }) {
   const bgColor = program?.cardDesign?.bgColor || "#1a1a2e";
   const accent = program?.cardDesign?.stampColor || "#d4ff4e";
-  const logoData = program?.cardDesign?.logoData;
+  // priorité au logo de la campagne (override) sinon celui du programme
+  const logoData = customLogo || program?.cardDesign?.logoData;
   const programName = program?.name || "Mon programme";
   const finalTitle = title || programName;
   const body = message || "Votre message apparaîtra ici…";
@@ -296,6 +299,8 @@ function CreateCampaignForm({
   const [triggerType, setTriggerType] = useState("IMMEDIATE");
   const [targetSegment, setTargetSegment] = useState("ALL");
   const [notifTitle, setNotifTitle] = useState(""); // optionnel, override du titre
+  const [notifLogo, setNotifLogo] = useState<string>(""); // optionnel, base64 data URL
+  const [logoError, setLogoError] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [inactivityDays, setInactivityDays] = useState(30);
@@ -303,6 +308,27 @@ function CreateCampaignForm({
   const [error, setError] = useState("");
 
   const selectedProgram = programs.find((p) => p.id === programId);
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setLogoError("");
+    const file = e.target.files?.[0];
+    if (!file) {
+      setNotifLogo("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Le fichier doit être une image");
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      setLogoError("Image trop lourde (max 500 KB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setNotifLogo(reader.result as string);
+    reader.onerror = () => setLogoError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -326,7 +352,11 @@ function CreateCampaignForm({
         name,
         message,
         triggerType,
-        triggerConfig: { ...triggerConfig, notifTitle: notifTitle || undefined },
+        triggerConfig: {
+          ...triggerConfig,
+          notifTitle: notifTitle || undefined,
+          notifLogo: notifLogo || undefined,
+        },
         targetSegment,
       }),
     });
@@ -400,6 +430,39 @@ function CreateCampaignForm({
             />
             <p className="text-xs text-gray-400">
               Si laissé vide, le nom du programme s&apos;affiche
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Logo de la notification <span className="text-gray-400 font-normal">(optionnel)</span>
+            </label>
+            <div className="flex items-center gap-3">
+              {notifLogo ? (
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={notifLogo}
+                    alt="Logo"
+                    className="h-14 w-14 rounded-lg object-contain border"
+                    style={{ background: selectedProgram?.cardDesign?.bgColor || "#1a1a2e" }}
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setNotifLogo("")}>
+                    Retirer
+                  </Button>
+                </div>
+              ) : (
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  onChange={handleLogoChange}
+                  className="text-sm"
+                />
+              )}
+            </div>
+            {logoError && <p className="text-xs text-red-500">{logoError}</p>}
+            <p className="text-xs text-gray-400">
+              PNG / JPG / SVG / WebP, max 500 KB. Si laissé vide, c&apos;est le logo du programme qui sera utilisé.
             </p>
           </div>
 
@@ -521,6 +584,7 @@ function CreateCampaignForm({
               program={selectedProgram}
               message={message}
               title={notifTitle}
+              customLogo={notifLogo}
               triggerType={triggerType}
             />
           </div>
