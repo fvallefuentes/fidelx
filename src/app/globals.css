@@ -2158,6 +2158,77 @@ html, body { overflow-x: clip; }
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
 }
+
+/* ─── Live wallet card preview (form) ────────────────────── */
+.dashboard .wcp {
+  width: 100%;
+  max-width: 320px;
+  padding: 16px 18px 22px;
+  border-radius: 18px;
+  box-shadow: 0 20px 50px -10px rgba(0,0,0,0.45),
+              0 0 0 1px rgba(255,255,255,0.04) inset;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Helvetica Neue", sans-serif;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.dashboard .wcp-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; min-height: 28px;
+}
+.dashboard .wcp-logo {
+  height: 26px; max-width: 130px; object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+.dashboard .wcp-logo-empty {
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-weight: 500; opacity: 0.6;
+}
+.dashboard .wcp-offer {
+  font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; font-weight: 600;
+  text-align: right;
+}
+.dashboard .wcp-stamps {
+  display: grid; gap: 8px;
+  margin: 4px 0 8px;
+}
+.dashboard .wcp-stamp {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1.5px solid;
+  background: transparent;
+}
+.dashboard .wcp-fields {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 8px 12px;
+}
+.dashboard .wcp-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.dashboard .wcp-label {
+  font-size: 9px; letter-spacing: 0.08em;
+  text-transform: uppercase; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 22ch;
+}
+.dashboard .wcp-value {
+  font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dashboard .wcp-qr-wrap {
+  display: flex; justify-content: center; padding-top: 8px;
+}
+.dashboard .wcp-qr {
+  display: block;
+  width: 76px; height: 76px;
+  border-radius: 6px;
+  background: #fff;
+  background-image:
+    linear-gradient(45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(-45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #0a0d04 75%),
+    linear-gradient(-45deg, transparent 75%, #0a0d04 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  box-shadow: 0 0 0 6px rgba(255,255,255,0.95);
+}
 .dashboard .program-preview-chip {
   width: 24px; height: 17px; border-radius: 4px;
   position: relative;

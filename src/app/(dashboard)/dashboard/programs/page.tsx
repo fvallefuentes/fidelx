@@ -293,6 +293,87 @@ export default function ProgramsPage() {
   );
 }
 
+/* ─── Aperçu live de la carte Apple Wallet (utilisé dans le formulaire) ─ */
+function WalletCardPreview({
+  bgColor,
+  textColor,
+  programName,
+  maxStamps,
+  logoData,
+}: {
+  bgColor: string;
+  textColor: string;
+  programName: string;
+  maxStamps: number;
+  logoData?: string;
+}) {
+  const total = Math.max(1, Math.min(20, maxStamps || 10));
+  const rows = total <= 5 ? 1 : 2;
+  const perRow = Math.ceil(total / rows);
+  const isDarkBg = isDark(bgColor);
+  const stampStroke = isDarkBg ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.45)";
+  const dim = isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)";
+
+  return (
+    <div
+      className="wcp"
+      style={{ background: bgColor, color: textColor }}
+    >
+      {/* Header : logo top-left, OFFRE top-right */}
+      <div className="wcp-head">
+        {logoData ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logoData} alt="Logo" className="wcp-logo" />
+        ) : (
+          <span className="wcp-logo-empty" style={{ color: dim }}>
+            Logo
+          </span>
+        )}
+        <div className="wcp-offer">
+          <span style={{ color: dim }}>OFFRE</span>
+        </div>
+      </div>
+
+      {/* Strip : 1 ou 2 rangées de cercles */}
+      <div
+        className="wcp-stamps"
+        style={{
+          gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`,
+        }}
+      >
+        {Array.from({ length: total }).map((_, i) => (
+          <span
+            key={i}
+            className="wcp-stamp"
+            style={{ borderColor: stampStroke }}
+          />
+        ))}
+      </div>
+
+      {/* Secondary fields : TAMPONS REQUIS (gauche) + PROGRAMME (droite) */}
+      <div className="wcp-fields">
+        <div className="wcp-field">
+          <span className="wcp-label" style={{ color: dim }}>
+            TAMPONS REQUIS POUR LA RÉCOMPENSE
+          </span>
+          <span className="wcp-value">{maxStamps}</span>
+        </div>
+        <div className="wcp-field" style={{ textAlign: "right" }}>
+          <span className="wcp-label" style={{ color: dim }}>
+            PROGRAMME
+          </span>
+          <span className="wcp-value">{programName || "—"}</span>
+        </div>
+      </div>
+
+      {/* Mock QR */}
+      <div className="wcp-qr-wrap">
+        <span className="wcp-qr" />
+      </div>
+    </div>
+  );
+}
+
 function CreateProgramForm({
   onSuccess,
   onCancel,
@@ -522,33 +603,15 @@ function CreateProgramForm({
                   className="h-10 w-16 cursor-pointer rounded border"
                 />
               </div>
-              {/* Preview */}
-              <div
-                className="flex-1 rounded-xl p-4 flex items-center justify-between gap-3"
-                style={{ backgroundColor: bgColor, color: textColor }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {logoData && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={logoData}
-                      alt="Logo"
-                      className="h-9 w-9 object-contain rounded shrink-0"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs opacity-70">Programme</p>
-                    <p className="font-bold truncate">{name || "Mon programme"}</p>
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs opacity-70">
-                    {type === "STAMPS" ? "Tampons" : "Points"}
-                  </p>
-                  <p className="text-2xl font-bold">
-                    0/{maxStamps}
-                  </p>
-                </div>
+              {/* Live preview = vraie carte Apple Wallet */}
+              <div className="flex-1 flex justify-center">
+                <WalletCardPreview
+                  bgColor={bgColor}
+                  textColor={textColor}
+                  programName={name || "Mon programme"}
+                  maxStamps={maxStamps}
+                  logoData={logoData}
+                />
               </div>
             </div>
           </div>
