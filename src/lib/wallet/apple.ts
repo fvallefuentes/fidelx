@@ -10,6 +10,20 @@
 
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Décode une data URL "data:image/...;base64,XXX" en Buffer,
+ * ou null si la chaîne est invalide.
+ */
+function decodeDataUrl(dataUrl: string): Buffer | null {
+  const m = dataUrl.match(/^data:image\/[\w+.-]+;base64,(.+)$/);
+  if (!m) return null;
+  try {
+    return Buffer.from(m[1], "base64");
+  } catch {
+    return null;
+  }
+}
+
 interface PassData {
   serialNumber: string;
   programName: string;
@@ -22,6 +36,7 @@ interface PassData {
   textColor: string;
   description: string;
   lastMessage?: string | null;
+  logoData?: string | null; // data URL "data:image/png;base64,..."
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -56,6 +71,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     textColor: (design.textColor as string) || "#ffffff",
     description: (design.description as string) || card.program.name,
     lastMessage: card.lastMessage,
+    logoData: (design.logoData as string) || null,
     locations: card.program.establishment
       ? [
           {
@@ -193,6 +209,27 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   pass.addBuffer("icon.png", DEFAULT_ICON_29);
   pass.addBuffer("icon@2x.png", DEFAULT_ICON_58);
   pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
+
+  // Logo personnalisé du commerce (haut-gauche du pass) si fourni
+  if (passData.logoData) {
+    try {
+      const logoBuf = decodeDataUrl(passData.logoData);
+      if (logoBuf) {
+        // Sharp resize aux 3 résolutions Apple recommande pour logo.png
+        // (160x50 @1x, 320x100 @2x, 480x150 @3x). On contraint la hauteur
+        // et on laisse la largeur s'adapter — Apple crop si trop large.
+        const sharp = (await import("sharp")).default;
+        const buf1x = await sharp(logoBuf).resize({ height: 50, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+        const buf2x = await sharp(logoBuf).resize({ height: 100, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+        const buf3x = await sharp(logoBuf).resize({ height: 150, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+        pass.addBuffer("logo.png", buf1x);
+        pass.addBuffer("logo@2x.png", buf2x);
+        pass.addBuffer("logo@3x.png", buf3x);
+      }
+    } catch (err) {
+      console.error("[apple] logo decode/resize failed:", err);
+    }
+  }
 
   // Strip image — pastilles de tampons générées dynamiquement
   if (passData.maxStamps && passData.maxStamps > 0) {

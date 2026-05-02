@@ -25,9 +25,34 @@ export async function GET() {
       program: {
         select: { name: true, type: true, config: true },
       },
+      registrations: {
+        select: { platform: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(cards);
+  // Enrichir avec le statut Wallet
+  const enriched = cards.map((card) => {
+    const apple = card.registrations.filter((r) => r.platform === "APPLE").length;
+    const google = card.registrations.filter((r) => r.platform === "GOOGLE").length;
+    const total = apple + google;
+
+    let walletStatus: "installed" | "removed" | "never_installed";
+    if (total > 0) walletStatus = "installed";
+    else {
+      // Si la carte a déjà été utilisée (visites > 0 ou tampons > 0),
+      // c'est qu'elle a été installée puis supprimée
+      const wasUsed = card.totalVisits > 0 || card.currentStamps > 0;
+      walletStatus = wasUsed ? "removed" : "never_installed";
+    }
+
+    return {
+      ...card,
+      walletStatus,
+      walletDevices: { apple, google, total },
+    };
+  });
+
+  return NextResponse.json(enriched);
 }

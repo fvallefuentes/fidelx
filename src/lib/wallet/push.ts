@@ -64,19 +64,34 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
     req.end();
 
     let status = 0;
+    let body = "";
     req.on("response", (headers) => {
       status = headers[":status"] as number;
     });
 
-    req.on("data", () => {});
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
 
-    req.on("end", () => {
+    req.on("end", async () => {
       client.close();
       if (status === 200) {
         console.log("[APNs] push sent:", pushToken.slice(0, 8) + "...");
         resolve(true);
+      } else if (status === 410) {
+        // Token mort : l'utilisateur a supprimé le pass de son Wallet
+        // → on supprime la registration pour ne plus jamais re-pousser
+        console.log(
+          `[APNs] device removed pass (410) — cleaning token ${pushToken.slice(0, 8)}…`
+        );
+        try {
+          await prisma.passRegistration.deleteMany({ where: { pushToken } });
+        } catch (err) {
+          console.error("[APNs] cleanup failed:", err);
+        }
+        resolve(false);
       } else {
-        console.error("[APNs] push failed, status:", status);
+        console.error(`[APNs] push failed, status: ${status} ${body}`);
         resolve(false);
       }
     });

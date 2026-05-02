@@ -41,14 +41,25 @@ function ProgramCardPreview({ program }: { program: Program }) {
   const stampOff = isDarkBg ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)";
   const dim = isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)";
 
+  const logoData = (design.logoData as string) || "";
+
   return (
     <div className="program-preview" style={{ background: bg, color: fg }}>
       <div className="program-preview-shine" />
 
       <div className="program-preview-head">
-        <span className="program-preview-brand" style={{ color: stampOn }}>
-          FIDLIFY · WALLET
-        </span>
+        {logoData ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={logoData}
+            alt="Logo"
+            className="program-preview-logo"
+          />
+        ) : (
+          <span className="program-preview-brand" style={{ color: stampOn }}>
+            FIDLIFY · WALLET
+          </span>
+        )}
         <span className="program-preview-chip" style={{ background: stampOn }} />
       </div>
 
@@ -295,10 +306,33 @@ function CreateProgramForm({
   const [rewardName, setRewardName] = useState("");
   const [bgColor, setBgColor] = useState("#1a1a2e");
   const [textColor, setTextColor] = useState("#ffffff");
+  const [logoData, setLogoData] = useState<string>(""); // base64 data URL
+  const [logoError, setLogoError] = useState<string>("");
   const [googleReviewEnabled, setGoogleReviewEnabled] = useState(false);
   const [googleReviewBonus, setGoogleReviewBonus] = useState(1);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setLogoError("");
+    const file = e.target.files?.[0];
+    if (!file) {
+      setLogoData("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Le fichier doit être une image");
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      setLogoError("Image trop lourde (max 500 KB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setLogoData(reader.result as string);
+    reader.onerror = () => setLogoError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -324,6 +358,7 @@ function CreateProgramForm({
         cardDesign: {
           bgColor,
           textColor,
+          logoData: logoData || undefined,
           description: `Programme ${name}`,
         },
         rewards:
@@ -429,8 +464,45 @@ function CreateProgramForm({
           </div>
 
           {/* Card Design */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="text-sm font-medium">Design de la carte</label>
+
+            {/* Logo upload */}
+            <div className="space-y-2">
+              <label className="text-xs text-gray-500">Logo (haut-gauche de la carte) — PNG/JPG, max 500 KB</label>
+              <div className="flex items-center gap-3">
+                {logoData ? (
+                  <div className="flex items-center gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={logoData}
+                      alt="Logo"
+                      className="h-14 w-14 rounded-lg object-contain border"
+                      style={{ background: bgColor }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setLogoData("")}
+                    >
+                      Retirer
+                    </Button>
+                  </div>
+                ) : (
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    onChange={handleLogoChange}
+                    className="text-sm"
+                  />
+                )}
+              </div>
+              {logoError && (
+                <p className="text-xs text-red-500">{logoError}</p>
+              )}
+            </div>
+
             <div className="flex gap-4">
               <div className="space-y-1">
                 <label className="text-xs text-gray-500">Fond</label>
@@ -452,14 +524,24 @@ function CreateProgramForm({
               </div>
               {/* Preview */}
               <div
-                className="flex-1 rounded-xl p-4 flex items-center justify-between"
+                className="flex-1 rounded-xl p-4 flex items-center justify-between gap-3"
                 style={{ backgroundColor: bgColor, color: textColor }}
               >
-                <div>
-                  <p className="text-xs opacity-70">Programme</p>
-                  <p className="font-bold">{name || "Mon programme"}</p>
+                <div className="flex items-center gap-3 min-w-0">
+                  {logoData && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={logoData}
+                      alt="Logo"
+                      className="h-9 w-9 object-contain rounded shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs opacity-70">Programme</p>
+                    <p className="font-bold truncate">{name || "Mon programme"}</p>
+                  </div>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="text-xs opacity-70">
                     {type === "STAMPS" ? "Tampons" : "Points"}
                   </p>
