@@ -2514,6 +2514,166 @@ html, body { overflow-x: clip; }
   .jcp { padding: 16px 18px 20px; }
 }
 
+/* ─── Campaign form layout with sticky live preview ────── */
+.dashboard .dx-campaign-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 980px) {
+  .dashboard .dx-campaign-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.dashboard .dx-campaign-preview {
+  position: sticky;
+  top: 100px;
+  align-self: start;
+}
+
+/* iPhone lock-screen style notification mockup */
+.dashboard .dx-notif-preview {
+  display: flex; flex-direction: column; gap: 14px; align-items: center;
+}
+.dashboard .dx-iphone {
+  width: 280px;
+  aspect-ratio: 9 / 19;
+  border-radius: 38px;
+  background: linear-gradient(165deg, #1a1a1a 0%, #2a2a2a 50%, #0a0a0a 100%);
+  padding: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1.5px #444,
+    0 0 0 6px #0a0a0a,
+    0 30px 60px -20px rgba(0,0,0,0.5),
+    0 50px 100px -30px rgba(0,0,0,0.4);
+}
+.dashboard .dx-iphone-status {
+  position: absolute; top: 14px; left: 0; right: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 26px;
+  font-size: 13px; font-weight: 600; color: #fff;
+  z-index: 5;
+}
+.dashboard .dx-iphone-notch {
+  width: 90px; height: 26px; border-radius: 14px;
+  background: #000;
+}
+.dashboard .dx-iphone-status-right {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: #fff;
+}
+.dashboard .dx-iphone-battery {
+  width: 24px; height: 11px; border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.6);
+  display: inline-block; padding: 1px;
+  position: relative;
+}
+.dashboard .dx-iphone-battery::after {
+  content: ""; position: absolute; right: -3px; top: 3px;
+  width: 2px; height: 5px; border-radius: 0 1px 1px 0;
+  background: rgba(255,255,255,0.6);
+}
+.dashboard .dx-iphone-battery-fill {
+  display: block; width: 78%; height: 100%;
+  background: #fff; border-radius: 1px;
+}
+.dashboard .dx-iphone-screen {
+  width: 100%; height: 100%;
+  border-radius: 30px;
+  background:
+    radial-gradient(120% 50% at 30% 0%, rgba(212,255,78,0.10), transparent 70%),
+    radial-gradient(150% 70% at 70% 100%, rgba(60,80,200,0.18), transparent 70%),
+    linear-gradient(180deg, #0a0a14 0%, #050508 100%);
+  padding: 70px 14px 18px;
+  display: flex; flex-direction: column; gap: 22px;
+  position: relative;
+}
+.dashboard .dx-iphone-clock {
+  text-align: center; color: #fff;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  margin-top: 16px;
+}
+.dashboard .dx-iphone-day {
+  font-size: 13px; font-weight: 500;
+  letter-spacing: 0.02em;
+  opacity: 0.9;
+  margin-bottom: -4px;
+}
+.dashboard .dx-iphone-time {
+  font-size: 64px; font-weight: 200; letter-spacing: -0.04em;
+  line-height: 1;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro", sans-serif;
+}
+.dashboard .dx-notif {
+  margin-top: auto;
+  display: flex; gap: 10px; padding: 12px;
+  background: rgba(220, 220, 230, 0.18);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 8px 30px -8px rgba(0,0,0,0.5);
+}
+.dashboard .dx-notif-icon {
+  width: 38px; height: 38px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.dashboard .dx-notif-icon img {
+  max-width: 80%; max-height: 80%; object-fit: contain;
+}
+.dashboard .dx-notif-body {
+  flex: 1; min-width: 0; color: #fff;
+  display: flex; flex-direction: column;
+}
+.dashboard .dx-notif-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; line-height: 1.2;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+.dashboard .dx-notif-app { font-weight: 600; }
+.dashboard .dx-notif-time { font-weight: 400; }
+.dashboard .dx-notif-title {
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.005em;
+}
+.dashboard .dx-notif-text {
+  font-size: 13px; font-weight: 400;
+  color: rgba(255,255,255,0.92);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+.dashboard .dx-iphone-hint {
+  position: absolute; bottom: 22px; left: 0; right: 0;
+  text-align: center;
+  font-size: 10px; color: rgba(255,255,255,0.4);
+  letter-spacing: 0.05em;
+}
+.dashboard .dx-notif-helper {
+  text-align: center; max-width: 280px;
+  display: flex; flex-direction: column; gap: 4px;
+  font-size: 11px;
+}
+.dashboard .dx-notif-helper strong {
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--accent);
+}
+.dashboard .dx-notif-helper span {
+  color: var(--ink-3); line-height: 1.4;
+}
+
 /* Badge "APERÇU" floating on the program list preview */
 .dashboard .wcp-tag {
   position: absolute;

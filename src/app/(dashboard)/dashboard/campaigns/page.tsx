@@ -34,6 +34,11 @@ interface Campaign {
 interface Program {
   id: string;
   name: string;
+  cardDesign?: {
+    bgColor?: string;
+    stampColor?: string;
+    logoData?: string;
+  };
 }
 
 const triggerIcons: Record<string, typeof Send> = {
@@ -191,6 +196,91 @@ export default function CampaignsPage() {
   );
 }
 
+/* ─── Live iPhone notification preview ──────────────────────────────── */
+function NotificationPreview({
+  program,
+  message,
+  title,
+  triggerType,
+}: {
+  program?: Program;
+  message: string;
+  title?: string;
+  triggerType: string;
+}) {
+  const bgColor = program?.cardDesign?.bgColor || "#1a1a2e";
+  const accent = program?.cardDesign?.stampColor || "#d4ff4e";
+  const logoData = program?.cardDesign?.logoData;
+  const programName = program?.name || "Mon programme";
+  const finalTitle = title || programName;
+  const body = message || "Votre message apparaîtra ici…";
+  const time = triggerType === "IMMEDIATE" ? "maintenant" : "à venir";
+
+  return (
+    <div className="dx-notif-preview">
+      <div className="dx-iphone">
+        {/* Status bar */}
+        <div className="dx-iphone-status">
+          <span>10:23</span>
+          <span className="dx-iphone-notch" />
+          <span className="dx-iphone-status-right">
+            <svg width="14" height="10" viewBox="0 0 14 10" fill="currentColor"><rect x="0" y="6" width="2" height="4" rx="0.5"/><rect x="3" y="4" width="2" height="6" rx="0.5"/><rect x="6" y="2" width="2" height="8" rx="0.5"/><rect x="9" y="0" width="2" height="10" rx="0.5"/></svg>
+            <span style={{ fontWeight: 600, fontSize: 11 }}>5G</span>
+            <span className="dx-iphone-battery">
+              <span className="dx-iphone-battery-fill" />
+            </span>
+          </span>
+        </div>
+
+        {/* Background glow / lockscreen feel */}
+        <div className="dx-iphone-screen">
+          <div className="dx-iphone-clock">
+            <div className="dx-iphone-day">samedi 30 avril</div>
+            <div className="dx-iphone-time">10:23</div>
+          </div>
+
+          {/* Notification card */}
+          <div className="dx-notif">
+            <div
+              className="dx-notif-icon"
+              style={{ background: bgColor, color: accent }}
+            >
+              {logoData ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoData} alt="" />
+              ) : (
+                <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em" }}>
+                  {programName.slice(0, 2).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="dx-notif-body">
+              <div className="dx-notif-meta">
+                <span className="dx-notif-app">WALLET</span>
+                <span className="dx-notif-time">{time}</span>
+              </div>
+              <div className="dx-notif-title">{finalTitle}</div>
+              <div className="dx-notif-text">{body}</div>
+            </div>
+          </div>
+
+          <div className="dx-iphone-hint">
+            Glissez pour ouvrir Wallet · {programName}
+          </div>
+        </div>
+      </div>
+
+      <div className="dx-notif-helper">
+        <strong>Aperçu lock-screen iPhone</strong>
+        <span>
+          Le titre, l&apos;icône et la couleur viennent du programme sélectionné.
+          Le texte du message est ce qu&apos;Apple Wallet affichera.
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function CreateCampaignForm({
   programs,
   onSuccess,
@@ -205,11 +295,14 @@ function CreateCampaignForm({
   const [programId, setProgramId] = useState(programs[0]?.id || "");
   const [triggerType, setTriggerType] = useState("IMMEDIATE");
   const [targetSegment, setTargetSegment] = useState("ALL");
+  const [notifTitle, setNotifTitle] = useState(""); // optionnel, override du titre
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
   const [inactivityDays, setInactivityDays] = useState(30);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const selectedProgram = programs.find((p) => p.id === programId);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -233,7 +326,7 @@ function CreateCampaignForm({
         name,
         message,
         triggerType,
-        triggerConfig,
+        triggerConfig: { ...triggerConfig, notifTitle: notifTitle || undefined },
         targetSegment,
       }),
     });
@@ -254,7 +347,9 @@ function CreateCampaignForm({
         <CardTitle>Nouvelle campagne</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="dx-campaign-grid">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
               {error}
@@ -270,6 +365,9 @@ function CreateCampaignForm({
                 onChange={(e) => setName(e.target.value)}
                 required
               />
+              <p className="text-xs text-gray-400">
+                Pour ton suivi interne (n&apos;est pas affiché au client)
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -285,7 +383,24 @@ function CreateCampaignForm({
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-gray-400">
+                Logo et couleur de la notif viennent de ce programme
+              </p>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Titre de la notification <span className="text-gray-400 font-normal">(optionnel)</span>
+            </label>
+            <Input
+              placeholder={selectedProgram?.name || "Nom du programme par défaut"}
+              value={notifTitle}
+              onChange={(e) => setNotifTitle(e.target.value)}
+            />
+            <p className="text-xs text-gray-400">
+              Si laissé vide, le nom du programme s&apos;affiche
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -295,11 +410,15 @@ function CreateCampaignForm({
               placeholder="Votre message apparaîtra sur l'écran de verrouillage de vos clients"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              maxLength={140}
               required
             />
-            <p className="text-xs text-gray-400">
-              Ce message apparaît en notification push sur le wallet du client
-            </p>
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>Apparaît en notif push sur le wallet du client</span>
+              <span className={message.length > 120 ? "text-orange-500" : ""}>
+                {message.length}/140
+              </span>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -395,6 +514,17 @@ function CreateCampaignForm({
             </Button>
           </div>
         </form>
+
+          {/* Live preview (sticky on right) */}
+          <div className="dx-campaign-preview">
+            <NotificationPreview
+              program={selectedProgram}
+              message={message}
+              title={notifTitle}
+              triggerType={triggerType}
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
