@@ -1556,6 +1556,7 @@ html, body { overflow-x: clip; }
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100dvh; /* dynamic viewport height — évite que le bas soit caché par la barre Safari */
   transition: transform .3s cubic-bezier(.2,.7,.2,1);
 }
 
@@ -1599,6 +1600,8 @@ html, body { overflow-x: clip; }
 
 .dx-nav {
   flex: 1;
+  min-height: 0; /* permet au scroll de fonctionner si la liste déborde */
+  overflow-y: auto;
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
@@ -2822,6 +2825,7 @@ html, body { overflow-x: clip; }
     left: auto;
     width: min(82vw, 320px);
     height: 100vh;
+    height: 100dvh;
     z-index: 60;
     transform: translateX(100%);
     box-shadow: -30px 0 80px -10px rgba(0,0,0,0.7);
@@ -2829,6 +2833,10 @@ html, body { overflow-x: clip; }
     border-left: 1px solid var(--line);
   }
   .dx-sidebar.mobile-open { transform: translateX(0); }
+  /* Respecte la safe-area iOS (home indicator) sur le bouton Déconnexion */
+  .dx-sidebar-foot {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
 
   /* Le close button n'est visible que sur mobile */
   .dx-sidebar-close { display: inline-flex; }
