@@ -2815,15 +2815,18 @@ html, body { overflow-x: clip; }
   .dx-chart-card.span-2 { grid-column: span 1; }
 }
 @media (max-width: 760px) {
-  /* Sidebar = drawer mobile : sort de l'écran par défaut, slide in quand .mobile-open */
+  /* Sidebar = drawer mobile depuis la droite (cohérent avec le hamburger à droite) */
   .dx-sidebar {
     position: fixed;
-    top: 0; left: 0; bottom: 0;
+    top: 0; right: 0; bottom: 0;
+    left: auto;
     width: min(82vw, 320px);
     height: 100vh;
     z-index: 60;
-    transform: translateX(-100%);
-    box-shadow: 30px 0 80px -10px rgba(0,0,0,0.7);
+    transform: translateX(100%);
+    box-shadow: -30px 0 80px -10px rgba(0,0,0,0.7);
+    border-right: 0;
+    border-left: 1px solid var(--line);
   }
   .dx-sidebar.mobile-open { transform: translateX(0); }
 
