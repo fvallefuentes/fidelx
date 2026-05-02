@@ -22,82 +22,26 @@ interface Program {
 /* ─── Read-only wallet card preview ──────────────────────── */
 function ProgramCardPreview({ program }: { program: Program }) {
   const design = program.cardDesign || {};
-  const bg = (design.bgColor as string) || "#0e110b";
-  const fg = (design.textColor as string) || "#f4f5f1";
   const config = program.config || {};
   const max =
     (config.maxStamps as number) ||
     ((config.tiers as { points: number }[])?.[0]?.points) ||
     10;
-  const reward =
-    program.rewards[0]?.name ||
-    (config.reward as string) ||
-    "1 récompense offerte";
-  const sampleStamps = Math.min(6, max);
-
-  // Detect if bg is bright to pick contrast for stamps
-  const isDarkBg = isDark(bg);
-  const stampOn = "#d4ff4e";
-  const stampOff = isDarkBg ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)";
-  const dim = isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)";
-
-  const logoData = (design.logoData as string) || "";
 
   return (
-    <div className="program-preview" style={{ background: bg, color: fg }}>
-      <div className="program-preview-shine" />
-
-      <div className="program-preview-head">
-        {logoData ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={logoData}
-            alt="Logo"
-            className="program-preview-logo"
-          />
-        ) : (
-          <span className="program-preview-brand" style={{ color: stampOn }}>
-            FIDLIFY · WALLET
-          </span>
-        )}
-        <span className="program-preview-chip" style={{ background: stampOn }} />
-      </div>
-
-      <div className="program-preview-name" style={{ color: dim }}>
-        Carte de fidélité
-      </div>
-      <div className="program-preview-shop">{program.name}</div>
-
-      <div className="program-preview-stamps">
-        {Array.from({ length: max }).map((_, i) => {
-          const filled = i < sampleStamps;
-          return (
-            <span
-              key={i}
-              className={`program-preview-stamp${filled ? " full" : ""}`}
-              style={{
-                background: filled ? stampOn : "transparent",
-                borderColor: filled ? stampOn : stampOff,
-                color: filled ? "#0a0d04" : "transparent",
-              }}
-            >
-              {filled ? "★" : ""}
-            </span>
-          );
-        })}
-      </div>
-
-      <div className="program-preview-foot">
-        <span className="program-preview-progress" style={{ color: dim }}>
-          <strong style={{ color: fg }}>
-            {sampleStamps}
-          </strong>
-          /{max} · {reward}
-        </span>
-        <span className="program-preview-qr" />
-      </div>
-
-      <div className="program-preview-tag">APERÇU</div>
+    <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+      <WalletCardPreview
+        bgColor={(design.bgColor as string) || "#1a1a2e"}
+        textColor={(design.textColor as string) || "#ffffff"}
+        stampColor={design.stampColor as string | undefined}
+        stampCheckColor={design.stampCheckColor as string | undefined}
+        stampEmptyColor={design.stampEmptyColor as string | undefined}
+        labelColor={design.labelColor as string | undefined}
+        logoData={(design.logoData as string) || undefined}
+        programName={program.name}
+        maxStamps={max}
+      />
+      <span className="wcp-tag">APERÇU</span>
     </div>
   );
 }

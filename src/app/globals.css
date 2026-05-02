@@ -2231,6 +2231,22 @@ html, body { overflow-x: clip; }
   background-position: 0 0, 0 4px, 4px -4px, -4px 0;
   box-shadow: 0 0 0 6px rgba(255,255,255,0.95);
 }
+
+/* Badge "APERÇU" floating on the program list preview */
+.dashboard .wcp-tag {
+  position: absolute;
+  top: 12px; right: 14px;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 9px; letter-spacing: 0.2em; font-weight: 700;
+  padding: 4px 9px; border-radius: 999px;
+  background: rgba(0,0,0,0.55);
+  color: var(--accent);
+  border: 1px solid rgba(212,255,78,0.4);
+  pointer-events: none;
+  z-index: 2;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
 .dashboard .program-preview-chip {
   width: 24px; height: 17px; border-radius: 4px;
   position: relative;
