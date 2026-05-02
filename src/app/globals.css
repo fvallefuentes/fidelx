@@ -2232,6 +2232,288 @@ html, body { overflow-x: clip; }
   box-shadow: 0 0 0 6px rgba(255,255,255,0.95);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   JOIN PAGE — fond blanc + identité Fidlify (lime + JetBrains Mono)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.join-shell {
+  --jl: #d4ff4e;     /* lime accent */
+  --jl-dark: #0a0d04;
+  --jt: #0a0a0a;
+  --jt-2: #4a4a4a;
+  --jt-3: #8a8a8a;
+  --jt-4: #c0c0c0;
+  --jbg-soft: #f7f7f5;
+
+  min-height: 100vh;
+  background: #ffffff;
+  color: var(--jt);
+  font-family: var(--font-geist-sans, "Geist", ui-sans-serif, system-ui, sans-serif);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24px 18px 36px;
+  gap: 22px;
+}
+.join-shell.join-loading {
+  align-items: center; justify-content: center;
+  padding: 0;
+}
+.join-spinner {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 3px solid #eee;
+  border-top-color: var(--jl);
+  animation: dx-spin .8s linear infinite;
+}
+
+.join-brand-bar {
+  width: 100%; max-width: 460px;
+  display: flex; justify-content: center;
+  padding: 6px 0 4px;
+}
+.join-brand {
+  display: inline-flex; align-items: center; gap: 10px;
+  text-decoration: none;
+  font-family: var(--font-jetbrains-mono, "JetBrains Mono", ui-monospace, monospace);
+  font-weight: 700; font-size: 16px; letter-spacing: 0.04em;
+  color: var(--jt);
+}
+
+.join-empty {
+  text-align: center; max-width: 360px; margin-top: 60px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.join-empty h1 { font-size: 22px; font-weight: 600; margin: 0; }
+.join-empty p { color: var(--jt-3); margin: 0; font-size: 14px; }
+.join-link {
+  margin-top: 8px; color: var(--jt); font-size: 14px; font-weight: 500;
+  border-bottom: 1px solid var(--jt-4);
+}
+
+/* Card stage */
+.join-card-stage {
+  width: 100%; max-width: 460px;
+  display: flex; justify-content: center;
+  padding: 8px 4px 0;
+}
+
+/* Wallet card render */
+.jcp {
+  width: 100%; max-width: 380px;
+  padding: 18px 20px 22px;
+  border-radius: 22px;
+  box-shadow:
+    0 30px 60px -20px rgba(0,0,0,0.25),
+    0 12px 30px -10px rgba(0,0,0,0.15),
+    0 0 0 1px rgba(255,255,255,0.06) inset;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Helvetica Neue", sans-serif;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.jcp-head {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 12px; min-height: 28px;
+}
+.jcp-logo { height: 28px; max-width: 150px; object-fit: contain; }
+.jcp-logo-empty {
+  font-size: 11px; letter-spacing: 0.18em; font-weight: 600;
+  text-transform: uppercase;
+}
+.jcp-offer {
+  font-size: 10px; letter-spacing: 0.2em; font-weight: 700;
+  text-transform: uppercase;
+}
+.jcp-stamps { display: grid; gap: 8px; padding: 4px 0; }
+.jcp-stamp {
+  aspect-ratio: 1; border-radius: 50%;
+  border: 1.5px solid;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .25s, border-color .25s;
+}
+.jcp-fields {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+}
+.jcp-label {
+  font-size: 9px; letter-spacing: 0.08em;
+  font-weight: 600; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 26ch;
+}
+.jcp-value {
+  font-size: 19px; font-weight: 600; letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.jcp-qr-wrap { display: flex; justify-content: center; padding-top: 6px; }
+.jcp-qr {
+  display: block; width: 86px; height: 86px;
+  border-radius: 6px; background: #fff;
+  background-image:
+    linear-gradient(45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(-45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #0a0d04 75%),
+    linear-gradient(-45deg, transparent 75%, #0a0d04 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  box-shadow: 0 0 0 6px #fff;
+}
+
+/* White content card below the wallet preview */
+.join-card {
+  width: 100%; max-width: 460px;
+  background: var(--jbg-soft);
+  border: 1px solid #ececea;
+  border-radius: 24px;
+  padding: 28px 26px;
+  box-shadow: 0 20px 40px -20px rgba(0,0,0,0.08);
+}
+.join-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--jt-3); margin-bottom: 14px;
+}
+.join-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--jl); box-shadow: 0 0 10px rgba(212,255,78,0.6);
+}
+.join-h1 {
+  font-size: 26px; font-weight: 600; letter-spacing: -0.025em;
+  margin: 0 0 8px; line-height: 1.1;
+}
+.join-h2 {
+  font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
+  margin: 12px 0 6px; text-align: center;
+}
+.join-sub {
+  font-size: 14.5px; color: var(--jt-2); line-height: 1.5;
+  margin: 0 0 20px;
+}
+.join-success { text-align: center; }
+.join-check {
+  margin: 0 auto;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: var(--jl);
+  color: var(--jl-dark);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 6px rgba(212,255,78,0.18);
+}
+
+.join-form { display: flex; flex-direction: column; gap: 14px; }
+.join-error {
+  background: #ffefee; border: 1px solid #ffd1cd;
+  color: #c5413a; font-size: 13.5px;
+  border-radius: 10px; padding: 11px 14px;
+}
+.join-field { display: flex; flex-direction: column; gap: 6px; }
+.join-field label {
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--jt-3); font-weight: 500;
+}
+.join-field input {
+  height: 48px; padding: 0 16px;
+  background: #fff;
+  border: 1px solid #e0e0dd;
+  border-radius: 12px;
+  color: var(--jt);
+  font-size: 15px; font-family: inherit;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+  outline: none;
+}
+.join-field input::placeholder { color: var(--jt-4); }
+.join-field input:hover { border-color: #c8c8c4; }
+.join-field input:focus {
+  border-color: var(--jl);
+  box-shadow: 0 0 0 3px rgba(212,255,78,0.25);
+}
+.join-or {
+  text-align: center; font-size: 11px;
+  color: var(--jt-3); letter-spacing: 0.18em;
+  font-family: var(--font-geist-mono, monospace);
+  text-transform: uppercase;
+  position: relative; padding: 4px 0;
+}
+.join-or::before, .join-or::after {
+  content: ""; position: absolute; top: 50%;
+  width: calc(50% - 24px); height: 1px; background: #e2e2df;
+}
+.join-or::before { left: 0; }
+.join-or::after { right: 0; }
+
+.join-submit {
+  margin-top: 6px;
+  height: 52px; border-radius: 12px;
+  background: var(--jl); color: var(--jl-dark);
+  border: 0; font-family: inherit; font-size: 15px; font-weight: 600;
+  letter-spacing: -0.005em; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  box-shadow:
+    0 0 0 1px rgba(212,255,78,0.5),
+    0 12px 28px -8px rgba(212,255,78,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  transition: transform .2s cubic-bezier(.2,.7,.2,1), box-shadow .2s, opacity .2s;
+}
+.join-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 0 1px rgba(212,255,78,0.7),
+    0 18px 36px -8px rgba(212,255,78,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.45);
+}
+.join-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+.join-fineprint {
+  font-size: 11.5px; color: var(--jt-3); text-align: center;
+  line-height: 1.55; margin: 16px 0 0;
+}
+
+/* Wallet add-to buttons (success state) */
+.join-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.join-btn-apple, .join-btn-google {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  height: 50px; border-radius: 12px;
+  font-size: 15px; font-weight: 500; letter-spacing: -0.005em;
+  text-decoration: none;
+  transition: transform .2s, box-shadow .2s, background .2s;
+}
+.join-btn-apple {
+  background: #000; color: #fff;
+  box-shadow: 0 8px 20px -10px rgba(0,0,0,0.45);
+}
+.join-btn-apple:hover {
+  transform: translateY(-1px);
+  background: #1a1a1a;
+}
+.join-btn-google {
+  background: #fff; color: #1a1a1a;
+  border: 1px solid #dadce0;
+  box-shadow: 0 4px 14px -8px rgba(0,0,0,0.18);
+}
+.join-btn-google:hover {
+  transform: translateY(-1px);
+  border-color: #b0b3b8;
+}
+
+/* Footer */
+.join-footer {
+  margin-top: auto;
+  padding-top: 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; max-width: 460px;
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--jt-3);
+}
+.join-brand-tiny {
+  display: inline-flex; align-items: center; gap: 8px;
+  text-decoration: none; color: var(--jt-2);
+  font-weight: 600; letter-spacing: 0.04em;
+}
+
+@media (max-width: 420px) {
+  .join-card { padding: 22px 20px; border-radius: 20px; }
+  .join-h1 { font-size: 22px; }
+  .jcp { padding: 16px 18px 20px; }
+}
+
 /* Badge "APERÇU" floating on the program list preview */
 .dashboard .wcp-tag {
   position: absolute;
