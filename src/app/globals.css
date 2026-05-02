@@ -1653,7 +1653,7 @@ html, body { overflow-x: clip; }
 /* ─── Header ───────────────────────────────────────────────── */
 .dx-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 22px 40px;
   border-bottom: 1px solid var(--line);
@@ -1665,7 +1665,7 @@ html, body { overflow-x: clip; }
   z-index: 10;
 }
 .dx-header-left {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
   min-width: 0;
 }
 .dx-burger {

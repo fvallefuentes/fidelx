@@ -14,19 +14,17 @@ export function Header({
   return (
     <header className="dx-header">
       <div className="dx-header-left">
+        <div className="dx-header-eyebrow">
+          <span className="dx-dot" />
+          <span>ESPACE COMMERÇANT</span>
+        </div>
+        <h2 className="dx-header-title">
+          Bonjour, <em>{session?.user?.name || "Commerçant"}</em>
+        </h2>
         <span className={`dx-plan-pill ${plan === "FREE" ? "free" : "paid"}`}>
           <Sparkles className="h-3.5 w-3.5" />
           {plan}
         </span>
-        <div>
-          <div className="dx-header-eyebrow">
-            <span className="dx-dot" />
-            <span>ESPACE COMMERÇANT</span>
-          </div>
-          <h2 className="dx-header-title">
-            Bonjour, <em>{session?.user?.name || "Commerçant"}</em>
-          </h2>
-        </div>
       </div>
       <div className="dx-header-right">
         <button
