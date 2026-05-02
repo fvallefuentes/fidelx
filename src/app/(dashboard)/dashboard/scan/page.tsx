@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Check, AlertCircle, PartyPopper, ScanLine, RotateCcw, Camera, Gift } from "lucide-react";
+import { Minus, Plus, Check, AlertCircle, PartyPopper, ScanLine, RotateCcw, Camera, Gift, UserSearch, Search, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 interface CardInfo {
   clientName: string;
@@ -23,7 +24,18 @@ interface StampResult {
   rewardPending: boolean;
 }
 
-type Step = "scan" | "confirm" | "reward_pending" | "stamping" | "claiming" | "success" | "reward_claimed" | "error";
+type Step = "scan" | "manual" | "confirm" | "reward_pending" | "stamping" | "claiming" | "success" | "reward_claimed" | "error";
+
+interface ManualCard {
+  id: string;
+  serialNumber: string;
+  currentStamps: number;
+  totalVisits: number;
+  status: string;
+  lastVisitAt: string | null;
+  client: { firstName: string; email: string | null; phone: string | null };
+  program: { name: string };
+}
 
 export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -41,6 +53,30 @@ export default function ScanPage() {
   const [error, setError] = useState("");
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState("");
+
+  // Mode "saisie manuelle" — sélection d'un client sans scan
+  const [manualCards, setManualCards] = useState<ManualCard[]>([]);
+  const [manualLoading, setManualLoading] = useState(false);
+  const [manualSearch, setManualSearch] = useState("");
+
+  async function loadManualCards() {
+    setManualLoading(true);
+    try {
+      const res = await fetch("/api/cards");
+      const data = await res.json();
+      if (Array.isArray(data)) setManualCards(data);
+    } catch (err) {
+      console.error("[scan/manual] failed:", err);
+    } finally {
+      setManualLoading(false);
+    }
+  }
+
+  function openManualMode() {
+    stopCamera();
+    setStep("manual");
+    if (manualCards.length === 0) loadManualCards();
+  }
 
   const stopCamera = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -218,6 +254,111 @@ export default function ScanPage() {
           <ScanLine className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
           <p className="text-sm text-blue-700">Demandez au client d&apos;ouvrir sa carte Apple Wallet et de taper sur le QR code en bas pour l&apos;agrandir.</p>
         </div>
+
+        {/* Fallback : saisie manuelle si le scan ne marche pas */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 uppercase tracking-wider">ou</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+        <Button variant="outline" className="w-full gap-2" onClick={openManualMode}>
+          <UserSearch className="h-4 w-4" />
+          Sélectionner un client manuellement
+        </Button>
+      </div>
+    );
+  }
+
+  // ─── Saisie manuelle (sans scan) ──────────────────────────────────────────
+  if (step === "manual") {
+    const filtered = manualCards.filter((c) => {
+      if (!manualSearch) return true;
+      const q = manualSearch.toLowerCase();
+      return (
+        c.client.firstName?.toLowerCase().includes(q) ||
+        c.client.email?.toLowerCase().includes(q) ||
+        c.client.phone?.toLowerCase().includes(q) ||
+        c.serialNumber.toLowerCase().includes(q) ||
+        c.program.name.toLowerCase().includes(q)
+      );
+    });
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Sélectionner un client</h1>
+          <p className="text-sm text-gray-500">Si le scan ne fonctionne pas, choisissez le client dans la liste</p>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Rechercher par nom, email, téléphone ou programme…"
+            value={manualSearch}
+            onChange={(e) => setManualSearch(e.target.value)}
+            className="pl-10"
+            autoFocus
+          />
+        </div>
+
+        <Card>
+          <CardContent className="p-0">
+            {manualLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-16 px-6">
+                <UserSearch className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">
+                  {manualSearch ? "Aucun client trouvé" : "Aucune carte enregistrée"}
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y">
+                {filtered.slice(0, 50).map((c) => {
+                  const initials = (c.client.firstName?.charAt(0) || "?").toUpperCase();
+                  return (
+                    <li key={c.id}>
+                      <button
+                        type="button"
+                        onClick={() => handleScan(c.serialNumber)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-700 font-semibold flex items-center justify-center flex-shrink-0">
+                          {initials}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{c.client.firstName || "Anonyme"}</p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {c.client.email || c.client.phone || c.serialNumber}
+                            {" · "}
+                            {c.program.name}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-semibold text-blue-600">{c.currentStamps} tampons</p>
+                          <p className="text-[11px] text-gray-400">{c.totalVisits} visite{c.totalVisits > 1 ? "s" : ""}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
+                      </button>
+                    </li>
+                  );
+                })}
+                {filtered.length > 50 && (
+                  <li className="px-4 py-3 text-center text-xs text-gray-400">
+                    Affinez la recherche — {filtered.length - 50} cartes supplémentaires
+                  </li>
+                )}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        <Button variant="outline" className="w-full gap-2" onClick={() => setStep("scan")}>
+          <ScanLine className="h-4 w-4" />
+          Revenir au scan QR
+        </Button>
       </div>
     );
   }
