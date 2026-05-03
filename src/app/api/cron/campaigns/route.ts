@@ -58,10 +58,12 @@ export async function GET(req: Request) {
     });
 
     try {
+      const cfg = (c.triggerConfig || {}) as { notifLogo?: string };
       const r = await notifyAllCardsInProgram(
         c.programId!,
         c.message,
-        c.targetSegment
+        c.targetSegment,
+        cfg.notifLogo
       );
       await prisma.notificationCampaign.update({
         where: { id: c.id },

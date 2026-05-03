@@ -224,6 +224,7 @@ model LoyaltyCard {
   lastVisitAt    DateTime?
   lastMessage    String?    // dernière notification reçue (campagne) — affichée au verso du pass
   lastMessageAt  DateTime?
+  lastCampaignLogo String?  @db.Text // data URL (base64) du logo override pour la dernière campagne
 
   client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   program       LoyaltyProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)
