@@ -79,11 +79,10 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     labelColor: (design.labelColor as string) || undefined,
     description: (design.description as string) || card.program.name,
     lastMessage: card.lastMessage,
-    // Priorité au logo de la dernière campagne, sinon logo programme
-    logoData:
-      (card as { lastCampaignLogo?: string }).lastCampaignLogo ||
-      (design.logoData as string) ||
-      null,
+    // Le logo de la carte vient TOUJOURS du programme. Le logo
+    // d'une campagne ne sert qu'à l'aperçu côté merchant — iOS
+    // utilise toujours sa propre icône Wallet pour les notifications.
+    logoData: (design.logoData as string) || null,
     locations: card.program.establishment
       ? [
           {

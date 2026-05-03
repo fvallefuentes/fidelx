@@ -114,8 +114,7 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
 export async function notifyAllCardsInProgram(
   programId: string,
   message: string,
-  segment?: string,
-  campaignLogo?: string | null
+  segment?: string
 ) {
   const where: Record<string, unknown> = { programId, status: "ACTIVE" };
 
@@ -137,16 +136,13 @@ export async function notifyAllCardsInProgram(
     select: { id: true },
   });
 
-  // Mettre à jour message + logo override sur chaque carte avant le push
-  // (la carte sera re-fetched par iOS et montrera le nouveau logo dans la notif)
+  // Mettre à jour le champ message sur chaque carte pour déclencher la notif
+  // (le logo de la carte vient toujours du programme, pas de la campagne)
   await Promise.allSettled(
     cards.map((card) =>
       prisma.loyaltyCard.update({
         where: { id: card.id },
-        data: {
-          lastMessage: message,
-          lastCampaignLogo: campaignLogo ?? null, // null = retour au logo programme
-        },
+        data: { lastMessage: message },
       }).then(() => notifyPassUpdate(card.id))
     )
   );

@@ -77,12 +77,10 @@ export async function POST(req: Request) {
 
   // Si envoi immédiat, envoyer maintenant
   if (triggerType === "IMMEDIATE" && programId) {
-    const cfg = (triggerConfig || {}) as { notifLogo?: string };
     const result = await notifyAllCardsInProgram(
       programId,
       message,
-      targetSegment,
-      cfg.notifLogo
+      targetSegment
     );
 
     await prisma.notificationCampaign.update({
