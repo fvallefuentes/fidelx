@@ -9,6 +9,8 @@
  */
 
 import sharp from "sharp";
+import path from "path";
+import fs from "fs";
 
 interface StripOptions {
   currentStamps: number;
@@ -17,6 +19,7 @@ interface StripOptions {
   stampColor?: string;
   stampCheckColor?: string;
   stampEmptyColor?: string;
+  showBranding?: boolean;
 }
 
 // Apple Wallet storeCard strip dimensions @3x
@@ -30,6 +33,7 @@ export async function generateStripImage({
   stampColor,
   stampCheckColor,
   stampEmptyColor,
+  showBranding,
 }: StripOptions): Promise<Buffer> {
   const total = Math.max(1, Math.min(20, maxStamps));
   const filled = Math.max(0, Math.min(total, currentStamps));
@@ -90,7 +94,22 @@ export async function generateStripImage({
   ${dots.join("\n  ")}
 </svg>`;
 
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  const stripBuf = await sharp(Buffer.from(svg)).png().toBuffer();
+
+  if (!showBranding) return stripBuf;
+
+  // Composite "powered by fidlify" logo en bas à gauche
+  const svgPath = path.join(process.cwd(), "src/lib/wallet/powered_by_fidlify.svg");
+  const logoSvg = fs.readFileSync(svgPath);
+  // Largeur cible ~340px (ratio original 341:98)
+  const logoW = 340;
+  const logoH = Math.round(98 * (logoW / 341));
+  const logoBuf = await sharp(logoSvg).resize(logoW, logoH).png().toBuffer();
+
+  return sharp(stripBuf)
+    .composite([{ input: logoBuf, left: 50, top: STRIP_H - logoH - 24 }])
+    .png()
+    .toBuffer();
 }
 
 /* ─── Helpers ──────────────────────────────────────────────── */

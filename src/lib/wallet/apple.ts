@@ -283,6 +283,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         stampColor: passData.stampColor,
         stampCheckColor: passData.stampCheckColor,
         stampEmptyColor: passData.stampEmptyColor,
+        showBranding: passData.showFidlifyBranding,
       });
       pass.addBuffer("strip.png", stripBuf);
       pass.addBuffer("strip@2x.png", stripBuf);
