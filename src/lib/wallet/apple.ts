@@ -24,6 +24,17 @@ function decodeDataUrl(dataUrl: string): Buffer | null {
   }
 }
 
+function isBgDark(hex: string): boolean {
+  const m = hex.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!m) return true;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b < 140;
+}
+
 interface PassData {
   serialNumber: string;
   programName: string;
@@ -189,16 +200,8 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     });
   }
 
-  // Header top-right :
-  //  - FREE : branding "Propulsée par FIDLIFY"
-  //  - Payant : champ OFFRE lié à lastMessage (notif iOS via changeMessage)
-  if (passData.showFidlifyBranding) {
-    pass.headerFields.push({
-      key: "branding",
-      label: "PROPULSÉE PAR",
-      value: "FIDLIFY",
-    });
-  } else {
+  // Header top-right : uniquement pour les plans payants
+  if (!passData.showFidlifyBranding) {
     pass.headerFields.push({
       key: "offer",
       label: "OFFRE",
@@ -244,8 +247,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     // Détermine le buffer source du logo
     let logoBuf: Buffer | null = null;
     if (passData.showFidlifyBranding) {
-      // Plan FREE → logo Fidlify
-      logoBuf = readFileSync(join(process.cwd(), "src/lib/wallet/powered_by_fidlify_logo.png"));
+      // Plan FREE → logo Fidlify blanc (fond sombre) ou noir (fond clair)
+      const dark = isBgDark(passData.bgColor);
+      const logoFile = dark ? "fidlify_logo_white.png" : "fidlify_logo_black.svg";
+      logoBuf = readFileSync(join(process.cwd(), `src/lib/wallet/${logoFile}`));
     } else if (passData.logoData) {
       // Plan payant → logo du merchant
       logoBuf = decodeDataUrl(passData.logoData);
