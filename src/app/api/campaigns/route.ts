@@ -58,8 +58,8 @@ export async function POST(req: Request) {
     const campaignsThisMonth = await prisma.notificationCampaign.count({
       where: { merchantId: session.user.id, createdAt: { gte: startOfMonth } },
     });
-    if (campaignsThisMonth >= 1) {
-      return NextResponse.json({ error: "Le plan FREE est limité à 1 campagne par mois." }, { status: 403 });
+    if (campaignsThisMonth >= 2) {
+      return NextResponse.json({ error: "Le plan FREE est limité à 2 campagnes par mois." }, { status: 403 });
     }
   }
 

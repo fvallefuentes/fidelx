@@ -106,7 +106,7 @@ export default function CampaignsPage() {
     const d = new Date(c.createdAt);
     return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
   });
-  const freeLimitReached = isFree && campaignsThisMonth.length >= 1;
+  const freeLimitReached = isFree && campaignsThisMonth.length >= 2;
 
   if (loading) {
     return (
@@ -133,10 +133,10 @@ export default function CampaignsPage() {
 
       {isFree && (
         <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-          Plan FREE — <strong>1 campagne / mois</strong>, envoi immédiat uniquement.{" "}
+          Plan FREE — <strong>2 campagnes / mois</strong>, envoi immédiat uniquement.{" "}
           {freeLimitReached
-            ? "Limite atteinte ce mois-ci. Passez au plan Pro pour envoyer plus de campagnes."
-            : `Il vous reste ${1 - campaignsThisMonth.length} campagne ce mois-ci.`}
+            ? "Limite atteinte ce mois-ci. Passez au plan Starter pour envoyer plus de campagnes."
+            : `Il vous reste ${2 - campaignsThisMonth.length} campagne(s) ce mois-ci.`}
         </div>
       )}
 
