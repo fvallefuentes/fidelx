@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Building2, Globe, CreditCard } from "lucide-react";
+import { PLAN_LABELS } from "@/lib/plan-limits";
 
 interface MerchantSettings {
   name: string;
@@ -210,7 +211,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-500">Plan actuel :</span>
               <Badge className={planColors[settings?.plan || "FREE"]}>
-                {settings?.plan || "FREE"}
+                {PLAN_LABELS[settings?.plan || "FREE"] ?? settings?.plan}
               </Badge>
             </div>
 

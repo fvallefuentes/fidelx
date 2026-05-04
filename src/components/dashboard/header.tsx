@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Menu, Sparkles } from "lucide-react";
+import { PLAN_LABELS } from "@/lib/plan-limits";
 
 export function Header({
   onOpenMobileNav,
@@ -23,7 +24,7 @@ export function Header({
         </h2>
         <span className={`dx-plan-pill ${plan === "FREE" ? "free" : "paid"}`}>
           <Sparkles className="h-3.5 w-3.5" />
-          {plan}
+          {PLAN_LABELS[plan] ?? plan}
         </span>
       </div>
       <div className="dx-header-right">
