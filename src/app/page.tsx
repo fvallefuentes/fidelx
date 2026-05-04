@@ -530,7 +530,7 @@ const tiers = [
   {
     name: "Multi-site",
     desc: "Pour les commerces avec plusieurs points de vente.",
-    price: "229 CHF",
+    price: "199 CHF",
     sub: "/ mois — facturé annuellement",
     features: [
       "25 000 clients actifs",
