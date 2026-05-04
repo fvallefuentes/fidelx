@@ -474,7 +474,7 @@ function SectionCompare() {
 /* ─── Pricing ─────────────────────────────────────────────── */
 const tiers = [
   {
-    name: "Free",
+    name: "Gratuit",
     desc: "Pour découvrir Fidlify sans engagement.",
     price: "0 CHF",
     sub: "/ mois · gratuit pour toujours",
@@ -491,7 +491,7 @@ const tiers = [
     featured: false,
   },
   {
-    name: "Starter",
+    name: "Essentiel",
     desc: "Pour les petits commerces qui veulent démarrer.",
     price: "39 CHF",
     sub: "/ mois — facturé annuellement",
@@ -510,7 +510,7 @@ const tiers = [
     featured: false,
   },
   {
-    name: "Growth",
+    name: "Croissance",
     desc: "Pour les commerces qui veulent automatiser leur fidélisation.",
     price: "89 CHF",
     sub: "/ mois — facturé annuellement",
@@ -523,12 +523,12 @@ const tiers = [
       "3 utilisateurs",
       "Support prioritaire",
     ],
-    cta: "Choisir Growth",
+    cta: "Choisir Croissance",
     href: "/register",
     featured: true,
   },
   {
-    name: "Multi-site",
+    name: "Multi-sites",
     desc: "Pour les commerces avec plusieurs points de vente.",
     price: "199 CHF",
     sub: "/ mois — facturé annuellement",
