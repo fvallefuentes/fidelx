@@ -99,31 +99,9 @@ export default function JoinPage() {
     );
   }
 
-  const design = program.cardDesign || {};
-  const max =
-    (program.config.maxStamps as number) ||
-    ((program.config.tiers as { points: number }[])?.[0]?.points) ||
-    10;
-
   return (
     <div className="join-shell">
       <BrandHeader />
-
-      <div className="join-card-stage">
-        <CardPreview
-          bgColor={design.bgColor || "#1a1a2e"}
-          textColor={design.textColor || "#ffffff"}
-          stampColor={design.stampColor}
-          stampCheckColor={design.stampCheckColor}
-          stampEmptyColor={design.stampEmptyColor}
-          labelColor={design.labelColor}
-          logoData={design.logoData}
-          programName={program.name}
-          maxStamps={max}
-          filled={success ? 0 : 0}
-          clientName={success ? firstName : undefined}
-        />
-      </div>
 
       {success ? (
         <div className="join-card join-success">
