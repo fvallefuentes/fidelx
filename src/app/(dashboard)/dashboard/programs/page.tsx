@@ -610,7 +610,7 @@ function CreateProgramForm({
               {isFree && (
                 <p className="text-xs text-gray-400 flex items-center gap-1">
                   <Lock className="h-3 w-3" />
-                  Plan FREE : tampons uniquement. Pro débloque points, cashback et hybride.
+                  Plan Gratuit : tampons uniquement. Essentiel débloque points, cashback et hybride.
                 </p>
               )}
             </div>
@@ -663,7 +663,7 @@ function CreateProgramForm({
               <label className="text-xs text-gray-500">Logo (haut-gauche de la carte) — PNG/JPG, max 500 KB</label>
               {isFree ? (
                 <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-400">
-                  Logo personnalisé non disponible sur le plan FREE — le logo Fidlify est affiché à la place.
+                  Logo personnalisé non disponible sur le plan Gratuit — le logo Fidlify est affiché à la place.
                 </div>
               ) : (
                 <div className="flex items-center gap-3">

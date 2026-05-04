@@ -133,9 +133,9 @@ export default function CampaignsPage() {
 
       {isFree && (
         <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-          Plan FREE — <strong>2 campagnes / mois</strong>, envoi immédiat uniquement.{" "}
+          Plan Gratuit — <strong>2 campagnes / mois</strong>, envoi immédiat uniquement.{" "}
           {freeLimitReached
-            ? "Limite atteinte ce mois-ci. Passez au plan Starter pour envoyer plus de campagnes."
+            ? "Limite atteinte ce mois-ci. Passez au plan Essentiel pour envoyer plus de campagnes."
             : `Il vous reste ${2 - campaignsThisMonth.length} campagne(s) ce mois-ci.`}
         </div>
       )}
