@@ -41,6 +41,7 @@ interface PassData {
   description: string;
   lastMessage?: string | null;
   logoData?: string | null; // data URL "data:image/png;base64,..."
+  showFidlifyBranding?: boolean;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -51,7 +52,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
       client: true,
       program: {
         include: {
-          merchant: true,
+          merchant: { select: { id: true, name: true, plan: true } },
           establishment: true,
         },
       },
@@ -83,6 +84,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     // d'une campagne ne sert qu'à l'aperçu côté merchant — iOS
     // utilise toujours sa propre icône Wallet pour les notifications.
     logoData: (design.logoData as string) || null,
+    showFidlifyBranding: (card.program.merchant.plan || "FREE") === "FREE",
     locations: card.program.establishment
       ? [
           {
@@ -197,24 +199,27 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   });
 
   // Champs verso
-  pass.backFields.push(
-    {
-      key: "merchant",
-      label: "Commerce",
-      value: passData.merchantName,
-    },
-    {
+  pass.backFields.push({
+    key: "merchant",
+    label: "Commerce",
+    value: passData.merchantName,
+  });
+
+  // Branding "Propulsé par Fidlify" uniquement pour le plan FREE
+  if (passData.showFidlifyBranding) {
+    pass.backFields.push({
       key: "info",
       label: "Information",
       value: "Carte de fidélité digitale propulsée par Fidlify",
-    },
-    {
-      key: "privacy",
-      label: "Confidentialité",
-      value:
-        "Vos données sont hébergées en Suisse et traitées conformément à la LPD. Vous pouvez demander la suppression de vos données à tout moment.",
-    }
-  );
+    });
+  }
+
+  pass.backFields.push({
+    key: "privacy",
+    label: "Confidentialité",
+    value:
+      "Vos données sont hébergées en Suisse et traitées conformément à la LPD. Vous pouvez demander la suppression de vos données à tout moment.",
+  });
 
   // Si logo fourni : on l'utilise comme logo (haut-gauche du pass)
   // ET comme icon (notification iOS, liste Wallet). Sinon on retombe sur

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPlanLimits, type ProgramType } from "@/lib/plan-limits";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -48,21 +49,35 @@ export async function POST(req: Request) {
     );
   }
 
-  // Vérifier la limite du plan gratuit (1 programme)
+  // Vérifier les limites du plan
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
   });
+  const limits = getPlanLimits(user?.plan);
 
-  if (user?.plan === "FREE") {
+  // Limite du nombre de programmes
+  if (limits.maxPrograms !== null) {
     const existingCount = await prisma.loyaltyProgram.count({
       where: { merchantId: session.user.id },
     });
-    if (existingCount >= 1) {
+    if (existingCount >= limits.maxPrograms) {
       return NextResponse.json(
-        { error: "Le plan gratuit est limité à 1 programme. Passez au plan Pro." },
+        {
+          error: `Votre plan est limité à ${limits.maxPrograms} programme${limits.maxPrograms > 1 ? "s" : ""}. Passez à un plan supérieur pour en créer plus.`,
+        },
         { status: 403 }
       );
     }
+  }
+
+  // Type de programme autorisé par le plan
+  if (!limits.allowedProgramTypes.includes(type as ProgramType)) {
+    return NextResponse.json(
+      {
+        error: `Le type "${type}" n'est pas disponible dans votre plan. Le plan FREE n'autorise que les cartes à tampons. Passez à un plan supérieur pour débloquer Points, Cashback et Hybride.`,
+      },
+      { status: 403 }
+    );
   }
 
   const program = await prisma.loyaltyProgram.create({

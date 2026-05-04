@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPlanLimits, countStampsThisMonth } from "@/lib/plan-limits";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -32,6 +33,24 @@ export async function POST(req: Request) {
   if (!card) return NextResponse.json({ error: "Carte introuvable" }, { status: 404 });
   if (card.program.merchant.id !== session.user.id) {
     return NextResponse.json({ error: "Ce programme ne vous appartient pas" }, { status: 403 });
+  }
+
+  // Limite du plan : nombre de tampons donnés ce mois-ci
+  const merchant = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { plan: true },
+  });
+  const limits = getPlanLimits(merchant?.plan);
+  if (limits.maxStampsPerMonth !== null) {
+    const used = await countStampsThisMonth(session.user.id);
+    if (used + stampCount > limits.maxStampsPerMonth) {
+      return NextResponse.json(
+        {
+          error: `Limite mensuelle atteinte (${limits.maxStampsPerMonth} tampons/mois sur votre plan). ${used} déjà donnés ce mois-ci. Passez à un plan supérieur pour des scans illimités.`,
+        },
+        { status: 403 }
+      );
+    }
   }
   if (card.status === "REVOKED" || card.status === "EXPIRED") {
     return NextResponse.json({ error: "Cette carte n'est plus active" }, { status: 400 });

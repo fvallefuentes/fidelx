@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock } from "lucide-react";
 
 interface Program {
   id: string;
@@ -458,6 +459,9 @@ function CreateProgramForm({
   onSuccess: () => void;
   onCancel: () => void;
 }) {
+  const { data: session } = useSession();
+  const plan = (session?.user?.plan as string) || "FREE";
+  const isFree = plan === "FREE";
   const [name, setName] = useState("");
   const [type, setType] = useState("STAMPS");
   const [maxStamps, setMaxStamps] = useState(10);
@@ -593,10 +597,22 @@ function CreateProgramForm({
                 onChange={(e) => setType(e.target.value)}
               >
                 <option value="STAMPS">Carte à tampons</option>
-                <option value="POINTS">Points cumulables</option>
-                <option value="CASHBACK">Cashback</option>
-                <option value="HYBRID">Hybride</option>
+                <option value="POINTS" disabled={isFree}>
+                  Points cumulables{isFree ? " — 🔒 Pro" : ""}
+                </option>
+                <option value="CASHBACK" disabled={isFree}>
+                  Cashback{isFree ? " — 🔒 Pro" : ""}
+                </option>
+                <option value="HYBRID" disabled={isFree}>
+                  Hybride{isFree ? " — 🔒 Pro" : ""}
+                </option>
               </select>
+              {isFree && (
+                <p className="text-xs text-gray-400 flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  Plan FREE : tampons uniquement. Pro débloque points, cashback et hybride.
+                </p>
+              )}
             </div>
 
             {(type === "STAMPS" || type === "HYBRID") && (
