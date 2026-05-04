@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe, STRIPE_PLAN_CODE_MAP } from "@/lib/stripe";
+import { getStripe, STRIPE_PLAN_CODE_MAP } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import type Stripe from "stripe";
 
@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -113,7 +113,7 @@ async function getPlanCodeFromPrice(price: Stripe.Price): Promise<string | null>
 
   // Si les metadata ne sont pas sur le Price, on les cherche sur le Product
   if (typeof price.product === "string") {
-    const product = await stripe.products.retrieve(price.product);
+    const product = await getStripe().products.retrieve(price.product);
     return product.metadata?.plan_code ?? null;
   }
   return null;
