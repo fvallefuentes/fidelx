@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LogoMark from "@/components/landing/LogoMark";
 
-export default function LoginPage() {
+const PAID_PLANS = ["essential", "growth", "multi_site"];
+
+function LoginForm() {
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan") ?? "";
+  const isPaidPlan = PAID_PLANS.includes(plan);
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +34,7 @@ export default function LoginPage() {
       setError("Email ou mot de passe incorrect");
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      router.push(isPaidPlan ? `/api/checkout?plan=${plan}` : "/dashboard");
     }
   }
 
@@ -51,7 +57,11 @@ export default function LoginPage() {
             <span>FIDLIFY</span>
           </Link>
           <h1 className="auth-title">Connexion</h1>
-          <p className="auth-desc">Accédez à votre tableau de bord Fidlify</p>
+          <p className="auth-desc">
+            {isPaidPlan
+              ? "Connectez-vous pour finaliser votre abonnement"
+              : "Accédez à votre tableau de bord Fidlify"}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -86,7 +96,7 @@ export default function LoginPage() {
           </div>
 
           <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? "Connexion..." : "Se connecter"}
+            {loading ? "Connexion..." : isPaidPlan ? "Se connecter et payer" : "Se connecter"}
             {!loading && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0d04" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14"/><path d="m13 5 7 7-7 7"/>
@@ -97,9 +107,17 @@ export default function LoginPage() {
 
         <div className="auth-foot">
           Pas encore de compte ?{" "}
-          <Link href="/register">Créer un compte</Link>
+          <Link href={plan ? `/register?plan=${plan}` : "/register"}>Créer un compte</Link>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

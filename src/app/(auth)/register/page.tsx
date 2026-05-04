@@ -136,7 +136,7 @@ function RegisterForm() {
 
         <div className="auth-foot">
           Déjà un compte ?{" "}
-          <Link href="/login">Se connecter</Link>
+          <Link href={plan ? `/login?plan=${plan}` : "/login"}>Se connecter</Link>
         </div>
       </div>
     </div>
