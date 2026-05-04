@@ -24,7 +24,7 @@ async function main() {
       phone: "+41 79 123 45 67",
       language: "fr",
       currency: "CHF",
-      plan: "PRO",
+      plan: "GROWTH",
     },
   });
 
