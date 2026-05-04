@@ -506,7 +506,7 @@ const tiers = [
       "Support inclus",
     ],
     cta: "Commencer",
-    href: "/register",
+    href: "/register?plan=essential",
     featured: false,
   },
   {
@@ -524,7 +524,7 @@ const tiers = [
       "Support prioritaire",
     ],
     cta: "Choisir Croissance",
-    href: "/register",
+    href: "/register?plan=growth",
     featured: true,
   },
   {
@@ -541,8 +541,8 @@ const tiers = [
       "Onboarding assisté",
       "Support prioritaire dédié",
     ],
-    cta: "Parler à l'équipe",
-    href: "/register",
+    cta: "Choisir Multi-sites",
+    href: "/register?plan=multi_site",
     featured: false,
   },
 ];

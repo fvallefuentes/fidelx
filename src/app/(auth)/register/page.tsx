@@ -1,11 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import LogoMark from "@/components/landing/LogoMark";
 
+const PAID_PLANS = ["essential", "growth", "multi_site"];
+
 export default function RegisterPage() {
+  const searchParams = useSearchParams();
+  const plan = searchParams.get("plan") ?? "";
+  const isPaidPlan = PAID_PLANS.includes(plan);
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,12 +39,12 @@ export default function RegisterPage() {
         return;
       }
 
-      // Auto-login après inscription
-      await signIn("credentials", {
-        email,
-        password,
-        callbackUrl: "/dashboard",
-      });
+      // Après inscription : checkout si plan payant, sinon dashboard
+      const callbackUrl = isPaidPlan
+        ? `/api/checkout?plan=${plan}`
+        : "/dashboard";
+
+      await signIn("credentials", { email, password, callbackUrl });
     } catch {
       setError("Erreur lors de l'inscription");
       setLoading(false);
