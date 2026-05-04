@@ -283,13 +283,30 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         stampColor: passData.stampColor,
         stampCheckColor: passData.stampCheckColor,
         stampEmptyColor: passData.stampEmptyColor,
-        showBranding: passData.showFidlifyBranding,
       });
       pass.addBuffer("strip.png", stripBuf);
       pass.addBuffer("strip@2x.png", stripBuf);
       pass.addBuffer("strip@3x.png", stripBuf);
     } catch (err) {
       console.error("[apple] strip generation failed:", err);
+    }
+  }
+
+  // Footer logo FREE branding — affiché près du QR code en bas
+  if (passData.showFidlifyBranding) {
+    try {
+      const sharp = (await import("sharp")).default;
+      const { readFileSync } = await import("fs");
+      const { join } = await import("path");
+      const logoSvg = readFileSync(join(process.cwd(), "src/lib/wallet/powered_by_fidlify.svg"));
+      const FOOTER_H = 82;
+      const FOOTER_W = Math.round(FOOTER_H * (341 / 98));
+      const footerBuf = await sharp(logoSvg).resize(FOOTER_W, FOOTER_H).png().toBuffer();
+      pass.addBuffer("footer.png", footerBuf);
+      pass.addBuffer("footer@2x.png", footerBuf);
+      pass.addBuffer("footer@3x.png", footerBuf);
+    } catch (err) {
+      console.error("[apple] footer generation failed:", err);
     }
   }
 
