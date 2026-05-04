@@ -54,8 +54,13 @@ export async function generateStripImage({
   const gapX = 40;
   const gapY = 40;
 
+  // Quand le branding est affiché, on réserve de la place en bas pour le logo
+  const LOGO_H = 65;
+  const LOGO_BOTTOM_PAD = 14;
+  const bottomReserve = showBranding ? LOGO_H + LOGO_BOTTOM_PAD * 2 : padY;
+
   const availW = STRIP_W - padX * 2;
-  const availH = STRIP_H - padY * 2;
+  const availH = STRIP_H - padY - bottomReserve;
 
   const dotByWidth = Math.floor((availW - gapX * (perRow - 1)) / perRow);
   const dotByHeight = Math.floor((availH - gapY * (rows - 1)) / rows);
@@ -65,7 +70,7 @@ export async function generateStripImage({
   const startX = (STRIP_W - totalRowW) / 2;
 
   const totalH = dotSize * rows + (rows - 1) * gapY;
-  const startY = (STRIP_H - totalH) / 2;
+  const startY = padY + (availH - totalH) / 2;
 
   const dots: string[] = [];
   for (let i = 0; i < total; i++) {
@@ -101,13 +106,11 @@ export async function generateStripImage({
   // Composite "powered by fidlify" logo en bas à gauche
   const svgPath = path.join(process.cwd(), "src/lib/wallet/powered_by_fidlify.svg");
   const logoSvg = fs.readFileSync(svgPath);
-  // Largeur cible ~340px (ratio original 341:98)
-  const logoW = 340;
-  const logoH = Math.round(98 * (logoW / 341));
-  const logoBuf = await sharp(logoSvg).resize(logoW, logoH).png().toBuffer();
+  const logoW = Math.round(LOGO_H * (341 / 98));
+  const logoBuf = await sharp(logoSvg).resize(logoW, LOGO_H).png().toBuffer();
 
   return sharp(stripBuf)
-    .composite([{ input: logoBuf, left: 50, top: STRIP_H - logoH - 24 }])
+    .composite([{ input: logoBuf, left: 50, top: STRIP_H - LOGO_H - LOGO_BOTTOM_PAD }])
     .png()
     .toBuffer();
 }
