@@ -661,29 +661,35 @@ function CreateProgramForm({
             {/* Logo upload */}
             <div className="space-y-2">
               <label className="text-xs text-gray-500">Logo (haut-gauche de la carte) — PNG/JPG, max 500 KB</label>
-              <div className="flex items-center gap-3">
-                {logoData ? (
-                  <div className="flex items-center gap-3">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={logoData}
-                      alt="Logo"
-                      className="h-14 w-14 rounded-lg object-contain border"
-                      style={{ background: bgColor }}
+              {isFree ? (
+                <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-400">
+                  Logo personnalisé non disponible sur le plan FREE — le logo Fidlify est affiché à la place.
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  {logoData ? (
+                    <div className="flex items-center gap-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={logoData}
+                        alt="Logo"
+                        className="h-14 w-14 rounded-lg object-contain border"
+                        style={{ background: bgColor }}
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={() => setLogoData("")}>
+                        Retirer
+                      </Button>
+                    </div>
+                  ) : (
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                      onChange={handleLogoChange}
+                      className="text-sm"
                     />
-                    <Button type="button" variant="outline" size="sm" onClick={() => setLogoData("")}>
-                      Retirer
-                    </Button>
-                  </div>
-                ) : (
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                    onChange={handleLogoChange}
-                    className="text-sm"
-                  />
-                )}
-              </div>
+                  )}
+                </div>
+              )}
               {logoError && <p className="text-xs text-red-500">{logoError}</p>}
             </div>
 

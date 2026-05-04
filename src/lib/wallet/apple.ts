@@ -233,17 +233,26 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       "Vos données sont hébergées en Suisse et traitées conformément à la LPD. Vous pouvez demander la suppression de vos données à tout moment.",
   });
 
-  // Si logo fourni : on l'utilise comme logo (haut-gauche du pass)
-  // ET comme icon (notification iOS, liste Wallet). Sinon on retombe sur
-  // les icônes Fidlify par défaut.
+  // Logo haut-gauche du pass + icône notifications
+  // FREE : logo Fidlify imposé / Payant : logo merchant ou fallback icône Fidlify
   let iconAdded = false;
-  if (passData.logoData) {
-    try {
-      const logoBuf = decodeDataUrl(passData.logoData);
-      if (logoBuf) {
-        const sharp = (await import("sharp")).default;
+  {
+    const sharp = (await import("sharp")).default;
+    const { readFileSync } = await import("fs");
+    const { join } = await import("path");
 
-        // logo.png — Apple recommande 160x50/320x100/480x150 (paysage)
+    // Détermine le buffer source du logo
+    let logoBuf: Buffer | null = null;
+    if (passData.showFidlifyBranding) {
+      // Plan FREE → logo Fidlify
+      logoBuf = readFileSync(join(process.cwd(), "src/lib/wallet/powered_by_fidlify_logo.png"));
+    } else if (passData.logoData) {
+      // Plan payant → logo du merchant
+      logoBuf = decodeDataUrl(passData.logoData);
+    }
+
+    if (logoBuf) {
+      try {
         const logo1x = await sharp(logoBuf).resize({ height: 50, fit: "inside", withoutEnlargement: true }).png().toBuffer();
         const logo2x = await sharp(logoBuf).resize({ height: 100, fit: "inside", withoutEnlargement: true }).png().toBuffer();
         const logo3x = await sharp(logoBuf).resize({ height: 150, fit: "inside", withoutEnlargement: true }).png().toBuffer();
@@ -251,8 +260,6 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         pass.addBuffer("logo@2x.png", logo2x);
         pass.addBuffer("logo@3x.png", logo3x);
 
-        // icon.png — square 29/58/87 — c'est l'icône qui apparaît dans
-        // la notification iOS et dans la liste Wallet. Crop carré + cover.
         const icon1x = await sharp(logoBuf).resize(29, 29, { fit: "cover", position: "center" }).png().toBuffer();
         const icon2x = await sharp(logoBuf).resize(58, 58, { fit: "cover", position: "center" }).png().toBuffer();
         const icon3x = await sharp(logoBuf).resize(87, 87, { fit: "cover", position: "center" }).png().toBuffer();
@@ -260,9 +267,9 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         pass.addBuffer("icon@2x.png", icon2x);
         pass.addBuffer("icon@3x.png", icon3x);
         iconAdded = true;
+      } catch (err) {
+        console.error("[apple] logo resize failed:", err);
       }
-    } catch (err) {
-      console.error("[apple] logo decode/resize failed:", err);
     }
   }
 
@@ -292,23 +299,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     }
   }
 
-  // Footer logo FREE branding — affiché près du QR code en bas
-  if (passData.showFidlifyBranding) {
-    try {
-      const sharp = (await import("sharp")).default;
-      const { readFileSync } = await import("fs");
-      const { join } = await import("path");
-      const logoSvg = readFileSync(join(process.cwd(), "src/lib/wallet/powered_by_fidlify.svg"));
-      const FOOTER_H = 82;
-      const FOOTER_W = Math.round(FOOTER_H * (341 / 98));
-      const footerBuf = await sharp(logoSvg).resize(FOOTER_W, FOOTER_H).png().toBuffer();
-      pass.addBuffer("footer.png", footerBuf);
-      pass.addBuffer("footer@2x.png", footerBuf);
-      pass.addBuffer("footer@3x.png", footerBuf);
-    } catch (err) {
-      console.error("[apple] footer generation failed:", err);
-    }
-  }
+
 
   return pass.getAsBuffer();
 }
