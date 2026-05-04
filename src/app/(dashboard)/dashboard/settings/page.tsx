@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Check, Building2, Globe, CreditCard } from "lucide-react";
-import { PLAN_LABELS } from "@/lib/plan-limits";
+import { PLAN_LABELS } from "@/lib/plan-labels";
 
 interface MerchantSettings {
   name: string;

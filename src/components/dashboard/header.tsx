@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Menu, Sparkles } from "lucide-react";
-import { PLAN_LABELS } from "@/lib/plan-limits";
+import { PLAN_LABELS } from "@/lib/plan-labels";
 
 export function Header({
   onOpenMobileNav,

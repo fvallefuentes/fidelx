@@ -2,13 +2,7 @@ import { prisma } from "@/lib/prisma";
 
 export type ProgramType = "STAMPS" | "POINTS" | "CASHBACK" | "HYBRID";
 
-export const PLAN_LABELS: Record<string, string> = {
-  FREE:       "Gratuit",
-  ESSENTIAL:  "Essentiel",
-  GROWTH:     "Croissance",
-  MULTI_SITE: "Multi-sites",
-};
-
+export { PLAN_LABELS } from "@/lib/plan-labels";
 export interface PlanLimits {
   maxActiveCards: number | null;
   maxStampsPerMonth: number | null;
