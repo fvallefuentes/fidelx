@@ -189,25 +189,21 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     });
   }
 
-  // Champ offre — header top-right, mis à jour par les campagnes,
-  // le changeMessage déclenche la notif iOS au refresh
-  pass.headerFields.push({
-    key: "offer",
-    label: "OFFRE",
-    value: passData.lastMessage || "",
-    changeMessage: "%@",
-  });
-
-  // Branding "Propulsé par Fidlify" sur le RECTO de la carte, juste
-  // au-dessus du QR code, uniquement pour le plan FREE.
-  // (auxiliaryFields = ligne discrète centrée juste au-dessus de la
-  // zone barcode dans le layout storeCard)
+  // Header top-right :
+  //  - FREE : branding "Propulsée par FIDLIFY"
+  //  - Payant : champ OFFRE lié à lastMessage (notif iOS via changeMessage)
   if (passData.showFidlifyBranding) {
-    pass.auxiliaryFields.push({
+    pass.headerFields.push({
       key: "branding",
-      label: "PROPULSÉ PAR",
+      label: "PROPULSÉE PAR",
       value: "FIDLIFY",
-      textAlignment: "PKTextAlignmentCenter",
+    });
+  } else {
+    pass.headerFields.push({
+      key: "offer",
+      label: "OFFRE",
+      value: passData.lastMessage || "",
+      changeMessage: "%@",
     });
   }
 
@@ -217,6 +213,18 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     label: "Commerce",
     value: passData.merchantName,
   });
+
+  // Pour le plan FREE, lastMessage ne peut pas être dans le header
+  // (occupé par le branding). On le met au verso avec changeMessage
+  // pour que la notif iOS marche quand même lors d'une campagne.
+  if (passData.showFidlifyBranding) {
+    pass.backFields.push({
+      key: "lastMessage",
+      label: "Dernière offre",
+      value: passData.lastMessage || "Aucune offre récente",
+      changeMessage: "%@",
+    });
+  }
 
   pass.backFields.push({
     key: "privacy",
