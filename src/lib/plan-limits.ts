@@ -1,23 +1,14 @@
-/**
- * Limites par plan d'abonnement.
- *
- * - FREE       : 50 cartes actives, 300 tampons/mois, STAMPS only,
- *                branding "Propulsé par Fidlify" affiché
- * - PRO        : 2000 cartes, scans illimités, tous types, sans branding
- * - BUSINESS   : illimité, multi-établissements
- * - ENTERPRISE : tout illimité, dédié
- */
-
 import { prisma } from "@/lib/prisma";
 
 export type ProgramType = "STAMPS" | "POINTS" | "CASHBACK" | "HYBRID";
 
 export interface PlanLimits {
-  maxActiveCards: number | null; // null = illimité
+  maxActiveCards: number | null;
   maxStampsPerMonth: number | null;
   allowedProgramTypes: ProgramType[];
   showFidlifyBranding: boolean;
   maxPrograms: number | null;
+  maxCampaignsPerMonth: number | null;
 }
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
@@ -27,27 +18,31 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     allowedProgramTypes: ["STAMPS"],
     showFidlifyBranding: true,
     maxPrograms: 1,
+    maxCampaignsPerMonth: 2,
   },
-  PRO: {
-    maxActiveCards: 2000,
+  ESSENTIAL: {
+    maxActiveCards: 1000,
+    maxStampsPerMonth: 2500,
+    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK", "HYBRID"],
+    showFidlifyBranding: false,
+    maxPrograms: null,
+    maxCampaignsPerMonth: 4,
+  },
+  GROWTH: {
+    maxActiveCards: 5000,
     maxStampsPerMonth: null,
     allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK", "HYBRID"],
     showFidlifyBranding: false,
     maxPrograms: null,
+    maxCampaignsPerMonth: null,
   },
-  BUSINESS: {
-    maxActiveCards: null,
+  MULTI_SITE: {
+    maxActiveCards: 25000,
     maxStampsPerMonth: null,
     allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK", "HYBRID"],
     showFidlifyBranding: false,
     maxPrograms: null,
-  },
-  ENTERPRISE: {
-    maxActiveCards: null,
-    maxStampsPerMonth: null,
-    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK", "HYBRID"],
-    showFidlifyBranding: false,
-    maxPrograms: null,
+    maxCampaignsPerMonth: null,
   },
 };
 
@@ -55,10 +50,6 @@ export function getPlanLimits(plan: string | null | undefined): PlanLimits {
   return PLAN_LIMITS[plan || "FREE"] || PLAN_LIMITS.FREE;
 }
 
-/**
- * Compte le nombre de tampons donnés ce mois-ci par un commerçant
- * (toutes cartes confondues, type STAMP / POINTS_EARN / CASHBACK_EARN).
- */
 export async function countStampsThisMonth(merchantId: string): Promise<number> {
   const start = new Date();
   start.setDate(1);
@@ -73,9 +64,6 @@ export async function countStampsThisMonth(merchantId: string): Promise<number> 
   });
 }
 
-/**
- * Compte le nombre de cartes actives sur tous les programmes du commerçant.
- */
 export async function countActiveCards(merchantId: string): Promise<number> {
   return prisma.loyaltyCard.count({
     where: {

@@ -104,10 +104,10 @@ export default function SettingsPage() {
   }
 
   const planColors: Record<string, string> = {
-    FREE: "bg-gray-100 text-gray-800",
-    PRO: "bg-blue-100 text-blue-800",
-    BUSINESS: "bg-purple-100 text-purple-800",
-    ENTERPRISE: "bg-orange-100 text-orange-800",
+    FREE:       "bg-gray-100 text-gray-800",
+    ESSENTIAL:  "bg-blue-100 text-blue-800",
+    GROWTH:     "bg-purple-100 text-purple-800",
+    MULTI_SITE: "bg-orange-100 text-orange-800",
   };
 
   return (

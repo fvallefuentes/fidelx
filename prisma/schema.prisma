@@ -62,8 +62,10 @@ model User {
   currency      String    @default("CHF")
   plan          Plan      @default(FREE)
 
-  stripeCustomerId     String?
-  stripeSubscriptionId String?
+  stripeCustomerId       String?
+  stripeSubscriptionId   String?
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
 
   accounts       Account[]
   sessions       Session[]
@@ -77,9 +79,9 @@ model User {
 
 enum Plan {
   FREE
-  PRO
-  BUSINESS
-  ENTERPRISE
+  ESSENTIAL
+  GROWTH
+  MULTI_SITE
 }
 
 // =============================================
@@ -430,6 +432,16 @@ model NotificationLog {
 
   @@index([campaignId])
   @@index([cardId])
+}
+
+// =============================================
+// STRIPE EVENTS (idempotence webhooks)
+// =============================================
+
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
 }
 
 // =============================================
