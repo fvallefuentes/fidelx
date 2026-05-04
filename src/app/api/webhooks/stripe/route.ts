@@ -69,14 +69,17 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
     ? await getPlanCodeFromPrice(sub.items.data[0].price)
     : null;
   const plan = planCode ? STRIPE_PLAN_CODE_MAP[planCode] : null;
-  const periodEnd = new Date(sub.current_period_end * 1000);
+  // current_period_end a été déplacé dans l'API basil — accès sécurisé
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawEnd = (sub as any).current_period_end ?? (sub as any).billing?.billing_cycle?.current_period_end;
+  const periodEnd = rawEnd ? new Date(rawEnd * 1000) : null;
 
   await prisma.user.updateMany({
     where: { stripeCustomerId: customerId },
     data: {
       stripeSubscriptionId: sub.id,
       stripePriceId: priceId ?? null,
-      stripeCurrentPeriodEnd: periodEnd,
+      stripeCurrentPeriodEnd: periodEnd ?? undefined,
       ...(plan ? { plan: plan as never } : {}),
     },
   });
