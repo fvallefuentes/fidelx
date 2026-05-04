@@ -45,6 +45,24 @@ export async function POST(req: Request) {
     );
   }
 
+  // Restrictions plan FREE
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
+  const isFree = !user?.plan || user.plan === "FREE";
+  if (isFree) {
+    if (triggerType !== "IMMEDIATE") {
+      return NextResponse.json({ error: "Le plan FREE ne permet que l'envoi immédiat." }, { status: 403 });
+    }
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    const campaignsThisMonth = await prisma.notificationCampaign.count({
+      where: { merchantId: session.user.id, createdAt: { gte: startOfMonth } },
+    });
+    if (campaignsThisMonth >= 1) {
+      return NextResponse.json({ error: "Le plan FREE est limité à 1 campagne par mois." }, { status: 403 });
+    }
+  }
+
   // Vérifier que le programme appartient au commerçant
   if (programId) {
     const program = await prisma.loyaltyProgram.findFirst({

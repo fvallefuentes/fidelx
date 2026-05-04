@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,9 @@ const statusVariants: Record<string, "default" | "success" | "secondary" | "warn
 };
 
 export default function CampaignsPage() {
+  const { data: session } = useSession();
+  const isFree = ((session?.user?.plan as string) || "FREE") === "FREE";
+
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +100,14 @@ export default function CampaignsPage() {
     setCampaigns(await res.json());
   }
 
+  // Vérifie si la limite mensuelle FREE est atteinte
+  const now = new Date();
+  const campaignsThisMonth = campaigns.filter((c) => {
+    const d = new Date(c.createdAt);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  });
+  const freeLimitReached = isFree && campaignsThisMonth.length >= 1;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -113,15 +125,25 @@ export default function CampaignsPage() {
             Envoyez des notifications à vos clients via leur wallet
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button onClick={() => setShowForm(true)} disabled={freeLimitReached}>
           <Plus className="mr-2 h-4 w-4" />
           Nouvelle campagne
         </Button>
       </div>
 
+      {isFree && (
+        <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+          Plan FREE — <strong>1 campagne / mois</strong>, envoi immédiat uniquement.{" "}
+          {freeLimitReached
+            ? "Limite atteinte ce mois-ci. Passez au plan Pro pour envoyer plus de campagnes."
+            : `Il vous reste ${1 - campaignsThisMonth.length} campagne ce mois-ci.`}
+        </div>
+      )}
+
       {showForm && (
         <CreateCampaignForm
           programs={programs}
+          isFree={isFree}
           onSuccess={() => {
             setShowForm(false);
             fetchCampaigns();
@@ -286,10 +308,12 @@ function NotificationPreview({
 
 function CreateCampaignForm({
   programs,
+  isFree,
   onSuccess,
   onCancel,
 }: {
   programs: Program[];
+  isFree: boolean;
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -491,14 +515,18 @@ function CreateCampaignForm({
                 className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                 value={triggerType}
                 onChange={(e) => setTriggerType(e.target.value)}
+                disabled={isFree}
               >
                 <option value="IMMEDIATE">Envoi immédiat</option>
-                <option value="SCHEDULED">Date/heure précise</option>
-                <option value="GEOFENCE">Proximité du commerce</option>
-                <option value="INACTIVITY">Client inactif (win-back)</option>
-                <option value="POST_STAMP">Après tamponnage</option>
-                <option value="MILESTONE">Palier de tampons atteint</option>
+                {!isFree && <option value="SCHEDULED">Date/heure précise</option>}
+                {!isFree && <option value="GEOFENCE">Proximité du commerce</option>}
+                {!isFree && <option value="INACTIVITY">Client inactif (win-back)</option>}
+                {!isFree && <option value="POST_STAMP">Après tamponnage</option>}
+                {!isFree && <option value="MILESTONE">Palier de tampons atteint</option>}
               </select>
+              {isFree && (
+                <p className="text-xs text-gray-400">Passez au plan Pro pour accéder aux autres déclencheurs.</p>
+              )}
             </div>
 
             <div className="space-y-2">
