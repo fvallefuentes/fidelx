@@ -198,21 +198,25 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     changeMessage: "%@",
   });
 
+  // Branding "Propulsé par Fidlify" sur le RECTO de la carte, juste
+  // au-dessus du QR code, uniquement pour le plan FREE.
+  // (auxiliaryFields = ligne discrète centrée juste au-dessus de la
+  // zone barcode dans le layout storeCard)
+  if (passData.showFidlifyBranding) {
+    pass.auxiliaryFields.push({
+      key: "branding",
+      label: "PROPULSÉ PAR",
+      value: "FIDLIFY",
+      textAlignment: "PKTextAlignmentCenter",
+    });
+  }
+
   // Champs verso
   pass.backFields.push({
     key: "merchant",
     label: "Commerce",
     value: passData.merchantName,
   });
-
-  // Branding "Propulsé par Fidlify" uniquement pour le plan FREE
-  if (passData.showFidlifyBranding) {
-    pass.backFields.push({
-      key: "info",
-      label: "Information",
-      value: "Carte de fidélité digitale propulsée par Fidlify",
-    });
-  }
 
   pass.backFields.push({
     key: "privacy",
