@@ -33,8 +33,10 @@ function LoginForm() {
     if (result?.error) {
       setError("Email ou mot de passe incorrect");
       setLoading(false);
+    } else if (isPaidPlan) {
+      window.location.href = `/api/checkout?plan=${plan}`;
     } else {
-      router.push(isPaidPlan ? `/api/checkout?plan=${plan}` : "/dashboard");
+      router.push("/dashboard");
     }
   }
 
