@@ -145,11 +145,8 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     passProps
   );
 
-  // Type de pass: storeCard — c'est le seul (avec coupon) qui supporte
-  // un strip image visible côté iOS. generic et eventTicket ne l'affichent
-  // pas. storeCard limite à 1 primary field, donc on met PROGRAMME en
-  // secondaryField (qui rend à droite sous le strip).
-  pass.type = "storeCard";
+  // eventTicket supporte strip.png ET footer.png (storeCard ignore footer)
+  pass.type = "eventTicket";
 
   // QR code en bas avec serial visible — setBarcodes() est la vraie API
   // de passkit-generator (les passProps.barcodes ne suffisent pas)
