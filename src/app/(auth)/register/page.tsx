@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import LogoMark from "@/components/landing/LogoMark";
 
 const PAID_PLANS = ["essential", "growth", "multi_site"];
 
-export default function RegisterPage() {
+function RegisterForm() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") ?? "";
   const isPaidPlan = PAID_PLANS.includes(plan);
@@ -140,5 +140,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   );
 }
