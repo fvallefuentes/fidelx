@@ -392,9 +392,12 @@ function WalletCardPreview({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoData} alt="Logo" className="wcp-logo" />
         ) : (
-          <span className="wcp-logo-empty" style={{ color: lblColor }}>
-            Logo
-          </span>
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={isDarkBg ? "/powered_by_fidlify_white.png" : "/powered_by_fidlify_black.svg"}
+            alt="Powered by Fidlify"
+            style={{ height: 22, width: "auto", objectFit: "contain", display: "block" }}
+          />
         )}
         <div className="wcp-offer">
           <span style={{ color: lblColor }}>OFFRE</span>
