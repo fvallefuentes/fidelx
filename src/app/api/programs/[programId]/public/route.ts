@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getPlanLimits } from "@/lib/plan-limits";
 
 export async function GET(
   _req: Request,
@@ -15,17 +16,20 @@ export async function GET(
       type: true,
       config: true,
       cardDesign: true,
-      merchant: { select: { name: true } },
+      merchant: { select: { name: true, plan: true } },
       establishment: { select: { name: true, address: true } },
     },
   });
 
   if (!program) {
-    return NextResponse.json(
-      { error: "Programme introuvable" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Programme introuvable" }, { status: 404 });
   }
 
-  return NextResponse.json(program);
+  const limits = getPlanLimits(program.merchant.plan);
+
+  return NextResponse.json({
+    ...program,
+    showFidlifyBranding: limits.showFidlifyBranding,
+    merchant: { name: program.merchant.name }, // ne pas exposer le plan
+  });
 }

@@ -22,6 +22,7 @@ interface ProgramInfo {
   };
   merchant: { name: string };
   establishment?: { name: string; address?: string };
+  showFidlifyBranding: boolean;
 }
 
 export default function JoinPage() {
@@ -87,7 +88,7 @@ export default function JoinPage() {
   if (!program) {
     return (
       <div className="join-shell">
-        <BrandHeader />
+        <BrandHeader showFidlify />
         <div className="join-empty">
           <h1>Programme introuvable</h1>
           <p>Ce programme n&apos;existe pas ou n&apos;est plus actif.</p>
@@ -101,7 +102,11 @@ export default function JoinPage() {
 
   return (
     <div className="join-shell">
-      <BrandHeader />
+      <BrandHeader
+        logoData={!program.showFidlifyBranding ? program.cardDesign.logoData : undefined}
+        merchantName={program.merchant.name}
+        showFidlify={program.showFidlifyBranding}
+      />
 
       {success ? (
         <div className="join-card join-success">
@@ -224,13 +229,34 @@ export default function JoinPage() {
 }
 
 /* ─── Brand header (top of page) ────────────────────────── */
-function BrandHeader() {
+function BrandHeader({
+  logoData,
+  merchantName,
+  showFidlify = true,
+}: {
+  logoData?: string;
+  merchantName?: string;
+  showFidlify?: boolean;
+}) {
   return (
     <header className="join-brand-bar">
-      <Link href="/" className="join-brand">
-        <LogoMark size={32} />
-        <span>FIDLIFY</span>
-      </Link>
+      {showFidlify || (!logoData && !merchantName) ? (
+        <Link href="/" className="join-brand">
+          <LogoMark size={32} />
+          <span>FIDLIFY</span>
+        </Link>
+      ) : logoData ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={logoData}
+          alt={merchantName ?? "Logo"}
+          style={{ maxHeight: 48, maxWidth: 180, objectFit: "contain" }}
+        />
+      ) : (
+        <span style={{ fontWeight: 700, fontSize: 18, letterSpacing: "0.04em" }}>
+          {merchantName}
+        </span>
+      )}
     </header>
   );
 }
