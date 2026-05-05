@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
+
+interface UsageStat { current: number; max: number | null; }
 
 interface MerchantSettings {
   name: string;
@@ -16,6 +18,16 @@ interface MerchantSettings {
   language: string;
   currency: string;
   plan: string;
+  createdAt: string;
+  stripeCurrentPeriodStart: string | null;
+  stripeCurrentPeriodEnd: string | null;
+  usage: {
+    periodStart: string;
+    programs:    UsageStat;
+    activeCards: UsageStat;
+    campaigns:   UsageStat;
+    stamps:      UsageStat;
+  };
   establishments: {
     id: string;
     name: string;
@@ -208,6 +220,7 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Plan + dates */}
             <div className="flex items-center gap-3">
               <span className="text-sm text-gray-500">Plan actuel :</span>
               <Badge className={planColors[settings?.plan || "FREE"]}>
@@ -215,20 +228,74 @@ export default function SettingsPage() {
               </Badge>
             </div>
 
-            {settings?.plan === "FREE" && (
-              <div className="rounded-lg bg-blue-50 p-4 space-y-3">
-                <p className="text-sm font-medium text-blue-900">
-                  Passez au Pro pour débloquer :
-                </p>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>- Jusqu&apos;à 1 000 clients</li>
-                  <li>- Tous les systèmes de fidélité</li>
-                  <li>- Notifications push illimitées</li>
-                  <li>- Analytics de base</li>
-                  <li>- Sans branding Fidlify</li>
-                </ul>
-                <Button size="sm">Passer au Pro — 29 CHF/mois</Button>
+            {settings?.plan !== "FREE" && settings?.stripeCurrentPeriodStart && (
+              <div className="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3 text-sm">
+                <div>
+                  <p className="text-gray-400 text-xs">Début de période</p>
+                  <p className="font-medium">
+                    {new Date(settings.stripeCurrentPeriodStart).toLocaleDateString("fr-CH")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-xs">Prochain renouvellement</p>
+                  <p className="font-medium">
+                    {settings.stripeCurrentPeriodEnd
+                      ? new Date(settings.stripeCurrentPeriodEnd).toLocaleDateString("fr-CH")
+                      : "—"}
+                  </p>
+                </div>
               </div>
+            )}
+
+            {settings?.plan === "FREE" && settings?.usage && (
+              <div className="rounded-lg bg-gray-50 p-3 text-sm">
+                <p className="text-gray-400 text-xs mb-1">Période depuis</p>
+                <p className="font-medium">
+                  {new Date(settings.usage.periodStart).toLocaleDateString("fr-CH")}
+                </p>
+              </div>
+            )}
+
+            {/* Usage stats */}
+            {settings?.usage && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  <TrendingUp className="h-4 w-4" /> Utilisation
+                </p>
+                {[
+                  { label: "Programmes",      ...settings.usage.programs },
+                  { label: "Clients actifs",  ...settings.usage.activeCards },
+                  { label: "Campagnes (période)", ...settings.usage.campaigns },
+                  { label: "Scans (période)", ...settings.usage.stamps },
+                ].map(({ label, current, max }) => {
+                  const pct = max ? Math.min(100, Math.round((current / max) * 100)) : 0;
+                  const danger = max && pct >= 90;
+                  return (
+                    <div key={label}>
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>{label}</span>
+                        <span className={danger ? "text-red-500 font-semibold" : ""}>
+                          {current}{max ? ` / ${max}` : " / illimité"}
+                        </span>
+                      </div>
+                      {max && (
+                        <div className="h-1.5 rounded-full bg-gray-200">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${danger ? "bg-red-500" : "bg-blue-500"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {settings?.plan === "FREE" && (
+              <a href="/register?plan=essential" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                Passer à Essentiel — 39 CHF/mois →
+              </a>
             )}
           </CardContent>
         </Card>

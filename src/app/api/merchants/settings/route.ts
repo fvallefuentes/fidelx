@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPlanLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -18,19 +19,41 @@ export async function GET() {
       language: true,
       currency: true,
       plan: true,
+      createdAt: true,
+      stripeCurrentPeriodStart: true,
+      stripeCurrentPeriodEnd: true,
       establishments: {
-        select: {
-          id: true,
-          name: true,
-          address: true,
-          phone: true,
-          googlePlaceId: true,
-        },
+        select: { id: true, name: true, address: true, phone: true, googlePlaceId: true },
       },
     },
   });
 
-  return NextResponse.json(user);
+  if (!user) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
+
+  const limits = getPlanLimits(user.plan);
+  const periodStart = getPeriodStart(user);
+
+  const [programCount, activeCardCount, campaignCount, stampsCount] = await Promise.all([
+    prisma.loyaltyProgram.count({ where: { merchantId: session.user.id } }),
+    prisma.loyaltyCard.count({
+      where: { program: { merchantId: session.user.id }, status: { in: ["ACTIVE", "REWARD_PENDING"] } },
+    }),
+    prisma.notificationCampaign.count({
+      where: { merchantId: session.user.id, createdAt: { gte: periodStart } },
+    }),
+    countStampsThisMonth(session.user.id, periodStart),
+  ]);
+
+  return NextResponse.json({
+    ...user,
+    usage: {
+      periodStart,
+      programs:    { current: programCount,   max: limits.maxPrograms },
+      activeCards: { current: activeCardCount, max: limits.maxActiveCards },
+      campaigns:   { current: campaignCount,   max: limits.maxCampaignsPerMonth },
+      stamps:      { current: stampsCount,     max: limits.maxStampsPerMonth },
+    },
+  });
 }
 
 export async function PUT(req: Request) {
