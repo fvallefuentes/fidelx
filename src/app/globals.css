@@ -2304,9 +2304,12 @@ html, body { overflow-x: clip; }
   background: #ffffff;
   color: var(--jt);
   font-family: var(--font-geist-sans, "Geist", ui-sans-serif, system-ui, sans-serif);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 24px 18px 36px;
-  gap: 22px;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 18px 36px;
+}
+.join-main {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 100%; gap: 22px; padding: 24px 0;
 }
 .join-shell.join-loading {
   align-items: center; justify-content: center;

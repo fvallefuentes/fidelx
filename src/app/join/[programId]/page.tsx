@@ -102,6 +102,7 @@ export default function JoinPage() {
 
   return (
     <div className="join-shell">
+      <div className="join-main">
       <BrandHeader
         logoData={!program.showFidlifyBranding ? program.cardDesign.logoData : undefined}
         merchantName={program.merchant.name}
@@ -217,6 +218,7 @@ export default function JoinPage() {
         </div>
       )}
 
+      </div>
       <footer className="join-footer">
         <Link href="/" className="join-brand-tiny">
           <LogoMark size={20} />
