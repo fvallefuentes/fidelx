@@ -156,6 +156,24 @@ export default function ClientsPage() {
                           : "—"}
                       </td>
                       <td className="py-3">
+                        {card.walletStatus === "installed" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: "#d4ff4e" }}>
+                            <Smartphone className="h-3.5 w-3.5" />
+                            Dans le Wallet
+                          </span>
+                        ) : card.walletStatus === "removed" ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400">
+                            <XCircle className="h-3.5 w-3.5" />
+                            Supprimée
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+                            <Hourglass className="h-3.5 w-3.5" />
+                            Pas installée
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3">
                         <Badge
                           variant={
                             card.status === "ACTIVE"
