@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyAllCardsInProgram } from "@/lib/wallet/push";
+import { getPlanLimits, getPeriodStart } from "@/lib/plan-limits";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -45,21 +46,28 @@ export async function POST(req: Request) {
     );
   }
 
-  // Restrictions plan FREE
-  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { plan: true } });
+  // Vérification limites du plan
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { plan: true, createdAt: true, stripeCurrentPeriodStart: true },
+  });
+  const limits = getPlanLimits(user?.plan);
   const isFree = !user?.plan || user.plan === "FREE";
-  if (isFree) {
-    if (triggerType !== "IMMEDIATE") {
-      return NextResponse.json({ error: "Le plan FREE ne permet que l'envoi immédiat." }, { status: 403 });
-    }
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
-    const campaignsThisMonth = await prisma.notificationCampaign.count({
-      where: { merchantId: session.user.id, createdAt: { gte: startOfMonth } },
+
+  if (isFree && triggerType !== "IMMEDIATE") {
+    return NextResponse.json({ error: "Le plan Gratuit ne permet que l'envoi immédiat." }, { status: 403 });
+  }
+
+  if (limits.maxCampaignsPerMonth !== null) {
+    const periodStart = getPeriodStart(user!);
+    const campaignsThisPeriod = await prisma.notificationCampaign.count({
+      where: { merchantId: session.user.id, createdAt: { gte: periodStart } },
     });
-    if (campaignsThisMonth >= 2) {
-      return NextResponse.json({ error: "Le plan FREE est limité à 2 campagnes par mois." }, { status: 403 });
+    if (campaignsThisPeriod >= limits.maxCampaignsPerMonth) {
+      return NextResponse.json(
+        { error: `Limite atteinte : ${limits.maxCampaignsPerMonth} campagnes par période sur votre plan.` },
+        { status: 403 }
+      );
     }
   }
 

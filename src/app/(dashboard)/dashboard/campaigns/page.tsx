@@ -100,12 +100,15 @@ export default function CampaignsPage() {
     setCampaigns(await res.json());
   }
 
-  // Vérifie si la limite mensuelle FREE est atteinte
+  // Période basée sur la date d'inscription (ancre mensuelle)
+  const createdAt = (session?.user as { createdAt?: string })?.createdAt;
+  const anchorDay = createdAt ? new Date(createdAt).getDate() : 1;
   const now = new Date();
-  const campaignsThisMonth = campaigns.filter((c) => {
-    const d = new Date(c.createdAt);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  });
+  let periodStart = new Date(now.getFullYear(), now.getMonth(), anchorDay, 0, 0, 0, 0);
+  if (periodStart > now) periodStart = new Date(now.getFullYear(), now.getMonth() - 1, anchorDay, 0, 0, 0, 0);
+
+  const campaignsThisMonth = campaigns.filter((c) => new Date(c.createdAt) >= periodStart);
+  const maxCampaigns = isFree ? 2 : null;
   const freeLimitReached = isFree && campaignsThisMonth.length >= 2;
 
   if (loading) {

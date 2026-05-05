@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPlanLimits, countStampsThisMonth } from "@/lib/plan-limits";
+import { getPlanLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -38,11 +38,12 @@ export async function POST(req: Request) {
   // Limite du plan : nombre de tampons donnés ce mois-ci
   const merchant = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { plan: true },
+    select: { plan: true, createdAt: true, stripeCurrentPeriodStart: true },
   });
   const limits = getPlanLimits(merchant?.plan);
   if (limits.maxStampsPerMonth !== null) {
-    const used = await countStampsThisMonth(session.user.id);
+    const periodStart = getPeriodStart(merchant!);
+    const used = await countStampsThisMonth(session.user.id, periodStart);
     if (used + stampCount > limits.maxStampsPerMonth) {
       return NextResponse.json(
         {

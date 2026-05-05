@@ -54,6 +54,7 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.plan = token.plan as string;
+        (session.user as { createdAt?: string }).createdAt = token.createdAt as string;
       }
       return session;
     },
@@ -64,9 +65,10 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { plan: true },
+          select: { plan: true, createdAt: true },
         });
         token.plan = dbUser?.plan ?? "FREE";
+        token.createdAt = dbUser?.createdAt?.toISOString();
       }
       return token;
     },
