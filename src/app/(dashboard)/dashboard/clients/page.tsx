@@ -38,12 +38,17 @@ function getProgression(card: ClientCard): number {
   return card.currentPoints;
 }
 
+type WalletFilter = "all" | "installed" | "removed" | "never_installed";
+type StatusFilter = "all" | "ACTIVE" | "COMPLETED" | "REWARD_PENDING" | "EXPIRED" | "REVOKED";
+
 export default function ClientsPage() {
   const [cards, setCards] = useState<ClientCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("lastVisitAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [walletFilter, setWalletFilter] = useState<WalletFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
     fetch("/api/cards")
@@ -60,9 +65,11 @@ export default function ClientsPage() {
 
   const filtered = cards
     .filter((c) =>
-      c.client.firstName.toLowerCase().includes(search.toLowerCase()) ||
+      (c.client.firstName.toLowerCase().includes(search.toLowerCase()) ||
       c.client.email?.toLowerCase().includes(search.toLowerCase()) ||
-      c.serialNumber.toLowerCase().includes(search.toLowerCase())
+      c.serialNumber.toLowerCase().includes(search.toLowerCase())) &&
+      (walletFilter === "all" || c.walletStatus === walletFilter) &&
+      (statusFilter === "all" || c.status === statusFilter)
     )
     .sort((a, b) => {
       let cmp = 0;
@@ -115,6 +122,57 @@ export default function ClientsPage() {
         />
       </div>
 
+      {/* Filtres */}
+      <div className="flex flex-wrap gap-4">
+        {/* Wallet */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-gray-400 mr-1">Wallet :</span>
+          {([
+            { val: "all",             label: "Tous" },
+            { val: "installed",       label: "Dans le Wallet" },
+            { val: "removed",         label: "Supprimée" },
+            { val: "never_installed", label: "Pas installée" },
+          ] as { val: WalletFilter; label: string }[]).map(({ val, label }) => (
+            <button
+              key={val}
+              onClick={() => setWalletFilter(val)}
+              className="text-xs px-2.5 py-1 rounded-full border transition-colors"
+              style={walletFilter === val
+                ? { background: "#d4ff4e", color: "#0a0d04", borderColor: "#d4ff4e", fontWeight: 600 }
+                : { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)" }
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Statut carte */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-gray-400 mr-1">Statut :</span>
+          {([
+            { val: "all",            label: "Tous" },
+            { val: "ACTIVE",         label: "Actif" },
+            { val: "COMPLETED",      label: "Complété" },
+            { val: "REWARD_PENDING", label: "Récompense" },
+            { val: "EXPIRED",        label: "Expiré" },
+            { val: "REVOKED",        label: "Révoqué" },
+          ] as { val: StatusFilter; label: string }[]).map(({ val, label }) => (
+            <button
+              key={val}
+              onClick={() => setStatusFilter(val)}
+              className="text-xs px-2.5 py-1 rounded-full border transition-colors"
+              style={statusFilter === val
+                ? { background: "#d4ff4e", color: "#0a0d04", borderColor: "#d4ff4e", fontWeight: 600 }
+                : { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)" }
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -130,7 +188,12 @@ export default function ClientsPage() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Liste des clients</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Liste des clients</span>
+              <span className="text-sm font-normal text-gray-400">
+                {filtered.length} / {cards.length}
+              </span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
