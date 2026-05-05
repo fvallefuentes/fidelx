@@ -2304,7 +2304,7 @@ html, body { overflow-x: clip; }
   background: #ffffff;
   color: var(--jt);
   font-family: var(--font-geist-sans, "Geist", ui-sans-serif, system-ui, sans-serif);
-  display: flex; flex-direction: column; align-items: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 24px 18px 36px;
   gap: 22px;
 }
