@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock } from "lucide-react";
+import LogoMark from "@/components/landing/LogoMark";
 
 interface Program {
   id: string;
@@ -392,9 +393,11 @@ function WalletCardPreview({
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoData} alt="Logo" className="wcp-logo" />
         ) : (
-          <span className="wcp-logo-empty" style={{ color: lblColor }}>
-            Logo
-          </span>
+          <LogoMark
+            size={32}
+            cardColor={isDarkBg ? "#ffffff" : "#0a0a0a"}
+            detailColor={bgColor}
+          />
         )}
         <div className="wcp-offer">
           <span style={{ color: lblColor }}>OFFRE</span>
