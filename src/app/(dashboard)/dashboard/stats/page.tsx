@@ -265,12 +265,12 @@ function fmtMonth(s: string) {
 }
 
 /* ─── KPI grid ───────────────────────────────────────────────── */
-function KpiGrid({ children }: { children: React.ReactNode }) {
+function KpiGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: number }) {
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
         gap: 14,
         marginBottom: 28,
       }}
@@ -377,7 +377,7 @@ function FreeSection({ stats }: { stats: FullStatsResponse }) {
   return (
     <>
       <SectionLabel>Vue générale</SectionLabel>
-      <KpiGrid>
+      <KpiGrid cols={4}>
         <KpiCard
           label="Clients inscrits"
           value={stats.totalClients}
@@ -395,19 +395,13 @@ function FreeSection({ stats }: { stats: FullStatsResponse }) {
           value={stats.totalStamps}
           icon={ScanLine}
           delta={scansLast7}
-          deltaLabel="Scans 7 derniers jours"
+          deltaLabel="7 derniers jours"
         />
         <KpiCard
           label="Récompenses débloquées"
           value={stats.rewardsClaimed}
           icon={Gift}
           sub="Total depuis le début"
-        />
-        <KpiCard
-          label="Progression moyenne"
-          value={stats.avgProgressionPct !== null ? `${stats.avgProgressionPct}%` : "—"}
-          icon={TrendingUp}
-          sub="Sur les cartes à tampons"
         />
       </KpiGrid>
 
@@ -444,7 +438,7 @@ function EssentialSection({ stats }: { stats: FullStatsResponse }) {
   return (
     <>
       <SectionLabel>Activité — 30 derniers jours</SectionLabel>
-      <KpiGrid>
+      <KpiGrid cols={4}>
         <KpiCard
           label="Nouvelles inscriptions"
           value={stats.newClientsLast30 ?? 0}
@@ -487,6 +481,12 @@ function EssentialSection({ stats }: { stats: FullStatsResponse }) {
           value={stats.nearRewardCount ?? 0}
           icon={Zap}
           sub="≥ 80 % de progression"
+        />
+        <KpiCard
+          label="Progression moyenne"
+          value={stats.avgProgressionPct !== null ? `${stats.avgProgressionPct}%` : "—"}
+          icon={TrendingUp}
+          sub="Cartes à tampons"
         />
       </KpiGrid>
 
@@ -550,7 +550,7 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
   return (
     <>
       <SectionLabel>Engagement & Campagnes</SectionLabel>
-      <KpiGrid>
+      <KpiGrid cols={3}>
         <KpiCard
           label="Clients actifs (30j)"
           value={stats.activeClientsLast30 ?? 0}
