@@ -229,16 +229,16 @@ export default function SettingsPage() {
             </div>
 
             {settings?.plan !== "FREE" && settings?.stripeCurrentPeriodStart && (
-              <div className="grid grid-cols-2 gap-3 rounded-lg bg-gray-50 p-3 text-sm">
+              <div className="grid grid-cols-2 gap-3 rounded-lg p-3 text-sm" style={{ background: "rgba(212,255,78,0.06)", border: "1px solid rgba(212,255,78,0.15)" }}>
                 <div>
-                  <p className="text-gray-400 text-xs">Début de période</p>
-                  <p className="font-medium">
+                  <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Début de période</p>
+                  <p className="font-medium" style={{ color: "var(--accent)" }}>
                     {new Date(settings.stripeCurrentPeriodStart).toLocaleDateString("fr-CH")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-gray-400 text-xs">Prochain renouvellement</p>
-                  <p className="font-medium">
+                  <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Prochain renouvellement</p>
+                  <p className="font-medium" style={{ color: "var(--accent)" }}>
                     {settings.stripeCurrentPeriodEnd
                       ? new Date(settings.stripeCurrentPeriodEnd).toLocaleDateString("fr-CH")
                       : "—"}
@@ -248,9 +248,9 @@ export default function SettingsPage() {
             )}
 
             {settings?.plan === "FREE" && settings?.usage && (
-              <div className="rounded-lg bg-gray-50 p-3 text-sm">
-                <p className="text-gray-400 text-xs mb-1">Période depuis</p>
-                <p className="font-medium">
+              <div className="rounded-lg p-3 text-sm" style={{ background: "rgba(212,255,78,0.06)", border: "1px solid rgba(212,255,78,0.15)" }}>
+                <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Période depuis</p>
+                <p className="font-medium" style={{ color: "var(--accent)" }}>
                   {new Date(settings.usage.periodStart).toLocaleDateString("fr-CH")}
                 </p>
               </div>
@@ -259,30 +259,32 @@ export default function SettingsPage() {
             {/* Usage stats */}
             {settings?.usage && (
               <div className="space-y-3">
-                <p className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <p className="text-sm font-medium flex items-center gap-1" style={{ color: "var(--accent)" }}>
                   <TrendingUp className="h-4 w-4" /> Utilisation
                 </p>
                 {[
-                  { label: "Programmes",      ...settings.usage.programs },
-                  { label: "Clients actifs",  ...settings.usage.activeCards },
-                  { label: "Campagnes (période)", ...settings.usage.campaigns },
-                  { label: "Scans (période)", ...settings.usage.stamps },
+                  { label: "Programmes",          ...settings.usage.programs },
+                  { label: "Clients actifs",       ...settings.usage.activeCards },
+                  { label: "Campagnes (période)",  ...settings.usage.campaigns },
+                  { label: "Scans (période)",      ...settings.usage.stamps },
                 ].map(({ label, current, max }) => {
                   const pct = max ? Math.min(100, Math.round((current / max) * 100)) : 0;
-                  const danger = max && pct >= 90;
+                  const danger = max !== null && current >= max;
+                  const warn   = max !== null && !danger && pct >= 80;
+                  const barColor = danger ? "#ff4e4e" : warn ? "#f59e0b" : "#d4ff4e";
                   return (
                     <div key={label}>
-                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <div className="flex justify-between text-xs mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>
                         <span>{label}</span>
-                        <span className={danger ? "text-red-500 font-semibold" : ""}>
-                          {current}{max ? ` / ${max}` : " / illimité"}
+                        <span style={{ color: danger ? "#ff4e4e" : warn ? "#f59e0b" : "rgba(255,255,255,0.7)", fontWeight: danger ? 600 : 400 }}>
+                          {current}{max !== null ? ` / ${max}` : " / illimité"}
                         </span>
                       </div>
-                      {max && (
-                        <div className="h-1.5 rounded-full bg-gray-200">
+                      {max !== null && (
+                        <div className="h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}>
                           <div
-                            className={`h-1.5 rounded-full transition-all ${danger ? "bg-red-500" : "bg-blue-500"}`}
-                            style={{ width: `${pct}%` }}
+                            className="h-1.5 rounded-full transition-all"
+                            style={{ width: `${pct}%`, background: barColor, boxShadow: `0 0 6px ${barColor}60` }}
                           />
                         </div>
                       )}
