@@ -338,6 +338,49 @@ export default function MerchantDetailPage() {
     }
   }
 
+  async function handleStopManualPlan() {
+    if (!id || !data) return;
+    if (
+      !confirm(
+        "Arrêter le plan manuel maintenant ? Le commerçant repassera immédiatement au plan Gratuit."
+      )
+    )
+      return;
+    setSavingManual(true);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: "FREE",
+          manualPlanUntil: null,
+          manualPlanReason: null,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                plan: updated.plan,
+                manualPlanUntil: updated.manualPlanUntil,
+                manualPlanReason: updated.manualPlanReason,
+              }
+            : prev
+        );
+        setPlanDraft(updated.plan);
+        setManualEnabled(false);
+        setManualUntil("");
+        setManualReason("");
+        setManualSaved(true);
+        setTimeout(() => setManualSaved(false), 2000);
+      }
+    } finally {
+      setSavingManual(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="dx-page">
@@ -773,7 +816,7 @@ export default function MerchantDetailPage() {
                 }}
               >
                 <Activity size={14} />
-                <span>
+                <span style={{ flex: 1, minWidth: 0 }}>
                   Plan{" "}
                   <strong>{PLAN_LABELS[data.plan] ?? data.plan}</strong> offert
                   jusqu&apos;au{" "}
@@ -789,6 +832,26 @@ export default function MerchantDetailPage() {
                     </>
                   )}
                 </span>
+                <button
+                  type="button"
+                  onClick={handleStopManualPlan}
+                  disabled={savingManual}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 8,
+                    background: "rgba(255,80,80,0.12)",
+                    color: "#ff7a7a",
+                    border: "1px solid rgba(255,80,80,0.25)",
+                    fontWeight: 600,
+                    fontSize: 12,
+                    cursor: savingManual ? "not-allowed" : "pointer",
+                    opacity: savingManual ? 0.5 : 1,
+                    fontFamily: "inherit",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Arrêter maintenant
+                </button>
               </div>
             )}
 
