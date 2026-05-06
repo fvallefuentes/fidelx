@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
-  Store,
+  Users,
   BarChart2,
   Settings,
   LogOut,
@@ -15,7 +15,7 @@ import LogoMark from "@/components/landing/LogoMark";
 
 const navigation = [
   { name: "Tableau de bord", href: "/admin", icon: LayoutDashboard, exact: true },
-  { name: "Commerçants", href: "/admin/merchants", icon: Store },
+  { name: "Utilisateurs", href: "/admin/users", icon: Users },
   { name: "Statistiques", href: "/admin/stats", icon: BarChart2 },
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ];

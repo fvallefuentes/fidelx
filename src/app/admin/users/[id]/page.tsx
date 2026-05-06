@@ -13,8 +13,38 @@ import {
   Phone,
   Check,
   Activity,
+  Shield,
+  Briefcase,
+  UserCog,
 } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
+
+const ROLE_META: Record<
+  string,
+  { label: string; icon: typeof Shield; color: string; bg: string; border: string }
+> = {
+  ADMIN: {
+    label: "Admin",
+    icon: Shield,
+    color: "#ff9966",
+    bg: "rgba(255,153,102,0.1)",
+    border: "rgba(255,153,102,0.2)",
+  },
+  USER: {
+    label: "Commerçant",
+    icon: Briefcase,
+    color: "#d4ff4e",
+    bg: "rgba(212,255,78,0.1)",
+    border: "rgba(212,255,78,0.18)",
+  },
+  STAFF: {
+    label: "Staff",
+    icon: UserCog,
+    color: "#82d8ff",
+    bg: "rgba(130,216,255,0.1)",
+    border: "rgba(130,216,255,0.2)",
+  },
+};
 
 const ACCENT = "#d4ff4e";
 const MUTED = "rgba(255,255,255,0.38)";
@@ -27,6 +57,7 @@ interface MerchantDetail {
   name: string | null;
   email: string;
   phone: string | null;
+  role: "ADMIN" | "USER" | "STAFF";
   plan: string;
   language: string;
   currency: string;
@@ -35,6 +66,18 @@ interface MerchantDetail {
   stripeSubscriptionId: string | null;
   stripeCurrentPeriodStart: string | null;
   stripeCurrentPeriodEnd: string | null;
+  employerMerchantId: string | null;
+  employerMerchant: {
+    id: string;
+    name: string | null;
+    email: string;
+  } | null;
+  staff: {
+    id: string;
+    name: string | null;
+    email: string;
+    createdAt: string;
+  }[];
   establishments: {
     id: string;
     name: string;
@@ -202,7 +245,7 @@ export default function MerchantDetailPage() {
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/admin/merchants/${id}`)
+    fetch(`/api/admin/users/${id}`)
       .then(async (r) => {
         if (!r.ok) throw new Error("Erreur de chargement");
         return r.json();
@@ -221,7 +264,7 @@ export default function MerchantDetailPage() {
     if (!id || !data) return;
     setSavingPlan(true);
     try {
-      const res = await fetch(`/api/admin/merchants/${id}`, {
+      const res = await fetch(`/api/admin/users/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan: planDraft }),
@@ -258,7 +301,7 @@ export default function MerchantDetailPage() {
     return (
       <div className="dx-page">
         <Link
-          href="/admin/merchants"
+          href="/admin/users"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -269,7 +312,7 @@ export default function MerchantDetailPage() {
           }}
         >
           <ChevronLeft size={16} />
-          Retour aux commerçants
+          Retour aux utilisateurs
         </Link>
         <div
           style={{
@@ -282,7 +325,7 @@ export default function MerchantDetailPage() {
             marginTop: 16,
           }}
         >
-          {error ?? "Commerçant introuvable"}
+          {error ?? "Utilisateur introuvable"}
         </div>
       </div>
     );
@@ -291,7 +334,7 @@ export default function MerchantDetailPage() {
   return (
     <div className="dx-page">
       <Link
-        href="/admin/merchants"
+        href="/admin/users"
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -303,7 +346,7 @@ export default function MerchantDetailPage() {
         }}
       >
         <ChevronLeft size={16} />
-        Retour aux commerçants
+        Retour aux utilisateurs
       </Link>
 
       <div className="dx-page-head">
@@ -317,19 +360,63 @@ export default function MerchantDetailPage() {
             marginTop: 4,
           }}
         >
-          <span
-            style={{
-              background: "rgba(212,255,78,0.1)",
-              border: "1px solid rgba(212,255,78,0.18)",
-              borderRadius: 20,
-              padding: "3px 10px",
-              fontSize: 11,
-              color: ACCENT,
-              fontWeight: 600,
-            }}
-          >
-            {PLAN_LABELS[data.plan] ?? data.plan}
-          </span>
+          {(() => {
+            const meta = ROLE_META[data.role] ?? ROLE_META.USER;
+            const Icon = meta.icon;
+            return (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  background: meta.bg,
+                  border: `1px solid ${meta.border}`,
+                  borderRadius: 20,
+                  padding: "3px 10px",
+                  fontSize: 11,
+                  color: meta.color,
+                  fontWeight: 600,
+                }}
+              >
+                <Icon size={11} strokeWidth={2.4} />
+                {meta.label}
+              </span>
+            );
+          })()}
+          {data.role === "USER" && (
+            <span
+              style={{
+                background: "rgba(212,255,78,0.1)",
+                border: "1px solid rgba(212,255,78,0.18)",
+                borderRadius: 20,
+                padding: "3px 10px",
+                fontSize: 11,
+                color: ACCENT,
+                fontWeight: 600,
+              }}
+            >
+              {PLAN_LABELS[data.plan] ?? data.plan}
+            </span>
+          )}
+          {data.role === "STAFF" && data.employerMerchant && (
+            <Link
+              href={`/admin/users/${data.employerMerchant.id}`}
+              style={{
+                fontSize: 12,
+                color: "rgba(255,255,255,0.55)",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              <Briefcase size={12} />
+              Employé par{" "}
+              <strong style={{ color: ACCENT }}>
+                {data.employerMerchant.name || data.employerMerchant.email}
+              </strong>
+            </Link>
+          )}
           <span style={{ color: MUTED, fontSize: 13 }}>
             Inscrit le{" "}
             {new Date(data.createdAt).toLocaleDateString("fr-CH", {
@@ -377,7 +464,8 @@ export default function MerchantDetailPage() {
         </div>
       </div>
 
-      {/* KPI grid */}
+      {/* KPI grid — USER + STAFF (STAFF shows employer's stats) */}
+      {(data.role === "USER" || data.role === "STAFF") && (
       <div
         style={{
           display: "grid",
@@ -389,7 +477,7 @@ export default function MerchantDetailPage() {
           label="Programmes"
           value={data.programs.length}
           icon={Store}
-          sub="Programmes créés"
+          sub={data.role === "STAFF" ? "Programmes employeur" : "Programmes créés"}
         />
         <KpiCard
           label="Clients"
@@ -410,8 +498,10 @@ export default function MerchantDetailPage() {
           sub="Tous types confondus"
         />
       </div>
+      )}
 
-      {/* Plan management + Stripe info */}
+      {/* Plan management + Stripe info — USER only */}
+      {data.role === "USER" && (
       <div
         style={{
           display: "grid",
@@ -596,8 +686,61 @@ export default function MerchantDetailPage() {
           </SectionCard>
         )}
       </div>
+      )}
 
-      {/* Establishments */}
+      {/* Staff list — only for USER (commerçant), shows their employees */}
+      {data.role === "USER" && data.staff && data.staff.length > 0 && (
+        <SectionCard title="Équipe / Staff">
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+                {["Nom", "Email", "Ajouté le"].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      padding: "10px 12px",
+                      textAlign: "left",
+                      color: MUTED,
+                      fontSize: 11,
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data.staff.map((s, i) => (
+                <tr
+                  key={s.id}
+                  style={{
+                    borderBottom:
+                      i < data.staff.length - 1
+                        ? `1px solid rgba(255,255,255,0.06)`
+                        : undefined,
+                  }}
+                >
+                  <td style={{ padding: "10px 12px", color: VAL_COLOR }}>
+                    {s.name || "—"}
+                  </td>
+                  <td style={{ padding: "10px 12px", color: "rgba(255,255,255,0.55)" }}>
+                    {s.email}
+                  </td>
+                  <td style={{ padding: "10px 12px", color: MUTED, fontSize: 12 }}>
+                    {new Date(s.createdAt).toLocaleDateString("fr-CH")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </SectionCard>
+      )}
+
+      {/* Establishments — USER only */}
+      {data.role === "USER" && (
       <SectionCard title="Établissements">
         {data.establishments.length === 0 ? (
           <p style={{ color: MUTED, fontSize: 13 }}>Aucun établissement.</p>
@@ -665,8 +808,10 @@ export default function MerchantDetailPage() {
           </table>
         )}
       </SectionCard>
+      )}
 
-      {/* Programs */}
+      {/* Programs — USER only */}
+      {data.role === "USER" && (
       <SectionCard title="Programmes">
         {data.programs.length === 0 ? (
           <p style={{ color: MUTED, fontSize: 13 }}>Aucun programme.</p>
@@ -764,8 +909,10 @@ export default function MerchantDetailPage() {
           </table>
         )}
       </SectionCard>
+      )}
 
-      {/* Recent activity */}
+      {/* Recent activity — USER + STAFF (STAFF sees employer's activity) */}
+      {(data.role === "USER" || data.role === "STAFF") && (
       <SectionCard title="Activité récente">
         {data.recentTx.length === 0 ? (
           <div
@@ -859,6 +1006,7 @@ export default function MerchantDetailPage() {
           </table>
         )}
       </SectionCard>
+      )}
     </div>
   );
 }

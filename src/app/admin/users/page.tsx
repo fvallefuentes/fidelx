@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search,
-  Store,
+  Users as UsersIcon,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Shield,
+  Briefcase,
+  UserCog,
 } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 
@@ -17,20 +20,23 @@ const BORDER = "rgba(255,255,255,0.08)";
 const CARD_BG = "rgba(255,255,255,0.04)";
 const VAL_COLOR = "rgba(255,255,255,0.92)";
 
-interface MerchantRow {
+interface UserRow {
   id: string;
   name: string | null;
   email: string;
+  role: "ADMIN" | "USER" | "STAFF";
   plan: string;
   phone: string | null;
   createdAt: string;
   stripeSubscriptionId: string | null;
+  employerMerchant: { id: string; name: string | null; email: string } | null;
   cardCount: number;
   _count: { programs: number; staff: number };
 }
 
-type SortKey = "name" | "plan" | "programs" | "clients" | "createdAt";
+type SortKey = "name" | "role" | "plan" | "programs" | "clients" | "createdAt";
 type SortDir = "asc" | "desc";
+type RoleFilter = "all" | "USER" | "STAFF" | "ADMIN";
 type PlanFilter = "all" | "FREE" | "ESSENTIAL" | "GROWTH" | "MULTI_SITE";
 
 const PLAN_ORDER: Record<string, number> = {
@@ -39,6 +45,58 @@ const PLAN_ORDER: Record<string, number> = {
   GROWTH: 2,
   MULTI_SITE: 3,
 };
+const ROLE_ORDER: Record<string, number> = { ADMIN: 0, USER: 1, STAFF: 2 };
+
+const ROLE_META: Record<
+  string,
+  { label: string; icon: typeof Shield; color: string; bg: string; border: string }
+> = {
+  ADMIN: {
+    label: "Admin",
+    icon: Shield,
+    color: "#ff9966",
+    bg: "rgba(255,153,102,0.1)",
+    border: "rgba(255,153,102,0.2)",
+  },
+  USER: {
+    label: "Commerçant",
+    icon: Briefcase,
+    color: "#d4ff4e",
+    bg: "rgba(212,255,78,0.1)",
+    border: "rgba(212,255,78,0.18)",
+  },
+  STAFF: {
+    label: "Staff",
+    icon: UserCog,
+    color: "#82d8ff",
+    bg: "rgba(130,216,255,0.1)",
+    border: "rgba(130,216,255,0.2)",
+  },
+};
+
+function RoleBadge({ role }: { role: string }) {
+  const meta = ROLE_META[role] ?? ROLE_META.USER;
+  const Icon = meta.icon;
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
+        background: meta.bg,
+        border: `1px solid ${meta.border}`,
+        borderRadius: 20,
+        padding: "3px 10px",
+        fontSize: 11,
+        color: meta.color,
+        fontWeight: 600,
+      }}
+    >
+      <Icon size={11} strokeWidth={2.4} />
+      {meta.label}
+    </span>
+  );
+}
 
 function PlanBadge({ plan }: { plan: string }) {
   return (
@@ -111,18 +169,19 @@ function SortTh({
   );
 }
 
-export default function AdminMerchantsPage() {
-  const [merchants, setMerchants] = useState<MerchantRow[]>([]);
+export default function AdminUsersPage() {
+  const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("all");
   const [sortKey, setSortKey] = useState<SortKey>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   useEffect(() => {
-    fetch("/api/admin/merchants")
+    fetch("/api/admin/users")
       .then((r) => r.json())
-      .then(setMerchants)
+      .then(setUsers)
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
@@ -136,12 +195,17 @@ export default function AdminMerchantsPage() {
   }
 
   const q = search.trim().toLowerCase();
-  const filtered = merchants
-    .filter((m) => {
-      if (planFilter !== "all" && m.plan !== planFilter) return false;
+  const filtered = users
+    .filter((u) => {
+      if (roleFilter !== "all" && u.role !== roleFilter) return false;
+      if (
+        planFilter !== "all" &&
+        (u.role !== "USER" || u.plan !== planFilter)
+      )
+        return false;
       if (!q) return true;
-      const name = (m.name ?? "").toLowerCase();
-      const email = m.email.toLowerCase();
+      const name = (u.name ?? "").toLowerCase();
+      const email = u.email.toLowerCase();
       return name.includes(q) || email.includes(q);
     })
     .sort((a, b) => {
@@ -149,6 +213,9 @@ export default function AdminMerchantsPage() {
       switch (sortKey) {
         case "name":
           cmp = (a.name ?? "").localeCompare(b.name ?? "");
+          break;
+        case "role":
+          cmp = (ROLE_ORDER[a.role] ?? 9) - (ROLE_ORDER[b.role] ?? 9);
           break;
         case "plan":
           cmp = (PLAN_ORDER[a.plan] ?? 0) - (PLAN_ORDER[b.plan] ?? 0);
@@ -167,13 +234,22 @@ export default function AdminMerchantsPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
 
+  const counts = {
+    all: users.length,
+    USER: users.filter((u) => u.role === "USER").length,
+    STAFF: users.filter((u) => u.role === "STAFF").length,
+    ADMIN: users.filter((u) => u.role === "ADMIN").length,
+  };
+
   return (
     <div className="dx-page">
       <div className="dx-page-head">
-        <h1 className="dx-page-title">Commerçants</h1>
+        <h1 className="dx-page-title">Utilisateurs</h1>
         <p className="dx-page-sub">
-          {merchants.length} commerçant{merchants.length !== 1 ? "s" : ""}{" "}
-          inscrit{merchants.length !== 1 ? "s" : ""}
+          {users.length} utilisateur{users.length !== 1 ? "s" : ""} —{" "}
+          {counts.USER} commerçant{counts.USER !== 1 ? "s" : ""},{" "}
+          {counts.STAFF} staff, {counts.ADMIN} admin
+          {counts.ADMIN !== 1 ? "s" : ""}
         </p>
       </div>
 
@@ -218,20 +294,19 @@ export default function AdminMerchantsPage() {
           }}
         >
           <span style={{ fontSize: 12, color: MUTED, marginRight: 6 }}>
-            Plan :
+            Rôle :
           </span>
           {(
             [
-              { val: "all", label: "Tous" },
-              { val: "FREE", label: "Gratuit" },
-              { val: "ESSENTIAL", label: "Essentiel" },
-              { val: "GROWTH", label: "Croissance" },
-              { val: "MULTI_SITE", label: "Multi-sites" },
-            ] as { val: PlanFilter; label: string }[]
+              { val: "all", label: `Tous (${counts.all})` },
+              { val: "USER", label: `Commerçants (${counts.USER})` },
+              { val: "STAFF", label: `Staff (${counts.STAFF})` },
+              { val: "ADMIN", label: `Admins (${counts.ADMIN})` },
+            ] as { val: RoleFilter; label: string }[]
           ).map(({ val, label }) => (
             <button
               key={val}
-              onClick={() => setPlanFilter(val)}
+              onClick={() => setRoleFilter(val)}
               style={{
                 fontSize: 12,
                 padding: "5px 11px",
@@ -239,7 +314,7 @@ export default function AdminMerchantsPage() {
                 border: "1px solid",
                 cursor: "pointer",
                 fontFamily: "inherit",
-                ...(planFilter === val
+                ...(roleFilter === val
                   ? {
                       background: ACCENT,
                       color: "#0a0d04",
@@ -257,6 +332,57 @@ export default function AdminMerchantsPage() {
             </button>
           ))}
         </div>
+
+        {(roleFilter === "all" || roleFilter === "USER") && (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontSize: 12, color: MUTED, marginRight: 6 }}>
+              Plan :
+            </span>
+            {(
+              [
+                { val: "all", label: "Tous" },
+                { val: "FREE", label: "Gratuit" },
+                { val: "ESSENTIAL", label: "Essentiel" },
+                { val: "GROWTH", label: "Croissance" },
+                { val: "MULTI_SITE", label: "Multi-sites" },
+              ] as { val: PlanFilter; label: string }[]
+            ).map(({ val, label }) => (
+              <button
+                key={val}
+                onClick={() => setPlanFilter(val)}
+                style={{
+                  fontSize: 12,
+                  padding: "5px 11px",
+                  borderRadius: 999,
+                  border: "1px solid",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  ...(planFilter === val
+                    ? {
+                        background: ACCENT,
+                        color: "#0a0d04",
+                        borderColor: ACCENT,
+                        fontWeight: 600,
+                      }
+                    : {
+                        background: "transparent",
+                        borderColor: "rgba(255,255,255,0.15)",
+                        color: "rgba(255,255,255,0.5)",
+                      }),
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -284,7 +410,7 @@ export default function AdminMerchantsPage() {
             textAlign: "center",
           }}
         >
-          <Store size={36} color={MUTED} strokeWidth={1.5} />
+          <UsersIcon size={36} color={MUTED} strokeWidth={1.5} />
           <p
             style={{
               marginTop: 14,
@@ -293,14 +419,14 @@ export default function AdminMerchantsPage() {
               fontWeight: 600,
             }}
           >
-            {search || planFilter !== "all"
+            {search || roleFilter !== "all" || planFilter !== "all"
               ? "Aucun résultat"
-              : "Aucun commerçant"}
+              : "Aucun utilisateur"}
           </p>
           <p style={{ marginTop: 4, color: MUTED, fontSize: 13 }}>
-            {search || planFilter !== "all"
+            {search || roleFilter !== "all" || planFilter !== "all"
               ? "Essayez d'ajuster les filtres"
-              : "Aucun compte commerçant n'est encore inscrit"}
+              : "Aucun compte n'est encore inscrit"}
           </p>
         </div>
       ) : (
@@ -343,7 +469,14 @@ export default function AdminMerchantsPage() {
                     Email
                   </th>
                   <SortTh
-                    label="Plan"
+                    label="Rôle"
+                    col="role"
+                    active={sortKey}
+                    dir={sortDir}
+                    onSort={handleSort}
+                  />
+                  <SortTh
+                    label="Plan / Employeur"
                     col="plan"
                     active={sortKey}
                     dir={sortDir}
@@ -388,9 +521,9 @@ export default function AdminMerchantsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((m, i) => (
+                {filtered.map((u, i) => (
                   <tr
-                    key={m.id}
+                    key={u.id}
                     style={{
                       borderBottom:
                         i < filtered.length - 1
@@ -405,7 +538,7 @@ export default function AdminMerchantsPage() {
                         fontWeight: 500,
                       }}
                     >
-                      {m.name || "—"}
+                      {u.name || "—"}
                     </td>
                     <td
                       style={{
@@ -413,30 +546,51 @@ export default function AdminMerchantsPage() {
                         color: "rgba(255,255,255,0.55)",
                       }}
                     >
-                      {m.email}
+                      {u.email}
                     </td>
                     <td style={{ padding: "14px 16px" }}>
-                      <PlanBadge plan={m.plan} />
+                      <RoleBadge role={u.role} />
+                    </td>
+                    <td style={{ padding: "14px 16px" }}>
+                      {u.role === "USER" ? (
+                        <PlanBadge plan={u.plan} />
+                      ) : u.role === "STAFF" ? (
+                        u.employerMerchant ? (
+                          <span
+                            style={{
+                              fontSize: 12,
+                              color: "rgba(255,255,255,0.55)",
+                            }}
+                          >
+                            {u.employerMerchant.name ||
+                              u.employerMerchant.email}
+                          </span>
+                        ) : (
+                          <span style={{ color: MUTED, fontSize: 12 }}>—</span>
+                        )
+                      ) : (
+                        <span style={{ color: MUTED, fontSize: 12 }}>—</span>
+                      )}
                     </td>
                     <td
                       style={{
                         padding: "14px 16px",
-                        color: ACCENT,
+                        color: u.role === "USER" ? ACCENT : MUTED,
                         textAlign: "center",
                         fontWeight: 600,
                       }}
                     >
-                      {m._count.programs}
+                      {u.role === "USER" ? u._count.programs : "—"}
                     </td>
                     <td
                       style={{
                         padding: "14px 16px",
-                        color: ACCENT,
+                        color: u.role === "USER" ? ACCENT : MUTED,
                         textAlign: "center",
                         fontWeight: 600,
                       }}
                     >
-                      {m.cardCount}
+                      {u.role === "USER" ? u.cardCount : "—"}
                     </td>
                     <td
                       style={{
@@ -445,11 +599,11 @@ export default function AdminMerchantsPage() {
                         fontSize: 12,
                       }}
                     >
-                      {new Date(m.createdAt).toLocaleDateString("fr-CH")}
+                      {new Date(u.createdAt).toLocaleDateString("fr-CH")}
                     </td>
                     <td style={{ padding: "14px 16px", textAlign: "right" }}>
                       <Link
-                        href={`/admin/merchants/${m.id}`}
+                        href={`/admin/users/${u.id}`}
                         style={{
                           display: "inline-block",
                           padding: "6px 14px",
