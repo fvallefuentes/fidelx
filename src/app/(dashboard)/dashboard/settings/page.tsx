@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard, TrendingUp } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp, Users } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 
 interface UsageStat { current: number; max: number | null; }
@@ -51,11 +51,22 @@ export default function SettingsPage() {
   const [estGoogleId, setEstGoogleId] = useState("");
   const [savingEst, setSavingEst] = useState(false);
 
+  // Staff
+  const [staffList, setStaffList] = useState<{id:string;name:string|null;email:string}[]>([]);
+  const [staffName, setStaffName] = useState("");
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffPassword, setStaffPassword] = useState("");
+  const [savingStaff, setSavingStaff] = useState(false);
+
   useEffect(() => {
     fetch("/api/merchants/settings")
       .then((r) => r.json())
       .then(setSettings)
       .finally(() => setLoading(false));
+    fetch("/api/merchants/staff")
+      .then((r) => r.json())
+      .then(setStaffList)
+      .catch(() => {});
   }, []);
 
   async function handleSaveProfile(e: React.FormEvent) {
@@ -106,6 +117,22 @@ export default function SettingsPage() {
     }
 
     setSavingEst(false);
+  }
+
+  async function handleAddStaff(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingStaff(true);
+    const res = await fetch("/api/merchants/staff", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: staffName, email: staffEmail, password: staffPassword }),
+    });
+    if (res.ok) {
+      const s = await res.json();
+      setStaffList(l => [...l, s]);
+      setStaffName(""); setStaffEmail(""); setStaffPassword("");
+    }
+    setSavingStaff(false);
   }
 
   if (loading) {
@@ -360,6 +387,64 @@ export default function SettingsPage() {
               </div>
               <Button type="submit" variant="outline" disabled={savingEst}>
                 {savingEst ? "Ajout..." : "Ajouter l'établissement"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Staff */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Équipe / Staff
+            </CardTitle>
+            <CardDescription>
+              Ajoutez des employés avec accès scanner uniquement
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {staffList.length > 0 && (
+              <div className="space-y-2">
+                {staffList.map((s) => (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div>
+                      <p className="font-medium">{s.name || "—"}</p>
+                      <p className="text-sm text-gray-500">{s.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleAddStaff} className="space-y-3 border-t pt-4">
+              <p className="text-sm font-medium">Ajouter un employé</p>
+              <div className="grid gap-3 md:grid-cols-3">
+                <Input
+                  placeholder="Prénom / Nom"
+                  value={staffName}
+                  onChange={(e) => setStaffName(e.target.value)}
+                />
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={staffEmail}
+                  onChange={(e) => setStaffEmail(e.target.value)}
+                  required
+                />
+                <Input
+                  type="password"
+                  placeholder="Mot de passe"
+                  value={staffPassword}
+                  onChange={(e) => setStaffPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" variant="outline" disabled={savingStaff}>
+                {savingStaff ? "Ajout..." : "Ajouter l'employé"}
               </Button>
             </form>
           </CardContent>

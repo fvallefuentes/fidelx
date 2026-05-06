@@ -55,6 +55,8 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.plan = token.plan as string;
         (session.user as { createdAt?: string }).createdAt = token.createdAt as string;
+        session.user.role = token.role as string;
+        (session.user as { merchantId?: string }).merchantId = token.merchantId as string;
       }
       return session;
     },
@@ -65,10 +67,15 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { plan: true, createdAt: true },
+          select: { plan: true, createdAt: true, role: true, employerMerchantId: true },
         });
         token.plan = dbUser?.plan ?? "FREE";
         token.createdAt = dbUser?.createdAt?.toISOString();
+        token.role = dbUser?.role ?? "USER";
+        // For STAFF, merchantId = their employer's ID; for others, it's their own id
+        token.merchantId = dbUser?.role === "STAFF"
+          ? (dbUser.employerMerchantId ?? token.id)
+          : (token.id as string);
       }
       return token;
     },

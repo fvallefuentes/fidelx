@@ -10,6 +10,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  const merchantId = (session.user as { merchantId?: string }).merchantId ?? session.user.id;
+
   const { serialNumber, establishmentId, amountSpent, count } = await req.json();
   const stampCount = Math.max(1, Math.min(20, parseInt(count) || 1));
 
@@ -31,19 +33,19 @@ export async function POST(req: Request) {
   });
 
   if (!card) return NextResponse.json({ error: "Carte introuvable" }, { status: 404 });
-  if (card.program.merchant.id !== session.user.id) {
+  if (card.program.merchant.id !== merchantId) {
     return NextResponse.json({ error: "Ce programme ne vous appartient pas" }, { status: 403 });
   }
 
   // Limite du plan : nombre de tampons donnés ce mois-ci
   const merchant = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: merchantId },
     select: { plan: true, createdAt: true, stripeCurrentPeriodStart: true },
   });
   const limits = getPlanLimits(merchant?.plan);
   if (limits.maxStampsPerMonth !== null) {
     const periodStart = getPeriodStart(merchant!);
-    const used = await countStampsThisMonth(session.user.id, periodStart);
+    const used = await countStampsThisMonth(merchantId, periodStart);
     if (used + stampCount > limits.maxStampsPerMonth) {
       return NextResponse.json(
         {

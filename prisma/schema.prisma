@@ -60,7 +60,11 @@ model User {
   phone         String?
   language      String    @default("fr") // fr, de, it, en
   currency      String    @default("CHF")
-  plan          Plan      @default(FREE)
+  plan               Plan    @default(FREE)
+  role               Role    @default(USER)
+  employerMerchantId String? // STAFF only: ID of employer merchant
+  employerMerchant   User?   @relation("StaffOf", fields: [employerMerchantId], references: [id])
+  staff              User[]  @relation("StaffOf")
 
   stripeCustomerId         String?
   stripeSubscriptionId     String?
@@ -76,6 +80,12 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  USER
+  STAFF
 }
 
 enum Plan {

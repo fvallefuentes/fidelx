@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   CreditCard,
@@ -36,6 +36,13 @@ export function Sidebar({
   onCloseMobile?: () => void;
 }) {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: string })?.role ?? "USER";
+
+  const visibleNav = navigation.filter(item => {
+    if (role === "STAFF") return item.href === "/dashboard/scan";
+    return true;
+  });
 
   return (
     <aside className={`dx-sidebar${mobileOpen ? " mobile-open" : ""}`}>
@@ -57,7 +64,7 @@ export function Sidebar({
 
       {/* Navigation */}
       <nav className="dx-nav">
-        {navigation.map((item) => {
+        {visibleNav.map((item) => {
           const isActive = item.exact
             ? pathname === item.href
             : pathname === item.href || pathname.startsWith(item.href + "/");
