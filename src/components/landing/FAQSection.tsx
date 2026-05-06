@@ -2,37 +2,7 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
-
-const questions = [
-  {
-    q: "Est-ce que mes clients doivent télécharger une application ?",
-    a: "Non, jamais. La carte Fidlify s'installe directement dans Apple Wallet ou Google Wallet — déjà présents sur 100% des smartphones modernes. Un simple tap depuis un QR code suffit.",
-  },
-  {
-    q: "Est-ce compatible Apple Wallet ET Google Wallet ?",
-    a: "Oui, Fidlify génère automatiquement la version compatible selon l'appareil de votre client. Aucune configuration de votre côté — la magie opère en arrière-plan.",
-  },
-  {
-    q: "Puis-je envoyer des notifications à mes clients ?",
-    a: "Oui. Vous pouvez envoyer des notifications push directement sur le téléphone de vos clients — promotions, nouveautés, anniversaires, rappels. Le taux d'ouverture moyen tourne autour de 94%.",
-  },
-  {
-    q: "Puis-je personnaliser le design de la carte ?",
-    a: "Entièrement. Logo, couleurs, photo de fond, type de récompense (tampons, points, paliers), texte. Votre carte ressemble à votre commerce — pas à Fidlify.",
-  },
-  {
-    q: "Combien de temps pour créer une carte ?",
-    a: "Environ 3 minutes. Vous remplissez les informations de votre commerce, choisissez le design, définissez la récompense — c'est en ligne et prêt à être distribué.",
-  },
-  {
-    q: "Est-ce adapté aux petits commerces ?",
-    a: "C'est précisément pour eux que Fidlify existe. Notre offre Starter démarre à 19 CHF/mois, sans engagement. Aucune compétence technique nécessaire.",
-  },
-  {
-    q: "Puis-je utiliser un QR code en magasin ?",
-    a: "Oui — vous générez votre QR code depuis le dashboard, l'imprimez (sticker, chevalet de table, addition) et vos clients scannent pour ajouter la carte au Wallet en un tap.",
-  },
-];
+import { FAQ_ITEMS } from "@/lib/seo";
 
 export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(0);
@@ -48,21 +18,35 @@ export default function FAQSection() {
         </div>
 
         <div className="faq-list">
-          {questions.map((item, i) => (
+          {FAQ_ITEMS.map((item, i) => (
             <div
               key={i}
               className={`faq-item${open === i ? " open" : ""}`}
             >
-              <div
+              <button
+                type="button"
                 className="faq-q"
+                aria-expanded={open === i}
+                aria-controls={`faq-answer-${i}`}
                 onClick={() => setOpen(open === i ? null : i)}
+                style={{
+                  background: "transparent",
+                  border: 0,
+                  padding: 0,
+                  width: "100%",
+                  textAlign: "left",
+                  font: "inherit",
+                  color: "inherit",
+                }}
               >
                 <span>{item.q}</span>
-                <span className="toggle">
+                <span className="toggle" aria-hidden="true">
                   <Plus size={14} />
                 </span>
+              </button>
+              <div id={`faq-answer-${i}`} className="faq-a" role="region">
+                {item.a}
               </div>
-              <div className="faq-a">{item.a}</div>
             </div>
           ))}
         </div>

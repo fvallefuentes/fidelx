@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import HeroCinematic from "@/components/landing/HeroCinematic";
 import JourneySection from "@/components/landing/JourneySection";
 import FAQSection from "@/components/landing/FAQSection";
@@ -6,6 +7,38 @@ import SectionDemo from "@/components/landing/SectionDemo";
 import RevealInit from "@/components/landing/RevealInit";
 import LogoMark from "@/components/landing/LogoMark";
 import Nav from "@/components/landing/Nav";
+import { FaqJsonLd } from "@/components/seo/JsonLd";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_KEYWORDS,
+  DEFAULT_OG_IMAGE,
+  DEFAULT_TITLE,
+  SITE_NAME,
+} from "@/lib/seo";
+
+/* ─── Metadata SEO de la home (canonique + OG) ────────────── */
+export const metadata: Metadata = {
+  title: {
+    absolute: DEFAULT_TITLE,
+  },
+  description: DEFAULT_DESCRIPTION,
+  keywords: DEFAULT_KEYWORDS,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    title: `${SITE_NAME} — Carte de fidélité digitale pour commerces locaux`,
+    description: DEFAULT_DESCRIPTION,
+    images: [
+      {
+        url: DEFAULT_OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "Aperçu Fidlify : carte de fidélité digitale dans Apple Wallet pour un café",
+      },
+    ],
+  },
+};
 
 /* ─── Tiny SVG icon helper ────────────────────────────────── */
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
@@ -93,8 +126,8 @@ function SectionProblem() {
             La fidélité client ne devrait pas être <em>compliquée.</em>
           </h2>
           <p className="lede">
-            Aujourd&apos;hui, garder un client coûte plus cher que d&apos;en acquérir un nouveau.
-            Pourtant, la plupart des commerçants n&apos;ont aucun outil pour le faire.
+            Acquérir un nouveau client coûte souvent plus cher que faire revenir un client existant.
+            Pourtant, beaucoup de commerçants n&apos;ont aucun outil simple pour fidéliser.
           </p>
         </div>
 
@@ -165,7 +198,7 @@ function SectionSolution() {
           <div className="sol-step reveal" style={{ transitionDelay: "200ms" }}>
             <div className="step-num mono">— ÉTAPE 03</div>
             <h3>Envoyez des offres ciblées.</h3>
-            <p>Notification push directement dans le téléphone du client. 94 % d&apos;ouverture en moyenne. Plus de ventes, instantanément.</p>
+            <p>Notification push directement dans le Wallet du client, idéale pour relancer au bon moment et générer des ventes additionnelles.</p>
             <div className="visual">
               <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
                 <div className="notif-row">
@@ -236,7 +269,7 @@ const features = [
   {
     tag: "PUSH",
     title: "Notifications ciblées",
-    body: "Segmentez, programmez, mesurez. 94 % d'ouverture moyenne.",
+    body: "Segmentez, programmez, mesurez. Des messages visibles directement dans le Wallet de vos clients.",
     visual: (
       <div style={{ display: "flex", flexDirection: "column" as const, gap: 5, width: "100%" }}>
         <div style={{ height: 6, borderRadius: 3, background: "linear-gradient(90deg, #d4ff4e, rgba(212,255,78,0.2))", width: "94%" }} />
@@ -371,7 +404,7 @@ function SectionForWho() {
 
 /* ─── Benefits ────────────────────────────────────────────── */
 const benefits = [
-  { num: "01", title: "Augmentez la fréquence d'achat.", body: "Un client fidèle revient 5x plus souvent qu'un nouveau. Fidlify le déclenche." },
+  { num: "01", title: "Augmentez la fréquence d'achat.", body: "Un client fidélisé revient plus souvent et coûte moins cher à réactiver. Fidlify déclenche le retour au bon moment." },
   { num: "02", title: "Gardez le contact avec vos clients.", body: "Plus besoin d'attendre qu'ils repassent. Une notification suffit." },
   { num: "03", title: "Remplacez les cartes papier.", body: "Plus de tampons, plus d'oublis, plus de cartes perdues. Tout est dans le téléphone." },
   { num: "04", title: "Lancez des offres instantanément.", body: "Une promo de dernière minute ? 30 secondes pour la diffuser à toute votre base." },
@@ -620,6 +653,41 @@ function SectionFinalCTA() {
   );
 }
 
+/* ─── SEO H1 + bloc texte (visuellement masqué — sémantique forte) ─
+   Hero conserve son <h1> d'origine pour le storytelling, mais on
+   ajoute un H1 SEO ciblé "carte de fidélité digitale pour commerçants"
+   en début de DOM. Visible aux moteurs ET aux lecteurs d'écran,
+   sans casser la composition cinématographique du Hero.
+   ─────────────────────────────────────────────────────────── */
+function SeoIntro() {
+  return (
+    <section
+      className="seo-intro"
+      aria-label="Introduction Fidlify"
+      style={{
+        position: "absolute",
+        width: 1,
+        height: 1,
+        padding: 0,
+        margin: -1,
+        overflow: "hidden",
+        clip: "rect(0,0,0,0)",
+        whiteSpace: "nowrap",
+        border: 0,
+      }}
+    >
+      <h1>Carte de fidélité digitale pour commerçants en Suisse</h1>
+      <p>
+        Fidlify est un logiciel de fidélisation SaaS conçu pour les commerces locaux
+        suisses. Créez une carte de fidélité digitale compatible Apple Wallet et
+        Google Wallet, distribuez-la via QR code, gérez vos points et tampons,
+        envoyez des notifications ciblées et suivez vos statistiques de retour client —
+        sans application à télécharger.
+      </p>
+    </section>
+  );
+}
+
 /* ─── Footer ──────────────────────────────────────────────── */
 function Footer() {
   return (
@@ -633,8 +701,9 @@ function Footer() {
                 <span>FIDLIFY</span>
               </div>
               <p style={{ color: "var(--ink-3)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: 0 }}>
-                La fidélité digitale pour les commerçants suisses.
-                Apple Wallet, Google Wallet, zéro app.
+                Logiciel de fidélisation SaaS pour les commerçants de Suisse romande.
+                Carte de fidélité digitale Apple Wallet et Google Wallet,
+                sans application à télécharger.
               </p>
             </div>
             <div>
@@ -665,7 +734,7 @@ function Footer() {
           </div>
 
           <div className="footer-bottom">
-            <span>© 2026 FIDLIFY · Made in Switzerland 🇨🇭</span>
+            <span>© 2026 FIDLIFY · Conçu en Suisse romande 🇨🇭 · Conformité LPD/RGPD</span>
             <span style={{ color: "var(--ink-4)" }}>fidlify.com</span>
           </div>
         </div>
@@ -683,6 +752,8 @@ function Footer() {
 export default function LandingPage() {
   return (
     <div className="landing">
+      <FaqJsonLd />
+      <SeoIntro />
       <RevealInit />
       <div className="ambient" />
       <div className="grid-overlay" />

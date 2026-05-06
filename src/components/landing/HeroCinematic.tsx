@@ -128,13 +128,14 @@ export default function HeroCinematic() {
           className={`hcc-title-wrap ${introCls}`}
           style={{ opacity: titleOpacity, transform: `translateY(${titleY}px)` }}
         >
-          <h1 className="h-display hcc-title">
+          <h2 className="h-display hcc-title">
             <span className="hcc-line"><span>Transformez chaque client</span></span>
             <span className="hcc-line"><span>en <em className="hcc-accent">client fidèle.</em></span></span>
-          </h1>
+          </h2>
           <p className="hcc-lede">
-            Créez des cartes de fidélité digitales pour Apple Wallet et Google Wallet,
-            envoyez des notifications ciblées et augmentez vos ventes sans application à télécharger.
+            Fidlify est la carte de fidélité digitale pour commerçants suisses, directement dans
+            Apple Wallet et Google Wallet. Remplacez les cartes papier, faites revenir vos clients
+            avec des notifications ciblées — sans application à télécharger.
           </p>
           <div
             className="hcc-cta-row"
