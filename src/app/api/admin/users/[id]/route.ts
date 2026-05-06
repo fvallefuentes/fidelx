@@ -35,6 +35,8 @@ export async function GET(
       stripeSubscriptionId: true,
       stripeCurrentPeriodStart: true,
       stripeCurrentPeriodEnd: true,
+      manualPlanUntil: true,
+      manualPlanReason: true,
       employerMerchantId: true,
       employerMerchant: {
         select: { id: true, name: true, email: true },
@@ -131,7 +133,12 @@ export async function PATCH(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await params;
-  const body = (await req.json()) as { plan?: string; role?: string };
+  const body = (await req.json()) as {
+    plan?: string;
+    role?: string;
+    manualPlanUntil?: string | null;
+    manualPlanReason?: string | null;
+  };
 
   const existing = await prisma.user.findUnique({
     where: { id },
@@ -141,18 +148,37 @@ export async function PATCH(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const updates: { plan?: AdminPlan; role?: AdminRole } = {};
+  const updates: {
+    plan?: AdminPlan;
+    role?: AdminRole;
+    manualPlanUntil?: Date | null;
+    manualPlanReason?: string | null;
+  } = {};
   if (body.plan && VALID_PLANS.includes(body.plan as AdminPlan)) {
     updates.plan = body.plan as AdminPlan;
   }
   if (body.role && VALID_ROLES.includes(body.role as AdminRole)) {
     updates.role = body.role as AdminRole;
   }
+  if (body.manualPlanUntil !== undefined) {
+    updates.manualPlanUntil = body.manualPlanUntil
+      ? new Date(body.manualPlanUntil)
+      : null;
+  }
+  if (body.manualPlanReason !== undefined) {
+    updates.manualPlanReason = body.manualPlanReason || null;
+  }
 
   const updated = await prisma.user.update({
     where: { id },
     data: updates,
-    select: { id: true, role: true, plan: true },
+    select: {
+      id: true,
+      role: true,
+      plan: true,
+      manualPlanUntil: true,
+      manualPlanReason: true,
+    },
   });
 
   return NextResponse.json(updated);

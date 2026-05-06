@@ -57,6 +57,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as { createdAt?: string }).createdAt = token.createdAt as string;
         session.user.role = token.role as string;
         (session.user as { merchantId?: string }).merchantId = token.merchantId as string;
+        (session.user as { manualPlanUntil?: string }).manualPlanUntil =
+          token.manualPlanUntil as string | undefined;
       }
       return session;
     },
@@ -67,11 +69,32 @@ export const authOptions: NextAuthOptions = {
       if (token.id) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { plan: true, createdAt: true, role: true, employerMerchantId: true },
+          select: {
+            plan: true,
+            createdAt: true,
+            role: true,
+            employerMerchantId: true,
+            manualPlanUntil: true,
+          },
         });
-        token.plan = dbUser?.plan ?? "FREE";
+
+        let effectivePlan = dbUser?.plan ?? "FREE";
+        let manualUntil = dbUser?.manualPlanUntil ?? null;
+
+        // Auto-revert expired manual plan (partenariat) → FREE
+        if (manualUntil && manualUntil < new Date()) {
+          await prisma.user.update({
+            where: { id: token.id as string },
+            data: { plan: "FREE", manualPlanUntil: null, manualPlanReason: null },
+          });
+          effectivePlan = "FREE";
+          manualUntil = null;
+        }
+
+        token.plan = effectivePlan;
         token.createdAt = dbUser?.createdAt?.toISOString();
         token.role = dbUser?.role ?? "USER";
+        token.manualPlanUntil = manualUntil?.toISOString();
         // For STAFF, merchantId = their employer's ID; for others, it's their own id
         token.merchantId = dbUser?.role === "STAFF"
           ? (dbUser.employerMerchantId ?? token.id)

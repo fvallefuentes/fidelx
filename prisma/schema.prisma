@@ -72,6 +72,11 @@ model User {
   stripeCurrentPeriodStart DateTime?
   stripeCurrentPeriodEnd   DateTime?
 
+  // Plan manuel offert par l'admin (partenariat, beta, etc.)
+  // Si défini, le plan revient automatiquement à FREE après cette date
+  manualPlanUntil  DateTime?
+  manualPlanReason String?
+
   accounts       Account[]
   sessions       Session[]
   establishments Establishment[]

@@ -66,6 +66,8 @@ interface MerchantDetail {
   stripeSubscriptionId: string | null;
   stripeCurrentPeriodStart: string | null;
   stripeCurrentPeriodEnd: string | null;
+  manualPlanUntil: string | null;
+  manualPlanReason: string | null;
   employerMerchantId: string | null;
   employerMerchant: {
     id: string;
@@ -243,6 +245,14 @@ export default function MerchantDetailPage() {
   const [savingPlan, setSavingPlan] = useState(false);
   const [planSaved, setPlanSaved] = useState(false);
 
+  // Manual plan grant (partenariat)
+  const [manualEnabled, setManualEnabled] = useState(false);
+  const [manualPlan, setManualPlan] = useState<string>("ESSENTIAL");
+  const [manualUntil, setManualUntil] = useState<string>(""); // YYYY-MM-DD
+  const [manualReason, setManualReason] = useState<string>("");
+  const [savingManual, setSavingManual] = useState(false);
+  const [manualSaved, setManualSaved] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     fetch(`/api/admin/users/${id}`)
@@ -253,6 +263,12 @@ export default function MerchantDetailPage() {
       .then((d: MerchantDetail) => {
         setData(d);
         setPlanDraft(d.plan);
+        if (d.manualPlanUntil) {
+          setManualEnabled(true);
+          setManualPlan(d.plan === "FREE" ? "ESSENTIAL" : d.plan);
+          setManualUntil(new Date(d.manualPlanUntil).toISOString().slice(0, 10));
+          setManualReason(d.manualPlanReason ?? "");
+        }
       })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : "Erreur inconnue")
@@ -277,6 +293,48 @@ export default function MerchantDetailPage() {
       }
     } finally {
       setSavingPlan(false);
+    }
+  }
+
+  async function handleSaveManualPlan() {
+    if (!id || !data) return;
+    setSavingManual(true);
+    try {
+      const body = manualEnabled
+        ? {
+            plan: manualPlan,
+            manualPlanUntil: manualUntil,
+            manualPlanReason: manualReason || null,
+          }
+        : {
+            // Remove manual grant: revert to FREE + clear fields
+            plan: "FREE",
+            manualPlanUntil: null,
+            manualPlanReason: null,
+          };
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setData((prev) =>
+          prev
+            ? {
+                ...prev,
+                plan: updated.plan,
+                manualPlanUntil: updated.manualPlanUntil,
+                manualPlanReason: updated.manualPlanReason,
+              }
+            : prev
+        );
+        setPlanDraft(updated.plan);
+        setManualSaved(true);
+        setTimeout(() => setManualSaved(false), 2000);
+      }
+    } finally {
+      setSavingManual(false);
     }
   }
 
@@ -686,6 +744,221 @@ export default function MerchantDetailPage() {
           </SectionCard>
         )}
       </div>
+      )}
+
+      {/* Plan manuel / Partenariat — USER only */}
+      {data.role === "USER" && (
+        <SectionCard title="Plan manuel / Partenariat">
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p style={{ color: MUTED, fontSize: 12, lineHeight: 1.5 }}>
+              Offrir un plan payant gratuitement (partenariat, beta, période
+              d&apos;essai). Le plan revient automatiquement à{" "}
+              <strong style={{ color: VAL_COLOR }}>Gratuit</strong> à la date
+              indiquée, à la prochaine connexion du commerçant.
+            </p>
+
+            {data.manualPlanUntil && (
+              <div
+                style={{
+                  background: "rgba(255,200,80,0.06)",
+                  border: "1px solid rgba(255,200,80,0.2)",
+                  borderRadius: 10,
+                  padding: "11px 14px",
+                  fontSize: 13,
+                  color: "#ffc850",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Activity size={14} />
+                <span>
+                  Plan{" "}
+                  <strong>{PLAN_LABELS[data.plan] ?? data.plan}</strong> offert
+                  jusqu&apos;au{" "}
+                  <strong>
+                    {new Date(data.manualPlanUntil).toLocaleDateString(
+                      "fr-CH",
+                      { day: "2-digit", month: "long", year: "numeric" }
+                    )}
+                  </strong>
+                  {data.manualPlanReason && (
+                    <>
+                      {" "}— <em>{data.manualPlanReason}</em>
+                    </>
+                  )}
+                </span>
+              </div>
+            )}
+
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                cursor: "pointer",
+                fontSize: 13,
+                color: VAL_COLOR,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={manualEnabled}
+                onChange={(e) => setManualEnabled(e.target.checked)}
+                style={{ accentColor: ACCENT, width: 16, height: 16 }}
+              />
+              Activer un plan manuel
+            </label>
+
+            {manualEnabled && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: 12,
+                }}
+              >
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      color: MUTED,
+                      marginBottom: 5,
+                    }}
+                  >
+                    Plan
+                  </label>
+                  <select
+                    value={manualPlan}
+                    onChange={(e) => setManualPlan(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: 9,
+                      border: `1px solid ${BORDER}`,
+                      background: "rgba(0,0,0,0.25)",
+                      color: VAL_COLOR,
+                      fontSize: 13,
+                      outline: "none",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    <option value="ESSENTIAL">Essentiel</option>
+                    <option value="GROWTH">Croissance</option>
+                    <option value="MULTI_SITE">Multi-sites</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      color: MUTED,
+                      marginBottom: 5,
+                    }}
+                  >
+                    Date de fin
+                  </label>
+                  <input
+                    type="date"
+                    value={manualUntil}
+                    onChange={(e) => setManualUntil(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: 9,
+                      border: `1px solid ${BORDER}`,
+                      background: "rgba(0,0,0,0.25)",
+                      color: VAL_COLOR,
+                      fontSize: 13,
+                      outline: "none",
+                      fontFamily: "inherit",
+                      colorScheme: "dark",
+                    }}
+                  />
+                </div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: 12,
+                      color: MUTED,
+                      marginBottom: 5,
+                    }}
+                  >
+                    Raison (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={manualReason}
+                    onChange={(e) => setManualReason(e.target.value)}
+                    placeholder="Partenariat 2026, Beta, Compensation, etc."
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      borderRadius: 9,
+                      border: `1px solid ${BORDER}`,
+                      background: "rgba(0,0,0,0.25)",
+                      color: VAL_COLOR,
+                      fontSize: 13,
+                      outline: "none",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={handleSaveManualPlan}
+                disabled={
+                  savingManual ||
+                  (manualEnabled && (!manualPlan || !manualUntil))
+                }
+                style={{
+                  padding: "9px 16px",
+                  borderRadius: 9,
+                  background: ACCENT,
+                  color: "#0a0d04",
+                  border: 0,
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor:
+                    savingManual ||
+                    (manualEnabled && (!manualPlan || !manualUntil))
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity:
+                    savingManual ||
+                    (manualEnabled && (!manualPlan || !manualUntil))
+                      ? 0.5
+                      : 1,
+                  fontFamily: "inherit",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {manualSaved ? (
+                  <>
+                    <Check size={14} /> Enregistré
+                  </>
+                ) : savingManual ? (
+                  "Enregistrement..."
+                ) : manualEnabled ? (
+                  "Activer le plan manuel"
+                ) : (
+                  "Retirer le plan manuel"
+                )}
+              </button>
+            </div>
+          </div>
+        </SectionCard>
       )}
 
       {/* Staff list — only for USER (commerçant), shows their employees */}

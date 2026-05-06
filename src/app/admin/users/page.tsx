@@ -29,6 +29,8 @@ interface UserRow {
   phone: string | null;
   createdAt: string;
   stripeSubscriptionId: string | null;
+  manualPlanUntil: string | null;
+  manualPlanReason: string | null;
   employerMerchant: { id: string; name: string | null; email: string } | null;
   cardCount: number;
   _count: { programs: number; staff: number };
@@ -553,7 +555,25 @@ export default function AdminUsersPage() {
                     </td>
                     <td style={{ padding: "14px 16px" }}>
                       {u.role === "USER" ? (
-                        <PlanBadge plan={u.plan} />
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                          <PlanBadge plan={u.plan} />
+                          {u.manualPlanUntil && (
+                            <span
+                              title={`Plan offert${u.manualPlanReason ? ` — ${u.manualPlanReason}` : ""} jusqu'au ${new Date(u.manualPlanUntil).toLocaleDateString("fr-CH")}`}
+                              style={{
+                                fontSize: 10,
+                                padding: "2px 7px",
+                                borderRadius: 20,
+                                background: "rgba(255,200,80,0.12)",
+                                border: "1px solid rgba(255,200,80,0.25)",
+                                color: "#ffc850",
+                                fontWeight: 600,
+                              }}
+                            >
+                              MANUEL
+                            </span>
+                          )}
+                        </span>
                       ) : u.role === "STAFF" ? (
                         u.employerMerchant ? (
                           <span
