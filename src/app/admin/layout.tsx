@@ -1,19 +1,68 @@
-import Link from "next/link";
-import LogoMark from "@/components/landing/LogoMark";
+"use client";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { redirect, usePathname } from "next/navigation";
+import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminHeader } from "@/components/admin/admin-header";
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { data: session, status } = useSession();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileNavOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [mobileNavOpen]);
+
+  if (status === "loading") {
+    return (
+      <div className="dx-loading">
+        <div className="dx-spinner" />
+      </div>
+    );
+  }
+
+  if (!session) redirect("/login");
+
+  const role = (session.user as { role?: string })?.role;
+  if (role !== "ADMIN") redirect("/dashboard");
+
   return (
-    <div style={{ minHeight: "100vh", background: "#0a0d04", color: "#fff" }}>
-      <header style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 32px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <LogoMark size={28} />
-        <span style={{ fontWeight: 700, letterSpacing: "0.06em", fontSize: 15 }}>FIDLIFY ADMIN</span>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-          <Link href="/dashboard" style={{ color: "rgba(255,255,255,0.45)" }}>← Dashboard</Link>
-        </span>
-      </header>
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 24px" }}>
-        {children}
-      </main>
+    <div className="dashboard">
+      <div className="dx-shell">
+        <div
+          className={`dx-sidebar-backdrop${mobileNavOpen ? " visible" : ""}`}
+          onClick={() => setMobileNavOpen(false)}
+          aria-hidden={!mobileNavOpen}
+        />
+        <AdminSidebar
+          mobileOpen={mobileNavOpen}
+          onCloseMobile={() => setMobileNavOpen(false)}
+        />
+        <div className="dx-main">
+          <AdminHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <main className="dx-content">{children}</main>
+        </div>
+      </div>
     </div>
   );
 }

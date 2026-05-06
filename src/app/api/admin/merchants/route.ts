@@ -11,11 +11,38 @@ export async function GET() {
   const merchants = await prisma.user.findMany({
     where: { role: "USER" },
     select: {
-      id: true, name: true, email: true, plan: true, createdAt: true,
+      id: true,
+      name: true,
+      email: true,
+      plan: true,
+      phone: true,
+      createdAt: true,
+      stripeSubscriptionId: true,
       _count: { select: { programs: true, staff: true } },
+      programs: {
+        select: {
+          _count: { select: { cards: true } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(merchants);
+  // Compute aggregated card count per merchant, then strip the nested programs array
+  const enriched = merchants.map((m) => {
+    const cardCount = m.programs.reduce((s, p) => s + p._count.cards, 0);
+    return {
+      id: m.id,
+      name: m.name,
+      email: m.email,
+      plan: m.plan,
+      phone: m.phone,
+      createdAt: m.createdAt,
+      stripeSubscriptionId: m.stripeSubscriptionId,
+      _count: m._count,
+      cardCount,
+    };
+  });
+
+  return NextResponse.json(enriched);
 }
