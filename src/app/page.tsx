@@ -5,8 +5,8 @@ import JourneySection from "@/components/landing/JourneySection";
 import FAQSection from "@/components/landing/FAQSection";
 import SectionDemo from "@/components/landing/SectionDemo";
 import RevealInit from "@/components/landing/RevealInit";
-import LogoMark from "@/components/landing/LogoMark";
 import Nav from "@/components/landing/Nav";
+import Footer from "@/components/landing/Footer";
 import { FaqJsonLd } from "@/components/seo/JsonLd";
 import {
   DEFAULT_DESCRIPTION,
@@ -689,59 +689,8 @@ function SeoIntro() {
 }
 
 /* ─── Footer ──────────────────────────────────────────────── */
-function Footer() {
-  return (
-    <footer className="footer">
-      <div className="wrap">
-        <div className="footer-inner">
-          <div className="footer-top">
-            <div>
-              <div className="brand" style={{ marginBottom: 16 }}>
-                <LogoMark size={40} />
-                <span>FIDLIFY</span>
-              </div>
-              <p style={{ color: "var(--ink-3)", fontSize: 13, lineHeight: 1.6, maxWidth: 280, margin: 0 }}>
-                Logiciel de fidélisation SaaS pour les commerçants de Suisse romande.
-                Carte de fidélité digitale Apple Wallet et Google Wallet,
-                sans application à télécharger.
-              </p>
-            </div>
-            <div>
-              <h5>Produit</h5>
-              <ul>
-                <li><a href="#features">Fonctionnalités</a></li>
-                <li><a href="#pricing">Tarifs</a></li>
-                <li><a href="#demo">Démo</a></li>
-                <li><a href="#faq">FAQ</a></li>
-              </ul>
-            </div>
-            <div>
-              <h5>Compte</h5>
-              <ul>
-                <li><Link href="/register">Créer un compte</Link></li>
-                <li><Link href="/login">Connexion</Link></li>
-                <li><Link href="/dashboard">Dashboard</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h5>Légal</h5>
-              <ul>
-                <li><a href="#">Conditions d&apos;utilisation</a></li>
-                <li><a href="#">Confidentialité</a></li>
-                <li><a href="#">LPD suisse</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="footer-bottom">
-            <span>© 2026 FIDLIFY · Conçu en Suisse romande 🇨🇭 · Conformité LPD/RGPD</span>
-            <span style={{ color: "var(--ink-4)" }}>fidlify.com</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
+// Le Footer est maintenant un composant partagé (avec liens légaux + cookies),
+// importé depuis "@/components/landing/Footer"
 
 /* ─── Page ─────────────────────────────────────────────────
    CORRECT ORDER (matching prototype app.jsx):

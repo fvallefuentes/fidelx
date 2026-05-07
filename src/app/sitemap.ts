@@ -1,12 +1,12 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/seo";
+import { LEGAL_PAGES } from "@/lib/legal";
 
 /**
  * Sitemap public.
- * Pour l'instant : home + auth (login / register).
- * Les pages légales (mentions, CGU, CGV, DPA, confidentialité, cookies)
- * seront ajoutées dès qu'elles seront publiées.
- * Les pages verticales SEO (cafés, restaurants, etc.) sont prévues phase 30-60j.
+ * Pages légales actuellement publiées : mentions, confidentialité, cookies, CGU.
+ * CGV et DPA seront ajoutés dès leur publication.
+ * Pages verticales SEO (cafés, restaurants, etc.) à ajouter en phase 30-60j.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -30,5 +30,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.6,
     },
+    ...LEGAL_PAGES.map((p) => ({
+      url: `${SITE_URL}${p.href}`,
+      lastModified: now,
+      changeFrequency: "yearly" as const,
+      priority: 0.4,
+    })),
   ];
 }
