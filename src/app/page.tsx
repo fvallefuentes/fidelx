@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import HeroCinematic from "@/components/landing/HeroCinematic";
 import HeroScroll3D from "@/components/landing/HeroScroll3D";
 import JourneySection from "@/components/landing/JourneySection";
 import FAQSection from "@/components/landing/FAQSection";
@@ -710,7 +709,6 @@ export default function LandingPage() {
       <div style={{ position: "relative", zIndex: 1 }}>
         <Nav />
         <HeroScroll3D />
-        <HeroCinematic />
         <SectionProblem />
         <SectionSolution />
         <JourneySection />
