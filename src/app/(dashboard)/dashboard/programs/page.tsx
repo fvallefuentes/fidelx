@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X } from "lucide-react";
 
 interface Program {
   id: string;
@@ -156,6 +156,7 @@ export default function ProgramsPage() {
   const [showForm, setShowForm] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editingProgram, setEditingProgram] = useState<Program | null>(null);
 
   useEffect(() => {
     fetchPrograms();
@@ -269,7 +270,7 @@ export default function ProgramsPage() {
                       Bonus avis Google activé
                     </div>
                   )}
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex gap-2 flex-wrap items-center">
                     <a
                       href={`/join/${program.id}`}
                       target="_blank"
@@ -278,6 +279,14 @@ export default function ProgramsPage() {
                       <ExternalLink className="h-3 w-3" />
                       Lien client
                     </a>
+                    <button
+                      type="button"
+                      onClick={() => setEditingProgram(program)}
+                      className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900"
+                    >
+                      <Palette className="h-3 w-3" />
+                      Modifier le design
+                    </button>
                     <div className="flex-1" />
                     {confirmDeleteId === program.id ? (
                       <div className="flex items-center gap-2">
@@ -317,6 +326,17 @@ export default function ProgramsPage() {
             );
           })}
         </div>
+      )}
+
+      {editingProgram && (
+        <EditProgramDesignModal
+          program={editingProgram}
+          onClose={() => setEditingProgram(null)}
+          onSaved={() => {
+            setEditingProgram(null);
+            fetchPrograms();
+          }}
+        />
       )}
     </div>
   );
@@ -798,5 +818,340 @@ function CreateProgramForm({
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL — Modifier le design d'un programme existant
+   (Le nombre de tampons et le type ne sont PAS modifiables car
+   cela casserait les progressions des cartes déjà émises.)
+   ═══════════════════════════════════════════════════════════ */
+function EditProgramDesignModal({
+  program,
+  onClose,
+  onSaved,
+}: {
+  program: Program;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const { data: session } = useSession();
+  const plan = (session?.user?.plan as string) || "FREE";
+  const isFree = plan === "FREE";
+  const design = (program.cardDesign || {}) as Record<string, string>;
+  const config = (program.config || {}) as Record<string, unknown>;
+  const maxStamps =
+    (config.maxStamps as number) ||
+    ((config.tiers as { points: number }[])?.[0]?.points) ||
+    10;
+
+  const [name, setName] = useState(program.name);
+  const [bgColor, setBgColor] = useState(design.bgColor || "#1a1a2e");
+  const [textColor, setTextColor] = useState(design.textColor || "#ffffff");
+  const [stampColor, setStampColor] = useState(
+    design.stampColor || "#ffffff"
+  );
+  const [stampCheckColor, setStampCheckColor] = useState(
+    design.stampCheckColor || design.bgColor || "#1a1a2e"
+  );
+  const [stampEmptyColor, setStampEmptyColor] = useState(
+    design.stampEmptyColor || "#ffffff"
+  );
+  const [labelColor, setLabelColor] = useState(
+    design.labelColor || "#a0a3aa"
+  );
+  const [description, setDescription] = useState(
+    design.description || ""
+  );
+  const [logoData, setLogoData] = useState<string>(design.logoData || "");
+  const [logoError, setLogoError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  // Bloque scroll body + escape pour fermer
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  function applyPreset(p: typeof CARD_PRESETS[number]) {
+    setBgColor(p.bgColor);
+    setTextColor(p.textColor);
+    setStampColor(p.stampColor);
+    setStampCheckColor(p.stampCheckColor);
+    setStampEmptyColor(p.stampEmptyColor);
+    setLabelColor(p.labelColor);
+  }
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setLogoError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setLogoError("Le fichier doit être une image");
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      setLogoError("Image trop lourde (max 500 KB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setLogoData(reader.result as string);
+    reader.onerror = () => setLogoError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    setError("");
+    setSuccess(false);
+
+    const res = await fetch(`/api/programs/${program.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        cardDesign: {
+          bgColor,
+          textColor,
+          stampColor,
+          stampCheckColor,
+          stampEmptyColor,
+          labelColor,
+          description,
+          // Sur plan FREE, on n'envoie pas logoData (l'API le rejetterait
+          // de toute façon, mais évite un round-trip d'erreur)
+          ...(isFree ? {} : { logoData: logoData || null }),
+        },
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      setError(data.error || "Erreur lors de la modification");
+      setSaving(false);
+      return;
+    }
+    setSuccess(true);
+    setSaving(false);
+    setTimeout(() => onSaved(), 800);
+  }
+
+  return (
+    <div
+      className="recovery-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-design-title"
+      onClick={onClose}
+      style={{ alignItems: "flex-start", paddingTop: "5vh", paddingBottom: "5vh" }}
+    >
+      <div
+        className="recovery-modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: 760, maxHeight: "90vh" }}
+      >
+        <header className="recovery-modal-head">
+          <h2 id="edit-design-title" style={{ fontSize: 16 }}>
+            <Palette
+              size={15}
+              style={{ display: "inline", marginRight: 8, verticalAlign: -2 }}
+            />
+            Modifier le design — {program.name}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            className="recovery-modal-close"
+          >
+            <X size={16} />
+          </button>
+        </header>
+
+        <form onSubmit={handleSubmit} className="recovery-modal-body" style={{ alignItems: "stretch", gap: 18 }}>
+          {error && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
+              Design enregistré. Les cartes Wallet existantes vont se mettre à jour automatiquement.
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-[1fr_280px]">
+            {/* Left : form */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500">Nom du programme</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500">Description (optionnel)</label>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex: Le 10ᵉ café offert"
+                />
+              </div>
+
+              {/* Lock notice for stamps count */}
+              <div
+                className="rounded-lg flex items-start gap-2 px-3 py-2 text-xs"
+                style={{
+                  background: "rgba(255,214,107,0.08)",
+                  border: "1px solid rgba(255,214,107,0.25)",
+                  color: "#ffd66b",
+                }}
+              >
+                <Lock size={12} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>
+                  Le nombre de tampons ({maxStamps}) et le type de programme ne sont pas modifiables — cela casserait
+                  les progressions des cartes déjà émises. Pour changer ces paramètres, créez un nouveau programme.
+                </span>
+              </div>
+
+              {/* Logo */}
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500">
+                  Logo (haut-gauche de la carte) — PNG/JPG, max 500 KB
+                </label>
+                {isFree ? (
+                  <div
+                    className="rounded-lg px-3 py-2 text-xs"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px dashed rgba(255,255,255,0.12)",
+                      color: "#8a8e84",
+                    }}
+                  >
+                    <Lock size={11} style={{ display: "inline", marginRight: 4, verticalAlign: -1 }} />
+                    Logo personnalisé réservé aux plans payants. Passez au plan Essentiel pour débloquer.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      onChange={handleLogoChange}
+                      className="text-xs"
+                    />
+                    {logoError && (
+                      <p className="text-xs text-red-500">{logoError}</p>
+                    )}
+                    {logoData && (
+                      <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={logoData}
+                          alt="Logo preview"
+                          style={{
+                            height: 36,
+                            maxWidth: 110,
+                            objectFit: "contain",
+                            background: "rgba(255,255,255,0.04)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                            borderRadius: 6,
+                            padding: 4,
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setLogoData("")}
+                          className="text-xs text-red-400 hover:text-red-300"
+                        >
+                          Retirer
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Presets */}
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500">Palette rapide</label>
+                <div className="flex gap-2 flex-wrap">
+                  {CARD_PRESETS.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => applyPreset(p)}
+                      title={p.name}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        background: p.bgColor,
+                        border:
+                          bgColor === p.bgColor
+                            ? "2px solid #d4ff4e"
+                            : "1px solid rgba(255,255,255,0.12)",
+                        cursor: "pointer",
+                      }}
+                      aria-label={p.name}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Color pickers */}
+              <div className="grid grid-cols-2 gap-2">
+                <ColorPicker label="Fond" value={bgColor} onChange={setBgColor} />
+                <ColorPicker label="Texte" value={textColor} onChange={setTextColor} />
+                <ColorPicker label="Tampon" value={stampColor} onChange={setStampColor} />
+                <ColorPicker label="✓ tampon" value={stampCheckColor} onChange={setStampCheckColor} />
+                <ColorPicker label="Cercle vide" value={stampEmptyColor} onChange={setStampEmptyColor} />
+                <ColorPicker label="Étiquettes" value={labelColor} onChange={setLabelColor} />
+              </div>
+            </div>
+
+            {/* Right : live preview */}
+            <div style={{ position: "sticky", top: 0 }}>
+              <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider text-center">
+                Aperçu live
+              </p>
+              <WalletCardPreview
+                bgColor={bgColor}
+                textColor={textColor}
+                stampColor={stampColor}
+                stampCheckColor={stampCheckColor}
+                stampEmptyColor={stampEmptyColor}
+                labelColor={labelColor}
+                programName={name}
+                maxStamps={maxStamps}
+                logoData={logoData || undefined}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 justify-end pt-2 border-t border-white/10">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Enregistrement…" : "Enregistrer le design"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
