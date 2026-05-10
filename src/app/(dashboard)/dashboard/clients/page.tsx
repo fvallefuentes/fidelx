@@ -251,19 +251,10 @@ export default function ClientsPage() {
                           {card.lastVisitAt ? new Date(card.lastVisitAt).toLocaleDateString("fr-CH") : "—"}
                         </td>
                         <td className="py-3 px-2">
-                          {card.walletStatus === "installed" ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: "#d4ff4e" }}>
-                              <Smartphone className="h-3.5 w-3.5" /> Dans le Wallet
-                            </span>
-                          ) : card.walletStatus === "removed" ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400">
-                              <XCircle className="h-3.5 w-3.5" /> Supprimée
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-                              <Hourglass className="h-3.5 w-3.5" /> Pas installée
-                            </span>
-                          )}
+                          <WalletStatusCell
+                            status={card.walletStatus}
+                            devices={card.walletDevices}
+                          />
                         </td>
                         <td className="py-3 px-2">
                           <Badge variant={card.status === "ACTIVE" ? "success" : card.status === "COMPLETED" ? "default" : "secondary"}>
@@ -299,6 +290,89 @@ export default function ClientsPage() {
           programName={recoveryCard.program.name}
           serialNumber={recoveryCard.serialNumber}
         />
+      )}
+    </div>
+  );
+}
+
+/* ── Cellule Wallet : statut + nb d'appareils + breakdown plateforme ─ */
+function WalletStatusCell({
+  status,
+  devices,
+}: {
+  status: "installed" | "removed" | "never_installed";
+  devices: { apple: number; google: number; total: number };
+}) {
+  if (status === "removed") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400">
+        <XCircle className="h-3.5 w-3.5" /> Supprimée
+      </span>
+    );
+  }
+  if (status === "never_installed") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-gray-400">
+        <Hourglass className="h-3.5 w-3.5" /> Pas installée
+      </span>
+    );
+  }
+  // installed → afficher détail des appareils
+  const breakdown = [
+    devices.apple ? `${devices.apple} iOS` : "",
+    devices.google ? `${devices.google} Android` : "",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <div
+      className="inline-flex items-center gap-2"
+      title={`Carte installée sur ${breakdown}`}
+    >
+      <span
+        className="inline-flex items-center gap-1 text-xs font-medium"
+        style={{ color: "#d4ff4e" }}
+      >
+        <Smartphone className="h-3.5 w-3.5" />
+        {devices.total > 1 ? `Wallet · ${devices.total} appareils` : "Dans le Wallet"}
+      </span>
+      {(devices.apple > 0 || devices.google > 0) && (
+        <span className="inline-flex items-center gap-1">
+          {devices.apple > 0 && (
+            <span
+              className="inline-flex items-center justify-center rounded-full"
+              style={{
+                width: 18,
+                height: 18,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "#c9ccc3",
+              }}
+              title={`Apple Wallet (${devices.apple})`}
+            >
+              <svg width="9" height="11" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.39c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.39-1.32 2.76-2.53 4zm-3.1-17.24c-2.22.22-4.03 2.46-3.79 4.5 2.04.16 4.09-2.16 3.79-4.5z" />
+              </svg>
+            </span>
+          )}
+          {devices.google > 0 && (
+            <span
+              className="inline-flex items-center justify-center rounded-full"
+              style={{
+                width: 18,
+                height: 18,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                fontSize: 9,
+                color: "#c9ccc3",
+              }}
+              title="Google Wallet"
+            >
+              G
+            </span>
+          )}
+        </span>
       )}
     </div>
   );

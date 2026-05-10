@@ -38,6 +38,7 @@ export default function JoinPage() {
   const [walletUrl, setWalletUrl] = useState("");
   const [googleWalletUrl, setGoogleWalletUrl] = useState("");
   const [error, setError] = useState("");
+  const [recoverySent, setRecoverySent] = useState(false);
 
   useEffect(() => {
     fetch(`/api/programs/${programId}/public`)
@@ -67,6 +68,12 @@ export default function JoinPage() {
     });
     const data = await res.json();
     if (!res.ok) {
+      // Cas spécial : carte déjà existante → email de récupération envoyé
+      if (res.status === 409 && data.recoveryEmailSent) {
+        setRecoverySent(true);
+        setSubmitting(false);
+        return;
+      }
       setError(data.error || "Erreur lors de l'inscription");
       setSubmitting(false);
       return;
@@ -109,7 +116,26 @@ export default function JoinPage() {
         showFidlify={program.showFidlifyBranding}
       />
 
-      {success ? (
+      {recoverySent ? (
+        <div className="join-card join-success">
+          <div className="join-check">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+          <h2 className="join-h2">Vous avez déjà une carte 👋</h2>
+          <p className="join-sub">
+            Un <strong>email de récupération</strong> vient de vous être envoyé à
+            l&apos;adresse renseignée. Cliquez sur le lien dans l&apos;email pour
+            réinstaller votre carte de fidélité dans votre Wallet — votre
+            progression actuelle est conservée.
+          </p>
+          <p className="join-fineprint">
+            Vérifiez vos spams si vous ne recevez pas l&apos;email dans les
+            prochaines minutes.
+          </p>
+        </div>
+      ) : success ? (
         <div className="join-card join-success">
           <div className="join-check">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

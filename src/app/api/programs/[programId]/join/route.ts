@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateSerialNumber } from "@/lib/utils";
 import { generateGoogleWalletLink } from "@/lib/wallet/google";
+import { normalizeEmail, normalizePhone } from "@/lib/normalize";
+import { sendRecoveryEmail } from "@/lib/email/recovery";
 
 export async function POST(
   req: Request,
@@ -12,7 +14,7 @@ export async function POST(
   const program = await prisma.loyaltyProgram.findUnique({
     where: { id: programId, isActive: true },
     include: {
-      merchant: { select: { plan: true } },
+      merchant: { select: { plan: true, name: true } },
       _count: { select: { cards: true } },
     },
   });
@@ -32,7 +34,12 @@ export async function POST(
     );
   }
 
-  const { firstName, email, phone, referralCode } = await req.json();
+  const {
+    firstName,
+    email: rawEmail,
+    phone: rawPhone,
+    referralCode,
+  } = await req.json();
 
   if (!firstName) {
     return NextResponse.json(
@@ -41,6 +48,10 @@ export async function POST(
     );
   }
 
+  // Normalisation : lowercase email + Gmail dots/aliases, phone E.164
+  const email = normalizeEmail(rawEmail);
+  const phone = normalizePhone(rawPhone);
+
   if (!email && !phone) {
     return NextResponse.json(
       { error: "Un email ou téléphone est requis" },
@@ -48,7 +59,9 @@ export async function POST(
     );
   }
 
-  // Chercher ou créer le client
+  // Chercher le client existant (cross-merchant : un client peut avoir N
+  // cartes pour N programmes différents — la contrainte unique est sur
+  // (clientId, programId), pas sur clientId seul).
   let client = null;
   if (email) {
     client = await prisma.client.findFirst({ where: { email } });
@@ -63,7 +76,7 @@ export async function POST(
     });
   }
 
-  // Vérifier si le client a déjà une carte pour ce programme
+  // Vérifier si le client a déjà une carte pour CE programme spécifique
   const existingCard = await prisma.loyaltyCard.findUnique({
     where: {
       clientId_programId: {
@@ -74,8 +87,24 @@ export async function POST(
   });
 
   if (existingCard) {
+    // Privacy-safe : si on a un email, on envoie un lien de récupération
+    // automatiquement. Réponse API opaque (toujours 409 même si pas d'email)
+    // pour empêcher l'énumération.
+    if (email) {
+      // Fire-and-forget — on ne bloque pas la réponse sur l'envoi
+      void sendRecoveryEmail({
+        toEmail: email,
+        firstName: client.firstName,
+        programName: program.name,
+        merchantName: program.merchant.name ?? "votre commerce",
+        serialNumber: existingCard.serialNumber,
+      });
+    }
     return NextResponse.json(
-      { error: "Vous avez déjà une carte pour ce programme" },
+      {
+        error: "Vous avez déjà une carte pour ce programme",
+        recoveryEmailSent: !!email,
+      },
       { status: 409 }
     );
   }
@@ -89,13 +118,11 @@ export async function POST(
     if (referralLink && referralLink.uses < referralLink.maxUses) {
       referralBonus = referralLink.bonusReferee;
 
-      // Mettre à jour le compteur du lien de parrainage
       await prisma.referralLink.update({
         where: { id: referralLink.id },
         data: { uses: { increment: 1 } },
       });
 
-      // Bonus pour le parrain
       if (referralLink.cardId) {
         await prisma.loyaltyCard.update({
           where: { id: referralLink.cardId },
@@ -115,7 +142,6 @@ export async function POST(
         });
       }
 
-      // Lier le filleul au parrain
       await prisma.client.update({
         where: { id: client.id },
         data: { referredById: referralLink.clientId },
@@ -135,7 +161,6 @@ export async function POST(
     },
   });
 
-  // Créer la transaction d'inscription
   if (referralBonus > 0) {
     await prisma.transaction.create({
       data: {
