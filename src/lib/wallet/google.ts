@@ -216,6 +216,66 @@ export async function sendGoogleWalletMessage(
 }
 
 /**
+ * Met à jour la CLASS Google Wallet d'un programme (design : bgColor, logo).
+ * À appeler quand le commerçant modifie le design de son programme.
+ * Toutes les cartes existantes liées à cette class verront le nouveau design
+ * (Google Wallet refetch la class côté client automatiquement).
+ */
+export async function updateGoogleWalletClass(
+  programId: string
+): Promise<boolean> {
+  if (!GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || !GOOGLE_WALLET_ISSUER_ID) {
+    return false;
+  }
+
+  const program = await prisma.loyaltyProgram.findUnique({
+    where: { id: programId },
+    include: { merchant: { select: { name: true } } },
+  });
+  if (!program) return false;
+
+  const design = (program.cardDesign as Record<string, unknown>) ?? {};
+  const classId = `${GOOGLE_WALLET_ISSUER_ID}.${programId}`;
+
+  const updatedClass = buildLoyaltyClass({
+    programId,
+    programName: program.name,
+    merchantName: program.merchant.name || "Commerce",
+    bgColor: (design.bgColor as string) || "#1a1a2e",
+    logoUrl: (design.logoUrl as string) || undefined,
+  });
+
+  try {
+    const accessToken = await getGoogleAccessToken();
+    if (!accessToken) return false;
+
+    const res = await fetch(
+      `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass/${classId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedClass),
+      }
+    );
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error(
+        `[GoogleWallet] class update failed (${res.status}):`,
+        text.slice(0, 200)
+      );
+    }
+    return res.ok;
+  } catch (error) {
+    console.error("Google Wallet class update error:", error);
+    return false;
+  }
+}
+
+/**
  * Met à jour un objet Google Wallet existant via l'API REST
  */
 export async function updateGoogleWalletObject(

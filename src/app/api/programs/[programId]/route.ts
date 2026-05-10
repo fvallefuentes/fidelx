@@ -126,16 +126,22 @@ export async function PATCH(
       where: { programId },
       select: { id: true },
     });
-    // Fire-and-forget : ne pas bloquer la réponse sur ~N pushs.
-    // Apple Wallet refetchera le pass à la prochaine notif (design pris
-    // dynamiquement à la génération du .pkpass).
+    // 1. APPLE WALLET : push silencieux à chaque iPhone enregistré.
+    //    Le .pkpass est régénéré à la volée avec le nouveau cardDesign.
     void Promise.allSettled(
       cards.map((c) => notifyPassUpdate(c.id))
     ).catch(() => {});
-    // Google Wallet : les passes existantes conservent leur design tant
-    // que l'objet n'est pas mis à jour. Le design du class n'est pas
-    // updatable rétroactivement via l'API — les nouveaux passes auront
-    // bien le nouveau design.
+    // 2. GOOGLE WALLET : update la LoyaltyClass (où vit le design côté
+    //    Google). Toutes les cartes existantes héritent automatiquement.
+    try {
+      const { updateGoogleWalletClass } = await import("@/lib/wallet/google");
+      void updateGoogleWalletClass(programId).catch(() => {});
+    } catch (e) {
+      console.error(
+        "[programs/patch] google class update failed:",
+        (e as Error).message
+      );
+    }
   } catch (e) {
     console.error("[programs/patch] propagation failed:", (e as Error).message);
   }
