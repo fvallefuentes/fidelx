@@ -32,6 +32,7 @@ export default function JoinPage() {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -64,6 +65,7 @@ export default function JoinPage() {
         firstName,
         email: email || undefined,
         phone: phone || undefined,
+        birthDate: birthDate || undefined,
       }),
     });
     const data = await res.json();
@@ -224,6 +226,23 @@ export default function JoinPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 autoComplete="tel"
+              />
+            </div>
+
+            <div className="join-field">
+              <label htmlFor="birthDate">
+                Date de naissance{" "}
+                <span style={{ color: "#8a8e84", fontSize: 11 }}>
+                  (optionnel — pour un cadeau d&apos;anniversaire 🎂)
+                </span>
+              </label>
+              <input
+                id="birthDate"
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                autoComplete="bday"
+                max={new Date().toISOString().split("T")[0]}
               />
             </div>
 

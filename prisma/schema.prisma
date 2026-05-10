@@ -129,6 +129,11 @@ model User {
   manualPlanUntil  DateTime?
   manualPlanReason String?
 
+  // Onboarding : null = pas encore terminé, redirige vers le wizard.
+  // Set quand le commerçant a (1) créé son 1er programme, (2) téléchargé
+  // son QR code, (3) validé un scan test.
+  onboardingCompletedAt DateTime?
+
   accounts       Account[]
   sessions       Session[]
   establishments Establishment[]
@@ -257,12 +262,13 @@ enum RewardType {
 // =============================================
 
 model Client {
-  id            String  @id @default(cuid())
+  id            String    @id @default(cuid())
   firstName     String
   email         String?
   phone         String?
-  preferredLang String  @default("fr")
-  referredById  String? // client qui l'a parrainé
+  birthDate     DateTime? // Date d'anniversaire (J-M-A) pour campagne anniversaire automatique
+  preferredLang String    @default("fr")
+  referredById  String?   // client qui l'a parrainé
 
   referredBy Client?  @relation("Referrals", fields: [referredById], references: [id])
   referrals  Client[] @relation("Referrals")
@@ -468,6 +474,7 @@ enum TriggerType {
   INACTIVITY
   POST_STAMP
   MILESTONE
+  BIRTHDAY    // Auto-déclenché J-7 avant l'anniversaire d'un client
 }
 
 enum Segment {

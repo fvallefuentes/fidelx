@@ -98,6 +98,7 @@ export async function POST(
     firstName,
     email: rawEmail,
     phone: rawPhone,
+    birthDate: rawBirthDate,
     referralCode,
   } = await req.json();
 
@@ -111,6 +112,19 @@ export async function POST(
 
   const email = normalizeEmail(rawEmail);
   const phone = normalizePhone(rawPhone);
+
+  // Parse birthDate : YYYY-MM-DD → Date à minuit UTC. Bornes : 1900..aujourd'hui
+  let birthDate: Date | null = null;
+  if (rawBirthDate && typeof rawBirthDate === "string") {
+    const parsed = new Date(rawBirthDate);
+    if (
+      !isNaN(parsed.getTime()) &&
+      parsed.getFullYear() >= 1900 &&
+      parsed.getTime() <= Date.now()
+    ) {
+      birthDate = parsed;
+    }
+  }
 
   if (!email && !phone) {
     return respond(
@@ -157,7 +171,13 @@ export async function POST(
 
   if (!client) {
     client = await prisma.client.create({
-      data: { firstName, email, phone },
+      data: { firstName, email, phone, birthDate },
+    });
+  } else if (birthDate && !client.birthDate) {
+    // Le client existe déjà mais n'a pas de date d'anniversaire → on l'enregistre
+    client = await prisma.client.update({
+      where: { id: client.id },
+      data: { birthDate },
     });
   }
 
