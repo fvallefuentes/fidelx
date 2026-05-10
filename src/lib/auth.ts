@@ -23,8 +23,9 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Email et mot de passe requis");
         }
 
+        const normalizedEmail = credentials.email.trim().toLowerCase();
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: normalizedEmail },
         });
 
         if (!user || !user.passwordHash) {
@@ -38,6 +39,14 @@ export const authOptions: NextAuthOptions = {
 
         if (!isValid) {
           throw new Error("Email ou mot de passe incorrect");
+        }
+
+        // Bloquer la connexion si l'email n'est pas vérifié.
+        // Bypass : ADMIN (cas de seed initial uniquement).
+        // Le préfixe EMAIL_NOT_VERIFIED: est détecté côté UI pour rediriger
+        // vers /verify-email avec l'email pré-rempli.
+        if (!user.emailVerified && user.role !== "ADMIN") {
+          throw new Error(`EMAIL_NOT_VERIFIED:${normalizedEmail}`);
         }
 
         return {

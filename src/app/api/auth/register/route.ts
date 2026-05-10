@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { issueVerificationCode } from "@/lib/email/verification";
 
 export async function POST(req: Request) {
   try {
@@ -13,11 +14,26 @@ export async function POST(req: Request) {
       );
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const existingUser = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     });
 
     if (existingUser) {
+      // Cas particulier : compte existe mais email pas encore vérifié
+      // → on régénère un code (cooldown géré par issueVerificationCode)
+      if (!existingUser.emailVerified) {
+        await issueVerificationCode(normalizedEmail);
+        return NextResponse.json(
+          {
+            requiresVerification: true,
+            email: normalizedEmail,
+            existing: true,
+          },
+          { status: 200 }
+        );
+      }
       return NextResponse.json(
         { error: "Un compte existe déjà avec cet email" },
         { status: 409 }
@@ -26,17 +42,24 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
-    const user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name,
-        email,
+        email: normalizedEmail,
         passwordHash,
         language: language || "fr",
+        // emailVerified reste null jusqu'à validation du code
       },
     });
 
+    // Émettre + envoyer le code OTP
+    await issueVerificationCode(normalizedEmail);
+
     return NextResponse.json(
-      { id: user.id, email: user.email, name: user.name },
+      {
+        requiresVerification: true,
+        email: normalizedEmail,
+      },
       { status: 201 }
     );
   } catch (error) {

@@ -12,6 +12,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") ?? "";
   const isPaidPlan = PAID_PLANS.includes(plan);
+  const justVerified = searchParams.get("verified") === "1";
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -31,6 +32,20 @@ function LoginForm() {
     });
 
     if (result?.error) {
+      // Cas spécial : email non vérifié → on relance un code et on redirige
+      if (result.error.startsWith("EMAIL_NOT_VERIFIED:")) {
+        const blockedEmail = result.error.split(":")[1] || email;
+        // Re-déclencher l'envoi du code (silencieux côté UI)
+        await fetch("/api/auth/resend-code", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: blockedEmail }),
+        }).catch(() => {});
+        const params = new URLSearchParams({ email: blockedEmail });
+        if (plan) params.set("plan", plan);
+        router.push(`/verify-email?${params.toString()}`);
+        return;
+      }
       setError("Email ou mot de passe incorrect");
       setLoading(false);
     } else if (isPaidPlan) {
@@ -67,6 +82,11 @@ function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {justVerified && !error && (
+            <div className="auth-success">
+              ✓ Email vérifié. Connectez-vous pour accéder à votre tableau de bord.
+            </div>
+          )}
           {error && <div className="auth-error">{error}</div>}
 
           <div className="auth-field">

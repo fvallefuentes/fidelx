@@ -1,17 +1,14 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import LogoMark from "@/components/landing/LogoMark";
 
-const PAID_PLANS = ["essential", "growth", "multi_site"];
-
 function RegisterForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan") ?? "";
-  const isPaidPlan = PAID_PLANS.includes(plan);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -39,12 +36,11 @@ function RegisterForm() {
         return;
       }
 
-      // Après inscription : checkout si plan payant, sinon dashboard
-      const callbackUrl = isPaidPlan
-        ? `/api/checkout?plan=${plan}`
-        : "/dashboard";
-
-      await signIn("credentials", { email, password, callbackUrl });
+      // Le compte est créé mais l'email n'est pas encore vérifié.
+      // On redirige vers /verify-email où l'utilisateur saisit le code OTP.
+      const params = new URLSearchParams({ email: data.email || email });
+      if (plan) params.set("plan", plan);
+      router.push(`/verify-email?${params.toString()}`);
     } catch {
       setError("Erreur lors de l'inscription");
       setLoading(false);

@@ -46,6 +46,21 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+// Code OTP pour la vérification email à l'inscription commerçant
+// (séparé de VerificationToken qui est réservé à NextAuth).
+model EmailVerificationCode {
+  id         String    @id @default(cuid())
+  email      String
+  codeHash   String    // hash bcrypt du code 6 chiffres
+  expiresAt  DateTime
+  usedAt     DateTime?
+  attempts   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
+  @@index([expiresAt])
+}
+
 // =============================================
 // COMMERCANTS (Users)
 // =============================================
