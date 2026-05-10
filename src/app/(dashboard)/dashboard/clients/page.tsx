@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CardRecoveryModal from "@/components/dashboard/CardRecoveryModal";
+import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 
 interface ClientCard {
   id: string;
@@ -121,9 +122,25 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-        <p className="text-gray-500">{cards.length} client{cards.length !== 1 ? "s" : ""} inscrits</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
+          <p className="text-gray-500">
+            {cards.length} client{cards.length !== 1 ? "s" : ""} inscrits
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <ExportCsvButton
+            endpoint="/api/merchants/export/clients"
+            filename="fidlify-clients.csv"
+            label="Exporter clients"
+          />
+          <ExportCsvButton
+            endpoint="/api/merchants/export/transactions"
+            filename="fidlify-transactions.csv"
+            label="Exporter transactions"
+          />
+        </div>
       </div>
 
       <div className="relative">

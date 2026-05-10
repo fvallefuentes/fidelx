@@ -10,6 +10,8 @@ export interface PlanLimits {
   showFidlifyBranding: boolean;
   maxPrograms: number | null;
   maxCampaignsPerMonth: number | null;
+  /** Export CSV (Clients, Transactions, Campagnes) — uniquement plans payants. */
+  canExportCsv: boolean;
 }
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
@@ -20,6 +22,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     showFidlifyBranding: true,
     maxPrograms: 1,
     maxCampaignsPerMonth: 2,
+    canExportCsv: false,
   },
   ESSENTIAL: {
     maxActiveCards: 1000,
@@ -28,6 +31,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     showFidlifyBranding: false,
     maxPrograms: null,
     maxCampaignsPerMonth: 4,
+    canExportCsv: true,
   },
   GROWTH: {
     maxActiveCards: 5000,
@@ -36,6 +40,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     showFidlifyBranding: false,
     maxPrograms: null,
     maxCampaignsPerMonth: null,
+    canExportCsv: true,
   },
   MULTI_SITE: {
     maxActiveCards: 25000,
@@ -44,6 +49,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     showFidlifyBranding: false,
     maxPrograms: null,
     maxCampaignsPerMonth: null,
+    canExportCsv: true,
   },
 };
 

@@ -16,6 +16,7 @@ import {
   Target,
   Milestone,
 } from "lucide-react";
+import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 
 interface Campaign {
   id: string;
@@ -121,17 +122,24 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Campagnes</h1>
           <p className="text-gray-500">
             Envoyez des notifications à vos clients via leur wallet
           </p>
         </div>
-        <Button onClick={() => setShowForm(true)} disabled={freeLimitReached}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouvelle campagne
-        </Button>
+        <div className="flex gap-2 items-center flex-wrap">
+          <ExportCsvButton
+            endpoint="/api/merchants/export/campaigns"
+            filename="fidlify-campagnes.csv"
+            label="Exporter CSV"
+          />
+          <Button onClick={() => setShowForm(true)} disabled={freeLimitReached}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouvelle campagne
+          </Button>
+        </div>
       </div>
 
       {isFree && (
