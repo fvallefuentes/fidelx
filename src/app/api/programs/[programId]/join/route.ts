@@ -4,6 +4,12 @@ import { generateSerialNumber } from "@/lib/utils";
 import { generateGoogleWalletLink } from "@/lib/wallet/google";
 import { normalizeEmail, normalizePhone } from "@/lib/normalize";
 import { sendRecoveryEmail } from "@/lib/email/recovery";
+import {
+  buildDeviceCookieHeader,
+  extractContext,
+  newDeviceCookieValue,
+} from "@/lib/anti-abuse/fingerprint";
+import { evaluateRateLimits } from "@/lib/anti-abuse/rate-limit";
 
 export async function POST(
   req: Request,
@@ -11,6 +17,57 @@ export async function POST(
 ) {
   const { programId } = await params;
 
+  // ─── Anti-abus : extraire le contexte d'identification ───
+  const ctx = extractContext(req);
+  const deviceCookie = ctx.deviceCookie ?? newDeviceCookieValue();
+  const setCookie = !ctx.deviceCookie; // on doit poser le cookie sur la réponse
+
+  const responseHeaders: Record<string, string> = {};
+  if (setCookie) {
+    responseHeaders["Set-Cookie"] = buildDeviceCookieHeader(deviceCookie);
+  }
+
+  // Helper pour logger une tentative + retourner une réponse JSON
+  async function respond(
+    body: Record<string, unknown>,
+    init: { status: number },
+    log: {
+      result:
+        | "SUCCESS"
+        | "RATE_LIMITED"
+        | "DUPLICATE_RECOVERY"
+        | "PROGRAM_FULL"
+        | "PROGRAM_NOT_FOUND"
+        | "VALIDATION_ERROR";
+      blockedReason?: string;
+      cardId?: string;
+      email?: string | null;
+      phone?: string | null;
+    }
+  ) {
+    try {
+      await prisma.joinAttempt.create({
+        data: {
+          programId,
+          ipPrefix: ctx.ipPrefix,
+          userAgent: ctx.userAgent,
+          deviceCookie,
+          fingerprint: ctx.fingerprint,
+          email: log.email ?? null,
+          phone: log.phone ?? null,
+          cardId: log.cardId ?? null,
+          result: log.result,
+          blockedReason: log.blockedReason ?? null,
+        },
+      });
+    } catch (e) {
+      // Le logging ne doit jamais bloquer la réponse client
+      console.error("[joinAttempt log] failed:", (e as Error).message);
+    }
+    return NextResponse.json(body, { status: init.status, headers: responseHeaders });
+  }
+
+  // ─── Vérif programme ───
   const program = await prisma.loyaltyProgram.findUnique({
     where: { id: programId, isActive: true },
     include: {
@@ -20,20 +77,23 @@ export async function POST(
   });
 
   if (!program) {
-    return NextResponse.json(
+    return respond(
       { error: "Programme introuvable" },
-      { status: 404 }
+      { status: 404 },
+      { result: "PROGRAM_NOT_FOUND" }
     );
   }
 
-  // Vérifier la limite du plan gratuit (50 clients)
+  // Plan FREE : limite 50 clients
   if (program.merchant.plan === "FREE" && program._count.cards >= 50) {
-    return NextResponse.json(
+    return respond(
       { error: "Ce programme a atteint sa limite de clients" },
-      { status: 403 }
+      { status: 403 },
+      { result: "PROGRAM_FULL" }
     );
   }
 
+  // ─── Validation input ───
   const {
     firstName,
     email: rawEmail,
@@ -42,26 +102,51 @@ export async function POST(
   } = await req.json();
 
   if (!firstName) {
-    return NextResponse.json(
+    return respond(
       { error: "Le prénom est requis" },
-      { status: 400 }
+      { status: 400 },
+      { result: "VALIDATION_ERROR", blockedReason: "missing_first_name" }
     );
   }
 
-  // Normalisation : lowercase email + Gmail dots/aliases, phone E.164
   const email = normalizeEmail(rawEmail);
   const phone = normalizePhone(rawPhone);
 
   if (!email && !phone) {
-    return NextResponse.json(
+    return respond(
       { error: "Un email ou téléphone est requis" },
-      { status: 400 }
+      { status: 400 },
+      { result: "VALIDATION_ERROR", blockedReason: "missing_email_phone" }
     );
   }
 
-  // Chercher le client existant (cross-merchant : un client peut avoir N
-  // cartes pour N programmes différents — la contrainte unique est sur
-  // (clientId, programId), pas sur clientId seul).
+  // ─── Rate limiting ───
+  const rl = await evaluateRateLimits({
+    programId,
+    ipPrefix: ctx.ipPrefix,
+    email,
+    phone,
+    deviceCookie,
+    fingerprint: ctx.fingerprint,
+  });
+  if (!rl.ok) {
+    return respond(
+      {
+        error:
+          "Trop de tentatives d'inscription. Veuillez réessayer dans quelques minutes.",
+      },
+      { status: 429 },
+      {
+        result: "RATE_LIMITED",
+        blockedReason: rl.rule,
+        email,
+        phone,
+      }
+    );
+  }
+
+  // ─── Lookup client (cross-merchant : un client peut avoir N cartes pour
+  //   N programmes différents — la contrainte unique est sur (clientId, programId)) ───
   let client = null;
   if (email) {
     client = await prisma.client.findFirst({ where: { email } });
@@ -76,22 +161,13 @@ export async function POST(
     });
   }
 
-  // Vérifier si le client a déjà une carte pour CE programme spécifique
+  // ─── Vérif carte existante pour CE programme ───
   const existingCard = await prisma.loyaltyCard.findUnique({
-    where: {
-      clientId_programId: {
-        clientId: client.id,
-        programId,
-      },
-    },
+    where: { clientId_programId: { clientId: client.id, programId } },
   });
 
   if (existingCard) {
-    // Privacy-safe : si on a un email, on envoie un lien de récupération
-    // automatiquement. Réponse API opaque (toujours 409 même si pas d'email)
-    // pour empêcher l'énumération.
     if (email) {
-      // Fire-and-forget — on ne bloque pas la réponse sur l'envoi
       void sendRecoveryEmail({
         toEmail: email,
         firstName: client.firstName,
@@ -100,16 +176,17 @@ export async function POST(
         serialNumber: existingCard.serialNumber,
       });
     }
-    return NextResponse.json(
+    return respond(
       {
         error: "Vous avez déjà une carte pour ce programme",
         recoveryEmailSent: !!email,
       },
-      { status: 409 }
+      { status: 409 },
+      { result: "DUPLICATE_RECOVERY", email, phone, cardId: existingCard.id }
     );
   }
 
-  // Traiter le parrainage si un code est fourni
+  // ─── Parrainage (optionnel) ───
   let referralBonus = 0;
   if (referralCode) {
     const referralLink = await prisma.referralLink.findUnique({
@@ -149,8 +226,10 @@ export async function POST(
     }
   }
 
+  // ─── Création de la carte (status PENDING par défaut) ───
+  // La carte ne deviendra ACTIVE qu'au premier scan en boutique par
+  // le commerçant ou un staff (cf. /api/transactions/stamp).
   const serialNumber = generateSerialNumber();
-
   const card = await prisma.loyaltyCard.create({
     data: {
       clientId: client.id,
@@ -158,6 +237,7 @@ export async function POST(
       serialNumber,
       currentStamps: referralBonus,
       currentPoints: referralBonus,
+      // status: PENDING (default)
     },
   });
 
@@ -172,20 +252,18 @@ export async function POST(
     });
   }
 
-  // Apple Wallet URL — l'extension .pkpass est requise pour que iOS Safari
-  // reconnaisse la réponse comme un pass Wallet (sinon page blanche).
+  // ─── URLs Wallet (Apple .pkpass + Google JWT link) ───
   const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple/${card.serialNumber}.pkpass`;
-
-  // Google Wallet URL
   const googleWalletUrl = await generateGoogleWalletLink(card.id);
 
-  return NextResponse.json(
+  return respond(
     {
       cardId: card.id,
       serialNumber: card.serialNumber,
       walletUrl,
       googleWalletUrl,
     },
-    { status: 201 }
+    { status: 201 },
+    { result: "SUCCESS", cardId: card.id, email, phone }
   );
 }

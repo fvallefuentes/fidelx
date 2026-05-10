@@ -61,6 +61,43 @@ model EmailVerificationCode {
   @@index([expiresAt])
 }
 
+// Tentative d'inscription via QR code : tracking anti-abus.
+// Chaque POST sur /api/programs/[id]/join est loggé ici, qu'il
+// réussisse ou non, avec le contexte (IP /24, UA, cookie device,
+// fingerprint, email/phone normalisés). Permet le rate limiting
+// par dimension et la détection d'abus.
+model JoinAttempt {
+  id            String     @id @default(cuid())
+  programId     String
+  ipPrefix      String?    // IP anonymisée (IPv4 /24, IPv6 /48)
+  userAgent     String?    @db.Text
+  deviceCookie  String?    // valeur du cookie fid_dev (UUID)
+  fingerprint   String?    // hash(UA + IP/24 + Accept-Language)
+  email         String?    // email normalisé (peut être null)
+  phone         String?    // phone normalisé E.164 (peut être null)
+  cardId        String?    // si succès, ID de la carte créée
+  result        JoinResult
+  blockedReason String?    // précision si rate limit / blocage
+  createdAt     DateTime   @default(now())
+
+  @@index([programId, createdAt])
+  @@index([ipPrefix, createdAt])
+  @@index([deviceCookie, createdAt])
+  @@index([fingerprint, createdAt])
+  @@index([email, createdAt])
+  @@index([phone, createdAt])
+  @@index([result, createdAt])
+}
+
+enum JoinResult {
+  SUCCESS
+  RATE_LIMITED
+  DUPLICATE_RECOVERY  // carte existante → email de récupération envoyé
+  PROGRAM_FULL        // limite plan FREE atteinte
+  PROGRAM_NOT_FOUND
+  VALIDATION_ERROR
+}
+
 // =============================================
 // COMMERCANTS (Users)
 // =============================================
@@ -253,7 +290,7 @@ model LoyaltyCard {
   cashbackBalance Float @default(0)
   totalVisits    Int    @default(0)
   totalSpent     Float  @default(0)
-  status         CardStatus @default(ACTIVE)
+  status         CardStatus @default(PENDING)
   lastVisitAt    DateTime?
   lastMessage    String?    // dernière notification reçue (campagne) — affichée au verso du pass
   lastMessageAt  DateTime?
@@ -276,6 +313,7 @@ model LoyaltyCard {
 }
 
 enum CardStatus {
+  PENDING        // Carte créée, mais pas encore validée par un 1er scan en boutique
   ACTIVE
   COMPLETED
   EXPIRED

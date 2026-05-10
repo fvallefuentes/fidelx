@@ -36,9 +36,9 @@ type SortKey = "firstName" | "progression" | "totalVisits" | "lastVisitAt" | "wa
 type SortDir = "asc" | "desc";
 
 const WALLET_ORDER = { installed: 0, removed: 1, never_installed: 2 };
-const STATUS_ORDER: Record<string, number> = { ACTIVE: 0, REWARD_PENDING: 1, COMPLETED: 2, EXPIRED: 3, REVOKED: 4 };
+const STATUS_ORDER: Record<string, number> = { PENDING: 0, ACTIVE: 1, REWARD_PENDING: 2, COMPLETED: 3, EXPIRED: 4, REVOKED: 5 };
 const STATUS_LABELS: Record<string, string> = {
-  ACTIVE: "Actif", COMPLETED: "Complété", REWARD_PENDING: "Récompense", EXPIRED: "Expiré", REVOKED: "Révoqué",
+  PENDING: "En attente", ACTIVE: "Actif", COMPLETED: "Complété", REWARD_PENDING: "Récompense", EXPIRED: "Expiré", REVOKED: "Révoqué",
 };
 
 function getProgression(card: ClientCard): number {
@@ -50,7 +50,7 @@ function getProgression(card: ClientCard): number {
 }
 
 type WalletFilter = "all" | "installed" | "removed" | "never_installed";
-type StatusFilter = "all" | "ACTIVE" | "COMPLETED" | "REWARD_PENDING" | "EXPIRED" | "REVOKED";
+type StatusFilter = "all" | "PENDING" | "ACTIVE" | "COMPLETED" | "REWARD_PENDING" | "EXPIRED" | "REVOKED";
 
 export default function ClientsPage() {
   const [cards, setCards] = useState<ClientCard[]>([]);
@@ -164,6 +164,7 @@ export default function ClientsPage() {
           <span className="text-xs text-gray-400 mr-1">Statut :</span>
           {([
             { val: "all",            label: "Tous" },
+            { val: "PENDING",        label: "En attente" },
             { val: "ACTIVE",         label: "Actif" },
             { val: "COMPLETED",      label: "Complété" },
             { val: "REWARD_PENDING", label: "Récompense" },

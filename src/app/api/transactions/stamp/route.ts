@@ -62,6 +62,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Une récompense est en attente de validation pour cette carte" }, { status: 400 });
   }
 
+  // ─── Auto-activation au premier scan (anti-abus) ───
+  // Les cartes sont créées en PENDING via le QR signup. Au premier scan
+  // par le commerçant en boutique, la carte est validée et passe en ACTIVE.
+  // Cela neutralise les attaques où un client crée des cartes en masse :
+  // tant qu'elles ne passent pas en caisse, elles n'ont aucune valeur.
+  const wasPending = (card.status as string) === "PENDING";
+  if (wasPending) {
+    await prisma.loyaltyCard.update({
+      where: { id: card.id },
+      data: { status: "ACTIVE" },
+    });
+    card.status = "ACTIVE";
+  }
+
   const config = card.program.config as Record<string, unknown>;
   let rewardUnlocked = null;
 

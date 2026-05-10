@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   BarChart2,
+  Shield,
   Settings,
   LogOut,
   X,
@@ -17,6 +18,7 @@ const navigation = [
   { name: "Tableau de bord", href: "/admin", icon: LayoutDashboard, exact: true },
   { name: "Utilisateurs", href: "/admin/users", icon: Users },
   { name: "Statistiques", href: "/admin/stats", icon: BarChart2 },
+  { name: "Anti-abus", href: "/admin/abuse", icon: Shield },
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ];
 
