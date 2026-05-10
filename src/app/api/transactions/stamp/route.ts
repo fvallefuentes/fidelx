@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
+import { createMerchantNotification } from "@/lib/notifications/merchant";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -47,12 +48,51 @@ export async function POST(req: Request) {
     const periodStart = getPeriodStart(merchant!);
     const used = await countStampsThisMonth(merchantId, periodStart);
     if (used + stampCount > limits.maxStampsPerMonth) {
+      // Notif in-app : limite atteinte (idempotent — 1× par mois grâce au dedupeKey)
+      const ym = new Date().toISOString().slice(0, 7);
+      void createMerchantNotification({
+        merchantId,
+        type: "PLAN_LIMIT_REACHED",
+        title: `🚫 Limite mensuelle atteinte`,
+        body: `${limits.maxStampsPerMonth} tampons/mois sur votre plan. Passez à un plan supérieur pour des scans illimités.`,
+        link: `/dashboard/settings`,
+        metadata: { plan: merchant?.plan, used, limit: limits.maxStampsPerMonth },
+        dedupeKey: `plan-limit-reached-${ym}`,
+        dedupeMinutes: 60 * 24 * 31,
+      });
       return NextResponse.json(
         {
           error: `Limite mensuelle atteinte (${limits.maxStampsPerMonth} tampons/mois sur votre plan). ${used} déjà donnés ce mois-ci. Passez à un plan supérieur pour des scans illimités.`,
         },
         { status: 403 }
       );
+    }
+    // Notif 80% : 1× par mois max
+    const ratio = (used + stampCount) / limits.maxStampsPerMonth;
+    if (ratio >= 0.8 && ratio < 0.95) {
+      const ym = new Date().toISOString().slice(0, 7);
+      void createMerchantNotification({
+        merchantId,
+        type: "PLAN_LIMIT_WARNING",
+        title: `⚠️ 80% de votre quota mensuel atteint`,
+        body: `${used + stampCount}/${limits.maxStampsPerMonth} tampons utilisés ce mois-ci.`,
+        link: `/dashboard/settings`,
+        metadata: { plan: merchant?.plan, used: used + stampCount, limit: limits.maxStampsPerMonth },
+        dedupeKey: `plan-limit-warning-80-${ym}`,
+        dedupeMinutes: 60 * 24 * 31,
+      });
+    } else if (ratio >= 0.95) {
+      const ym = new Date().toISOString().slice(0, 7);
+      void createMerchantNotification({
+        merchantId,
+        type: "PLAN_LIMIT_REACHED",
+        title: `🔥 95% de votre quota mensuel atteint`,
+        body: `${used + stampCount}/${limits.maxStampsPerMonth} tampons utilisés. Pensez à upgrader avant blocage.`,
+        link: `/dashboard/settings`,
+        metadata: { plan: merchant?.plan, used: used + stampCount, limit: limits.maxStampsPerMonth },
+        dedupeKey: `plan-limit-warning-95-${ym}`,
+        dedupeMinutes: 60 * 24 * 31,
+      });
     }
   }
   if (card.status === "REVOKED" || card.status === "EXPIRED") {

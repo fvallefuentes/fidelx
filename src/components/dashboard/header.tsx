@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { Menu, Sparkles } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
+import { NotificationsBell } from "./NotificationsBell";
 
 export function Header({
   onOpenMobileNav,
@@ -28,6 +29,7 @@ export function Header({
         </span>
       </div>
       <div className="dx-header-right">
+        <NotificationsBell />
         <button
           type="button"
           className="dx-burger"

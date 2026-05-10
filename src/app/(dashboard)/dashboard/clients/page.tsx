@@ -15,6 +15,7 @@ import {
   ArrowDown,
   RotateCcw,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import CardRecoveryModal from "@/components/dashboard/CardRecoveryModal";
 
 interface ClientCard {
@@ -53,6 +54,7 @@ type WalletFilter = "all" | "installed" | "removed" | "never_installed";
 type StatusFilter = "all" | "PENDING" | "ACTIVE" | "COMPLETED" | "REWARD_PENDING" | "EXPIRED" | "REVOKED";
 
 export default function ClientsPage() {
+  const router = useRouter();
   const [cards, setCards] = useState<ClientCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -227,7 +229,11 @@ export default function ClientsPage() {
                   {filtered.map((card) => {
                     const maxStamps = (card.program.config as { maxStamps?: number }).maxStamps || 10;
                     return (
-                      <tr key={card.id} className="hover:bg-gray-50">
+                      <tr
+                        key={card.id}
+                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                        onClick={() => router.push(`/dashboard/clients/${card.id}`)}
+                      >
                         <td className="py-3 px-2">
                           <p className="font-medium">{card.client.firstName}</p>
                           <p className="text-xs text-gray-400">{card.client.email || card.client.phone || "—"}</p>
@@ -265,7 +271,10 @@ export default function ClientsPage() {
                         <td className="py-3 px-2 text-right">
                           <button
                             type="button"
-                            onClick={() => setRecoveryCard(card)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setRecoveryCard(card);
+                            }}
                             className="client-row-action"
                             title="Récupérer la carte (QR à donner au client)"
                           >

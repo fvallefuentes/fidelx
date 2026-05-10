@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createMerchantNotification } from "@/lib/notifications/merchant";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -30,6 +31,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Aucune récompense en attente sur cette carte" }, { status: 400 });
   }
 
+  // Détecter si c'est la 1ère récompense (utile pour la notif merchant)
+  const isFirstReward =
+    (await prisma.rewardClaim.count({
+      where: { cardId: card.id, redeemedAt: { not: null } },
+    })) === 0;
+
   // Reset stamps and reactivate card
   await prisma.loyaltyCard.update({
     where: { id: card.id },
@@ -43,6 +50,18 @@ export async function POST(req: Request) {
     const { notifyPassUpdate } = await import("@/lib/wallet/push");
     await notifyPassUpdate(card.id);
   } catch { /* non bloquant */ }
+
+  // Notification in-app commerçant : 1ère récompense d'un client
+  if (isFirstReward) {
+    void createMerchantNotification({
+      merchantId: card.program.merchant.id,
+      type: "CLIENT_FIRST_REWARD",
+      title: `🎉 1ère récompense pour ${card.client.firstName}`,
+      body: `Carte complétée, récompense remise.`,
+      link: `/dashboard/clients/${card.id}`,
+      metadata: { cardId: card.id },
+    });
+  }
 
   return NextResponse.json({
     success: true,

@@ -98,6 +98,34 @@ enum JoinResult {
   VALIDATION_ERROR
 }
 
+// Notifications in-app pour le commerçant (cloche dans le header).
+// Distinctes des push wallet (qui vont aux clients finaux).
+model MerchantNotification {
+  id          String                    @id @default(cuid())
+  merchantId  String
+  type        MerchantNotificationType
+  title       String
+  body        String?
+  link        String?  // URL relative à ouvrir au clic
+  readAt      DateTime?
+  metadata    Json?    // {cardId, clientId, programId, campaignId, ...}
+  createdAt   DateTime @default(now())
+
+  @@index([merchantId, createdAt])
+  @@index([merchantId, readAt])
+}
+
+enum MerchantNotificationType {
+  CLIENT_SIGNUP           // Nouveau client inscrit
+  CLIENT_FIRST_REWARD     // 1ère récompense réclamée par un client
+  CLIENT_BIRTHDAY_SOON    // Anniversaire d'un client J-7
+  CLIENT_BIRTHDAY_TODAY   // Anniversaire d'un client aujourd'hui
+  CAMPAIGN_SENT           // Une campagne a été envoyée
+  PLAN_LIMIT_WARNING      // Quota plan à 80%
+  PLAN_LIMIT_REACHED      // Quota plan à 95% ou 100%
+  SYSTEM                  // Notification générique de Fidlify
+}
+
 // =============================================
 // COMMERCANTS (Users)
 // =============================================
@@ -301,6 +329,7 @@ model LoyaltyCard {
   lastMessage    String?    // dernière notification reçue (campagne) — affichée au verso du pass
   lastMessageAt  DateTime?
   lastCampaignLogo String?  @db.Text // data URL (base64) du logo override pour la dernière campagne
+  merchantNotes  String?    @db.Text // notes libres du commerçant sur ce client (drill-down)
 
   client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   program       LoyaltyProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)

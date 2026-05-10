@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyAllCardsInProgram } from "@/lib/wallet/push";
+import { createMerchantNotification } from "@/lib/notifications/merchant";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -70,6 +71,15 @@ export async function GET(req: Request) {
           sentCount: r.sent,
           sentAt: new Date(),
         },
+      });
+      // Notif in-app commerçant : campagne envoyée
+      void createMerchantNotification({
+        merchantId: c.merchantId,
+        type: "CAMPAIGN_SENT",
+        title: `📨 Campagne envoyée : ${c.name}`,
+        body: `${r.sent}/${r.total} destinataires touchés.`,
+        link: `/dashboard/campaigns`,
+        metadata: { campaignId: c.id },
       });
       results.push({ id: c.id, name: c.name, sent: r.sent, total: r.total });
     } catch (err) {

@@ -10,6 +10,7 @@ import {
   newDeviceCookieValue,
 } from "@/lib/anti-abuse/fingerprint";
 import { evaluateRateLimits } from "@/lib/anti-abuse/rate-limit";
+import { createMerchantNotification } from "@/lib/notifications/merchant";
 
 export async function POST(
   req: Request,
@@ -275,6 +276,16 @@ export async function POST(
   // ─── URLs Wallet (Apple .pkpass + Google JWT link) ───
   const walletUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple/${card.serialNumber}.pkpass`;
   const googleWalletUrl = await generateGoogleWalletLink(card.id);
+
+  // Notification in-app commerçant : nouveau client inscrit
+  void createMerchantNotification({
+    merchantId: program.merchantId,
+    type: "CLIENT_SIGNUP",
+    title: `Nouveau client : ${client.firstName}`,
+    body: `Inscrit·e au programme « ${program.name} »`,
+    link: `/dashboard/clients/${card.id}`,
+    metadata: { cardId: card.id, clientId: client.id, programId },
+  });
 
   return respond(
     {

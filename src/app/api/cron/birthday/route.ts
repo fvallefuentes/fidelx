@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyPassUpdate } from "@/lib/wallet/push";
+import { createMerchantNotification } from "@/lib/notifications/merchant";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -129,6 +130,17 @@ export async function GET(req: Request) {
           delivered: true,
           deliveredAt: now,
         },
+      });
+
+      // Notif in-app commerçant : anniversaire d'un client (J-7)
+      const client = matchingClients.find((c) => c.id === card.clientId);
+      void createMerchantNotification({
+        merchantId: card.program.merchantId,
+        type: "CLIENT_BIRTHDAY_SOON",
+        title: `🎂 Anniversaire dans 7 jours`,
+        body: `${client?.firstName ?? "Un client"} fête son anniversaire bientôt. Campagne envoyée.`,
+        link: `/dashboard/clients/${card.id}`,
+        metadata: { cardId: card.id },
       });
 
       sent++;
