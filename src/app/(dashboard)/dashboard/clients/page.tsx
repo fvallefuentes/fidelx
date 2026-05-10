@@ -4,7 +4,18 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Users, Search, Smartphone, XCircle, Hourglass, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Users,
+  Search,
+  Smartphone,
+  XCircle,
+  Hourglass,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  RotateCcw,
+} from "lucide-react";
+import CardRecoveryModal from "@/components/dashboard/CardRecoveryModal";
 
 interface ClientCard {
   id: string;
@@ -49,6 +60,7 @@ export default function ClientsPage() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [walletFilter, setWalletFilter] = useState<WalletFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [recoveryCard, setRecoveryCard] = useState<ClientCard | null>(null);
 
   useEffect(() => {
     fetch("/api/cards")
@@ -207,6 +219,7 @@ export default function ClientsPage() {
                     <SortTh label="Dernière visite" col="lastVisitAt" active={sortKey} dir={sortDir} onSort={handleSort} />
                     <SortTh label="Wallet"          col="walletStatus" active={sortKey} dir={sortDir} onSort={handleSort} />
                     <SortTh label="Statut"          col="status"      active={sortKey} dir={sortDir} onSort={handleSort} />
+                    <th className="pb-3 font-medium px-2 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -257,6 +270,17 @@ export default function ClientsPage() {
                             {STATUS_LABELS[card.status] ?? card.status}
                           </Badge>
                         </td>
+                        <td className="py-3 px-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setRecoveryCard(card)}
+                            className="client-row-action"
+                            title="Récupérer la carte (QR à donner au client)"
+                          >
+                            <RotateCcw size={12} />
+                            Récup.
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
@@ -265,6 +289,16 @@ export default function ClientsPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {recoveryCard && (
+        <CardRecoveryModal
+          open={!!recoveryCard}
+          onClose={() => setRecoveryCard(null)}
+          clientFirstName={recoveryCard.client.firstName}
+          programName={recoveryCard.program.name}
+          serialNumber={recoveryCard.serialNumber}
+        />
       )}
     </div>
   );

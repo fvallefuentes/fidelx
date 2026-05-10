@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         "/checkout/",
         "/stamp/",
         "/join/",
+        "/carte/", // Pages de récupération individuelles (URL = token)
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
