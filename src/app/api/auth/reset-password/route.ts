@@ -12,7 +12,12 @@ import { prisma } from "@/lib/prisma";
  */
 
 export async function POST(req: Request) {
-  const body = await req.json();
+  let body: { token?: string; password?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body JSON invalide" }, { status: 400 });
+  }
   const token = String(body?.token || "").trim();
   const password = String(body?.password || "");
 

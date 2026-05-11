@@ -14,6 +14,7 @@ const BETA_GATE_OPEN_PATHS = new Set([
   "/favicon.ico",
   "/manifest.webmanifest",
   "/sw.js",
+  "/reset-password", // user reçoit le lien par email, doit pouvoir l'ouvrir
 ]);
 
 /* ─── IP block cache (TTL 60s, partagé entre requêtes du même worker) ─── */
