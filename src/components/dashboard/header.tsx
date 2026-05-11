@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Menu, Sparkles } from "lucide-react";
+import { Menu, Sparkles, Search } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 import { NotificationsBell } from "./NotificationsBell";
 
@@ -12,6 +13,24 @@ export function Header({
 }) {
   const { data: session } = useSession();
   const plan = session?.user?.plan || "FREE";
+  const [isMac, setIsMac] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      setIsMac(/Mac|iPhone|iPad/i.test(navigator.platform));
+    }
+  }, []);
+
+  function openSearch() {
+    // Déclenche le command palette en simulant Cmd/Ctrl+K
+    const event = new KeyboardEvent("keydown", {
+      key: "k",
+      metaKey: isMac,
+      ctrlKey: !isMac,
+      bubbles: true,
+    });
+    window.dispatchEvent(event);
+  }
 
   return (
     <header className="dx-header">
@@ -29,6 +48,17 @@ export function Header({
         </span>
       </div>
       <div className="dx-header-right">
+        <button
+          type="button"
+          onClick={openSearch}
+          className="dx-header-search-btn"
+          aria-label="Rechercher (Ctrl+K)"
+          title="Rechercher (Ctrl+K)"
+        >
+          <Search className="h-[15px] w-[15px]" />
+          <span>Rechercher…</span>
+          <span className="cp-kbd">{isMac ? "⌘K" : "Ctrl K"}</span>
+        </button>
         <NotificationsBell />
         <button
           type="button"

@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X, Eye } from "lucide-react";
+import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
 
 interface Program {
   id: string;
@@ -157,6 +158,7 @@ export default function ProgramsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
+  const [previewingProgram, setPreviewingProgram] = useState<Program | null>(null);
 
   useEffect(() => {
     fetchPrograms();
@@ -271,6 +273,15 @@ export default function ProgramsPage() {
                     </div>
                   )}
                   <div className="mt-4 flex gap-2 flex-wrap items-center">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewingProgram(program)}
+                      className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
+                      title="Voir l'interface telle qu'un client la voit"
+                    >
+                      <Eye className="h-3 w-3" />
+                      Voir comme un client
+                    </button>
                     <a
                       href={`/join/${program.id}`}
                       target="_blank"
@@ -336,6 +347,15 @@ export default function ProgramsPage() {
             setEditingProgram(null);
             fetchPrograms();
           }}
+        />
+      )}
+
+      {previewingProgram && (
+        <ClientPreviewModal
+          programId={previewingProgram.id}
+          programName={previewingProgram.name}
+          open={!!previewingProgram}
+          onClose={() => setPreviewingProgram(null)}
         />
       )}
     </div>

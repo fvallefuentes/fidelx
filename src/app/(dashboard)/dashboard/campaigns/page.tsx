@@ -17,6 +17,8 @@ import {
   Milestone,
 } from "lucide-react";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
+import { CAMPAIGN_TEMPLATES, type CampaignTemplate } from "@/lib/campaign-templates";
+import { Sparkles } from "lucide-react";
 
 interface Campaign {
   id: string;
@@ -333,6 +335,20 @@ function CreateCampaignForm({
   const [programId, setProgramId] = useState(programs[0]?.id || "");
   const [triggerType, setTriggerType] = useState("IMMEDIATE");
   const [targetSegment, setTargetSegment] = useState("ALL");
+  const [showTemplates, setShowTemplates] = useState(true);
+
+  function applyTemplate(tpl: CampaignTemplate) {
+    setName(tpl.name);
+    setMessage(tpl.message);
+    // FREE plan : seulement IMMEDIATE autorisé pour le push manuel
+    if (isFree && tpl.triggerType !== "IMMEDIATE") {
+      setTriggerType("IMMEDIATE");
+    } else {
+      setTriggerType(tpl.triggerType);
+    }
+    setTargetSegment(tpl.targetSegment);
+    setShowTemplates(false);
+  }
   const [notifTitle, setNotifTitle] = useState(""); // optionnel, override du titre
   const [notifLogo, setNotifLogo] = useState<string>(""); // optionnel, base64 data URL
   const [logoError, setLogoError] = useState("");
@@ -408,10 +424,44 @@ function CreateCampaignForm({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle>Nouvelle campagne</CardTitle>
+        <button
+          type="button"
+          onClick={() => setShowTemplates((v) => !v)}
+          className="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors"
+          style={{
+            borderColor: showTemplates
+              ? "rgba(212,255,78,0.5)"
+              : "rgba(255,255,255,0.15)",
+            color: showTemplates ? "#d4ff4e" : "rgba(255,255,255,0.6)",
+            background: showTemplates ? "rgba(212,255,78,0.08)" : "transparent",
+          }}
+        >
+          <Sparkles className="h-3 w-3" />
+          {showTemplates ? "Masquer les modèles" : "Choisir un modèle"}
+        </button>
       </CardHeader>
       <CardContent>
+        {showTemplates && (
+          <div className="campaign-templates-grid">
+            {CAMPAIGN_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                onClick={() => applyTemplate(tpl)}
+                className="campaign-template-card"
+              >
+                <span className="campaign-template-emoji">{tpl.emoji}</span>
+                <div className="campaign-template-info">
+                  <div className="campaign-template-title">{tpl.title}</div>
+                  <div className="campaign-template-desc">{tpl.description}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="dx-campaign-grid">
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">

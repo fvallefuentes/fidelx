@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { redirect, usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
+import { CommandPalette } from "@/components/dashboard/CommandPalette";
 
 export default function DashboardLayout({
   children,
@@ -85,6 +86,7 @@ export default function DashboardLayout({
 
   return (
     <div className="dashboard">
+      <CommandPalette />
       <div className="dx-shell">
         {/* Backdrop derrière le drawer mobile */}
         <div
