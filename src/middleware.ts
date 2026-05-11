@@ -17,6 +17,8 @@ const BETA_GATE_OPEN_PATHS = new Set([
   "/sitemap.xml",
   "/icon.svg",
   "/favicon.ico",
+  "/manifest.webmanifest",
+  "/sw.js",
 ]);
 
 export async function middleware(req: NextRequest) {
