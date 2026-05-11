@@ -36,6 +36,7 @@ import {
   BarChart2,
 } from "lucide-react";
 import type { FullStatsResponse } from "@/app/api/merchants/stats/full/route";
+import { StatsInsights } from "@/components/dashboard/StatsInsights";
 
 const ACCENT      = "#d4ff4e";
 const ACCENT_FILL = "rgba(212,255,78,0.15)";
@@ -781,6 +782,13 @@ export default function StatsPage() {
       {!loading && !error && stats && (
         <>
           <FreeSection stats={stats} />
+
+          {/* Insights avancés : delta période + heatmap + cohorts.
+              Affichage adapté au plan (FREE voit comparaison + teasers locked). */}
+          <div style={{ marginTop: 32 }}>
+            <StatsInsights isFree={plan === "FREE"} />
+          </div>
+
           {planLevel >= PLAN_ORDER.ESSENTIAL && <EssentialSection stats={stats} />}
           {planLevel >= PLAN_ORDER.GROWTH && <GrowthSection stats={stats} />}
           {planLevel >= PLAN_ORDER.MULTI_SITE && <MultiSiteSection stats={stats} />}

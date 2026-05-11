@@ -6,6 +6,7 @@ import { redirect, usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { CommandPalette } from "@/components/dashboard/CommandPalette";
+import { PWARegister } from "@/components/dashboard/PWARegister";
 
 export default function DashboardLayout({
   children,
@@ -86,6 +87,7 @@ export default function DashboardLayout({
 
   return (
     <div className="dashboard">
+      <PWARegister />
       <CommandPalette />
       <div className="dx-shell">
         {/* Backdrop derrière le drawer mobile */}
