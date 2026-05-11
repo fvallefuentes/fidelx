@@ -9,6 +9,56 @@ import { prisma } from "./prisma";
  * dynamiquement (NextAuth ne passe pas req à authorize directement,
  * donc on logue ce qu'on a).
  */
+const AUTO_BLOCK_THRESHOLD = 5; // 5 tentatives échouées
+const AUTO_BLOCK_WINDOW_MS = 10 * 60_000; // dans une fenêtre de 10 min
+const AUTO_BLOCK_DURATION_MS = 60 * 60_000; // → bloque 1 heure
+
+/**
+ * Vérifie si l'IP doit être auto-bloquée après une tentative échouée.
+ * Compte les WRONG_PASSWORD + USER_NOT_FOUND récents depuis cette IP.
+ * Si seuil atteint, upsert BlockedIp.
+ */
+async function maybeAutoBlockIp(ipPrefix: string | null): Promise<void> {
+  if (!ipPrefix) return;
+  try {
+    const recentFailures = await prisma.loginLog.count({
+      where: {
+        ipPrefix,
+        result: { in: ["WRONG_PASSWORD", "USER_NOT_FOUND"] },
+        createdAt: { gte: new Date(Date.now() - AUTO_BLOCK_WINDOW_MS) },
+      },
+    });
+    if (recentFailures < AUTO_BLOCK_THRESHOLD) return;
+
+    // Vérifier si déjà bloqué (pour ne pas écraser la raison/durée admin)
+    const existing = await prisma.blockedIp.findUnique({
+      where: { ipPrefix },
+      select: { id: true, blockedById: true, expiresAt: true },
+    });
+    // Si bloqué par un admin (blockedById set) ou bloqué permanent → on ne touche pas
+    if (existing && existing.blockedById) return;
+    if (existing && existing.expiresAt === null) return;
+
+    const expiresAt = new Date(Date.now() + AUTO_BLOCK_DURATION_MS);
+    const reason = `Auto-block : ${recentFailures}+ tentatives de connexion échouées en ${
+      AUTO_BLOCK_WINDOW_MS / 60_000
+    } min`;
+
+    if (existing) {
+      await prisma.blockedIp.update({
+        where: { id: existing.id },
+        data: { reason, expiresAt, blockedById: null },
+      });
+    } else {
+      await prisma.blockedIp.create({
+        data: { ipPrefix, reason, expiresAt, blockedById: null },
+      });
+    }
+  } catch (e) {
+    console.error("[autoBlockIp] failed:", (e as Error).message);
+  }
+}
+
 async function logLoginAttempt(input: {
   email: string;
   userId?: string | null;
@@ -87,6 +137,8 @@ export const authOptions: NextAuthOptions = {
             ipPrefix,
             userAgent,
           });
+          // Vérifie si l'IP doit être auto-bloquée (en parallèle, fire-and-forget)
+          void maybeAutoBlockIp(ipPrefix);
           throw new Error("Email ou mot de passe incorrect");
         }
 
@@ -103,6 +155,7 @@ export const authOptions: NextAuthOptions = {
             ipPrefix,
             userAgent,
           });
+          void maybeAutoBlockIp(ipPrefix);
           throw new Error("Email ou mot de passe incorrect");
         }
 

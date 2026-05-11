@@ -134,6 +134,126 @@ export function verificationCodeEmail({
 }
 
 /**
+ * Email de réinitialisation de mot de passe (initié par le user via /forgot-password).
+ * Inclus aussi le cas où l'admin envoie le lien.
+ */
+export function passwordResetEmail({
+  firstName,
+  resetUrl,
+  ttlHours,
+}: {
+  firstName?: string | null;
+  resetUrl: string;
+  ttlHours: number;
+}): { subject: string; html: string; text: string } {
+  const subject = "Réinitialisation de votre mot de passe Fidlify";
+
+  const greet = firstName ? `Bonjour ${firstName},` : "Bonjour,";
+  const text = [
+    greet,
+    ``,
+    `Vous (ou l'équipe Fidlify) avez demandé la réinitialisation de votre mot de passe.`,
+    ``,
+    `Cliquez sur ce lien pour définir un nouveau mot de passe :`,
+    resetUrl,
+    ``,
+    `Ce lien est valable ${ttlHours} heures et ne peut être utilisé qu'une seule fois.`,
+    ``,
+    `Si vous n'avez pas demandé ce changement, ignorez ce message — votre mot de passe actuel reste inchangé.`,
+    ``,
+    `— L'équipe Fidlify`,
+    `https://www.fidlify.com`,
+  ].join("\n");
+
+  const html = `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#070707;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:${INK};">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#070707;">
+    <tr>
+      <td align="center" style="padding:48px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:${BG};border:1px solid ${LINE};border-radius:18px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 32px 8px;">
+              <div style="font-family:'SF Mono',Menlo,Consolas,monospace;font-size:11px;letter-spacing:0.18em;color:${ACCENT};font-weight:600;">FIDLIFY</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px 4px;">
+              <h1 style="margin:0;font-size:24px;line-height:1.25;font-weight:600;letter-spacing:-0.01em;color:${INK};">
+                Réinitialisation du mot de passe
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 32px 24px;">
+              <p style="margin:0;font-size:15px;line-height:1.65;color:${INK_2};">
+                ${greet} Vous avez demandé à réinitialiser votre mot de passe.
+                Cliquez sur le bouton ci-dessous pour en définir un nouveau.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:8px 32px 12px;">
+              <a href="${resetUrl}" style="display:inline-block;padding:14px 28px;background:${ACCENT};color:#0a0d04;border-radius:999px;font-weight:600;text-decoration:none;font-size:14px;">
+                Définir un nouveau mot de passe
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:0 32px 24px;">
+              <p style="margin:0;font-size:12px;color:#8a8e84;">
+                Lien valable <strong style="color:${INK_2};">${ttlHours} heures</strong>, à usage unique.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:18px 32px 8px;">
+              <p style="margin:0;font-size:12px;color:#8a8e84;line-height:1.6;">
+                Lien direct (si le bouton ne fonctionne pas) :
+              </p>
+              <p style="margin:4px 0 0;font-size:11px;color:#c9ccc3;word-break:break-all;font-family:'SF Mono',Menlo,Consolas,monospace;">
+                ${resetUrl}
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 0;">
+              <div style="height:1px;background:${LINE};"></div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 32px;">
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#8a8e84;">
+                Si vous n'avez pas fait cette demande, ignorez ce message. Votre mot de passe actuel reste inchangé et seul ce lien (à usage unique) permet de le modifier.
+              </p>
+            </td>
+          </tr>
+        </table>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;margin-top:24px;">
+          <tr>
+            <td align="center" style="padding:0 16px;">
+              <p style="margin:0;font-size:11px;line-height:1.6;color:#565a52;letter-spacing:0.04em;">
+                © ${new Date().getFullYear()} FIDLIFY · Conçu en Suisse romande 🇨🇭
+                <br /><a href="https://www.fidlify.com" style="color:#8a8e84;text-decoration:none;">www.fidlify.com</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject, html, text };
+}
+
+/**
  * Email de récupération de carte de fidélité.
  * Envoyé automatiquement quand un client tente de s'inscrire à un programme
  * pour lequel il a déjà une carte (privacy-safe : aucun leak via la réponse API).

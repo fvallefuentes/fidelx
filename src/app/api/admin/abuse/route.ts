@@ -83,6 +83,15 @@ export async function GET(req: Request) {
     take: 10,
   });
 
+  // IPs actuellement bloquées (non expirées)
+  const blockedIps = await prisma.blockedIp.findMany({
+    where: {
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
   return NextResponse.json({
     stats: {
       total24h,
@@ -101,6 +110,7 @@ export async function GET(req: Request) {
         count: g._count._all,
       })),
     },
+    blockedIps,
     attempts: attempts.map((a) => ({
       ...a,
       program: programMap.get(a.programId) ?? null,

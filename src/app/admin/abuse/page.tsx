@@ -39,6 +39,15 @@ type Attempt = {
   } | null;
 };
 
+type BlockedIp = {
+  id: string;
+  ipPrefix: string;
+  reason: string | null;
+  blockedById: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+};
+
 type ApiResponse = {
   stats: {
     total24h: number;
@@ -51,6 +60,7 @@ type ApiResponse = {
     ips: { ipPrefix: string | null; count: number }[];
     cookies: { deviceCookie: string | null; count: number }[];
   };
+  blockedIps: BlockedIp[];
   attempts: Attempt[];
 };
 
@@ -146,6 +156,32 @@ export default function AbusePage() {
           icon={Activity}
         />
       </div>
+
+      {/* IPs actuellement bloquées */}
+      {data.blockedIps.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Ban className="h-4 w-4 text-red-400" />
+              IPs actuellement bloquées ({data.blockedIps.length})
+            </CardTitle>
+            <CardDescription>
+              Les requêtes depuis ces IPs reçoivent un 403 (cache 60s par worker)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1.5">
+              {data.blockedIps.map((b) => (
+                <BlockedIpRow
+                  key={b.id}
+                  blocked={b}
+                  onUnblocked={() => window.location.reload()}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Top IPs / cookies suspects */}
       {(data.suspicious.ips.length > 0 ||
@@ -396,6 +432,62 @@ function KpiCard({
         style={{ color: color || "#fff" }}
       >
         {value}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Ligne IP bloquée + bouton "Débloquer" ──────────────── */
+function BlockedIpRow({
+  blocked,
+  onUnblocked,
+}: {
+  blocked: BlockedIp;
+  onUnblocked: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+
+  async function unblock() {
+    if (!confirm(`Débloquer l'IP ${blocked.ipPrefix} ?`)) return;
+    setLoading(true);
+    const res = await fetch(`/api/admin/abuse/block-ip/${blocked.id}`, {
+      method: "DELETE",
+    });
+    setLoading(false);
+    if (res.ok) onUnblocked();
+  }
+
+  const expiresLabel = blocked.expiresAt
+    ? `expire le ${new Date(blocked.expiresAt).toLocaleString("fr-CH", { dateStyle: "short", timeStyle: "short" })}`
+    : "permanent";
+  const isAutoBlock = !blocked.blockedById;
+
+  return (
+    <div className="ip-block-list-row">
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <code className="font-mono text-gray-200">{blocked.ipPrefix}</code>
+        {isAutoBlock && (
+          <Badge variant="secondary" className="text-[10px]">
+            AUTO
+          </Badge>
+        )}
+        {blocked.reason && (
+          <span className="text-xs text-gray-500 truncate" title={blocked.reason}>
+            · {blocked.reason}
+          </span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <span className="text-[11px] text-gray-500 font-mono">{expiresLabel}</span>
+        <button
+          type="button"
+          onClick={unblock}
+          disabled={loading}
+          className="ip-block-unblock-btn"
+        >
+          {loading ? <RotateCcw size={10} className="animate-spin" /> : <X size={10} />}
+          Débloquer
+        </button>
       </div>
     </div>
   );
