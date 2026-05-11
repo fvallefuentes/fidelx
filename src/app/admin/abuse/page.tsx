@@ -9,7 +9,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, AlertTriangle, RotateCcw, Activity, Filter } from "lucide-react";
+import { Shield, AlertTriangle, RotateCcw, Activity, Filter, Ban, X } from "lucide-react";
 
 type Result =
   | "SUCCESS"
@@ -167,22 +167,31 @@ export default function AbusePage() {
                   {data.suspicious.ips.map((g, i) => (
                     <div
                       key={i}
-                      className="flex justify-between items-center py-1.5 px-2 rounded bg-white/[0.02] text-xs"
+                      className="flex justify-between items-center gap-2 py-1.5 px-2 rounded bg-white/[0.02] text-xs"
                     >
                       <code className="font-mono text-gray-300">
                         {g.ipPrefix}
                       </code>
-                      <Badge
-                        variant={
-                          g.count > 10
-                            ? "destructive"
-                            : g.count > 5
-                            ? "default"
-                            : "secondary"
-                        }
-                      >
-                        {g.count} attempts
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge
+                          variant={
+                            g.count > 10
+                              ? "destructive"
+                              : g.count > 5
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
+                          {g.count} attempts
+                        </Badge>
+                        {g.ipPrefix && (
+                          <BlockIpButton
+                            ipPrefix={g.ipPrefix}
+                            count={g.count}
+                            onBlocked={() => window.location.reload()}
+                          />
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -387,6 +396,153 @@ function KpiCard({
         style={{ color: color || "#fff" }}
       >
         {value}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Bouton "Bloquer" sur une ligne IP ────────────────────── */
+function BlockIpButton({
+  ipPrefix,
+  count,
+  onBlocked,
+}: {
+  ipPrefix: string;
+  count: number;
+  onBlocked: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [duration, setDuration] = useState<"1h" | "24h" | "7d" | "30d" | "forever">("24h");
+  const [reason, setReason] = useState("");
+
+  async function block() {
+    setLoading(true);
+    const res = await fetch("/api/admin/abuse/block-ip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ipPrefix,
+        reason: reason.trim() || `Auto-block après ${count} attempts en 24h`,
+        expiresIn: duration,
+      }),
+    });
+    setLoading(false);
+    if (res.ok) {
+      setOpen(false);
+      onBlocked();
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="ip-block-btn"
+        title={`Bloquer l'IP ${ipPrefix}`}
+      >
+        <Ban size={10} /> Bloquer
+      </button>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(7,7,7,0.8)",
+        zIndex: 1100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+      onClick={() => setOpen(false)}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#0c0d0c",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 14,
+          padding: 24,
+          maxWidth: 440,
+          width: "100%",
+        }}
+      >
+        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
+          <Ban size={14} style={{ display: "inline", marginRight: 8, verticalAlign: -2, color: "#ff7a6b" }} />
+          Bloquer l&apos;IP
+        </h3>
+        <p style={{ margin: "8px 0 14px", fontSize: 12, color: "#8a8e84" }}>
+          Toute requête venant de <code style={{ color: "#f4f5f1", fontFamily: "var(--font-geist-mono, monospace)" }}>{ipPrefix}</code>{" "}
+          recevra un 403. {count} tentatives observées sur 24h.
+        </p>
+
+        <label style={{ display: "block", fontSize: 11, color: "#8a8e84", marginBottom: 4 }}>Durée</label>
+        <select
+          value={duration}
+          onChange={(e) => setDuration(e.target.value as typeof duration)}
+          style={{
+            width: "100%",
+            height: 36,
+            padding: "0 10px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#f4f5f1",
+            borderRadius: 8,
+            fontFamily: "inherit",
+            marginBottom: 12,
+          }}
+        >
+          <option value="1h">1 heure</option>
+          <option value="24h">24 heures</option>
+          <option value="7d">7 jours</option>
+          <option value="30d">30 jours</option>
+          <option value="forever">Permanent</option>
+        </select>
+
+        <label style={{ display: "block", fontSize: 11, color: "#8a8e84", marginBottom: 4 }}>Raison (optionnel)</label>
+        <input
+          type="text"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="Ex: Bot, attaque brute-force…"
+          style={{
+            width: "100%",
+            height: 36,
+            padding: "0 10px",
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            color: "#f4f5f1",
+            borderRadius: 8,
+            fontFamily: "inherit",
+            marginBottom: 14,
+            fontSize: 12.5,
+          }}
+        />
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="ip-block-unblock-btn"
+            style={{ padding: "6px 14px" }}
+          >
+            <X size={11} /> Annuler
+          </button>
+          <button
+            type="button"
+            onClick={block}
+            disabled={loading}
+            className="ip-block-btn"
+            style={{ padding: "6px 14px", fontSize: 12 }}
+          >
+            <Ban size={11} /> {loading ? "Blocage…" : "Confirmer le blocage"}
+          </button>
+        </div>
       </div>
     </div>
   );

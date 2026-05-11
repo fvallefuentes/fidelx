@@ -18,6 +18,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
+import { UserAdminActions } from "@/components/admin/UserAdminActions";
 
 const ROLE_META: Record<
   string,
@@ -68,6 +69,8 @@ interface MerchantDetail {
   stripeCurrentPeriodEnd: string | null;
   manualPlanUntil: string | null;
   manualPlanReason: string | null;
+  suspendedAt: string | null;
+  suspendedReason: string | null;
   employerMerchantId: string | null;
   employerMerchant: {
     id: string;
@@ -1343,6 +1346,21 @@ export default function MerchantDetailPage() {
         )}
       </SectionCard>
       )}
+
+      {/* Panneau d'actions admin (suspend, reset password, logs) */}
+      <UserAdminActions
+        userId={data.id}
+        email={data.email}
+        role={data.role}
+        suspendedAt={data.suspendedAt}
+        suspendedReason={data.suspendedReason}
+        onUpdated={() => {
+          fetch(`/api/admin/users/${id}`)
+            .then((r) => r.json())
+            .then((d: MerchantDetail) => setData(d))
+            .catch(() => {});
+        }}
+      />
     </div>
   );
 }

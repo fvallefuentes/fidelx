@@ -37,6 +37,8 @@ export async function GET(
       stripeCurrentPeriodEnd: true,
       manualPlanUntil: true,
       manualPlanReason: true,
+      suspendedAt: true,
+      suspendedReason: true,
       employerMerchantId: true,
       employerMerchant: {
         select: { id: true, name: true, email: true },

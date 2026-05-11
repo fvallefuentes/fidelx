@@ -126,6 +126,65 @@ enum MerchantNotificationType {
   SYSTEM                  // Notification générique de Fidlify
 }
 
+/// Trace de chaque tentative de connexion (succès + échec).
+/// Permet à l'admin de voir l'activité d'un user en cas d'incident.
+model LoginLog {
+  id        String        @id @default(cuid())
+  userId    String?       // null si l'email tapé n'existe pas en DB
+  email     String        // tel que tapé par l'utilisateur (normalisé)
+  ipPrefix  String?       // IP anonymisée /24 ou /48
+  userAgent String?       @db.Text
+  result    LoginResult
+  reason    String?       // précision (ex: "wrong-password", "suspended", etc.)
+  createdAt DateTime      @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@index([result, createdAt])
+}
+
+enum LoginResult {
+  SUCCESS
+  WRONG_PASSWORD
+  USER_NOT_FOUND
+  EMAIL_NOT_VERIFIED
+  SUSPENDED
+  ERROR
+}
+
+/// Token de reset password généré par l'admin pour un user.
+/// L'admin transmet le lien à l'utilisateur out-of-band (email, SMS, etc.).
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique // sha256(token) — token clair jamais stocké
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  createdBy String?   // ID de l'admin qui a généré le token (audit)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+/// Blocage IP géré par l'admin depuis /admin/abuse.
+/// Le middleware vérifie chaque requête contre cette table.
+model BlockedIp {
+  id          String    @id @default(cuid())
+  ipPrefix    String    @unique // /24 IPv4 ou /48 IPv6
+  reason      String?
+  blockedById String?   // ID de l'admin qui a bloqué
+  expiresAt   DateTime? // null = blocage permanent
+  createdAt   DateTime  @default(now())
+
+  @@index([ipPrefix])
+  @@index([expiresAt])
+}
+
 // =============================================
 // COMMERCANTS (Users)
 // =============================================
@@ -161,6 +220,15 @@ model User {
   // Set quand le commerçant a (1) créé son 1er programme, (2) téléchargé
   // son QR code, (3) validé un scan test.
   onboardingCompletedAt DateTime?
+
+  // Suspension admin : si défini, l'utilisateur ne peut plus se connecter.
+  // Différent de la suppression : ses données et programmes sont préservés.
+  suspendedAt     DateTime?
+  suspendedReason String?
+  suspendedById   String?    // ID de l'admin qui a suspendu
+
+  loginLogs           LoginLog[]
+  passwordResetTokens PasswordResetToken[]
 
   accounts       Account[]
   sessions       Session[]

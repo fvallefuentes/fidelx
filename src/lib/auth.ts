@@ -3,6 +3,42 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
+/**
+ * Helper : log une tentative de connexion (fire-and-forget).
+ * Capture l'IP et UA depuis l'authorize() — extraits via la lib req
+ * dynamiquement (NextAuth ne passe pas req à authorize directement,
+ * donc on logue ce qu'on a).
+ */
+async function logLoginAttempt(input: {
+  email: string;
+  userId?: string | null;
+  result:
+    | "SUCCESS"
+    | "WRONG_PASSWORD"
+    | "USER_NOT_FOUND"
+    | "EMAIL_NOT_VERIFIED"
+    | "SUSPENDED"
+    | "ERROR";
+  reason?: string;
+  ipPrefix?: string | null;
+  userAgent?: string | null;
+}) {
+  try {
+    await prisma.loginLog.create({
+      data: {
+        email: input.email,
+        userId: input.userId ?? null,
+        result: input.result,
+        reason: input.reason ?? null,
+        ipPrefix: input.ipPrefix ?? null,
+        userAgent: input.userAgent ?? null,
+      },
+    });
+  } catch (e) {
+    console.error("[loginLog] failed:", (e as Error).message);
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
@@ -18,7 +54,23 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        // Extraction du contexte (IP / UA) pour le log
+        const ip = (req?.headers?.["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+          (req?.headers?.["x-real-ip"] as string) ||
+          null;
+        const ipPrefix = ip
+          ? ip.includes(":")
+            ? ip.split(":").slice(0, 3).join(":") + "::/48"
+            : (() => {
+                const parts = ip.split(".");
+                return parts.length === 4
+                  ? `${parts[0]}.${parts[1]}.${parts[2]}.0/24`
+                  : ip;
+              })()
+          : null;
+        const userAgent = (req?.headers?.["user-agent"] as string) || null;
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email et mot de passe requis");
         }
@@ -29,6 +81,12 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user || !user.passwordHash) {
+          void logLoginAttempt({
+            email: normalizedEmail,
+            result: "USER_NOT_FOUND",
+            ipPrefix,
+            userAgent,
+          });
           throw new Error("Email ou mot de passe incorrect");
         }
 
@@ -38,16 +96,51 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isValid) {
+          void logLoginAttempt({
+            email: normalizedEmail,
+            userId: user.id,
+            result: "WRONG_PASSWORD",
+            ipPrefix,
+            userAgent,
+          });
           throw new Error("Email ou mot de passe incorrect");
         }
 
-        // Bloquer la connexion si l'email n'est pas vérifié.
-        // Bypass : ADMIN (cas de seed initial uniquement).
-        // Le préfixe EMAIL_NOT_VERIFIED: est détecté côté UI pour rediriger
-        // vers /verify-email avec l'email pré-rempli.
+        // Bloquer la connexion si l'email n'est pas vérifié (sauf ADMIN seed).
         if (!user.emailVerified && user.role !== "ADMIN") {
+          void logLoginAttempt({
+            email: normalizedEmail,
+            userId: user.id,
+            result: "EMAIL_NOT_VERIFIED",
+            ipPrefix,
+            userAgent,
+          });
           throw new Error(`EMAIL_NOT_VERIFIED:${normalizedEmail}`);
         }
+
+        // Bloquer la connexion si l'utilisateur a été suspendu par un admin
+        if (user.suspendedAt) {
+          void logLoginAttempt({
+            email: normalizedEmail,
+            userId: user.id,
+            result: "SUSPENDED",
+            reason: user.suspendedReason ?? undefined,
+            ipPrefix,
+            userAgent,
+          });
+          throw new Error(
+            "ACCOUNT_SUSPENDED:" +
+              encodeURIComponent(user.suspendedReason || "Contactez l'équipe Fidlify")
+          );
+        }
+
+        void logLoginAttempt({
+          email: normalizedEmail,
+          userId: user.id,
+          result: "SUCCESS",
+          ipPrefix,
+          userAgent,
+        });
 
         return {
           id: user.id,

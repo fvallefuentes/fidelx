@@ -1,15 +1,10 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 const BETA_COOKIE = "fidlify_beta_ok";
 
 // Routes laissées ouvertes même quand le beta gate est actif :
-// - /beta-access : la page d'accès elle-même (sinon boucle infinie)
-// - /api/beta-access : POST handler du gate
-// - /robots.txt, /sitemap.xml, /icon.svg, /favicon.ico : metadata files
-//
-// Toutes les autres routes /api/* sont déjà exclues via le matcher
-// (Stripe webhooks, Apple/Google Wallet, cron, etc.)
 const BETA_GATE_OPEN_PATHS = new Set([
   "/beta-access",
   "/api/beta-access",
@@ -21,14 +16,85 @@ const BETA_GATE_OPEN_PATHS = new Set([
   "/sw.js",
 ]);
 
+/* ─── IP block cache (TTL 60s, partagé entre requêtes du même worker) ─── */
+let ipCache: { set: Set<string>; fetchedAt: number } | null = null;
+const IP_CACHE_TTL_MS = 60_000;
+
+async function getBlockedIpSet(): Promise<Set<string>> {
+  const now = Date.now();
+  if (ipCache && now - ipCache.fetchedAt < IP_CACHE_TTL_MS) {
+    return ipCache.set;
+  }
+  try {
+    const rows = await prisma.blockedIp.findMany({
+      where: {
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date(now) } }],
+      },
+      select: { ipPrefix: true },
+    });
+    ipCache = { set: new Set(rows.map((r) => r.ipPrefix)), fetchedAt: now };
+  } catch (e) {
+    console.error("[middleware/ipBlock] DB query failed:", (e as Error).message);
+    // En cas d'erreur DB, on garde le cache existant ou un set vide
+    if (!ipCache) ipCache = { set: new Set(), fetchedAt: now };
+  }
+  return ipCache.set;
+}
+
+/** Anonymise une IP au prefix /24 IPv4 ou /48 IPv6 (cohérent avec lib/anti-abuse/fingerprint.ts). */
+function anonymizeIp(ip: string | null): string | null {
+  if (!ip) return null;
+  const trimmed = ip.trim();
+  if (!trimmed) return null;
+  if (trimmed.includes(":")) {
+    const parts = trimmed.split(":");
+    return parts.slice(0, 3).join(":") + "::/48";
+  }
+  const parts = trimmed.split(".");
+  if (parts.length === 4) {
+    return `${parts[0]}.${parts[1]}.${parts[2]}.0/24`;
+  }
+  return trimmed;
+}
+
+function extractIp(req: NextRequest): string | null {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+  return req.headers.get("x-real-ip") || null;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // ─── IP BLOCK CHECK (priorité absolue) ───
+  // L'IP du visiteur est comparée à la liste des prefixes bloqués (cache 60s).
+  // Le /beta-access est OUVERT pour permettre à l'admin de débloquer une IP
+  // via /admin/abuse même si elle est bloquée. Sauf que /admin nécessite
+  // une connexion donc en pratique pas un risque.
+  const ip = extractIp(req);
+  const ipPrefix = anonymizeIp(ip);
+  if (ipPrefix) {
+    const blockedSet = await getBlockedIpSet();
+    if (blockedSet.has(ipPrefix)) {
+      return new NextResponse(
+        "<h1>Accès bloqué</h1><p>Votre adresse IP a été bloquée par l'administrateur. Si vous pensez qu'il s'agit d'une erreur, contactez contact@fidlify.com.</p>",
+        {
+          status: 403,
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        }
+      );
+    }
+  }
+
   // ─── BETA GATE (phase de test) ───
-  // Si BETA_ACCESS_PASSWORD est défini, on bloque toute requête browser
-  // sans le cookie fidlify_beta_ok=1.
+  // Tous les /api/* sont AUTORISÉS (webhooks Stripe, Apple/Google Wallet,
+  // cron, NextAuth). Le gate ne s'applique qu'aux pages browser.
   const betaPassword = process.env.BETA_ACCESS_PASSWORD;
-  if (betaPassword && !BETA_GATE_OPEN_PATHS.has(pathname)) {
+  if (
+    betaPassword &&
+    !pathname.startsWith("/api/") &&
+    !BETA_GATE_OPEN_PATHS.has(pathname)
+  ) {
     const cookie = req.cookies.get(BETA_COOKIE);
     if (cookie?.value !== "1") {
       const url = req.nextUrl.clone();
@@ -72,20 +138,12 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Matcher élargi : on intercepte tout SAUF les routes API (webhooks
-// Stripe, Apple/Google Wallet, NextAuth, cron) et les assets Next.js.
-//
-// Le beta gate s'applique sur la majorité des pages browser ;
-// la logique role-based reste fonctionnelle sur /dashboard et /admin.
+/* ─── Config ─── */
+// Prisma requiert le runtime Node.js (Edge ne supporte pas l'adapter pg).
+// Sur Next.js 15+ : runtime "nodejs" est dispo en middleware.
 export const config = {
+  runtime: "nodejs",
   matcher: [
-    /*
-     * Match toutes les routes sauf :
-     * - api (toutes routes API : webhooks, NextAuth, wallet, cron, etc.)
-     * - _next/static (fichiers statiques Next.js)
-     * - _next/image (optimisation d'images)
-     * - icon.svg, favicon.ico (metadata files)
-     */
-    "/((?!api|_next/static|_next/image|icon.svg|favicon.ico).*)",
+    "/((?!_next/static|_next/image|icon.svg|favicon.ico).*)",
   ],
 };
