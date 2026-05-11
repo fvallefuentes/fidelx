@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 /**
  * Headers de sécurité (audit V2 §6).
@@ -55,4 +56,16 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry — wrappe la config Next.js pour activer la capture serveur + client
+// Note : sans SENTRY_AUTH_TOKEN les source maps ne sont pas uploadées (stack
+// traces minifiées dans Sentry). Acceptable pour MVP — ajouter le token plus
+// tard via le panel Sentry pour des stack traces lisibles.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  org: "fidlify",
+  project: "javascript-nextjs",
+  // Désactive le client logger pour éviter le bundle bloat
+  disableLogger: true,
+  // tunnelRoute désactivé : si activé, il faut s'assurer que le rate-limit
+  // anti-abus ne bloque pas les calls Sentry.
+});
