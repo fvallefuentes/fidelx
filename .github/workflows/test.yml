@@ -93,7 +93,7 @@ jobs:
         run: npx prisma generate
 
       - name: Prepare test database
-        run: npx prisma db push --skip-generate
+        run: npx prisma db push
         env:
           DATABASE_URL: "postgresql://test:test@localhost:5432/test"
 
