@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { notifyPassUpdate } from "@/lib/wallet/push";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
+import { requireCronSecret } from "@/lib/api/validation";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,13 +28,8 @@ export const runtime = "nodejs";
  */
 
 export async function GET(req: Request) {
-  // Auth simple par Bearer token
-  const expected = process.env.CRON_SECRET;
-  const auth = req.headers.get("authorization") || "";
-  const token = auth.replace(/^Bearer\s+/i, "");
-  if (expected && token !== expected) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  const cronAuthError = requireCronSecret(req);
+  if (cronAuthError) return cronAuthError;
 
   const now = new Date();
   const targetDate = new Date(now);

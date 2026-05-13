@@ -12,17 +12,14 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileNavPathname, setMobileNavPathname] = useState<string | null>(null);
   const pathname = usePathname();
-
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [pathname]);
+  const mobileNavOpen = mobileNavPathname === pathname;
 
   useEffect(() => {
     if (!mobileNavOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileNavOpen(false);
+      if (e.key === "Escape") setMobileNavPathname(null);
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -51,15 +48,15 @@ export default function AdminLayout({
       <div className="dx-shell">
         <div
           className={`dx-sidebar-backdrop${mobileNavOpen ? " visible" : ""}`}
-          onClick={() => setMobileNavOpen(false)}
+          onClick={() => setMobileNavPathname(null)}
           aria-hidden={!mobileNavOpen}
         />
         <AdminSidebar
           mobileOpen={mobileNavOpen}
-          onCloseMobile={() => setMobileNavOpen(false)}
+          onCloseMobile={() => setMobileNavPathname(null)}
         />
         <div className="dx-main">
-          <AdminHeader onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <AdminHeader onOpenMobileNav={() => setMobileNavPathname(pathname)} />
           <main className="dx-content">{children}</main>
         </div>
       </div>

@@ -160,8 +160,31 @@ export default function ProgramsPage() {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [previewingProgram, setPreviewingProgram] = useState<Program | null>(null);
 
+  async function fetchPrograms() {
+    const res = await fetch("/api/programs");
+    const data = await res.json();
+    setPrograms(data);
+    setLoading(false);
+  }
+
   useEffect(() => {
-    fetchPrograms();
+    let cancelled = false;
+
+    async function loadPrograms() {
+      const res = await fetch("/api/programs");
+      const data = await res.json();
+      if (cancelled) return;
+      setPrograms(data);
+      setLoading(false);
+    }
+
+    loadPrograms().catch(() => {
+      if (!cancelled) setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function deleteProgram(id: string) {
@@ -175,13 +198,6 @@ export default function ProgramsPage() {
       const data = await res.json();
       alert(data.error || "Erreur lors de la suppression");
     }
-  }
-
-  async function fetchPrograms() {
-    const res = await fetch("/api/programs");
-    const data = await res.json();
-    setPrograms(data);
-    setLoading(false);
   }
 
   if (loading) {

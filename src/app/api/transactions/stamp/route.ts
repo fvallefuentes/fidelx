@@ -1,9 +1,18 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
+import { parseJsonBody } from "@/lib/api/validation";
+
+const stampSchema = z.object({
+  serialNumber: z.string().trim().min(1, "Numéro de série requis"),
+  establishmentId: z.string().trim().min(1).optional().nullable(),
+  amountSpent: z.coerce.number().min(0, "Montant invalide").optional(),
+  count: z.coerce.number().int().min(1).max(20).optional().default(1),
+});
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -13,12 +22,10 @@ export async function POST(req: Request) {
 
   const merchantId = (session.user as { merchantId?: string }).merchantId ?? session.user.id;
 
-  const { serialNumber, establishmentId, amountSpent, count } = await req.json();
-  const stampCount = Math.max(1, Math.min(20, parseInt(count) || 1));
-
-  if (!serialNumber) {
-    return NextResponse.json({ error: "Numéro de série requis" }, { status: 400 });
-  }
+  const parsed = await parseJsonBody(req, stampSchema);
+  if (!parsed.ok) return parsed.response;
+  const { serialNumber, establishmentId, amountSpent, count } = parsed.data;
+  const stampCount = count;
 
   const card = await prisma.loyaltyCard.findUnique({
     where: { serialNumber },

@@ -1,9 +1,33 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyAllCardsInProgram } from "@/lib/wallet/push";
 import { getPlanLimits, getPeriodStart } from "@/lib/plan-limits";
+import { parseJsonBody } from "@/lib/api/validation";
+import type { Prisma } from "@/generated/prisma/client";
+
+const createCampaignSchema = z.object({
+  programId: z.string().trim().min(1).optional().nullable(),
+  name: z.string().trim().min(1, "Nom de campagne requis").max(120, "Nom de campagne trop long"),
+  message: z.string().trim().min(1, "Message requis").max(350, "Message trop long"),
+  triggerType: z.enum([
+    "IMMEDIATE",
+    "SCHEDULED",
+    "GEOFENCE",
+    "INACTIVITY",
+    "POST_STAMP",
+    "MILESTONE",
+    "BIRTHDAY",
+  ]),
+  triggerConfig: z
+    .object({ sendAt: z.string().datetime().optional() })
+    .catchall(z.unknown())
+    .optional()
+    .default({}),
+  targetSegment: z.enum(["ALL", "ACTIVE", "DORMANT", "NEW", "VIP"]).optional().default("ALL"),
+});
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -29,7 +53,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const body = await req.json();
+  const parsed = await parseJsonBody(req, createCampaignSchema);
+  if (!parsed.ok) return parsed.response;
   const {
     programId,
     name,
@@ -37,14 +62,7 @@ export async function POST(req: Request) {
     triggerType,
     triggerConfig,
     targetSegment,
-  } = body;
-
-  if (!name || !message || !triggerType) {
-    return NextResponse.json(
-      { error: "Champs requis manquants" },
-      { status: 400 }
-    );
-  }
+  } = parsed.data;
 
   // Vérification limites du plan
   const user = await prisma.user.findUnique({
@@ -91,8 +109,8 @@ export async function POST(req: Request) {
       name,
       message,
       triggerType,
-      triggerConfig: triggerConfig || {},
-      targetSegment: targetSegment || "ALL",
+      triggerConfig: triggerConfig as Prisma.InputJsonValue,
+      targetSegment,
       status: triggerType === "IMMEDIATE" ? "SENT" : "SCHEDULED",
       scheduledAt:
         triggerType === "SCHEDULED" && triggerConfig?.sendAt

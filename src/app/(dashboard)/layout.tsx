@@ -15,17 +15,12 @@ export default function DashboardLayout({
 }) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileNavPathname, setMobileNavPathname] = useState<string | null>(null);
   const [onboardingChecked, setOnboardingChecked] = useState(false);
   const pathname = usePathname();
+  const mobileNavOpen = mobileNavPathname === pathname;
   const isOnboardingRoute = pathname === "/dashboard/onboarding";
   const isScanRoute = pathname === "/dashboard/scan"; // STAFF n'a accès qu'au scan
-
-  // Auto-close drawer on route change
-  /* eslint-disable-next-line react-hooks/set-state-in-effect */
-  useEffect(() => {
-    setMobileNavOpen(false);
-  }, [pathname]);
 
   // Vérifier l'onboarding du commerçant : redirection forcée si pas terminé
   // (sauf si on est déjà sur /dashboard/onboarding ou si rôle != USER)
@@ -57,7 +52,7 @@ export default function DashboardLayout({
   useEffect(() => {
     if (!mobileNavOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileNavOpen(false);
+      if (e.key === "Escape") setMobileNavPathname(null);
     };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -93,17 +88,17 @@ export default function DashboardLayout({
         {/* Backdrop derrière le drawer mobile */}
         <div
           className={`dx-sidebar-backdrop${mobileNavOpen ? " visible" : ""}`}
-          onClick={() => setMobileNavOpen(false)}
+          onClick={() => setMobileNavPathname(null)}
           aria-hidden={!mobileNavOpen}
         />
 
         <Sidebar
           mobileOpen={mobileNavOpen}
-          onCloseMobile={() => setMobileNavOpen(false)}
+          onCloseMobile={() => setMobileNavPathname(null)}
         />
 
         <div className="dx-main">
-          <Header onOpenMobileNav={() => setMobileNavOpen(true)} />
+          <Header onOpenMobileNav={() => setMobileNavPathname(pathname)} />
           <main className="dx-content">{children}</main>
         </div>
       </div>

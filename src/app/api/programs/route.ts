@@ -1,8 +1,36 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanLimits, type ProgramType } from "@/lib/plan-limits";
+import { parseJsonBody } from "@/lib/api/validation";
+import type { Prisma } from "@/generated/prisma/client";
+import type { RewardType } from "@/generated/prisma/enums";
+
+const jsonObject = z.record(z.string(), z.unknown());
+
+const createProgramSchema = z.object({
+  name: z.string().trim().min(1, "Nom du programme requis").max(120, "Nom du programme trop long"),
+  type: z.enum(["STAMPS", "POINTS", "CASHBACK", "HYBRID"]),
+  config: jsonObject,
+  cardDesign: jsonObject,
+  establishmentId: z.string().trim().min(1).optional().nullable(),
+  googleReviewEnabled: z.boolean().optional().default(false),
+  googleReviewBonus: z.coerce.number().int().min(0).max(100).optional().default(0),
+  googleReviewMinVisits: z.coerce.number().int().min(1).max(100).optional().default(3),
+  rewards: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, "Nom de récompense requis").max(120, "Nom de récompense trop long"),
+        description: z.string().trim().max(500, "Description trop longue").optional(),
+        threshold: z.coerce.number().int().positive("Seuil de récompense invalide"),
+        rewardType: z.enum(["FREE_ITEM", "DISCOUNT_CHF", "DISCOUNT_PCT", "CUSTOM"]),
+        rewardValue: z.coerce.number().min(0).optional(),
+      })
+    )
+    .optional(),
+});
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -29,7 +57,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const body = await req.json();
+  const parsed = await parseJsonBody(req, createProgramSchema);
+  if (!parsed.ok) return parsed.response;
   const {
     name,
     type,
@@ -40,14 +69,7 @@ export async function POST(req: Request) {
     googleReviewEnabled,
     googleReviewBonus,
     googleReviewMinVisits,
-  } = body;
-
-  if (!name || !type || !config || !cardDesign) {
-    return NextResponse.json(
-      { error: "Champs requis manquants" },
-      { status: 400 }
-    );
-  }
+  } = parsed.data;
 
   // Vérifier les limites du plan
   const user = await prisma.user.findUnique({
@@ -86,19 +108,19 @@ export async function POST(req: Request) {
       establishmentId: establishmentId || undefined,
       name,
       type,
-      config,
-      cardDesign,
-      googleReviewEnabled: googleReviewEnabled || false,
-      googleReviewBonus: googleReviewBonus || 0,
-      googleReviewMinVisits: googleReviewMinVisits || 3,
+      config: config as Prisma.InputJsonValue,
+      cardDesign: cardDesign as Prisma.InputJsonValue,
+      googleReviewEnabled,
+      googleReviewBonus,
+      googleReviewMinVisits,
       rewards: rewards?.length
         ? {
             create: rewards.map(
-              (r: { name: string; description?: string; threshold: number; rewardType: string; rewardValue?: number }) => ({
+              (r) => ({
                 name: r.name,
                 description: r.description,
                 threshold: r.threshold,
-                rewardType: r.rewardType,
+                rewardType: r.rewardType as RewardType,
                 rewardValue: r.rewardValue,
               })
             ),

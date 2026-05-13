@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Check, AlertCircle, Star, PartyPopper } from "lucide-react";
+import { Check, AlertCircle, PartyPopper } from "lucide-react";
 
 interface StampResult {
   success: boolean;
@@ -22,40 +21,42 @@ interface StampResult {
 export default function StampPage() {
   const params = useParams();
   const serialNumber = params.serialNumber as string;
-  const [amountSpent, setAmountSpent] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [result, setResult] = useState<StampResult | null>(null);
   const [error, setError] = useState("");
 
-  async function handleStamp() {
-    setLoading(true);
-    setError("");
+  useEffect(() => {
+    let cancelled = false;
 
-    const res = await fetch("/api/transactions/stamp", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        serialNumber,
-        amountSpent: amountSpent ? parseFloat(amountSpent) : undefined,
-      }),
-    });
+    async function stampCard() {
+      const res = await fetch("/api/transactions/stamp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serialNumber }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
+      if (cancelled) return;
 
-    if (!res.ok) {
-      setError(data.error || "Erreur lors du tamponnage");
+      if (!res.ok) {
+        setError(data.error || "Erreur lors du tamponnage");
+      } else {
+        setResult(data);
+      }
       setLoading(false);
-      return;
     }
 
-    setResult(data);
-    setLoading(false);
-  }
+    stampCard().catch(() => {
+      if (!cancelled) {
+        setError("Erreur lors du tamponnage");
+        setLoading(false);
+      }
+    });
 
-  // Auto-stamp on load (commerçant scanne le QR du client)
-  useEffect(() => {
-    handleStamp();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
+  }, [serialNumber]);
 
   if (loading) {
     return (

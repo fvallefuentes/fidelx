@@ -1,35 +1,19 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { createHash } from "crypto";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { parseJsonBody } from "@/lib/api/validation";
 
-/**
- * POST /api/auth/reset-password
- * Body : { token: string, password: string }
- *
- * Le user a reçu un lien de reset (admin l'a généré via /api/admin/users/[id]/reset-password).
- * Cet endpoint vérifie le token (sha256), invalide-le, et met à jour le hash du mot de passe.
- */
+const resetPasswordSchema = z.object({
+  token: z.string().trim().min(1, "Token requis"),
+  password: z.string().min(8, "Mot de passe : minimum 8 caractères").max(256, "Mot de passe trop long"),
+});
 
 export async function POST(req: Request) {
-  let body: { token?: string; password?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Body JSON invalide" }, { status: 400 });
-  }
-  const token = String(body?.token || "").trim();
-  const password = String(body?.password || "");
-
-  if (!token) {
-    return NextResponse.json({ error: "Token requis" }, { status: 400 });
-  }
-  if (!password || password.length < 8) {
-    return NextResponse.json(
-      { error: "Mot de passe : minimum 8 caractères" },
-      { status: 400 }
-    );
-  }
+  const parsed = await parseJsonBody(req, resetPasswordSchema);
+  if (!parsed.ok) return parsed.response;
+  const { token, password } = parsed.data;
 
   const tokenHash = createHash("sha256").update(token).digest("hex");
 
@@ -59,7 +43,6 @@ export async function POST(req: Request) {
 
   const passwordHash = await bcrypt.hash(password, 12);
 
-  // Update password + invalider le token + invalider tous les autres tokens du user
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },

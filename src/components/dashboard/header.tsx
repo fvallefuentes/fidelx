@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Menu, Sparkles, Search } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
@@ -13,13 +13,9 @@ export function Header({
 }) {
   const { data: session } = useSession();
   const plan = session?.user?.plan || "FREE";
-  const [isMac, setIsMac] = useState(false);
-
-  useEffect(() => {
-    if (typeof navigator !== "undefined") {
-      setIsMac(/Mac|iPhone|iPad/i.test(navigator.platform));
-    }
-  }, []);
+  const [isMac] = useState(() =>
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad/i.test(navigator.platform)
+  );
 
   function openSearch() {
     // Déclenche le command palette en simulant Cmd/Ctrl+K

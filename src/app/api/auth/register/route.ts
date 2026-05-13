@@ -1,28 +1,28 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { issueVerificationCode } from "@/lib/email/verification";
+import { parseJsonBody } from "@/lib/api/validation";
+
+const registerSchema = z.object({
+  name: z.string().trim().min(1, "Nom requis").max(120, "Nom trop long"),
+  email: z.email("Email invalide").trim().toLowerCase(),
+  password: z.string().min(8, "Mot de passe : minimum 8 caractères").max(256, "Mot de passe trop long"),
+  language: z.enum(["fr", "de", "it", "en"]).optional().default("fr"),
+});
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password, language } = await req.json();
-
-    if (!email || !password || !name) {
-      return NextResponse.json(
-        { error: "Nom, email et mot de passe requis" },
-        { status: 400 }
-      );
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
+    const parsed = await parseJsonBody(req, registerSchema);
+    if (!parsed.ok) return parsed.response;
+    const { name, email: normalizedEmail, password, language } = parsed.data;
 
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     });
 
     if (existingUser) {
-      // Cas particulier : compte existe mais email pas encore vérifié
-      // → on régénère un code (cooldown géré par issueVerificationCode)
       if (!existingUser.emailVerified) {
         await issueVerificationCode(normalizedEmail);
         return NextResponse.json(
@@ -47,12 +47,10 @@ export async function POST(req: Request) {
         name,
         email: normalizedEmail,
         passwordHash,
-        language: language || "fr",
-        // emailVerified reste null jusqu'à validation du code
+        language,
       },
     });
 
-    // Émettre + envoyer le code OTP
     await issueVerificationCode(normalizedEmail);
 
     return NextResponse.json(

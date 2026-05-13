@@ -16,7 +16,7 @@ import { test as base, type BrowserContext } from "@playwright/test";
 const BETA_COOKIE_NAME = "fidlify_beta_ok";
 
 export const test = base.extend<{ context: BrowserContext }>({
-  context: async ({ context, baseURL }, use) => {
+  context: async ({ context, baseURL }, runFixture) => {
     // Extrait le domaine du baseURL pour poser le cookie
     const url = baseURL || "http://localhost:3000";
     const { hostname, protocol } = new URL(url);
@@ -33,7 +33,7 @@ export const test = base.extend<{ context: BrowserContext }>({
       },
     ]);
 
-    await use(context);
+    await runFixture(context);
   },
 });
 
