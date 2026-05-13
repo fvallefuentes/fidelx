@@ -7,6 +7,6 @@ import { NextResponse } from "next/server";
  */
 export async function POST() {
   throw new Error("Sentry test — server error from /api/sentry-example");
-  // eslint-disable-next-line @typescript-eslint/no-unreachable-code
+  // eslint-disable-next-line no-unreachable
   return NextResponse.json({ ok: true });
 }
