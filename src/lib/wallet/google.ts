@@ -144,15 +144,22 @@ export async function generateGoogleWalletLink(
   const design = card.program.cardDesign as Record<string, unknown>;
 
   const classId = `${GOOGLE_WALLET_ISSUER_ID}.${card.program.id}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  // Google Wallet exige obligatoirement un programLogo lors de la création
+  // de la classe. Si le merchant n'a pas configuré de logo, fallback sur
+  // le logo Fidlify rasterisé en PNG (Google n'accepte pas SVG).
+  const logoUrl =
+    (design.logoUrl as string) ||
+    `${appUrl.replace(/\/$/, "")}/api/wallet/google/default-logo`;
 
   const loyaltyClass = buildLoyaltyClass({
     programId: card.program.id,
     programName: card.program.name,
     merchantName: card.program.merchant.name || "Commerce",
     bgColor: (design.bgColor as string) || "#1a1a2e",
+    logoUrl,
   });
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   const loyaltyObject = buildLoyaltyObject({
     serialNumber: card.serialNumber,
@@ -263,13 +270,19 @@ export async function updateGoogleWalletClass(
 
   const design = (program.cardDesign as Record<string, unknown>) ?? {};
   const classId = `${GOOGLE_WALLET_ISSUER_ID}.${programId}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+  // Fallback obligatoire vers le logo Fidlify si le merchant n'en a pas.
+  const logoUrl =
+    (design.logoUrl as string) ||
+    `${appUrl.replace(/\/$/, "")}/api/wallet/google/default-logo`;
 
   const updatedClass = buildLoyaltyClass({
     programId,
     programName: program.name,
     merchantName: program.merchant.name || "Commerce",
     bgColor: (design.bgColor as string) || "#1a1a2e",
-    logoUrl: (design.logoUrl as string) || undefined,
+    logoUrl,
   });
 
   try {
