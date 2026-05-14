@@ -45,7 +45,10 @@ export function buildLoyaltyClass(data: LoyaltyClassData) {
     id: `${GOOGLE_WALLET_ISSUER_ID}.${data.programId}`,
     issuerName: data.merchantName,
     programName: data.programName,
-    reviewStatus: "UNDER_REVIEW",
+    // Issuer Fidlify approuvé en publication par Google Wallet (mai 2026) :
+    // les nouvelles classes peuvent être directement APPROVED, plus besoin
+    // de transition UNDER_REVIEW.
+    reviewStatus: "APPROVED",
     hexBackgroundColor: data.bgColor,
     programLogo: data.logoUrl
       ? {
