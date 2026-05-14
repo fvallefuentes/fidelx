@@ -17,13 +17,19 @@ export async function GET(
   const design = card.program.cardDesign as Record<string, unknown>;
   const maxStamps = (config.maxStamps as number) || 10;
   const currentStamps = card.currentStamps;
+
+  // Couleurs : on respecte les overrides explicites du merchant (stampColor,
+  // stampCheckColor, stampEmptyColor) comme côté Apple. Fallback sur bgColor/
+  // textColor si pas définis.
   const bgColor = (design.bgColor as string) || "#1a1a2e";
   const textColor = (design.textColor as string) || "#ffffff";
-
   const W = 1032;
   const H = 336;
   const bg = bgColor.startsWith("#") ? bgColor : "#1a1a2e";
   const fg = textColor.startsWith("#") ? textColor : "#ffffff";
+  const stampFill = (design.stampColor as string) || fg;
+  const stampCheck = (design.stampCheckColor as string) || bg;
+  const stampEmptyStroke = (design.stampEmptyColor as string) || fg;
 
   const perRow = maxStamps <= 5 ? maxStamps : 5;
   const rows = Math.ceil(maxStamps / perRow);
@@ -44,12 +50,12 @@ export async function GET(
     const sw = Math.max(3, radius * 0.1);
 
     if (filled) {
-      circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fg}"/>`;
+      circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${stampFill}"/>`;
       const ck = radius * 0.45;
-      circles += `<polyline points="${cx - ck * 0.6},${cy} ${cx - ck * 0.1},${cy + ck * 0.55} ${cx + ck * 0.7},${cy - ck * 0.55}" fill="none" stroke="${bg}" stroke-width="${sw * 1.4}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      circles += `<polyline points="${cx - ck * 0.6},${cy} ${cx - ck * 0.1},${cy + ck * 0.55} ${cx + ck * 0.7},${cy - ck * 0.55}" fill="none" stroke="${stampCheck}" stroke-width="${sw * 1.4}" stroke-linecap="round" stroke-linejoin="round"/>`;
     } else {
-      circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fg}" opacity="0.15"/>`;
-      circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${fg}" stroke-width="${sw}" opacity="0.55"/>`;
+      circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${stampEmptyStroke}" opacity="0.12"/>`;
+      circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${stampEmptyStroke}" stroke-width="${sw}" opacity="0.55"/>`;
     }
   }
 
