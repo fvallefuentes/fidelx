@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   CreditCard,
@@ -18,14 +19,14 @@ import {
 import LogoMark from "@/components/landing/LogoMark";
 
 const navigation = [
-  { name: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, exact: true },
-  { name: "Programme", href: "/dashboard/programs", icon: CreditCard },
-  { name: "Scanner", href: "/dashboard/scan", icon: ScanLine },
-  { name: "Clients", href: "/dashboard/clients", icon: Users },
-  { name: "Statistiques", href: "/dashboard/stats", icon: BarChart2 },
-  { name: "Campagnes", href: "/dashboard/campaigns", icon: Bell },
-  { name: "QR Code", href: "/dashboard/qrcode", icon: QrCode },
-  { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
+  { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, exact: true },
+  { key: "program", href: "/dashboard/programs", icon: CreditCard },
+  { key: "scan", href: "/dashboard/scan", icon: ScanLine },
+  { key: "clients", href: "/dashboard/clients", icon: Users },
+  { key: "stats", href: "/dashboard/stats", icon: BarChart2 },
+  { key: "campaigns", href: "/dashboard/campaigns", icon: Bell },
+  { key: "qrcode", href: "/dashboard/qrcode", icon: QrCode },
+  { key: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function Sidebar({
@@ -37,6 +38,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const t = useTranslations("Dashboard.sidebar");
   const role = (session?.user as { role?: string })?.role ?? "USER";
 
   const visibleNav = navigation.filter(item => {
@@ -55,7 +57,7 @@ export function Sidebar({
         <button
           type="button"
           className="dx-sidebar-close"
-          aria-label="Fermer le menu"
+          aria-label={t("closeMenu")}
           onClick={onCloseMobile}
         >
           <X className="h-[18px] w-[18px]" />
@@ -70,13 +72,13 @@ export function Sidebar({
             : pathname === item.href || pathname.startsWith(item.href + "/");
           return (
             <Link
-              key={item.name}
+              key={item.key}
               href={item.href}
               onClick={onCloseMobile}
               className={`dx-nav-item${isActive ? " active" : ""}`}
             >
               <item.icon className="h-[18px] w-[18px]" />
-              <span>{item.name}</span>
+              <span>{t(`items.${item.key}`)}</span>
               {isActive && <span className="dx-nav-tick" />}
             </Link>
           );
@@ -91,7 +93,7 @@ export function Sidebar({
           className="dx-nav-item dx-logout"
         >
           <LogOut className="h-[18px] w-[18px]" />
-          <span>Déconnexion</span>
+          <span>{t("logout")}</span>
         </button>
       </div>
     </aside>

@@ -3,13 +3,17 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import LogoMark from "@/components/landing/LogoMark";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 
 const PAID_PLANS = ["essential", "growth", "multi_site"];
 const RESEND_COOLDOWN = 60;
 
 function VerifyEmailForm() {
   const searchParams = useSearchParams();
+  const t = useTranslations("Auth.verifyEmail");
+  const auth = useTranslations("Auth");
   const email = searchParams.get("email") ?? "";
   const plan = searchParams.get("plan") ?? "";
   const isPaidPlan = PAID_PLANS.includes(plan);
@@ -88,7 +92,7 @@ function VerifyEmailForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Code invalide");
+        setError(data.error || t("invalidCode"));
         setSubmitting(false);
         // Reset focus sur le premier champ pour rééssayer
         setDigits(["", "", "", "", "", ""]);
@@ -105,7 +109,7 @@ function VerifyEmailForm() {
         window.location.href = next;
       }, 1500);
     } catch {
-      setError("Erreur de connexion");
+      setError(t("connectionError"));
       setSubmitting(false);
     }
   }
@@ -123,12 +127,12 @@ function VerifyEmailForm() {
       const data = await res.json();
       if (!res.ok) {
         if (data.cooldownSeconds) setResendCooldown(data.cooldownSeconds);
-        setError(data.error || "Erreur lors de l'envoi du code");
+        setError(data.error || t("resendError"));
       } else {
         setResendCooldown(RESEND_COOLDOWN);
       }
     } catch {
-      setError("Erreur de connexion");
+      setError(t("connectionError"));
     } finally {
       setResending(false);
     }
@@ -145,14 +149,11 @@ function VerifyEmailForm() {
               <LogoMark size={36} />
               <span>FIDLIFY</span>
             </Link>
-            <h1 className="auth-title">Email manquant</h1>
-            <p className="auth-desc">
-              Cette page nécessite un email en paramètre. Veuillez recommencer
-              l&apos;inscription.
-            </p>
+            <h1 className="auth-title">{t("missingTitle")}</h1>
+            <p className="auth-desc">{t("missingDescription")}</p>
           </div>
           <div className="auth-foot">
-            <Link href="/register">Retour à l&apos;inscription</Link>
+            <Link href="/register">{t("backRegister")}</Link>
           </div>
         </div>
       </div>
@@ -178,8 +179,11 @@ function VerifyEmailForm() {
           <path d="M19 12H5" />
           <path d="m12 19-7-7 7-7" />
         </svg>
-        Accueil
+        {auth("backHome")}
       </Link>
+      <div className="auth-language">
+        <LanguageSwitcher compact />
+      </div>
 
       <div className="auth-card">
         <div className="auth-head">
@@ -187,11 +191,10 @@ function VerifyEmailForm() {
             <LogoMark size={36} />
             <span>FIDLIFY</span>
           </Link>
-          <h1 className="auth-title">Vérifiez votre email</h1>
+          <h1 className="auth-title">{t("title")}</h1>
           <p className="auth-desc">
-            Nous avons envoyé un code à{" "}
-            <strong style={{ color: "#f4f5f1" }}>{email}</strong>.<br />
-            Saisissez-le ci-dessous (valable 15 minutes).
+            {t("description", { email })}<br />
+            {t("descriptionHint")}
           </p>
         </div>
 
@@ -212,7 +215,7 @@ function VerifyEmailForm() {
               </svg>
             </div>
             <p>
-              Email vérifié&nbsp;! Redirection vers la connexion…
+              {t("success")}
             </p>
           </div>
         ) : (
@@ -225,7 +228,7 @@ function VerifyEmailForm() {
           >
             {error && <div className="auth-error">{error}</div>}
 
-            <div className="otp-row" role="group" aria-label="Code de vérification 6 chiffres">
+            <div className="otp-row" role="group" aria-label={t("otpLabel")}>
               {digits.map((d, i) => (
                 <input
                   key={i}
@@ -242,7 +245,7 @@ function VerifyEmailForm() {
                   onKeyDown={(e) => handleKeyDown(i, e)}
                   onPaste={handlePaste}
                   autoComplete={i === 0 ? "one-time-code" : "off"}
-                  aria-label={`Chiffre ${i + 1}`}
+                  aria-label={t("digitLabel", { number: i + 1 })}
                   disabled={submitting}
                 />
               ))}
@@ -253,13 +256,13 @@ function VerifyEmailForm() {
               className="auth-submit"
               disabled={submitting || digits.join("").length !== 6}
             >
-              {submitting ? "Vérification…" : "Vérifier mon email"}
+              {submitting ? t("verifying") : t("submit")}
             </button>
 
             <div className="verify-resend">
               {resendCooldown > 0 ? (
                 <span className="verify-resend-disabled">
-                  Renvoyer un code dans {resendCooldown}s
+                  {t("resendIn", { seconds: resendCooldown })}
                 </span>
               ) : (
                 <button
@@ -268,19 +271,19 @@ function VerifyEmailForm() {
                   disabled={resending}
                   className="verify-resend-btn"
                 >
-                  {resending ? "Envoi…" : "Renvoyer un code"}
+                  {resending ? t("resending") : t("resend")}
                 </button>
               )}
             </div>
 
             <p className="auth-fineprint">
-              Vérifiez vos spams si vous ne recevez pas le code.
+              {t("spamHint")}
             </p>
           </form>
         )}
 
         <div className="auth-foot">
-          <Link href="/login">Retour à la connexion</Link>
+          <Link href="/login">{t("backLogin")}</Link>
         </div>
       </div>
     </div>

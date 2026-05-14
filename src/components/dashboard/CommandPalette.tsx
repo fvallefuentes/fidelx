@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Search,
   User,
@@ -43,25 +44,26 @@ type SearchResult = {
 };
 
 type NavItem = {
-  label: string;
+  key: "dashboard" | "clients" | "programs" | "campaigns" | "scan" | "qrcode" | "stats" | "settings";
   href: string;
   icon: typeof LayoutDashboard;
   keywords: string[];
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, keywords: ["dashboard", "accueil"] },
-  { label: "Clients", href: "/dashboard/clients", icon: UsersIcon, keywords: ["clients", "cartes"] },
-  { label: "Programmes", href: "/dashboard/programs", icon: Stamp, keywords: ["programmes", "fidélité"] },
-  { label: "Campagnes", href: "/dashboard/campaigns", icon: Megaphone, keywords: ["campagnes", "notifications"] },
-  { label: "Scanner", href: "/dashboard/scan", icon: ScanLine, keywords: ["scan", "qr"] },
-  { label: "QR Code", href: "/dashboard/qrcode", icon: QrCode, keywords: ["qr", "qrcode"] },
-  { label: "Statistiques", href: "/dashboard/stats", icon: BarChart2, keywords: ["stats", "statistiques", "rapports"] },
-  { label: "Paramètres", href: "/dashboard/settings", icon: Settings, keywords: ["paramètres", "settings", "compte"] },
+  { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, keywords: ["dashboard", "accueil", "home"] },
+  { key: "clients", href: "/dashboard/clients", icon: UsersIcon, keywords: ["clients", "customers", "kunden", "cartes"] },
+  { key: "programs", href: "/dashboard/programs", icon: Stamp, keywords: ["programmes", "programs", "programme", "fidélité"] },
+  { key: "campaigns", href: "/dashboard/campaigns", icon: Megaphone, keywords: ["campagnes", "campaigns", "kampagnen", "notifications"] },
+  { key: "scan", href: "/dashboard/scan", icon: ScanLine, keywords: ["scan", "scanner", "qr"] },
+  { key: "qrcode", href: "/dashboard/qrcode", icon: QrCode, keywords: ["qr", "qrcode"] },
+  { key: "stats", href: "/dashboard/stats", icon: BarChart2, keywords: ["stats", "statistiques", "statistics", "berichte"] },
+  { key: "settings", href: "/dashboard/settings", icon: Settings, keywords: ["paramètres", "settings", "einstellungen", "compte"] },
 ];
 
 export function CommandPalette() {
   const router = useRouter();
+  const t = useTranslations("Dashboard.commandPalette");
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult>({
@@ -138,7 +140,7 @@ export function CommandPalette() {
   const navMatches = query.trim()
     ? NAV_ITEMS.filter(
         (n) =>
-          n.label.toLowerCase().includes(query.toLowerCase()) ||
+          t(`items.${n.key}`).toLowerCase().includes(query.toLowerCase()) ||
           n.keywords.some((k) => k.toLowerCase().includes(query.toLowerCase()))
       )
     : NAV_ITEMS;
@@ -170,8 +172,8 @@ export function CommandPalette() {
               <Icon size={14} />
             </span>
             <div className="cp-item-body">
-              <div className="cp-item-title">{n.label}</div>
-              <div className="cp-item-sub">Navigation rapide</div>
+              <div className="cp-item-title">{t(`items.${n.key}`)}</div>
+              <div className="cp-item-sub">{t("quickNav")}</div>
             </div>
             <span className="cp-item-arrow">
               <ArrowRight size={12} />
@@ -224,7 +226,7 @@ export function CommandPalette() {
           </span>
           <div className="cp-item-body">
             <div className="cp-item-title">{p.name}</div>
-            <div className="cp-item-sub">Programme · {p.type}</div>
+            <div className="cp-item-sub">{t("program")} · {p.type}</div>
           </div>
           <span className="cp-item-arrow">
             <ArrowRight size={12} />
@@ -296,7 +298,7 @@ export function CommandPalette() {
       className="cp-backdrop"
       role="dialog"
       aria-modal="true"
-      aria-label="Recherche globale"
+      aria-label={t("globalSearch")}
       onClick={() => setOpen(false)}
     >
       <div className="cp-modal" onClick={(e) => e.stopPropagation()}>
@@ -308,7 +310,7 @@ export function CommandPalette() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Rechercher un client, programme, campagne…"
+            placeholder={t("placeholder")}
             className="cp-input"
             autoComplete="off"
           />
@@ -319,7 +321,7 @@ export function CommandPalette() {
           {/* Empty state with quick nav */}
           {!hasQuery && (
             <>
-              <div className="cp-section-title">Navigation</div>
+              <div className="cp-section-title">{t("navigation")}</div>
               {flatItems
                 .filter((i) => i.type === "nav")
                 .map((item, i) => (
@@ -341,7 +343,7 @@ export function CommandPalette() {
             <>
               {navMatches.length > 0 && (
                 <>
-                  <div className="cp-section-title">Navigation</div>
+                  <div className="cp-section-title">{t("navigation")}</div>
                   {flatItems
                     .filter((i) => i.type === "nav")
                     .map((item) => {
@@ -364,7 +366,7 @@ export function CommandPalette() {
               {results.clients.length > 0 && (
                 <>
                   <div className="cp-section-title">
-                    Clients ({results.clients.length})
+                    {t("items.clients")} ({results.clients.length})
                   </div>
                   {flatItems
                     .filter((i) => i.type === "client")
@@ -388,7 +390,7 @@ export function CommandPalette() {
               {results.programs.length > 0 && (
                 <>
                   <div className="cp-section-title">
-                    Programmes ({results.programs.length})
+                    {t("items.programs")} ({results.programs.length})
                   </div>
                   {flatItems
                     .filter((i) => i.type === "program")
@@ -412,7 +414,7 @@ export function CommandPalette() {
               {results.campaigns.length > 0 && (
                 <>
                   <div className="cp-section-title">
-                    Campagnes ({results.campaigns.length})
+                    {t("items.campaigns")} ({results.campaigns.length})
                   </div>
                   {flatItems
                     .filter((i) => i.type === "campaign")
@@ -436,14 +438,14 @@ export function CommandPalette() {
               {!loading && !hasResults && navMatches.length === 0 && (
                 <div className="cp-empty">
                   <Bell size={20} />
-                  <p>Aucun résultat</p>
-                  <span>Essayez avec un autre terme.</span>
+                  <p>{t("noResult")}</p>
+                  <span>{t("tryAnother")}</span>
                 </div>
               )}
 
               {loading && (
                 <div className="cp-loading">
-                  Recherche…
+                  {t("searching")}
                 </div>
               )}
             </>
@@ -454,15 +456,15 @@ export function CommandPalette() {
           <span>
             <kbd className="cp-kbd-sm">↑</kbd>
             <kbd className="cp-kbd-sm">↓</kbd>
-            naviguer
+            {t("navigate")}
           </span>
           <span>
             <kbd className="cp-kbd-sm">↵</kbd>
-            ouvrir
+            {t("open")}
           </span>
           <span>
             <kbd className="cp-kbd-sm">esc</kbd>
-            fermer
+            {t("close")}
           </span>
         </div>
       </div>

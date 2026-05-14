@@ -1,0 +1,548 @@
+{
+  "Common": {
+    "brand": "FIDLIFY",
+    "home": "Accueil",
+    "loading": "Chargement...",
+    "language": "Langue",
+    "languages": {
+      "fr": "Français",
+      "de": "Deutsch",
+      "en": "English"
+    }
+  },
+  "Cookies": {
+    "bannerLabel": "Information cookies",
+    "bannerText": "Ce site utilise uniquement des cookies strictement nécessaires au fonctionnement (authentification, sécurité). Aucun cookie de mesure d'audience, de profilage ou de publicité.",
+    "learnMore": "En savoir plus",
+    "preferences": "Préférences",
+    "understood": "J'ai compris",
+    "manage": "Gérer mes cookies",
+    "close": "Fermer",
+    "modalText": "Fidlify n'utilise actuellement aucun cookie de mesure d'audience, de marketing ou de profilage. Seuls les cookies strictement nécessaires au fonctionnement du Service sont déposés.",
+    "necessaryTitle": "Cookies strictement nécessaires",
+    "necessaryDescription": "Authentification, sécurité (CSRF), session. Indispensables au fonctionnement du Site.",
+    "alwaysActive": "Toujours actif",
+    "auth": "Authentification",
+    "csrf": "Protection CSRF",
+    "redirect": "Redirection",
+    "session": "session",
+    "days": "30 jours",
+    "detailsPrefix": "Pour plus de détails, consultez notre",
+    "cookiePolicy": "Politique cookies",
+    "privacyPolicy": "Politique de confidentialité",
+    "and": "et notre",
+    "save": "Enregistrer mes préférences"
+  },
+  "Landing": {
+    "nav": {
+      "solution": "Solution",
+      "features": "Fonctionnalités",
+      "demo": "Démo",
+      "pricing": "Tarifs",
+      "faq": "FAQ",
+      "login": "Connexion",
+      "tryFree": "Essayer gratuitement",
+      "openMenu": "Ouvrir le menu",
+      "closeMenu": "Fermer le menu",
+      "navigation": "Navigation"
+    },
+    "hero": {
+      "eyebrow": "FIDLIFY · FAITES DÉFILER",
+      "title": "La fidélité qui donne",
+      "titleAccent": "envie de revenir.",
+      "lede": "Créez un programme de fidélité digital dans Apple Wallet et Google Wallet, sans application à télécharger.",
+      "progress": "PROGRESSION",
+      "reward": "RÉCOMPENSE",
+      "rewardText": "1 café offert",
+      "featureLabel": "CHAPITRE 02",
+      "featureTitle": "Apple Wallet · sans app · sans friction",
+      "ready": "PRÊT EN 5 MINUTES",
+      "readyText": "Lancez votre programme dès aujourd'hui.",
+      "createCard": "Créer ma carte fidélité",
+      "demo": "▶ Démo 90s",
+      "scroll": "FAITES DÉFILER",
+      "shops": {
+        "bakery": "Boulangerie Pré",
+        "cafe": "Café Lumen"
+      }
+    },
+    "demoSection": {
+      "eyebrow": "EXPÉRIENCE PRODUIT",
+      "titleA": "Créer. Partager.",
+      "titleB": "Fidéliser.",
+      "lede": "Un parcours simple, du commerçant au client — en 5 étapes.",
+      "stepLabel": "ÉTAPE",
+      "cardName": "Carte de fidélité",
+      "rewardText": "1 café offert au 10ᵉ",
+      "now": "maintenant",
+      "offer": "—15% sur tout le menu jusqu'à 17h ☕",
+      "shops": {
+        "yourShop": "Votre boutique",
+        "cafe": "Café Lumen"
+      },
+      "steps": [
+        {
+          "title": "Le commerçant configure sa carte.",
+          "body": "Logo, couleurs, récompenses. Sans code, sans dev."
+        },
+        {
+          "title": "Le client scanne le QR code.",
+          "body": "En caisse, sur la table, sur l'addition. Un tap, c'est installé."
+        },
+        {
+          "title": "La carte s'ajoute au Wallet.",
+          "body": "Apple Wallet ou Google Wallet. Toujours dans la poche du client."
+        },
+        {
+          "title": "Le commerçant envoie une notification.",
+          "body": "Une offre, un rappel, une nouveauté. Direct dans son téléphone."
+        },
+        {
+          "title": "Le client revient acheter.",
+          "body": "Et son tampon avance. Et il revient encore. Voilà la fidélité."
+        }
+      ]
+    },
+    "journey": {
+      "eyebrow": "PRODUCT JOURNEY",
+      "wallet": "Wallet",
+      "cardName": "Carte de fidélité",
+      "rewardText": "1 café offert",
+      "notificationTime": "maintenant",
+      "notification": "Plus que 4 cafés et le 10ᵉ est offert ☕",
+      "revenueLabel": "REVENUS · 30 JOURS",
+      "revenueDelta": "↑ +3 580 vs mois précédent",
+      "newCustomers": "nouveaux clients",
+      "openRate": "d'ouverture",
+      "scroll": "SCROLL ↓",
+      "scenes": [
+        {
+          "kicker": "ÉTAPE 01 · CRÉATION",
+          "title": "Une carte fidélité.",
+          "sub": "Conçue pour vivre dans le Wallet de vos clients."
+        },
+        {
+          "kicker": "ÉTAPE 02 · INSTALLATION",
+          "title": "Elle arrive dans le téléphone.",
+          "sub": "Apple Wallet ou Google Wallet — sans aucune app à télécharger."
+        },
+        {
+          "kicker": "ÉTAPE 03 · ACTIVATION",
+          "title": "Toujours dans la poche.",
+          "sub": "Présente à chaque visite, à chaque achat, à chaque trajet."
+        },
+        {
+          "kicker": "ÉTAPE 04 · ENGAGEMENT",
+          "title": "Une notification, un retour.",
+          "sub": "94 % d'ouverture. Le canal le plus direct vers vos clients."
+        },
+        {
+          "kicker": "ÉTAPE 05 · CROISSANCE",
+          "title": "Fidélisez. Notifiez. Vendez plus.",
+          "sub": "Vendez plus."
+        }
+      ]
+    },
+    "faq": {
+      "titleA": "Les questions",
+      "titleB": "qu'on nous pose souvent.",
+      "items": [
+        {
+          "q": "Est-ce que mes clients doivent télécharger une application ?",
+          "a": "Non, jamais. La carte Fidlify s'installe directement dans Apple Wallet ou Google Wallet — déjà présents sur la majorité des smartphones récents. Un simple tap depuis un QR code suffit."
+        },
+        {
+          "q": "Est-ce compatible Apple Wallet ET Google Wallet ?",
+          "a": "Oui, Fidlify génère automatiquement la version compatible selon l'appareil de votre client. Aucune configuration de votre côté — la carte s'ajoute en un tap sur iPhone comme sur Android."
+        },
+        {
+          "q": "Puis-je envoyer des notifications à mes clients ?",
+          "a": "Oui. Vous pouvez envoyer des notifications push directement dans le Wallet de vos clients — promotions, nouveautés, anniversaires, rappels. Idéal pour relancer un client au bon moment."
+        },
+        {
+          "q": "Puis-je personnaliser le design de la carte ?",
+          "a": "Entièrement. Logo, couleurs, photo de fond, type de récompense, texte. Votre carte ressemble à votre commerce — pas à Fidlify."
+        },
+        {
+          "q": "Combien de temps pour créer une carte de fidélité digitale ?",
+          "a": "Environ 3 minutes. Vous remplissez les informations de votre commerce, choisissez le design et la récompense — c'est en ligne et prêt à être distribué via QR code."
+        },
+        {
+          "q": "Est-ce adapté aux petits commerces suisses ?",
+          "a": "C'est précisément pour eux que Fidlify existe. L'offre Gratuite permet de tester la solution, puis l'offre Essentiel démarre à 39 CHF/mois, sans engagement."
+        },
+        {
+          "q": "Puis-je utiliser un QR code en magasin ?",
+          "a": "Oui — vous générez votre QR code depuis le dashboard, l'imprimez et vos clients scannent pour ajouter la carte au Wallet en un tap."
+        },
+        {
+          "q": "Combien coûte un programme de fidélité digital avec Fidlify ?",
+          "a": "Quatre offres : Gratuit, Essentiel, Croissance et Multi-sites. Pas d'engagement, pas de frais cachés."
+        }
+      ]
+    },
+    "footer": {
+      "description": "Logiciel de fidélisation SaaS pour les commerçants de Suisse romande. Carte de fidélité digitale Apple Wallet et Google Wallet, sans application à télécharger.",
+      "product": "Produit",
+      "account": "Compte",
+      "legal": "Légal",
+      "createAccount": "Créer un compte",
+      "contact": "Contact",
+      "manageCookies": "Gérer mes cookies",
+      "manageCookiesLabel": "Ouvrir la fenêtre de gestion des cookies",
+      "madeIn": "Conçu en Suisse romande",
+      "compliance": "Conformité LPD/RGPD",
+      "links": {
+        "features": "Fonctionnalités",
+        "pricing": "Tarifs",
+        "demo": "Démo",
+        "faq": "FAQ",
+        "login": "Connexion"
+      },
+      "legalLinks": {
+        "mentions-legales": "Mentions légales",
+        "politique-de-confidentialite": "Confidentialité",
+        "cgu": "CGU",
+        "politique-cookies": "Cookies"
+      }
+    }
+  },
+  "Auth": {
+    "backHome": "Accueil",
+    "login": {
+      "title": "Connexion",
+      "paidDescription": "Connectez-vous pour finaliser votre abonnement",
+      "description": "Accédez à votre tableau de bord Fidlify",
+      "verified": "Email vérifié. Connectez-vous pour accéder à votre tableau de bord.",
+      "invalidCredentials": "Email ou mot de passe incorrect",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.ch",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Votre mot de passe",
+      "forgotPassword": "Mot de passe oublié ?",
+      "submit": "Se connecter",
+      "submitPaid": "Se connecter et payer",
+      "loading": "Connexion...",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte"
+    },
+    "register": {
+      "title": "Créer un compte",
+      "description": "Lancez votre programme de fidélité en 5 minutes",
+      "genericError": "Erreur lors de l'inscription",
+      "businessName": "Nom du commerce",
+      "businessPlaceholder": "Boulangerie du Lac",
+      "email": "Email",
+      "emailPlaceholder": "votre@email.ch",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "Minimum 8 caractères",
+      "submit": "Créer mon compte gratuit",
+      "loading": "Création...",
+      "fineprint": "En créant un compte, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.",
+      "hasAccount": "Déjà un compte ?",
+      "login": "Se connecter"
+    },
+    "forgotPassword": {
+      "back": "Connexion",
+      "title": "Mot de passe oublié",
+      "description": "Recevez un lien sécurisé pour réinitialiser votre mot de passe.",
+      "sendError": "Erreur lors de l'envoi",
+      "sentTitle": "Email envoyé.",
+      "sentBody": "Si un compte existe pour {email}, vous recevrez un lien de réinitialisation dans les prochaines minutes.",
+      "sentHint": "Vérifiez vos spams si vous ne le voyez pas. Le lien est valable 24h.",
+      "emailLabel": "Email du compte",
+      "emailPlaceholder": "votre@email.ch",
+      "sending": "Envoi...",
+      "submit": "Envoyer le lien de réinitialisation",
+      "fineprint": "Pour la sécurité, nous confirmerons toujours l'envoi, même si l'email n'est pas associé à un compte.",
+      "remember": "Vous vous souvenez ?",
+      "backLogin": "Retour à la connexion"
+    },
+    "resetPassword": {
+      "title": "Réinitialiser le mot de passe",
+      "description": "Définissez un nouveau mot de passe pour votre compte.",
+      "minLength": "Minimum 8 caractères",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "genericError": "Erreur lors du reset",
+      "invalidLink": "Lien invalide — aucun token fourni dans l'URL.",
+      "success": "Mot de passe modifié. Redirection vers la connexion...",
+      "newPassword": "Nouveau mot de passe",
+      "confirm": "Confirmer",
+      "saving": "Modification...",
+      "submit": "Définir le nouveau mot de passe",
+      "backLogin": "← Retour à la connexion"
+    },
+    "verifyEmail": {
+      "missingTitle": "Email manquant",
+      "missingDescription": "Cette page nécessite un email en paramètre. Veuillez recommencer l'inscription.",
+      "backRegister": "Retour à l'inscription",
+      "title": "Vérifiez votre email",
+      "description": "Nous avons envoyé un code à {email}.",
+      "descriptionHint": "Saisissez-le ci-dessous (valable 15 minutes).",
+      "invalidCode": "Code invalide",
+      "connectionError": "Erreur de connexion",
+      "resendError": "Erreur lors de l'envoi du code",
+      "success": "Email vérifié ! Redirection vers la connexion...",
+      "otpLabel": "Code de vérification 6 chiffres",
+      "digitLabel": "Chiffre {number}",
+      "verifying": "Vérification...",
+      "submit": "Vérifier mon email",
+      "resendIn": "Renvoyer un code dans {seconds}s",
+      "resending": "Envoi...",
+      "resend": "Renvoyer un code",
+      "spamHint": "Vérifiez vos spams si vous ne recevez pas le code.",
+      "backLogin": "Retour à la connexion"
+    }
+  },
+  "Dashboard": {
+    "header": {
+      "eyebrow": "ESPACE COMMERÇANT",
+      "hello": "Bonjour,",
+      "fallbackName": "Commerçant",
+      "search": "Rechercher...",
+      "searchLabel": "Rechercher (Ctrl+K)",
+      "openMenu": "Ouvrir le menu"
+    },
+    "sidebar": {
+      "closeMenu": "Fermer le menu",
+      "items": {
+        "dashboard": "Tableau de bord",
+        "program": "Programme",
+        "scan": "Scanner",
+        "clients": "Clients",
+        "stats": "Statistiques",
+        "campaigns": "Campagnes",
+        "qrcode": "QR Code",
+        "settings": "Paramètres"
+      },
+      "logout": "Déconnexion"
+    },
+    "commandPalette": {
+      "globalSearch": "Recherche globale",
+      "placeholder": "Rechercher un client, programme, campagne...",
+      "quickNav": "Navigation rapide",
+      "navigation": "Navigation",
+      "program": "Programme",
+      "noResult": "Aucun résultat",
+      "tryAnother": "Essayez avec un autre terme.",
+      "searching": "Recherche...",
+      "navigate": "naviguer",
+      "open": "ouvrir",
+      "close": "fermer",
+      "items": {
+        "dashboard": "Tableau de bord",
+        "clients": "Clients",
+        "programs": "Programmes",
+        "campaigns": "Campagnes",
+        "scan": "Scanner",
+        "qrcode": "QR Code",
+        "stats": "Statistiques",
+        "settings": "Paramètres"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "{count, plural, =0 {Notifications} =1 {1 notification non lue} other {# notifications non lues}}",
+      "markAll": "Tout marquer",
+      "empty": "Pas encore de notifications.",
+      "emptyHint": "Vos activités importantes apparaîtront ici.",
+      "markRead": "Marquer comme lu",
+      "time": {
+        "now": "à l'instant",
+        "minute": "il y a {count} min",
+        "hour": "il y a {count} h",
+        "day": "il y a {count} j"
+      }
+    },
+    "export": {
+      "label": "Exporter CSV",
+      "lockedTitle": "Export CSV réservé aux plans payants — cliquez pour passer au plan Essentiel",
+      "pro": "Pro",
+      "loading": "Export...",
+      "networkError": "Erreur réseau",
+      "statusError": "Erreur {status}"
+    },
+    "cardRecovery": {
+      "title": "Récupération de carte",
+      "close": "Fermer",
+      "explain": "Si {name} a perdu sa carte ou changé de téléphone, scanner ce QR code lui permet de la réinstaller dans son Wallet avec sa progression actuelle préservée.",
+      "copied": "Copié",
+      "copy": "Copier le lien",
+      "print": "Imprimer",
+      "printTitle": "Récupérer la carte de fidélité",
+      "cardNumber": "Carte n° {serialNumber}",
+      "printHint": "Scannez ce QR code pour réinstaller votre carte dans votre Wallet.",
+      "printProgress": "Votre progression est conservée."
+    },
+    "clientPreview": {
+      "title": "Aperçu client — {programName}",
+      "reloadTitle": "Recharger l'aperçu",
+      "reload": "Recharger",
+      "openTitle": "Ouvrir dans un nouvel onglet (pour tester sur smartphone)",
+      "newTab": "Nouvel onglet",
+      "close": "Fermer",
+      "warning": "Si vous remplissez le formulaire ici, une vraie carte sera créée sur votre programme. Utilisez votre propre email/téléphone pour un vrai test, ou simplement scrollez pour voir l'interface client.",
+      "iframeTitle": "Aperçu client"
+    },
+    "statsInsights": {
+      "lockedHeatmapTitle": "Heatmap horaire",
+      "lockedHeatmapDescription": "Visualisez les heures et jours de pointe de votre commerce. Débloqué dès le plan Essentiel.",
+      "lockedCohortTitle": "Rétention par cohorte",
+      "lockedCohortDescription": "Suivez si vos clients de janvier sont encore actifs en mars. Disponible avec un plan payant.",
+      "freeHint": "Passez au plan Essentiel ou supérieur pour débloquer la heatmap et la rétention par cohorte.",
+      "periodTitle": "Comparaison période",
+      "periodSub": "{days} derniers jours vs {from} → {to}",
+      "metrics": {
+        "newClients": "Nouveaux clients",
+        "scans": "Scans",
+        "rewards": "Récompenses",
+        "activeClients": "Clients actifs",
+        "avgScansPerClient": "Scans/client"
+      },
+      "deltaPrevious": "vs {previous}{unit}",
+      "stable": " (stable)",
+      "heatmapTitle": "Heatmap horaire",
+      "heatmapSub": "Scans par heure × jour sur les 30 derniers jours",
+      "less": "Moins",
+      "more": "Plus",
+      "scanCount": "{day} {hour}h : {count, plural, =0 {aucun scan} =1 {1 scan} other {# scans}}",
+      "cohortTitle": "Rétention par cohorte",
+      "cohortSub": "Pourcentage de clients encore actifs N semaines après leur inscription",
+      "cohort": "Cohorte",
+      "signups": "Inscrits",
+      "activeTitle": "{retained}/{signups} clients actifs en S+{week}",
+      "weekPrefix": "S+{week}",
+      "days": ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"]
+    },
+    "home": {
+      "title": "Tableau de bord",
+      "subtitle": "Vue d'ensemble de votre programme de fidélité — données en temps réel.",
+      "cards": {
+        "registeredClients": "Clients inscrits",
+        "newLast7": "Nouveaux 7 derniers jours",
+        "activeCards": "Cartes actives",
+        "onCards": "Sur {count} cartes",
+        "totalVisits": "Visites totales",
+        "visitsLast7": "Visites 7 derniers jours",
+        "returnRate": "Taux de retour",
+        "returnedTwice": "Clients revenus ≥ 2 fois"
+      },
+      "charts": {
+        "visits30": "VISITES — 30 DERNIERS JOURS",
+        "stampsDistributed": "tampons distribués",
+        "dailyVisits": "Visites quotidiennes",
+        "engagement": "ENGAGEMENT",
+        "newClients30": "NOUVEAUX CLIENTS — 30 JOURS",
+        "signedUp": "inscrits",
+        "cardProgress": "PROGRESSION DES CARTES",
+        "cards": "cartes",
+        "topPrograms": "TOP PROGRAMMES",
+        "recentClients": "DERNIERS CLIENTS"
+      },
+      "empty": {
+        "programs": "Aucun programme actif",
+        "clients": "Aucun client pour le moment.",
+        "clientsHint": "Partagez votre QR code pour commencer."
+      },
+      "client": {
+        "anonymous": "Anonyme",
+        "noEmail": "Pas d'email"
+      },
+      "tooltip": {
+        "visits": "visite(s)",
+        "newClients": "nouveau(x)",
+        "cards": "carte(s)"
+      }
+    },
+    "qrcode": {
+      "title": "QR Code",
+      "subtitle": "Affichez ce QR code en caisse pour inscrire vos clients",
+      "emptyTitle": "Aucun programme",
+      "emptyDescription": "Créez d'abord un programme de fidélité",
+      "cardTitle": "Votre QR Code",
+      "cardDescription": "Les clients scannent ce code pour recevoir leur carte de fidélité",
+      "download": "Télécharger",
+      "copied": "Copié !",
+      "copy": "Copier le lien",
+      "howItWorks": "Comment ça marche",
+      "steps": [
+        { "title": "Affichez le QR code", "desc": "Imprimez-le ou affichez-le sur un écran en caisse" },
+        { "title": "Le client scanne", "desc": "Il ouvre l'appareil photo de son téléphone et scanne le code" },
+        { "title": "Formulaire rapide", "desc": "Prénom + email ou téléphone — c'est tout" },
+        { "title": "Carte ajoutée au Wallet", "desc": "Apple Wallet ou Google Wallet, automatiquement" }
+      ]
+    }
+  },
+  "Public": {
+    "join": {
+      "notFoundError": "Programme introuvable",
+      "contactRequired": "Email ou téléphone requis",
+      "submitError": "Erreur lors de l'inscription",
+      "notFoundTitle": "Programme introuvable",
+      "notFoundBody": "Ce programme n'existe pas ou n'est plus actif.",
+      "backHome": "Retour à l'accueil",
+      "recoveryTitle": "Vous avez déjà une carte",
+      "recoveryBody": "Un email de récupération vient de vous être envoyé à l'adresse renseignée. Cliquez sur le lien dans l'email pour réinstaller votre carte de fidélité dans votre Wallet — votre progression actuelle est conservée.",
+      "recoveryHint": "Vérifiez vos spams si vous ne recevez pas l'email dans les prochaines minutes.",
+      "successTitle": "Carte créée !",
+      "successBody": "Ajoutez-la maintenant à votre Wallet pour la garder à portée de main.",
+      "appleWallet": "Ajouter à Apple Wallet",
+      "googleWallet": "Ajouter à Google Wallet",
+      "walletHint": "Pas besoin d'application — la carte vit dans votre Wallet.",
+      "title": "Rejoignez le programme.",
+      "subtitle": "Recevez votre carte de fidélité directement dans votre Wallet — sans application à télécharger.",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Votre prénom",
+      "or": "ou",
+      "phone": "Téléphone",
+      "birthDate": "Date de naissance",
+      "birthDateHint": "(optionnel — pour un cadeau d'anniversaire)",
+      "submitting": "Création...",
+      "submit": "Obtenir ma carte",
+      "fineprint": "En vous inscrivant, vous acceptez la politique de confidentialité. Vos données sont hébergées en Suisse.",
+      "madeIn": "Made in Switzerland"
+    },
+    "stamp": {
+      "loading": "Tamponnage en cours...",
+      "errorFallback": "Erreur lors du tamponnage",
+      "errorTitle": "Erreur",
+      "back": "Retour",
+      "rewardUnlocked": "Récompense débloquée !",
+      "stamped": "Tamponné !",
+      "client": "Client",
+      "stamps": "Tampons",
+      "visits": "Visites",
+      "close": "Fermer"
+    },
+    "cardRecovery": {
+      "unavailableTitle": "Carte indisponible.",
+      "unavailableBody": "Cette carte n'est plus active. Veuillez contacter directement {merchantName} pour en savoir plus.",
+      "title": "Récupérez votre carte.",
+      "body": "Bonjour {firstName} — votre progression est conservée. Réinstallez votre carte de fidélité {programName} dans votre Wallet en un tap.",
+      "progress": "VOTRE PROGRESSION",
+      "stamps": "tampons",
+      "points": "points",
+      "visits": "{count, plural, =0 {aucune visite enregistrée} =1 {1 visite enregistrée} other {# visites enregistrées}}",
+      "appleWallet": "Ajouter à Apple Wallet",
+      "googleWallet": "Ajouter à Google Wallet",
+      "fineprint": "Votre carte sera réinstallée à l'identique avec votre progression actuelle. Rien à refaire.",
+      "madeIn": "Made in Switzerland"
+    },
+    "checkoutSuccess": {
+      "title": "Paiement confirmé !",
+      "waiting": "Activation de votre abonnement en cours...",
+      "ready": "Abonnement actif ! Redirection..."
+    },
+    "betaAccess": {
+      "wrongPassword": "Mot de passe incorrect",
+      "networkError": "Erreur réseau, réessayez",
+      "badge": "BÊTA PRIVÉE",
+      "title": "Accès restreint",
+      "subtitle": "Fidlify est en phase de test fermé. Saisissez le mot de passe d'accès pour continuer.",
+      "placeholder": "Mot de passe d'accès",
+      "checking": "Vérification...",
+      "submit": "Entrer",
+      "foot": "Vous représentez un commerce et souhaitez participer au test ?"
+    }
+  }
+}

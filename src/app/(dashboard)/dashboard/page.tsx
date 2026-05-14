@@ -25,6 +25,7 @@ import {
   RadialBar,
   PolarAngleAxis,
 } from "recharts";
+import { useLocale, useTranslations } from "next-intl";
 
 interface DashboardStats {
   totalClients: number;
@@ -49,6 +50,8 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const t = useTranslations("Dashboard.home");
+  const locale = useLocale();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -68,37 +71,43 @@ export default function DashboardPage() {
     );
   }
 
-  const dVisits = trendDelta(stats?.visitsThisWeek || 0, stats?.visitsLastWeek || 0);
-  const dClients = trendDelta(stats?.newClientsThisWeek || 0, stats?.newClientsLastWeek || 0);
+  const dVisits = trendDelta(
+    stats?.visitsThisWeek || 0,
+    stats?.visitsLastWeek || 0,
+  );
+  const dClients = trendDelta(
+    stats?.newClientsThisWeek || 0,
+    stats?.newClientsLastWeek || 0,
+  );
 
   const statCards = [
     {
-      title: "Clients inscrits",
+      title: t("cards.registeredClients"),
       value: stats?.totalClients || 0,
       icon: Users,
       trend: dClients,
-      sub: "Nouveaux 7 derniers jours",
+      sub: t("cards.newLast7"),
     },
     {
-      title: "Cartes actives",
+      title: t("cards.activeCards"),
       value: stats?.activeCards || 0,
       icon: CreditCard,
       trend: null,
-      sub: `Sur ${stats?.totalClients || 0} cartes`,
+      sub: t("cards.onCards", { count: stats?.totalClients || 0 }),
     },
     {
-      title: "Visites totales",
+      title: t("cards.totalVisits"),
       value: stats?.totalVisits || 0,
       icon: TrendingUp,
       trend: dVisits,
-      sub: "Visites 7 derniers jours",
+      sub: t("cards.visitsLast7"),
     },
     {
-      title: "Taux de retour",
+      title: t("cards.returnRate"),
       value: `${stats?.returnRate || 0}%`,
       icon: Repeat,
       trend: null,
-      sub: "Clients revenus ≥ 2 fois",
+      sub: t("cards.returnedTwice"),
     },
   ];
 
@@ -116,13 +125,10 @@ export default function DashboardPage() {
   return (
     <div className="dx-page">
       <div className="dx-page-head">
-        <h1 className="dx-page-title">Tableau de bord</h1>
-        <p className="dx-page-sub">
-          Vue d&apos;ensemble de votre programme de fidélité — données en temps réel.
-        </p>
+        <h1 className="dx-page-title">{t("title")}</h1>
+        <p className="dx-page-sub">{t("subtitle")}</p>
       </div>
 
-      {/* Stats Grid */}
       <div className="dx-stats-grid">
         {statCards.map((s) => (
           <div className="dx-stat-card" key={s.title}>
@@ -135,7 +141,11 @@ export default function DashboardPage() {
             <div className="dx-stat-value">{s.value}</div>
             <div className="dx-stat-foot">
               {s.trend !== null && (
-                <span className={`dx-trend ${s.trend.up ? "up" : s.trend.down ? "down" : "flat"}`}>
+                <span
+                  className={`dx-trend ${
+                    s.trend.up ? "up" : s.trend.down ? "down" : "flat"
+                  }`}
+                >
                   {s.trend.up ? (
                     <ArrowUpRight className="h-3 w-3" />
                   ) : s.trend.down ? (
@@ -150,24 +160,29 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Charts row 1: Visits area + Engagement gauge */}
       <div className="dx-charts-row">
         <div className="dx-chart-card span-2">
           <div className="dx-chart-head">
             <div>
-              <div className="dx-chart-eyebrow">VISITES — 30 DERNIERS JOURS</div>
+              <div className="dx-chart-eyebrow">{t("charts.visits30")}</div>
               <div className="dx-chart-num">
                 {(stats?.visitsByDay || []).reduce((a, b) => a + b.count, 0)}
-                <span className="dx-chart-num-sub"> tampons distribués</span>
+                <span className="dx-chart-num-sub">
+                  {" "}
+                  {t("charts.stampsDistributed")}
+                </span>
               </div>
             </div>
             <div className="dx-chart-legend">
-              <span className="dx-legend-dot" /> Visites quotidiennes
+              <span className="dx-legend-dot" /> {t("charts.dailyVisits")}
             </div>
           </div>
           <div className="dx-chart-body" style={{ height: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats?.visitsByDay || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart
+                data={stats?.visitsByDay || []}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="visitsFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#d4ff4e" stopOpacity={0.45} />
@@ -177,20 +192,32 @@ export default function DashboardPage() {
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={fmtShortDate}
+                  tickFormatter={(value) => fmtShortDate(value, locale)}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#8a8e84", fontSize: 11, fontFamily: "var(--font-geist-mono, monospace)" }}
+                  tick={{
+                    fill: "#8a8e84",
+                    fontSize: 11,
+                    fontFamily: "var(--font-geist-mono, monospace)",
+                  }}
                   interval="preserveStartEnd"
                   minTickGap={40}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#8a8e84", fontSize: 11, fontFamily: "var(--font-geist-mono, monospace)" }}
+                  tick={{
+                    fill: "#8a8e84",
+                    fontSize: 11,
+                    fontFamily: "var(--font-geist-mono, monospace)",
+                  }}
                   width={28}
                 />
-                <Tooltip content={<DarkTooltip suffix="visite(s)" />} />
+                <Tooltip
+                  content={
+                    <DarkTooltip suffix={t("tooltip.visits")} locale={locale} />
+                  }
+                />
                 <Area
                   type="monotone"
                   dataKey="count"
@@ -198,7 +225,12 @@ export default function DashboardPage() {
                   strokeWidth={2}
                   fill="url(#visitsFill)"
                   dot={false}
-                  activeDot={{ r: 5, fill: "#d4ff4e", stroke: "#0a0d04", strokeWidth: 2 }}
+                  activeDot={{
+                    r: 5,
+                    fill: "#d4ff4e",
+                    stroke: "#0a0d04",
+                    strokeWidth: 2,
+                  }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -208,13 +240,23 @@ export default function DashboardPage() {
         <div className="dx-chart-card">
           <div className="dx-chart-head">
             <div>
-              <div className="dx-chart-eyebrow">ENGAGEMENT</div>
+              <div className="dx-chart-eyebrow">{t("charts.engagement")}</div>
               <div className="dx-chart-num">
-                {stats?.returnRate || 0}<span className="dx-chart-num-sub">%</span>
+                {stats?.returnRate || 0}
+                <span className="dx-chart-num-sub">%</span>
               </div>
             </div>
           </div>
-          <div className="dx-chart-body" style={{ height: 240, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div
+            className="dx-chart-body"
+            style={{
+              height: 240,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <ResponsiveContainer width="100%" height="80%">
               <RadialBarChart
                 innerRadius="72%"
@@ -223,7 +265,12 @@ export default function DashboardPage() {
                 startAngle={90}
                 endAngle={-270}
               >
-                <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                <PolarAngleAxis
+                  type="number"
+                  domain={[0, 100]}
+                  angleAxisId={0}
+                  tick={false}
+                />
                 <RadialBar
                   background={{ fill: "rgba(255,255,255,0.05)" }}
                   dataKey="value"
@@ -232,44 +279,70 @@ export default function DashboardPage() {
                 />
               </RadialBarChart>
             </ResponsiveContainer>
-            <div className="dx-radial-caption">Clients revenus ≥ 2 fois</div>
+            <div className="dx-radial-caption">{t("cards.returnedTwice")}</div>
           </div>
         </div>
       </div>
 
-      {/* Charts row 2: New clients bar + Stamp distribution */}
       <div className="dx-charts-row">
         <div className="dx-chart-card">
           <div className="dx-chart-head">
             <div>
-              <div className="dx-chart-eyebrow">NOUVEAUX CLIENTS — 30 JOURS</div>
+              <div className="dx-chart-eyebrow">{t("charts.newClients30")}</div>
               <div className="dx-chart-num">
                 {(stats?.newClientsByDay || []).reduce((a, b) => a + b.count, 0)}
-                <span className="dx-chart-num-sub"> inscrits</span>
+                <span className="dx-chart-num-sub">
+                  {" "}
+                  {t("charts.signedUp")}
+                </span>
               </div>
             </div>
           </div>
           <div className="dx-chart-body" style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats?.newClientsByDay || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart
+                data={stats?.newClientsByDay || []}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+              >
                 <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={fmtShortDate}
+                  tickFormatter={(value) => fmtShortDate(value, locale)}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#8a8e84", fontSize: 11, fontFamily: "var(--font-geist-mono, monospace)" }}
+                  tick={{
+                    fill: "#8a8e84",
+                    fontSize: 11,
+                    fontFamily: "var(--font-geist-mono, monospace)",
+                  }}
                   interval="preserveStartEnd"
                   minTickGap={50}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#8a8e84", fontSize: 11, fontFamily: "var(--font-geist-mono, monospace)" }}
+                  tick={{
+                    fill: "#8a8e84",
+                    fontSize: 11,
+                    fontFamily: "var(--font-geist-mono, monospace)",
+                  }}
                   width={28}
                 />
-                <Tooltip content={<DarkTooltip suffix="nouveau(x)" />} cursor={{ fill: "rgba(212,255,78,0.08)" }} />
-                <Bar dataKey="count" fill="#d4ff4e" radius={[4, 4, 0, 0]} maxBarSize={14} />
+                <Tooltip
+                  content={
+                    <DarkTooltip
+                      suffix={t("tooltip.newClients")}
+                      locale={locale}
+                    />
+                  }
+                  cursor={{ fill: "rgba(212,255,78,0.08)" }}
+                />
+                <Bar
+                  dataKey="count"
+                  fill="#d4ff4e"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={14}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -278,9 +351,10 @@ export default function DashboardPage() {
         <div className="dx-chart-card span-2">
           <div className="dx-chart-head">
             <div>
-              <div className="dx-chart-eyebrow">PROGRESSION DES CARTES</div>
+              <div className="dx-chart-eyebrow">{t("charts.cardProgress")}</div>
               <div className="dx-chart-num">
-                {stats?.totalClients || 0}<span className="dx-chart-num-sub"> cartes</span>
+                {stats?.totalClients || 0}
+                <span className="dx-chart-num-sub"> {t("charts.cards")}</span>
               </div>
             </div>
           </div>
@@ -296,21 +370,35 @@ export default function DashboardPage() {
                   type="number"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#8a8e84", fontSize: 11, fontFamily: "var(--font-geist-mono, monospace)" }}
+                  tick={{
+                    fill: "#8a8e84",
+                    fontSize: 11,
+                    fontFamily: "var(--font-geist-mono, monospace)",
+                  }}
                 />
                 <YAxis
                   dataKey="range"
                   type="category"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: "#c9ccc3", fontSize: 12, fontFamily: "var(--font-geist-mono, monospace)" }}
+                  tick={{
+                    fill: "#c9ccc3",
+                    fontSize: 12,
+                    fontFamily: "var(--font-geist-mono, monospace)",
+                  }}
                   width={68}
                 />
-                <Tooltip content={<DarkTooltip suffix="carte(s)" />} cursor={{ fill: "rgba(212,255,78,0.08)" }} />
+                <Tooltip
+                  content={
+                    <DarkTooltip suffix={t("tooltip.cards")} locale={locale} />
+                  }
+                  cursor={{ fill: "rgba(212,255,78,0.08)" }}
+                />
                 <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={20}>
                   {(stats?.stampDistribution || []).map((entry, i) => {
                     const pct = (entry.count / Math.max(1, totalRetention)) * 100;
-                    const color = i === 4 ? "#d4ff4e" : `rgba(212,255,78,${0.25 + pct / 200})`;
+                    const color =
+                      i === 4 ? "#d4ff4e" : `rgba(212,255,78,${0.25 + pct / 200})`;
                     return <Cell key={i} fill={color} />;
                   })}
                 </Bar>
@@ -320,11 +408,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Bottom row: Top programs + Recent clients */}
       <div className="dx-charts-row">
         <div className="dx-chart-card">
           <div className="dx-chart-head">
-            <div className="dx-chart-eyebrow">TOP PROGRAMMES</div>
+            <div className="dx-chart-eyebrow">{t("charts.topPrograms")}</div>
           </div>
           <div className="dx-list">
             {stats?.topPrograms && stats.topPrograms.length > 0 ? (
@@ -333,7 +420,9 @@ export default function DashboardPage() {
                 const w = Math.max(6, (p.cards / max) * 100);
                 return (
                   <div className="dx-list-row" key={p.id}>
-                    <div className="dx-list-rank">{String(i + 1).padStart(2, "0")}</div>
+                    <div className="dx-list-rank">
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
                     <div className="dx-list-mid">
                       <div className="dx-list-name">{p.name}</div>
                       <div className="dx-bar-track">
@@ -345,14 +434,14 @@ export default function DashboardPage() {
                 );
               })
             ) : (
-              <div className="dx-empty">Aucun programme actif</div>
+              <div className="dx-empty">{t("empty.programs")}</div>
             )}
           </div>
         </div>
 
         <div className="dx-chart-card span-2">
           <div className="dx-chart-head">
-            <div className="dx-chart-eyebrow">DERNIERS CLIENTS</div>
+            <div className="dx-chart-eyebrow">{t("charts.recentClients")}</div>
           </div>
           <div className="dx-list">
             {stats?.recentClients && stats.recentClients.length > 0 ? (
@@ -362,8 +451,12 @@ export default function DashboardPage() {
                     {(c.firstName?.charAt(0) || "?").toUpperCase()}
                   </div>
                   <div className="dx-client-mid">
-                    <div className="dx-client-name">{c.firstName || "Anonyme"}</div>
-                    <div className="dx-client-mail">{c.email || "Pas d'email"}</div>
+                    <div className="dx-client-name">
+                      {c.firstName || t("client.anonymous")}
+                    </div>
+                    <div className="dx-client-mail">
+                      {c.email || t("client.noEmail")}
+                    </div>
                   </div>
                   <div className="dx-client-stamps">
                     <Stamp className="h-3.5 w-3.5" />
@@ -371,15 +464,16 @@ export default function DashboardPage() {
                   </div>
                   {c.lastVisitAt && (
                     <div className="dx-client-date">
-                      {new Date(c.lastVisitAt).toLocaleDateString("fr-CH")}
+                      {new Date(c.lastVisitAt).toLocaleDateString(locale)}
                     </div>
                   )}
                 </div>
               ))
             ) : (
               <div className="dx-empty">
-                Aucun client pour le moment.<br />
-                Partagez votre QR code pour commencer.
+                {t("empty.clients")}
+                <br />
+                {t("empty.clientsHint")}
               </div>
             )}
           </div>
@@ -389,15 +483,14 @@ export default function DashboardPage() {
   );
 }
 
-/* ─── Helpers ────────────────────────────────────────────── */
-function fmtShortDate(s: string) {
+function fmtShortDate(s: string, locale: string) {
   const d = new Date(s);
-  return d.toLocaleDateString("fr-CH", { day: "2-digit", month: "short" });
+  return d.toLocaleDateString(locale, { day: "2-digit", month: "short" });
 }
 
 function trendDelta(current: number, previous: number) {
   if (current === 0 && previous === 0) {
-    return { up: false, down: false, label: "—" };
+    return { up: false, down: false, label: "-" };
   }
   if (previous === 0) {
     return { up: true, down: false, label: `+${current}` };
@@ -412,16 +505,19 @@ interface TooltipPayload {
   payload?: { date?: string };
   value?: number;
 }
+
 function DarkTooltip({
   active,
   payload,
   label,
   suffix,
+  locale,
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   label?: string;
   suffix?: string;
+  locale: string;
 }) {
   if (!active || !payload || !payload.length) return null;
   const p = payload[0];
@@ -429,7 +525,13 @@ function DarkTooltip({
   return (
     <div className="dx-tt">
       <div className="dx-tt-date">
-        {date ? new Date(date).toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" }) : ""}
+        {date
+          ? new Date(date).toLocaleDateString(locale, {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : ""}
       </div>
       <div className="dx-tt-row">
         <span className="dx-tt-dot" />

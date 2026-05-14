@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import LogoMark from "./LogoMark";
 
 export default function Nav() {
   const [open, setOpen] = useState(false);
+  const t = useTranslations("Landing.nav");
 
   // Close drawer on Escape, lock body scroll while open
   useEffect(() => {
@@ -36,28 +39,29 @@ export default function Nav() {
 
             {/* Desktop links */}
             <div className="nav-links">
-              <a href="#solution">Solution</a>
-              <a href="#features">Fonctionnalités</a>
-              <a href="#demo">Démo</a>
-              <a href="#pricing">Tarifs</a>
+              <a href="#solution">{t("solution")}</a>
+              <a href="#features">{t("features")}</a>
+              <a href="#demo">{t("demo")}</a>
+              <a href="#pricing">{t("pricing")}</a>
               <a href="#faq">FAQ</a>
             </div>
 
             {/* Desktop CTAs */}
             <div className="nav-cta">
+              <LanguageSwitcher compact />
               <Link
                 href="/login"
                 className="btn btn-ghost"
                 style={{ height: 40, padding: "0 18px", fontSize: 14 }}
               >
-                Connexion
+                {t("login")}
               </Link>
               <Link
                 href="/register"
                 className="btn btn-primary"
                 style={{ height: 40, padding: "0 18px", fontSize: 14 }}
               >
-                Essayer gratuitement
+                {t("tryFree")}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
               </Link>
             </div>
@@ -66,7 +70,7 @@ export default function Nav() {
             <button
               type="button"
               className={`nav-burger${open ? " open" : ""}`}
-              aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
+              aria-label={open ? t("closeMenu") : t("openMenu")}
               aria-expanded={open}
               onClick={() => setOpen((v) => !v)}
             >
@@ -88,7 +92,7 @@ export default function Nav() {
         className={`nav-drawer${open ? " open" : ""}`}
         aria-hidden={!open}
         role="dialog"
-        aria-label="Navigation"
+        aria-label={t("navigation")}
       >
         <div className="nav-drawer-head">
           <Link href="/" className="brand" onClick={close}>
@@ -98,7 +102,7 @@ export default function Nav() {
           <button
             type="button"
             className="nav-drawer-close"
-            aria-label="Fermer le menu"
+            aria-label={t("closeMenu")}
             onClick={close}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -106,19 +110,20 @@ export default function Nav() {
         </div>
 
         <nav className="nav-drawer-links">
-          <a href="#solution" onClick={close}>Solution</a>
-          <a href="#features" onClick={close}>Fonctionnalités</a>
-          <a href="#demo" onClick={close}>Démo</a>
-          <a href="#pricing" onClick={close}>Tarifs</a>
+          <a href="#solution" onClick={close}>{t("solution")}</a>
+          <a href="#features" onClick={close}>{t("features")}</a>
+          <a href="#demo" onClick={close}>{t("demo")}</a>
+          <a href="#pricing" onClick={close}>{t("pricing")}</a>
           <a href="#faq" onClick={close}>FAQ</a>
         </nav>
 
         <div className="nav-drawer-cta">
+          <LanguageSwitcher />
           <Link href="/login" className="btn btn-ghost" onClick={close} style={{ width: "100%", justifyContent: "center" }}>
-            Connexion
+            {t("login")}
           </Link>
           <Link href="/register" className="btn btn-primary" onClick={close} style={{ width: "100%", justifyContent: "center" }}>
-            Essayer gratuitement
+            {t("tryFree")}
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
           </Link>
         </div>

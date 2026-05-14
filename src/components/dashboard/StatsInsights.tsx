@@ -10,6 +10,7 @@ import {
   Users,
   Lock,
 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { InsightsResponse } from "@/app/api/merchants/stats/insights/route";
 
 const ACCENT = "#d4ff4e";
@@ -19,8 +20,8 @@ const BORDER = "rgba(255,255,255,0.08)";
 const CARD_BG = "rgba(255,255,255,0.04)";
 const VAL_COLOR = "rgba(255,255,255,0.92)";
 
-/* ─── Composant principal ──────────────────────────────────────── */
 export function StatsInsights({ isFree }: { isFree: boolean }) {
+  const t = useTranslations("Dashboard.statsInsights");
   const [data, setData] = useState<InsightsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,60 +40,64 @@ export function StatsInsights({ isFree }: { isFree: boolean }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      {/* 1. Period comparison (toujours dispo, même en FREE) */}
       <PeriodComparison comparison={data.comparison} />
 
-      {/* 2. Heatmap (plans payants uniquement) */}
       {data.available ? (
         <HeatmapPanel cells={data.heatmap} />
       ) : (
         <LockedFeaturePanel
-          title="Heatmap horaire"
-          description="Visualisez les heures et jours de pointe de votre commerce. Débloqué dès le plan Essentiel."
+          title={t("lockedHeatmapTitle")}
+          description={t("lockedHeatmapDescription")}
         />
       )}
 
-      {/* 3. Cohort retention (plans payants uniquement) */}
       {data.available && data.cohorts.length > 0 ? (
         <CohortPanel cohorts={data.cohorts} />
       ) : !data.available ? (
         <LockedFeaturePanel
-          title="Rétention par cohorte"
-          description="Suivez si vos clients de janvier sont encore actifs en mars. Disponible avec un plan payant."
+          title={t("lockedCohortTitle")}
+          description={t("lockedCohortDescription")}
         />
       ) : null}
 
       {isFree && (
         <p style={{ fontSize: 12, color: MUTED, textAlign: "center" }}>
-          Passez au plan Essentiel ou supérieur pour débloquer la heatmap et
-          la rétention par cohorte.
+          {t("freeHint")}
         </p>
       )}
     </div>
   );
 }
 
-/* ─── 1. Period comparison cards (delta % vs 30j précédents) ───── */
 function PeriodComparison({
   comparison,
 }: {
   comparison: InsightsResponse["comparison"];
 }) {
+  const t = useTranslations("Dashboard.statsInsights");
   const metrics = comparison.metrics;
   const items: { key: keyof typeof metrics; label: string; unit?: string }[] = [
-    { key: "newClients", label: "Nouveaux clients" },
-    { key: "scans", label: "Scans" },
-    { key: "rewards", label: "Récompenses" },
-    { key: "activeClients", label: "Clients actifs" },
-    { key: "avgScansPerClient", label: "Scans/client", unit: "" },
+    { key: "newClients", label: t("metrics.newClients") },
+    { key: "scans", label: t("metrics.scans") },
+    { key: "rewards", label: t("metrics.rewards") },
+    { key: "activeClients", label: t("metrics.activeClients") },
+    {
+      key: "avgScansPerClient",
+      label: t("metrics.avgScansPerClient"),
+      unit: "",
+    },
   ];
 
   return (
     <section>
       <SectionHeader
         icon={<Calendar size={14} />}
-        title="Comparaison période"
-        sub={`${comparison.period.days} derniers jours vs ${comparison.previousPeriod.from} → ${comparison.previousPeriod.to}`}
+        title={t("periodTitle")}
+        sub={t("periodSub", {
+          days: comparison.period.days,
+          from: comparison.previousPeriod.from,
+          to: comparison.previousPeriod.to,
+        })}
       />
       <div
         style={{
@@ -132,6 +137,7 @@ function DeltaCard({
   deltaPct: number | null;
   unit?: string;
 }) {
+  const t = useTranslations("Dashboard.statsInsights");
   const isUp = deltaPct !== null && deltaPct > 0;
   const isDown = deltaPct !== null && deltaPct < 0;
   const isFlat = deltaPct === 0;
@@ -162,7 +168,9 @@ function DeltaCard({
         {current}
         {unit}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+      <div
+        style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}
+      >
         <span
           style={{
             display: "inline-flex",
@@ -175,37 +183,32 @@ function DeltaCard({
         >
           <Icon size={12} />
           {deltaPct === null
-            ? "—"
+            ? "-"
             : `${deltaPct > 0 ? "+" : ""}${deltaPct}%`}
         </span>
         <span style={{ fontSize: 11, color: MUTED }}>
-          vs {previous}
-          {unit}
-          {isFlat ? " (stable)" : ""}
+          {t("deltaPrevious", { previous, unit })}
+          {isFlat ? t("stable") : ""}
         </span>
       </div>
     </div>
   );
 }
 
-/* ─── 2. Heatmap panel ───────────────────────────────────────── */
 function HeatmapPanel({ cells }: { cells: InsightsResponse["heatmap"] }) {
-  const dayLabels = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+  const t = useTranslations("Dashboard.statsInsights");
+  const dayLabels = t.raw("days") as string[];
   const max = Math.max(1, ...cells.map((c) => c.count));
-
-  // Réorganise pour avoir [hour x day] (8 colonnes : 1 label + 7 jours)
   const cellMap = new Map<string, number>();
   cells.forEach((c) => cellMap.set(`${c.day}-${c.hour}`, c.count));
-
-  // Reorder days : Lun → Sam → Dim pour l'affichage
   const dayOrder = [1, 2, 3, 4, 5, 6, 0];
 
   return (
     <section>
       <SectionHeader
         icon={<Activity size={14} />}
-        title="Heatmap horaire"
-        sub="Scans par heure × jour sur les 30 derniers jours"
+        title={t("heatmapTitle")}
+        sub={t("heatmapSub")}
       />
       <div
         style={{
@@ -262,7 +265,11 @@ function HeatmapPanel({ cells }: { cells: InsightsResponse["heatmap"] }) {
                   return (
                     <td key={d}>
                       <div
-                        title={`${dayLabels[d]} ${hour}h : ${count} scan${count > 1 ? "s" : ""}`}
+                        title={t("scanCount", {
+                          day: dayLabels[d],
+                          hour,
+                          count,
+                        })}
                         style={{
                           width: 24,
                           height: 14,
@@ -292,7 +299,7 @@ function HeatmapPanel({ cells }: { cells: InsightsResponse["heatmap"] }) {
             color: MUTED,
           }}
         >
-          <span>Moins</span>
+          <span>{t("less")}</span>
           {[0.15, 0.3, 0.5, 0.7, 0.9].map((i) => (
             <div
               key={i}
@@ -304,24 +311,23 @@ function HeatmapPanel({ cells }: { cells: InsightsResponse["heatmap"] }) {
               }}
             />
           ))}
-          <span>Plus</span>
+          <span>{t("more")}</span>
         </div>
       </div>
     </section>
   );
 }
 
-/* ─── 3. Cohort retention table ──────────────────────────────── */
 function CohortPanel({ cohorts }: { cohorts: InsightsResponse["cohorts"] }) {
-  // Find max retention weeks displayed
+  const t = useTranslations("Dashboard.statsInsights");
   const maxWeeks = Math.max(0, ...cohorts.map((c) => c.retention.length));
 
   return (
     <section>
       <SectionHeader
         icon={<Users size={14} />}
-        title="Rétention par cohorte"
-        sub="Pourcentage de clients encore actifs N semaines après leur inscription"
+        title={t("cohortTitle")}
+        sub={t("cohortSub")}
       />
       <div
         style={{
@@ -342,11 +348,11 @@ function CohortPanel({ cohorts }: { cohorts: InsightsResponse["cohorts"] }) {
         >
           <thead>
             <tr>
-              <th style={thStyle}>Cohorte</th>
-              <th style={thStyle}>Inscrits</th>
+              <th style={thStyle}>{t("cohort")}</th>
+              <th style={thStyle}>{t("signups")}</th>
               {Array.from({ length: maxWeeks }).map((_, i) => (
                 <th key={i} style={thStyle}>
-                  S+{i + 1}
+                  {t("weekPrefix", { week: i + 1 })}
                 </th>
               ))}
             </tr>
@@ -377,7 +383,11 @@ function CohortPanel({ cohorts }: { cohorts: InsightsResponse["cohorts"] }) {
                   {Array.from({ length: maxWeeks }).map((_, i) => {
                     const retained = c.retention[i];
                     if (retained === undefined) {
-                      return <td key={i} style={{ ...tdStyle, color: MUTED }}>—</td>;
+                      return (
+                        <td key={i} style={{ ...tdStyle, color: MUTED }}>
+                          -
+                        </td>
+                      );
                     }
                     const pct = c.signups > 0 ? (retained / c.signups) * 100 : 0;
                     const intensity = pct / 100;
@@ -386,16 +396,19 @@ function CohortPanel({ cohorts }: { cohorts: InsightsResponse["cohorts"] }) {
                         key={i}
                         style={{
                           ...tdStyle,
-                          background: `rgba(212,255,78,${0.05 + intensity * 0.55})`,
-                          color:
-                            intensity > 0.5
-                              ? "#0a0d04"
-                              : VAL_COLOR,
+                          background: `rgba(212,255,78,${
+                            0.05 + intensity * 0.55
+                          })`,
+                          color: intensity > 0.5 ? "#0a0d04" : VAL_COLOR,
                           fontWeight: 500,
                           textAlign: "center",
                           width: 60,
                         }}
-                        title={`${retained}/${c.signups} clients actifs en S+${i + 1}`}
+                        title={t("activeTitle", {
+                          retained,
+                          signups: c.signups,
+                          week: i + 1,
+                        })}
                       >
                         {Math.round(pct)}%
                       </td>
@@ -410,7 +423,6 @@ function CohortPanel({ cohorts }: { cohorts: InsightsResponse["cohorts"] }) {
   );
 }
 
-/* ─── Helpers UI ─────────────────────────────────────────────── */
 function SectionHeader({
   icon,
   title,
@@ -439,9 +451,7 @@ function SectionHeader({
         {icon}
         {title}
       </div>
-      {sub && (
-        <div style={{ fontSize: 12, color: MUTED }}>{sub}</div>
-      )}
+      {sub && <div style={{ fontSize: 12, color: MUTED }}>{sub}</div>}
     </div>
   );
 }
@@ -484,6 +494,7 @@ const thStyle: React.CSSProperties = {
   letterSpacing: "0.04em",
   borderBottom: `1px solid ${BORDER}`,
 };
+
 const tdStyle: React.CSSProperties = {
   padding: "8px 10px",
   borderBottom: `1px solid ${BORDER}`,

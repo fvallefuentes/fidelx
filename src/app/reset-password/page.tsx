@@ -3,8 +3,10 @@
 import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Loader2, Lock, Check } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 
 export default function ResetPasswordPage() {
   return (
@@ -17,6 +19,8 @@ export default function ResetPasswordPage() {
 function ResetForm() {
   const params = useSearchParams();
   const router = useRouter();
+  const t = useTranslations("Auth.resetPassword");
+  const auth = useTranslations("Auth");
   const token = params.get("token") || "";
 
   const [password, setPassword] = useState("");
@@ -29,11 +33,11 @@ function ResetForm() {
     e.preventDefault();
     setError("");
     if (password.length < 8) {
-      setError("Minimum 8 caractères");
+      setError(t("minLength"));
       return;
     }
     if (password !== confirm) {
-      setError("Les mots de passe ne correspondent pas");
+      setError(t("mismatch"));
       return;
     }
 
@@ -45,7 +49,7 @@ function ResetForm() {
     });
     const data = await res.json();
     if (!res.ok) {
-      setError(data.error || "Erreur lors du reset");
+      setError(data.error || t("genericError"));
       setLoading(false);
       return;
     }
@@ -63,8 +67,11 @@ function ResetForm() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
         </svg>
-        Accueil
+        {auth("backHome")}
       </Link>
+      <div className="auth-language">
+        <LanguageSwitcher compact />
+      </div>
 
       <div className="auth-card">
         <div className="auth-head">
@@ -74,23 +81,21 @@ function ResetForm() {
           </Link>
           <h1 className="auth-title">
             <Lock size={20} style={{ display: "inline", marginRight: 8, verticalAlign: -3 }} />
-            Réinitialiser le mot de passe
+            {t("title")}
           </h1>
-          <p className="auth-desc">
-            Définissez un nouveau mot de passe pour votre compte.
-          </p>
+          <p className="auth-desc">{t("description")}</p>
         </div>
 
         {!token && (
           <div className="auth-error">
-            Lien invalide — aucun token fourni dans l&apos;URL.
+            {t("invalidLink")}
           </div>
         )}
 
         {token && success && (
           <div className="auth-success">
             <Check size={14} style={{ display: "inline", marginRight: 4, verticalAlign: -2 }} />
-            Mot de passe modifié. Redirection vers la connexion…
+            {t("success")}
           </div>
         )}
 
@@ -99,7 +104,7 @@ function ResetForm() {
             {error && <div className="auth-error">{error}</div>}
 
             <div className="auth-field">
-              <label htmlFor="password" className="auth-label">Nouveau mot de passe</label>
+              <label htmlFor="password" className="auth-label">{t("newPassword")}</label>
               <input
                 id="password"
                 type="password"
@@ -114,7 +119,7 @@ function ResetForm() {
             </div>
 
             <div className="auth-field">
-              <label htmlFor="confirm" className="auth-label">Confirmer</label>
+              <label htmlFor="confirm" className="auth-label">{t("confirm")}</label>
               <input
                 id="confirm"
                 type="password"
@@ -129,16 +134,16 @@ function ResetForm() {
 
             <button type="submit" className="auth-submit" disabled={loading}>
               {loading ? (
-                <><Loader2 size={14} className="animate-spin" /> Modification…</>
+                <><Loader2 size={14} className="animate-spin" /> {t("saving")}</>
               ) : (
-                "Définir le nouveau mot de passe"
+                t("submit")
               )}
             </button>
           </form>
         )}
 
         <div className="auth-foot">
-          <Link href="/login">← Retour à la connexion</Link>
+          <Link href="/login">{t("backLogin")}</Link>
         </div>
       </div>
     </div>

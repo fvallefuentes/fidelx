@@ -3,28 +3,25 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import LogoMark from "@/components/landing/LogoMark";
 
-/**
- * Page d'accès beta — gate l'accès à fidlify.com pendant la phase de test.
- * Si BETA_ACCESS_PASSWORD est défini côté serveur, toute requête browser
- * sans le cookie fidlify_beta_ok est redirigée ici.
- *
- * Une fois le bon mot de passe saisi, un cookie httpOnly est posé pour
- * 30 jours et l'utilisateur est redirigé vers la page d'origine (?next=...).
- *
- * Non gatée : /api/*, /_next/*, robots.txt, sitemap.xml, icon.svg
- * (machines, webhooks Stripe / Apple Wallet / Google Wallet)
- */
 export default function BetaAccessPage() {
   return (
-    <Suspense fallback={<div className="beta-shell"><div className="beta-bg" /></div>}>
+    <Suspense
+      fallback={
+        <div className="beta-shell">
+          <div className="beta-bg" />
+        </div>
+      }
+    >
       <BetaAccessForm />
     </Suspense>
   );
 }
 
 function BetaAccessForm() {
+  const t = useTranslations("Public.betaAccess");
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "/";
@@ -45,15 +42,14 @@ function BetaAccessForm() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Mot de passe incorrect");
+        setError(data.error || t("wrongPassword"));
         setLoading(false);
         return;
       }
-      // Cookie posé → on suit la redirection demandée
       router.push(nextUrl);
       router.refresh();
     } catch {
-      setError("Erreur réseau, réessayez");
+      setError(t("networkError"));
       setLoading(false);
     }
   }
@@ -68,21 +64,18 @@ function BetaAccessForm() {
         </div>
 
         <div className="beta-badge">
-          <Lock size={11} /> BÊTA PRIVÉE
+          <Lock size={11} /> {t("badge")}
         </div>
 
-        <h1 className="beta-title">Accès restreint</h1>
-        <p className="beta-sub">
-          Fidlify est en phase de test fermé. Saisissez le mot de passe d&apos;accès
-          pour continuer.
-        </p>
+        <h1 className="beta-title">{t("title")}</h1>
+        <p className="beta-sub">{t("subtitle")}</p>
 
         <form onSubmit={handleSubmit} className="beta-form">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mot de passe d'accès"
+            placeholder={t("placeholder")}
             autoFocus
             autoComplete="off"
             required
@@ -92,17 +85,16 @@ function BetaAccessForm() {
           <button type="submit" disabled={loading} className="beta-btn">
             {loading ? (
               <>
-                <Loader2 size={14} className="animate-spin" /> Vérification…
+                <Loader2 size={14} className="animate-spin" /> {t("checking")}
               </>
             ) : (
-              "Entrer"
+              t("submit")
             )}
           </button>
         </form>
 
         <p className="beta-foot">
-          Vous représentez un commerce et souhaitez participer au test ?{" "}
-          <a href="mailto:contact@fidlify.com">contact@fidlify.com</a>
+          {t("foot")} <a href="mailto:contact@fidlify.com">contact@fidlify.com</a>
         </p>
       </div>
     </div>

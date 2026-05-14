@@ -1,6 +1,7 @@
 "use client";
 
 import { useCookiePreferences } from "./CookiePreferencesProvider";
+import { useTranslations } from "next-intl";
 
 /**
  * Bouton "Ouvrir le panneau cookies" — utilisé dans la Politique cookies
@@ -8,6 +9,7 @@ import { useCookiePreferences } from "./CookiePreferencesProvider";
  */
 export default function OpenCookiePrefsButton() {
   const { open } = useCookiePreferences();
+  const t = useTranslations("Cookies");
   return (
     <button
       type="button"
@@ -15,7 +17,7 @@ export default function OpenCookiePrefsButton() {
       className="btn btn-primary"
       style={{ padding: "10px 18px" }}
     >
-      Gérer mes cookies
+      {t("manage")}
     </button>
   );
 }

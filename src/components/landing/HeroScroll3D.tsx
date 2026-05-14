@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 /**
  * HeroScroll3D — animation cinématographique pilotée par le scroll.
@@ -22,6 +23,7 @@ import Link from "next/link";
  * (pas document.documentElement) pour rester scoped.
  */
 export default function HeroScroll3D() {
+  const t = useTranslations("Landing.hero");
   const sectionRef = useRef<HTMLElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const stampsRef = useRef<HTMLDivElement>(null);
@@ -118,16 +120,13 @@ export default function HeroScroll3D() {
           <div className="h3d-headline">
             <span className="h3d-eyebrow">
               <span className="h3d-dot" />
-              <span>FIDLIFY · FAITES DÉFILER</span>
+              <span>{t("eyebrow")}</span>
             </span>
             <h2 className="h3d-title">
-              La fidélité qui donne <br />
-              <span className="h3d-acc">envie de revenir.</span>
+              {t("title")} <br />
+              <span className="h3d-acc">{t("titleAccent")}</span>
             </h2>
-            <p className="h3d-lede">
-              Créez un programme de fidélité digital dans Apple Wallet et Google
-              Wallet, sans application à télécharger.
-            </p>
+            <p className="h3d-lede">{t("lede")}</p>
           </div>
 
           {/* Scène 3D */}
@@ -154,7 +153,7 @@ export default function HeroScroll3D() {
                 </span>
                 <div>
                   <div className="h3d-o-tag">FIDLIFY</div>
-                  <div className="h3d-o-shop">Boulangerie Pré</div>
+                  <div className="h3d-o-shop">{t("shops.bakery")}</div>
                 </div>
               </div>
               <div className="h3d-bar">
@@ -171,14 +170,14 @@ export default function HeroScroll3D() {
                   </span>
                   <div>
                     <div className="h3d-card-org">FIDLIFY</div>
-                    <div className="h3d-card-shop">Café Lumen</div>
+                    <div className="h3d-card-shop">{t("shops.cafe")}</div>
                   </div>
                 </div>
                 <div className="h3d-card-mark" aria-hidden />
               </div>
               <div className="h3d-card-body">
                 <div className="h3d-card-lbl">
-                  PROGRESSION ·{" "}
+                  {t("progress")} ·{" "}
                   <span ref={stampCountRef}>0</span>/10
                 </div>
                 <div ref={stampsRef} className="h3d-stamps">
@@ -191,8 +190,8 @@ export default function HeroScroll3D() {
               </div>
               <div className="h3d-card-foot">
                 <div>
-                  <div className="h3d-card-lbl">RÉCOMPENSE</div>
-                  <div className="h3d-card-reward">1 café offert</div>
+                  <div className="h3d-card-lbl">{t("reward")}</div>
+                  <div className="h3d-card-reward">{t("rewardText")}</div>
                 </div>
                 <Qr />
               </div>
@@ -215,9 +214,9 @@ export default function HeroScroll3D() {
 
           {/* Feature mid-scroll */}
           <div className="h3d-feature">
-            <div className="h3d-feature-lbl">CHAPITRE 02</div>
+            <div className="h3d-feature-lbl">{t("featureLabel")}</div>
             <div className="h3d-feature-ttl">
-              Apple Wallet · sans app · sans friction
+              {t("featureTitle")}
             </div>
           </div>
 
@@ -225,23 +224,23 @@ export default function HeroScroll3D() {
 
           {/* End line + CTAs */}
           <div className="h3d-endline">
-            <div className="h3d-endline-l1">PRÊT EN 5 MINUTES</div>
+            <div className="h3d-endline-l1">{t("ready")}</div>
             <div className="h3d-endline-l2">
-              Lancez votre programme dès aujourd&apos;hui.
+              {t("readyText")}
             </div>
           </div>
           <div className="h3d-endcta">
             <Link href="/register" className="h3d-btn h3d-btn-primary">
-              Créer ma carte fidélité
+              {t("createCard")}
             </Link>
             <Link href="#demo" className="h3d-btn h3d-btn-light">
-              ▶ Démo 90s
+              {t("demo")}
             </Link>
           </div>
 
           <div className="h3d-hint" aria-hidden>
             <i />
-            <span>FAITES DÉFILER</span>
+            <span>{t("scroll")}</span>
           </div>
           <div className="h3d-vignette" aria-hidden />
           <div className="h3d-grain" aria-hidden />

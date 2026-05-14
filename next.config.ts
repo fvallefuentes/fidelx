@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from "next-intl/plugin";
 
 /**
  * Headers de sécurité (audit V2 §6).
@@ -56,11 +57,13 @@ const nextConfig: NextConfig = {
   },
 };
 
+const withNextIntl = createNextIntlPlugin();
+
 // Sentry — wrappe la config Next.js pour activer la capture serveur + client
 // Note : sans SENTRY_AUTH_TOKEN les source maps ne sont pas uploadées (stack
 // traces minifiées dans Sentry). Acceptable pour MVP — ajouter le token plus
 // tard via le panel Sentry pour des stack traces lisibles.
-export default withSentryConfig(nextConfig, {
+export default withSentryConfig(withNextIntl(nextConfig), {
   silent: true,
   org: "fidlify",
   project: "javascript-nextjs",

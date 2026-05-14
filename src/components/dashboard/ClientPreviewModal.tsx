@@ -2,18 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { X, ExternalLink, RotateCcw, Smartphone } from "lucide-react";
+import { useTranslations } from "next-intl";
 
-/**
- * Modal "Voir comme un client" : affiche la page /join/[programId] dans un
- * iframe avec une mise en scène smartphone, pour que le commerçant puisse
- * visualiser exactement ce que voit son client.
- *
- * - Ouverture en iframe = pas de simulation à maintenir, on utilise le flow
- *   réel. Si le commerçant remplit le formulaire, une vraie carte sera créée
- *   (avertissement affiché en banner).
- * - Bouton "Ouvrir dans un nouvel onglet" pour tester sur son téléphone.
- * - Bouton "Recharger" pour reset l'iframe (cas : il a soumis et veut retester).
- */
 export default function ClientPreviewModal({
   programId,
   programName,
@@ -25,6 +15,7 @@ export default function ClientPreviewModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations("Dashboard.clientPreview");
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
@@ -65,36 +56,39 @@ export default function ClientPreviewModal({
         className="client-preview-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="recovery-modal-head" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <header
+          className="recovery-modal-head"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        >
           <h2 id="preview-modal-title" style={{ fontSize: 16 }}>
             <Smartphone
               size={15}
               style={{ display: "inline", marginRight: 8, verticalAlign: -2 }}
             />
-            Aperçu client — {programName}
+            {t("title", { programName })}
           </h2>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <button
               type="button"
               onClick={() => setReloadKey((k) => k + 1)}
               className="client-preview-action"
-              title="Recharger l'aperçu"
+              title={t("reloadTitle")}
             >
-              <RotateCcw size={13} /> Recharger
+              <RotateCcw size={13} /> {t("reload")}
             </button>
             <a
               href={joinUrl}
               target="_blank"
               rel="noreferrer"
               className="client-preview-action"
-              title="Ouvrir dans un nouvel onglet (pour tester sur smartphone)"
+              title={t("openTitle")}
             >
-              <ExternalLink size={13} /> Nouvel onglet
+              <ExternalLink size={13} /> {t("newTab")}
             </a>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fermer"
+              aria-label={t("close")}
               className="recovery-modal-close"
             >
               <X size={16} />
@@ -102,20 +96,15 @@ export default function ClientPreviewModal({
           </div>
         </header>
 
-        <div className="client-preview-banner">
-          ⚠️ Si vous remplissez le formulaire ici, une <strong>vraie carte</strong> sera
-          créée sur votre programme. Utilisez votre propre email/téléphone pour
-          un vrai test, ou simplement scrollez pour voir l&apos;interface client.
-        </div>
+        <div className="client-preview-banner">{t("warning")}</div>
 
         <div className="client-preview-body">
-          {/* Phone frame */}
           <div className="phone-frame">
             <div className="phone-frame-notch" />
             <iframe
               key={reloadKey}
               src={joinUrl}
-              title="Aperçu client"
+              title={t("iframeTitle")}
               className="phone-frame-iframe"
               sandbox="allow-forms allow-scripts allow-same-origin allow-popups"
             />

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
-import { FAQ_ITEMS } from "@/lib/seo";
 
 export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(0);
+  const t = useTranslations("Landing.faq");
+  const items = t.raw("items") as Array<{ q: string; a: string }>;
 
   return (
     <section className="section" id="faq">
@@ -13,12 +15,12 @@ export default function FAQSection() {
         <div className="section-head center" style={{ marginBottom: 0 }}>
           <div className="eyebrow"><span className="dot" /><span>FAQ</span></div>
           <h2 className="h-section">
-            Les questions <em>qu&apos;on nous pose souvent.</em>
+            {t("titleA")} <em>{t("titleB")}</em>
           </h2>
         </div>
 
         <div className="faq-list">
-          {FAQ_ITEMS.map((item, i) => (
+          {items.map((item, i) => (
             <div
               key={i}
               className={`faq-item${open === i ? " open" : ""}`}

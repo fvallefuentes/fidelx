@@ -2,18 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Copy, Check, Printer, X, Smartphone } from "lucide-react";
+import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
 
-/**
- * Modal de récupération de carte client.
- *
- * Usage commerçant :
- * - Le client perd sa carte Wallet (suppression accidentelle, changement
- *   de téléphone) et revient en magasin
- * - Le commerçant ouvre cette modal depuis la liste des clients
- * - Le QR code pointe vers /carte/[serialNumber] qui réinstalle la carte
- *   avec sa progression intacte (Apple/Google Wallet idempotents)
- */
 export default function CardRecoveryModal({
   open,
   onClose,
@@ -27,6 +18,7 @@ export default function CardRecoveryModal({
   programName: string;
   serialNumber: string;
 }) {
+  const t = useTranslations("Dashboard.cardRecovery");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const printCanvasRef = useRef<HTMLCanvasElement>(null);
   const [copied, setCopied] = useState(false);
@@ -36,7 +28,6 @@ export default function CardRecoveryModal({
       ? `${window.location.origin}/carte/${serialNumber}`
       : "";
 
-  // Bloquer scroll body + Échap pour fermer
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -51,7 +42,6 @@ export default function CardRecoveryModal({
     };
   }, [open, onClose]);
 
-  // Générer les QR codes (modal + zone print)
   useEffect(() => {
     if (!open || !recoveryUrl) return;
     const opts = {
@@ -100,12 +90,12 @@ export default function CardRecoveryModal({
                 size={16}
                 style={{ display: "inline", marginRight: 8, verticalAlign: -2 }}
               />
-              Récupération de carte
+              {t("title")}
             </h2>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fermer"
+              aria-label={t("close")}
               className="recovery-modal-close"
             >
               <X size={16} />
@@ -114,10 +104,10 @@ export default function CardRecoveryModal({
 
           <div className="recovery-modal-body">
             <p className="recovery-modal-explain">
-              Si <strong>{clientFirstName}</strong> a perdu sa carte ou changé
-              de téléphone, scanner ce QR code lui permet de la{" "}
-              <strong>réinstaller dans son Wallet</strong> avec sa progression
-              actuelle préservée.
+              {t.rich("explain", {
+                name: clientFirstName,
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
 
             <div className="recovery-qr-frame">
@@ -142,11 +132,11 @@ export default function CardRecoveryModal({
               >
                 {copied ? (
                   <>
-                    <Check size={14} /> Copié
+                    <Check size={14} /> {t("copied")}
                   </>
                 ) : (
                   <>
-                    <Copy size={14} /> Copier le lien
+                    <Copy size={14} /> {t("copy")}
                   </>
                 )}
               </button>
@@ -155,14 +145,13 @@ export default function CardRecoveryModal({
                 onClick={handlePrint}
                 className="recovery-modal-btn recovery-modal-btn-primary"
               >
-                <Printer size={14} /> Imprimer
+                <Printer size={14} /> {t("print")}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Zone print only — masquée à l'écran, révélée au print */}
       <div className="recovery-print" style={{ display: "none" }}>
         <div
           style={{
@@ -178,21 +167,21 @@ export default function CardRecoveryModal({
             FIDLIFY
           </div>
           <h1 style={{ fontSize: 22, margin: "0 0 8px" }}>
-            Récupérer la carte de fidélité
+            {t("printTitle")}
           </h1>
           <p style={{ margin: "0 0 4px", fontSize: 14 }}>
             <strong>{clientFirstName}</strong> · {programName}
           </p>
           <p style={{ margin: "0 0 24px", fontSize: 12, color: "#666" }}>
-            Carte n° {serialNumber}
+            {t("cardNumber", { serialNumber })}
           </p>
           <div style={{ display: "inline-block", padding: 16 }}>
             <canvas ref={printCanvasRef} />
           </div>
           <p style={{ marginTop: 24, fontSize: 13, color: "#444" }}>
-            Scannez ce QR code pour réinstaller votre carte dans votre Wallet.
+            {t("printHint")}
             <br />
-            Votre progression est conservée.
+            {t("printProgress")}
           </p>
           <p
             style={{
@@ -207,7 +196,6 @@ export default function CardRecoveryModal({
         </div>
       </div>
 
-      {/* CSS print-only override pour révéler la zone d'impression */}
       <style>{`
         @media print {
           .recovery-print { display: block !important; }

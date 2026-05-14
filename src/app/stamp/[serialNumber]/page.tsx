@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Check, AlertCircle, PartyPopper } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface StampResult {
   success: boolean;
@@ -19,6 +20,7 @@ interface StampResult {
 }
 
 export default function StampPage() {
+  const t = useTranslations("Public.stamp");
   const params = useParams();
   const serialNumber = params.serialNumber as string;
   const [loading, setLoading] = useState(true);
@@ -39,7 +41,7 @@ export default function StampPage() {
       if (cancelled) return;
 
       if (!res.ok) {
-        setError(data.error || "Erreur lors du tamponnage");
+        setError(data.error || t("errorFallback"));
       } else {
         setResult(data);
       }
@@ -48,7 +50,7 @@ export default function StampPage() {
 
     stampCard().catch(() => {
       if (!cancelled) {
-        setError("Erreur lors du tamponnage");
+        setError(t("errorFallback"));
         setLoading(false);
       }
     });
@@ -56,14 +58,14 @@ export default function StampPage() {
     return () => {
       cancelled = true;
     };
-  }, [serialNumber]);
+  }, [serialNumber, t]);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="h-8 w-8 mx-auto animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="mt-4 text-gray-500">Tamponnage en cours...</p>
+          <p className="mt-4 text-gray-500">{t("loading")}</p>
         </div>
       </div>
     );
@@ -77,10 +79,10 @@ export default function StampPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
               <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
-            <h2 className="mt-4 text-lg font-bold">Erreur</h2>
+            <h2 className="mt-4 text-lg font-bold">{t("errorTitle")}</h2>
             <p className="mt-2 text-gray-500">{error}</p>
             <Button className="mt-4 w-full" onClick={() => window.history.back()}>
-              Retour
+              {t("back")}
             </Button>
           </CardContent>
         </Card>
@@ -98,7 +100,9 @@ export default function StampPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-yellow-100">
                   <PartyPopper className="h-8 w-8 text-yellow-600" />
                 </div>
-                <h2 className="mt-4 text-xl font-bold">Récompense débloquée !</h2>
+                <h2 className="mt-4 text-xl font-bold">
+                  {t("rewardUnlocked")}
+                </h2>
                 <p className="mt-2 text-lg text-blue-600 font-semibold">
                   {result.rewardUnlocked.name}
                 </p>
@@ -108,12 +112,12 @@ export default function StampPage() {
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                   <Check className="h-8 w-8 text-green-600" />
                 </div>
-                <h2 className="mt-4 text-xl font-bold">Tamponné !</h2>
+                <h2 className="mt-4 text-xl font-bold">{t("stamped")}</h2>
               </>
             )}
 
             <div className="mt-4 rounded-xl bg-gray-50 p-4">
-              <p className="text-sm text-gray-500">Client</p>
+              <p className="text-sm text-gray-500">{t("client")}</p>
               <p className="text-lg font-semibold">{result.client.firstName}</p>
               <div className="mt-3 flex justify-around">
                 {result.card.currentStamps !== undefined && (
@@ -121,20 +125,20 @@ export default function StampPage() {
                     <p className="text-2xl font-bold text-blue-600">
                       {result.card.currentStamps}
                     </p>
-                    <p className="text-xs text-gray-500">Tampons</p>
+                    <p className="text-xs text-gray-500">{t("stamps")}</p>
                   </div>
                 )}
                 <div>
                   <p className="text-2xl font-bold text-purple-600">
                     {result.card.totalVisits}
                   </p>
-                  <p className="text-xs text-gray-500">Visites</p>
+                  <p className="text-xs text-gray-500">{t("visits")}</p>
                 </div>
               </div>
             </div>
 
             <Button className="mt-4 w-full" onClick={() => window.close()}>
-              Fermer
+              {t("close")}
             </Button>
           </CardContent>
         </Card>

@@ -1,0 +1,548 @@
+{
+  "Common": {
+    "brand": "FIDLIFY",
+    "home": "Startseite",
+    "loading": "Wird geladen...",
+    "language": "Sprache",
+    "languages": {
+      "fr": "Français",
+      "de": "Deutsch",
+      "en": "English"
+    }
+  },
+  "Cookies": {
+    "bannerLabel": "Cookie-Information",
+    "bannerText": "Diese Website verwendet nur technisch notwendige Cookies für Betrieb, Authentifizierung und Sicherheit. Es werden keine Analyse-, Profiling- oder Werbe-Cookies gesetzt.",
+    "learnMore": "Mehr erfahren",
+    "preferences": "Einstellungen",
+    "understood": "Verstanden",
+    "manage": "Cookies verwalten",
+    "close": "Schließen",
+    "modalText": "Fidlify verwendet derzeit keine Analyse-, Marketing- oder Profiling-Cookies. Es werden nur technisch notwendige Cookies für den Betrieb des Dienstes gesetzt.",
+    "necessaryTitle": "Technisch notwendige Cookies",
+    "necessaryDescription": "Authentifizierung, Sicherheit (CSRF), Sitzung. Für den Betrieb der Website erforderlich.",
+    "alwaysActive": "Immer aktiv",
+    "auth": "Authentifizierung",
+    "csrf": "CSRF-Schutz",
+    "redirect": "Weiterleitung",
+    "session": "Sitzung",
+    "days": "30 Tage",
+    "detailsPrefix": "Weitere Details finden Sie in unserer",
+    "cookiePolicy": "Cookie-Richtlinie",
+    "privacyPolicy": "Datenschutzerklärung",
+    "and": "und unserer",
+    "save": "Einstellungen speichern"
+  },
+  "Landing": {
+    "nav": {
+      "solution": "Lösung",
+      "features": "Funktionen",
+      "demo": "Demo",
+      "pricing": "Preise",
+      "faq": "FAQ",
+      "login": "Anmelden",
+      "tryFree": "Kostenlos testen",
+      "openMenu": "Menü öffnen",
+      "closeMenu": "Menü schließen",
+      "navigation": "Navigation"
+    },
+    "hero": {
+      "eyebrow": "FIDLIFY · SCROLLEN",
+      "title": "Kundenbindung, die",
+      "titleAccent": "zum Wiederkommen motiviert.",
+      "lede": "Erstellen Sie ein digitales Loyalty-Programm für Apple Wallet und Google Wallet, ohne App-Download.",
+      "progress": "FORTSCHRITT",
+      "reward": "BELOHNUNG",
+      "rewardText": "1 Kaffee gratis",
+      "featureLabel": "KAPITEL 02",
+      "featureTitle": "Apple Wallet · ohne App · ohne Reibung",
+      "ready": "IN 5 MINUTEN BEREIT",
+      "readyText": "Starten Sie Ihr Programm noch heute.",
+      "createCard": "Kundenkarte erstellen",
+      "demo": "▶ 90s Demo",
+      "scroll": "SCROLLEN",
+      "shops": {
+        "bakery": "Bäckerei Pré",
+        "cafe": "Café Lumen"
+      }
+    },
+    "demoSection": {
+      "eyebrow": "PRODUKTERLEBNIS",
+      "titleA": "Erstellen. Teilen.",
+      "titleB": "Binden.",
+      "lede": "Ein einfacher Ablauf, vom Händler bis zum Kunden — in 5 Schritten.",
+      "stepLabel": "SCHRITT",
+      "cardName": "Kundenkarte",
+      "rewardText": "1 Kaffee gratis beim 10.",
+      "now": "jetzt",
+      "offer": "—15% auf das ganze Menü bis 17 Uhr ☕",
+      "shops": {
+        "yourShop": "Ihr Geschäft",
+        "cafe": "Café Lumen"
+      },
+      "steps": [
+        {
+          "title": "Der Händler konfiguriert seine Karte.",
+          "body": "Logo, Farben, Belohnungen. Ohne Code, ohne Entwicklung."
+        },
+        {
+          "title": "Der Kunde scannt den QR-Code.",
+          "body": "An der Kasse, auf dem Tisch oder auf der Quittung. Ein Tap, fertig installiert."
+        },
+        {
+          "title": "Die Karte landet im Wallet.",
+          "body": "Apple Wallet oder Google Wallet. Immer in der Tasche des Kunden."
+        },
+        {
+          "title": "Der Händler sendet eine Benachrichtigung.",
+          "body": "Ein Angebot, eine Erinnerung, eine Neuheit. Direkt aufs Smartphone."
+        },
+        {
+          "title": "Der Kunde kommt wieder kaufen.",
+          "body": "Der Stempelstand wächst. Und der Kunde kommt erneut. So funktioniert Loyalität."
+        }
+      ]
+    },
+    "journey": {
+      "eyebrow": "PRODUCT JOURNEY",
+      "wallet": "Wallet",
+      "cardName": "Kundenkarte",
+      "rewardText": "1 Kaffee gratis",
+      "notificationTime": "jetzt",
+      "notification": "Nur noch 4 Kaffees bis zum Gratiskaffee ☕",
+      "revenueLabel": "UMSATZ · 30 TAGE",
+      "revenueDelta": "↑ +3 580 vs. Vormonat",
+      "newCustomers": "neue Kunden",
+      "openRate": "Öffnungsrate",
+      "scroll": "SCROLL ↓",
+      "scenes": [
+        {
+          "kicker": "SCHRITT 01 · ERSTELLUNG",
+          "title": "Eine Kundenkarte.",
+          "sub": "Gemacht für das Wallet Ihrer Kunden."
+        },
+        {
+          "kicker": "SCHRITT 02 · INSTALLATION",
+          "title": "Sie landet auf dem Smartphone.",
+          "sub": "Apple Wallet oder Google Wallet — ohne App-Download."
+        },
+        {
+          "kicker": "SCHRITT 03 · AKTIVIERUNG",
+          "title": "Immer griffbereit.",
+          "sub": "Bei jedem Besuch, jedem Einkauf, jedem Weg."
+        },
+        {
+          "kicker": "SCHRITT 04 · ENGAGEMENT",
+          "title": "Eine Nachricht, ein Besuch.",
+          "sub": "94 % Öffnungsrate. Der direkteste Kanal zu Ihren Kunden."
+        },
+        {
+          "kicker": "SCHRITT 05 · WACHSTUM",
+          "title": "Binden. Benachrichtigen. Mehr verkaufen.",
+          "sub": "Mehr verkaufen."
+        }
+      ]
+    },
+    "faq": {
+      "titleA": "Fragen,",
+      "titleB": "die wir oft hören.",
+      "items": [
+        {
+          "q": "Müssen meine Kunden eine App herunterladen?",
+          "a": "Nein. Die Fidlify-Karte wird direkt in Apple Wallet oder Google Wallet installiert, die auf den meisten modernen Smartphones bereits vorhanden sind."
+        },
+        {
+          "q": "Funktioniert es mit Apple Wallet UND Google Wallet?",
+          "a": "Ja. Fidlify generiert automatisch die passende Version für das Gerät Ihres Kunden."
+        },
+        {
+          "q": "Kann ich Benachrichtigungen an Kunden senden?",
+          "a": "Ja. Sie senden Push-Benachrichtigungen direkt ins Wallet Ihrer Kunden: Angebote, Neuheiten, Geburtstage oder Erinnerungen."
+        },
+        {
+          "q": "Kann ich das Kartendesign anpassen?",
+          "a": "Vollständig. Logo, Farben, Hintergrundbild, Belohnung und Texte passen zu Ihrem Geschäft."
+        },
+        {
+          "q": "Wie lange dauert es, eine digitale Kundenkarte zu erstellen?",
+          "a": "Etwa 3 Minuten. Sie erfassen Ihr Geschäft, wählen Design und Belohnung, und die Karte ist bereit zur Verteilung."
+        },
+        {
+          "q": "Ist es für kleine Schweizer Geschäfte geeignet?",
+          "a": "Genau dafür wurde Fidlify gebaut. Sie können kostenlos starten und später auf ein passendes Abo wechseln."
+        },
+        {
+          "q": "Kann ich einen QR-Code im Geschäft verwenden?",
+          "a": "Ja. Sie erzeugen den QR-Code im Dashboard, drucken ihn aus und Ihre Kunden fügen die Karte mit einem Tap hinzu."
+        },
+        {
+          "q": "Was kostet ein digitales Loyalty-Programm mit Fidlify?",
+          "a": "Es gibt die Pläne Gratuit, Essentiel, Croissance und Multi-sites. Keine versteckten Gebühren."
+        }
+      ]
+    },
+    "footer": {
+      "description": "SaaS-Loyalty-Software für lokale Händler in der Schweiz. Digitale Kundenkarte für Apple Wallet und Google Wallet, ganz ohne App-Download.",
+      "product": "Produkt",
+      "account": "Konto",
+      "legal": "Rechtliches",
+      "createAccount": "Konto erstellen",
+      "contact": "Kontakt",
+      "manageCookies": "Cookies verwalten",
+      "manageCookiesLabel": "Cookie-Einstellungen öffnen",
+      "madeIn": "Entwickelt in der Schweiz",
+      "compliance": "DSG/DSGVO-konform",
+      "links": {
+        "features": "Funktionen",
+        "pricing": "Preise",
+        "demo": "Demo",
+        "faq": "FAQ",
+        "login": "Anmelden"
+      },
+      "legalLinks": {
+        "mentions-legales": "Impressum",
+        "politique-de-confidentialite": "Datenschutz",
+        "cgu": "AGB",
+        "politique-cookies": "Cookies"
+      }
+    }
+  },
+  "Auth": {
+    "backHome": "Startseite",
+    "login": {
+      "title": "Anmelden",
+      "paidDescription": "Melden Sie sich an, um Ihr Abonnement abzuschließen",
+      "description": "Öffnen Sie Ihr Fidlify-Dashboard",
+      "verified": "E-Mail bestätigt. Melden Sie sich an, um Ihr Dashboard zu öffnen.",
+      "invalidCredentials": "E-Mail oder Passwort ist falsch",
+      "email": "E-Mail",
+      "emailPlaceholder": "ihre@email.ch",
+      "password": "Passwort",
+      "passwordPlaceholder": "Ihr Passwort",
+      "forgotPassword": "Passwort vergessen?",
+      "submit": "Anmelden",
+      "submitPaid": "Anmelden und bezahlen",
+      "loading": "Anmeldung...",
+      "noAccount": "Noch kein Konto?",
+      "createAccount": "Konto erstellen"
+    },
+    "register": {
+      "title": "Konto erstellen",
+      "description": "Starten Sie Ihr Loyalty-Programm in 5 Minuten",
+      "genericError": "Fehler bei der Registrierung",
+      "businessName": "Name des Geschäfts",
+      "businessPlaceholder": "Bäckerei am See",
+      "email": "E-Mail",
+      "emailPlaceholder": "ihre@email.ch",
+      "password": "Passwort",
+      "passwordPlaceholder": "Mindestens 8 Zeichen",
+      "submit": "Kostenloses Konto erstellen",
+      "loading": "Erstellung...",
+      "fineprint": "Mit der Erstellung eines Kontos akzeptieren Sie unsere Nutzungsbedingungen und unsere Datenschutzerklärung.",
+      "hasAccount": "Sie haben bereits ein Konto?",
+      "login": "Anmelden"
+    },
+    "forgotPassword": {
+      "back": "Anmelden",
+      "title": "Passwort vergessen",
+      "description": "Erhalten Sie einen sicheren Link, um Ihr Passwort zurückzusetzen.",
+      "sendError": "Fehler beim Senden",
+      "sentTitle": "E-Mail gesendet.",
+      "sentBody": "Falls ein Konto für {email} existiert, erhalten Sie in den nächsten Minuten einen Link zum Zurücksetzen.",
+      "sentHint": "Prüfen Sie auch den Spam-Ordner. Der Link ist 24 Stunden gültig.",
+      "emailLabel": "E-Mail des Kontos",
+      "emailPlaceholder": "ihre@email.ch",
+      "sending": "Wird gesendet...",
+      "submit": "Link zum Zurücksetzen senden",
+      "fineprint": "Aus Sicherheitsgründen bestätigen wir den Versand immer, auch wenn die E-Mail keinem Konto zugeordnet ist.",
+      "remember": "Sie erinnern sich?",
+      "backLogin": "Zurück zur Anmeldung"
+    },
+    "resetPassword": {
+      "title": "Passwort zurücksetzen",
+      "description": "Legen Sie ein neues Passwort für Ihr Konto fest.",
+      "minLength": "Mindestens 8 Zeichen",
+      "mismatch": "Die Passwörter stimmen nicht überein",
+      "genericError": "Fehler beim Zurücksetzen",
+      "invalidLink": "Ungültiger Link — kein Token in der URL.",
+      "success": "Passwort geändert. Weiterleitung zur Anmeldung...",
+      "newPassword": "Neues Passwort",
+      "confirm": "Bestätigen",
+      "saving": "Wird geändert...",
+      "submit": "Neues Passwort festlegen",
+      "backLogin": "← Zurück zur Anmeldung"
+    },
+    "verifyEmail": {
+      "missingTitle": "E-Mail fehlt",
+      "missingDescription": "Diese Seite benötigt eine E-Mail als Parameter. Bitte starten Sie die Registrierung erneut.",
+      "backRegister": "Zurück zur Registrierung",
+      "title": "Bestätigen Sie Ihre E-Mail",
+      "description": "Wir haben einen Code an {email} gesendet.",
+      "descriptionHint": "Geben Sie ihn unten ein (15 Minuten gültig).",
+      "invalidCode": "Ungültiger Code",
+      "connectionError": "Verbindungsfehler",
+      "resendError": "Fehler beim Senden des Codes",
+      "success": "E-Mail bestätigt! Weiterleitung zur Anmeldung...",
+      "otpLabel": "6-stelliger Bestätigungscode",
+      "digitLabel": "Ziffer {number}",
+      "verifying": "Wird geprüft...",
+      "submit": "E-Mail bestätigen",
+      "resendIn": "Code erneut senden in {seconds}s",
+      "resending": "Wird gesendet...",
+      "resend": "Code erneut senden",
+      "spamHint": "Prüfen Sie den Spam-Ordner, falls Sie den Code nicht erhalten.",
+      "backLogin": "Zurück zur Anmeldung"
+    }
+  },
+  "Dashboard": {
+    "header": {
+      "eyebrow": "HÄNDLERBEREICH",
+      "hello": "Guten Tag,",
+      "fallbackName": "Händler",
+      "search": "Suchen...",
+      "searchLabel": "Suchen (Ctrl+K)",
+      "openMenu": "Menü öffnen"
+    },
+    "sidebar": {
+      "closeMenu": "Menü schließen",
+      "items": {
+        "dashboard": "Dashboard",
+        "program": "Programm",
+        "scan": "Scannen",
+        "clients": "Kunden",
+        "stats": "Statistiken",
+        "campaigns": "Kampagnen",
+        "qrcode": "QR-Code",
+        "settings": "Einstellungen"
+      },
+      "logout": "Abmelden"
+    },
+    "commandPalette": {
+      "globalSearch": "Globale Suche",
+      "placeholder": "Kunde, Programm oder Kampagne suchen...",
+      "quickNav": "Schnellnavigation",
+      "navigation": "Navigation",
+      "program": "Programm",
+      "noResult": "Kein Ergebnis",
+      "tryAnother": "Versuchen Sie einen anderen Begriff.",
+      "searching": "Suche...",
+      "navigate": "navigieren",
+      "open": "öffnen",
+      "close": "schließen",
+      "items": {
+        "dashboard": "Dashboard",
+        "clients": "Kunden",
+        "programs": "Programme",
+        "campaigns": "Kampagnen",
+        "scan": "Scannen",
+        "qrcode": "QR-Code",
+        "stats": "Statistiken",
+        "settings": "Einstellungen"
+      }
+    },
+    "notifications": {
+      "title": "Benachrichtigungen",
+      "unread": "{count, plural, =0 {Benachrichtigungen} =1 {1 ungelesene Benachrichtigung} other {# ungelesene Benachrichtigungen}}",
+      "markAll": "Alle markieren",
+      "empty": "Noch keine Benachrichtigungen.",
+      "emptyHint": "Wichtige Aktivitäten erscheinen hier.",
+      "markRead": "Als gelesen markieren",
+      "time": {
+        "now": "gerade eben",
+        "minute": "vor {count} Min.",
+        "hour": "vor {count} Std.",
+        "day": "vor {count} Tg."
+      }
+    },
+    "export": {
+      "label": "CSV exportieren",
+      "lockedTitle": "CSV-Export ist kostenpflichtigen Plänen vorbehalten — klicken Sie, um auf Essential zu wechseln",
+      "pro": "Pro",
+      "loading": "Export...",
+      "networkError": "Netzwerkfehler",
+      "statusError": "Fehler {status}"
+    },
+    "cardRecovery": {
+      "title": "Karte wiederherstellen",
+      "close": "Schließen",
+      "explain": "Falls {name} die Karte verloren oder das Telefon gewechselt hat, kann dieser QR-Code die Karte mit dem aktuellen Fortschritt wieder im Wallet installieren.",
+      "copied": "Kopiert",
+      "copy": "Link kopieren",
+      "print": "Drucken",
+      "printTitle": "Treuekarte wiederherstellen",
+      "cardNumber": "Karte Nr. {serialNumber}",
+      "printHint": "Scannen Sie diesen QR-Code, um Ihre Karte wieder im Wallet zu installieren.",
+      "printProgress": "Ihr Fortschritt bleibt erhalten."
+    },
+    "clientPreview": {
+      "title": "Kundenvorschau — {programName}",
+      "reloadTitle": "Vorschau neu laden",
+      "reload": "Neu laden",
+      "openTitle": "In neuem Tab öffnen (zum Testen auf dem Smartphone)",
+      "newTab": "Neuer Tab",
+      "close": "Schließen",
+      "warning": "Wenn Sie das Formular hier ausfüllen, wird eine echte Karte in Ihrem Programm erstellt. Verwenden Sie Ihre eigene E-Mail/Telefonnummer für einen echten Test oder scrollen Sie einfach, um die Kundenoberfläche anzusehen.",
+      "iframeTitle": "Kundenvorschau"
+    },
+    "statsInsights": {
+      "lockedHeatmapTitle": "Stunden-Heatmap",
+      "lockedHeatmapDescription": "Sehen Sie die Spitzenzeiten und stärksten Tage Ihres Geschäfts. Ab dem Essential-Plan freigeschaltet.",
+      "lockedCohortTitle": "Kohortenbindung",
+      "lockedCohortDescription": "Verfolgen Sie, ob Ihre Januar-Kunden im März noch aktiv sind. Verfügbar mit einem kostenpflichtigen Plan.",
+      "freeHint": "Wechseln Sie auf Essential oder höher, um Heatmap und Kohortenbindung freizuschalten.",
+      "periodTitle": "Zeitraumvergleich",
+      "periodSub": "Letzte {days} Tage vs. {from} → {to}",
+      "metrics": {
+        "newClients": "Neue Kunden",
+        "scans": "Scans",
+        "rewards": "Prämien",
+        "activeClients": "Aktive Kunden",
+        "avgScansPerClient": "Scans/Kunde"
+      },
+      "deltaPrevious": "vs. {previous}{unit}",
+      "stable": " (stabil)",
+      "heatmapTitle": "Stunden-Heatmap",
+      "heatmapSub": "Scans pro Stunde × Tag in den letzten 30 Tagen",
+      "less": "Weniger",
+      "more": "Mehr",
+      "scanCount": "{day} {hour} Uhr: {count, plural, =0 {keine Scans} =1 {1 Scan} other {# Scans}}",
+      "cohortTitle": "Kohortenbindung",
+      "cohortSub": "Prozent der Kunden, die N Wochen nach der Anmeldung noch aktiv sind",
+      "cohort": "Kohorte",
+      "signups": "Anmeldungen",
+      "activeTitle": "{retained}/{signups} aktive Kunden in W+{week}",
+      "weekPrefix": "W+{week}",
+      "days": ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"]
+    },
+    "home": {
+      "title": "Dashboard",
+      "subtitle": "Überblick über Ihr Loyalty-Programm — Daten in Echtzeit.",
+      "cards": {
+        "registeredClients": "Registrierte Kunden",
+        "newLast7": "Neu in den letzten 7 Tagen",
+        "activeCards": "Aktive Karten",
+        "onCards": "Von {count} Karten",
+        "totalVisits": "Besuche gesamt",
+        "visitsLast7": "Besuche in den letzten 7 Tagen",
+        "returnRate": "Rückkehrrate",
+        "returnedTwice": "Kunden mit ≥ 2 Besuchen"
+      },
+      "charts": {
+        "visits30": "BESUCHE — LETZTE 30 TAGE",
+        "stampsDistributed": "Stempel verteilt",
+        "dailyVisits": "Tägliche Besuche",
+        "engagement": "ENGAGEMENT",
+        "newClients30": "NEUE KUNDEN — 30 TAGE",
+        "signedUp": "angemeldet",
+        "cardProgress": "KARTENFORTSCHRITT",
+        "cards": "Karten",
+        "topPrograms": "TOP-PROGRAMME",
+        "recentClients": "NEUESTE KUNDEN"
+      },
+      "empty": {
+        "programs": "Kein aktives Programm",
+        "clients": "Noch keine Kunden.",
+        "clientsHint": "Teilen Sie Ihren QR-Code, um zu starten."
+      },
+      "client": {
+        "anonymous": "Anonym",
+        "noEmail": "Keine E-Mail"
+      },
+      "tooltip": {
+        "visits": "Besuch(e)",
+        "newClients": "neue(r)",
+        "cards": "Karte(n)"
+      }
+    },
+    "qrcode": {
+      "title": "QR-Code",
+      "subtitle": "Zeigen Sie diesen QR-Code an der Kasse, um Kunden zu registrieren",
+      "emptyTitle": "Kein Programm",
+      "emptyDescription": "Erstellen Sie zuerst ein Loyalty-Programm",
+      "cardTitle": "Ihr QR-Code",
+      "cardDescription": "Kunden scannen diesen Code, um ihre Treuekarte zu erhalten",
+      "download": "Herunterladen",
+      "copied": "Kopiert!",
+      "copy": "Link kopieren",
+      "howItWorks": "So funktioniert es",
+      "steps": [
+        { "title": "QR-Code anzeigen", "desc": "Drucken Sie ihn aus oder zeigen Sie ihn an der Kasse auf einem Bildschirm" },
+        { "title": "Der Kunde scannt", "desc": "Er öffnet die Kamera seines Telefons und scannt den Code" },
+        { "title": "Kurzes Formular", "desc": "Vorname + E-Mail oder Telefon — mehr nicht" },
+        { "title": "Karte im Wallet", "desc": "Apple Wallet oder Google Wallet, automatisch" }
+      ]
+    }
+  },
+  "Public": {
+    "join": {
+      "notFoundError": "Programm nicht gefunden",
+      "contactRequired": "E-Mail oder Telefon erforderlich",
+      "submitError": "Fehler bei der Anmeldung",
+      "notFoundTitle": "Programm nicht gefunden",
+      "notFoundBody": "Dieses Programm existiert nicht oder ist nicht mehr aktiv.",
+      "backHome": "Zur Startseite",
+      "recoveryTitle": "Sie haben bereits eine Karte",
+      "recoveryBody": "Eine Wiederherstellungs-E-Mail wurde an die angegebene Adresse gesendet. Klicken Sie auf den Link in der E-Mail, um Ihre Treuekarte wieder im Wallet zu installieren — Ihr aktueller Fortschritt bleibt erhalten.",
+      "recoveryHint": "Prüfen Sie auch den Spam-Ordner, falls die E-Mail in den nächsten Minuten nicht ankommt.",
+      "successTitle": "Karte erstellt!",
+      "successBody": "Fügen Sie sie jetzt Ihrem Wallet hinzu, damit sie immer griffbereit ist.",
+      "appleWallet": "Zu Apple Wallet hinzufügen",
+      "googleWallet": "Zu Google Wallet hinzufügen",
+      "walletHint": "Keine App nötig — die Karte lebt in Ihrem Wallet.",
+      "title": "Treten Sie dem Programm bei.",
+      "subtitle": "Erhalten Sie Ihre Treuekarte direkt in Ihrem Wallet — ohne App-Download.",
+      "firstName": "Vorname",
+      "firstNamePlaceholder": "Ihr Vorname",
+      "or": "oder",
+      "phone": "Telefon",
+      "birthDate": "Geburtsdatum",
+      "birthDateHint": "(optional — für ein Geburtstagsgeschenk)",
+      "submitting": "Wird erstellt...",
+      "submit": "Meine Karte erhalten",
+      "fineprint": "Mit der Anmeldung akzeptieren Sie die Datenschutzerklärung. Ihre Daten werden in der Schweiz gehostet.",
+      "madeIn": "Made in Switzerland"
+    },
+    "stamp": {
+      "loading": "Stempel wird hinzugefügt...",
+      "errorFallback": "Fehler beim Stempeln",
+      "errorTitle": "Fehler",
+      "back": "Zurück",
+      "rewardUnlocked": "Prämie freigeschaltet!",
+      "stamped": "Gestempelt!",
+      "client": "Kunde",
+      "stamps": "Stempel",
+      "visits": "Besuche",
+      "close": "Schließen"
+    },
+    "cardRecovery": {
+      "unavailableTitle": "Karte nicht verfügbar.",
+      "unavailableBody": "Diese Karte ist nicht mehr aktiv. Bitte kontaktieren Sie {merchantName} direkt, um mehr zu erfahren.",
+      "title": "Stellen Sie Ihre Karte wieder her.",
+      "body": "Hallo {firstName} — Ihr Fortschritt bleibt erhalten. Installieren Sie Ihre Treuekarte {programName} mit einem Tippen wieder in Ihrem Wallet.",
+      "progress": "IHR FORTSCHRITT",
+      "stamps": "Stempel",
+      "points": "Punkte",
+      "visits": "{count, plural, =0 {keine Besuche erfasst} =1 {1 Besuch erfasst} other {# Besuche erfasst}}",
+      "appleWallet": "Zu Apple Wallet hinzufügen",
+      "googleWallet": "Zu Google Wallet hinzufügen",
+      "fineprint": "Ihre Karte wird identisch mit Ihrem aktuellen Fortschritt wiederhergestellt. Nichts weiter zu tun.",
+      "madeIn": "Made in Switzerland"
+    },
+    "checkoutSuccess": {
+      "title": "Zahlung bestätigt!",
+      "waiting": "Ihr Abonnement wird aktiviert...",
+      "ready": "Abonnement aktiv! Weiterleitung..."
+    },
+    "betaAccess": {
+      "wrongPassword": "Falsches Passwort",
+      "networkError": "Netzwerkfehler, bitte erneut versuchen",
+      "badge": "PRIVATE BETA",
+      "title": "Eingeschränkter Zugriff",
+      "subtitle": "Fidlify befindet sich in einer geschlossenen Testphase. Geben Sie das Zugangspasswort ein, um fortzufahren.",
+      "placeholder": "Zugangspasswort",
+      "checking": "Wird geprüft...",
+      "submit": "Eintreten",
+      "foot": "Sie vertreten ein Geschäft und möchten am Test teilnehmen?"
+    }
+  }
+}

@@ -8,41 +8,23 @@ import {
   useSpring,
   useMotionTemplate,
 } from "framer-motion";
+import { useTranslations } from "next-intl";
 
-/* ─── Scenes (text left side) ─────────────────────────────── */
-const scenes = [
-  {
-    range: [0.00, 0.05, 0.20, 0.25] as const,
-    kicker: "ÉTAPE 01 · CRÉATION",
-    title: "Une carte fidélité.",
-    sub: "Conçue pour vivre dans le Wallet de vos clients.",
-  },
-  {
-    range: [0.20, 0.28, 0.40, 0.48] as const,
-    kicker: "ÉTAPE 02 · INSTALLATION",
-    title: "Elle arrive dans le téléphone.",
-    sub: "Apple Wallet ou Google Wallet — sans aucune app à télécharger.",
-  },
-  {
-    range: [0.42, 0.50, 0.60, 0.68] as const,
-    kicker: "ÉTAPE 03 · ACTIVATION",
-    title: "Toujours dans la poche.",
-    sub: "Présente à chaque visite, à chaque achat, à chaque trajet.",
-  },
-  {
-    range: [0.62, 0.70, 0.80, 0.88] as const,
-    kicker: "ÉTAPE 04 · ENGAGEMENT",
-    title: "Une notification, un retour.",
-    sub: "94 % d'ouverture. Le canal le plus direct vers vos clients.",
-  },
-  {
-    range: [0.80, 0.88, 0.97, 1.00] as const,
-    kicker: "ÉTAPE 05 · CROISSANCE",
-    title: null,
-    sub: "Vendez plus.",
-    finale: true,
-  },
-];
+type JourneyScene = {
+  range: readonly [number, number, number, number];
+  kicker: string;
+  title: string;
+  sub: string;
+  finale?: boolean;
+};
+
+const sceneRanges = [
+  [0.00, 0.05, 0.20, 0.25],
+  [0.20, 0.28, 0.40, 0.48],
+  [0.42, 0.50, 0.60, 0.68],
+  [0.62, 0.70, 0.80, 0.88],
+  [0.80, 0.88, 0.97, 1.00],
+] as const;
 
 const BAR_HEIGHTS = [35, 50, 42, 60, 55, 72, 65, 80, 75, 92];
 
@@ -63,7 +45,7 @@ function SceneText({
   scene,
   p,
 }: {
-  scene: typeof scenes[number];
+  scene: JourneyScene;
   p: ReturnType<typeof useSpring>;
 }) {
   const opacity = useTransform(p, [...scene.range], [0, 1, 1, 0]);
@@ -76,9 +58,7 @@ function SceneText({
       <div className="js-kicker">{scene.kicker}</div>
       {scene.finale ? (
         <h2 className="js-title">
-          Fidélisez. <span style={{ color: "#8a8e84" }}>Notifiez.</span>
-          <br />
-          <span style={{ color: "#d4ff4e" }}>Vendez plus.</span>
+          <span style={{ color: "#d4ff4e" }}>{scene.title}</span>
         </h2>
       ) : (
         <h2 className="js-title">{scene.title}</h2>
@@ -93,7 +73,7 @@ function ProgressDot({
   scene,
   p,
 }: {
-  scene: typeof scenes[number];
+  scene: JourneyScene;
   p: ReturnType<typeof useSpring>;
 }) {
   const active  = useTransform(p, [scene.range[1], scene.range[2]], [0, 1]);
@@ -104,7 +84,14 @@ function ProgressDot({
 
 /* ─── Main component ──────────────────────────────────────── */
 export default function JourneySection() {
+  const t = useTranslations("Landing.journey");
   const containerRef = useRef<HTMLElement>(null);
+  const sceneMessages = t.raw("scenes") as Array<Pick<JourneyScene, "kicker" | "title" | "sub">>;
+  const scenes: JourneyScene[] = sceneMessages.map((scene, index) => ({
+    ...scene,
+    range: sceneRanges[index] ?? sceneRanges[0],
+    finale: index === sceneMessages.length - 1,
+  }));
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -193,7 +180,7 @@ export default function JourneySection() {
             <div className="journey-eyebrow">
               <div style={{ display: "inline-flex", alignItems: "center", gap: 10, fontFamily: "var(--font-geist-mono,monospace)", fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#8a8e84" }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#d4ff4e", boxShadow: "0 0 12px rgba(212,255,78,.45)", display: "inline-block" }} />
-                PRODUCT JOURNEY
+                {t("eyebrow")}
               </div>
             </div>
 
@@ -229,7 +216,7 @@ export default function JourneySection() {
                       <span>9:41</span>
                       <span style={{ fontFamily: "monospace", letterSpacing: 2 }}>● ● ●</span>
                     </div>
-                    <div className="j-phone-label">Wallet</div>
+                    <div className="j-phone-label">{t("wallet")}</div>
                     <div className="j-phone-slot">
                       <div className="j-phone-slot-glow" />
                     </div>
@@ -248,7 +235,7 @@ export default function JourneySection() {
                     <span className="j-card-brand">FIDLIFY · WALLET</span>
                     <span className="j-card-icon" />
                   </div>
-                  <div className="j-card-name">Carte de fidélité</div>
+                  <div className="j-card-name">{t("cardName")}</div>
                   <div className="j-card-shop">Café Lumen</div>
                   <div className="j-card-stamps">
                     {Array.from({ length: 10 }).map((_, i) => (
@@ -257,7 +244,7 @@ export default function JourneySection() {
                   </div>
                   <div className="j-card-foot">
                     <span style={{ fontFamily: "var(--font-geist-mono,monospace)", fontSize: 11, color: "#8a8e84" }}>
-                      <strong style={{ color: "#f4f5f1" }}>6</strong>/10 · 1 café offert
+                      <strong style={{ color: "#f4f5f1" }}>6</strong>/10 · {t("rewardText")}
                     </span>
                     <span className="j-qr" />
                   </div>
@@ -273,9 +260,9 @@ export default function JourneySection() {
                 <div className="j-notif-body">
                   <div className="j-notif-ttl">
                     Café Lumen
-                    <span style={{ fontFamily: "var(--font-geist-mono,monospace)", fontSize: 11, color: "#8a8e84" }}>maintenant</span>
+                    <span style={{ fontFamily: "var(--font-geist-mono,monospace)", fontSize: 11, color: "#8a8e84" }}>{t("notificationTime")}</span>
                   </div>
-                  <div className="j-notif-msg">Plus que 4 cafés et le 10ᵉ est offert ☕</div>
+                  <div className="j-notif-msg">{t("notification")}</div>
                 </div>
               </motion.div>
 
@@ -285,11 +272,11 @@ export default function JourneySection() {
                 style={{ opacity: dashOpacity, scale: dashScale, y: dashY, rotateY: dashRotY, rotateX: dashRotX }}
               >
                 <div className="j-dash-head">
-                  <span style={{ fontFamily: "var(--font-geist-mono,monospace)", fontSize: 11, color: "#8a8e84", letterSpacing: "0.1em" }}>REVENUS · 30 JOURS</span>
+                  <span style={{ fontFamily: "var(--font-geist-mono,monospace)", fontSize: 11, color: "#8a8e84", letterSpacing: "0.1em" }}>{t("revenueLabel")}</span>
                   <span className="j-dash-pill">+24 %</span>
                 </div>
                 <div className="j-dash-num">CHF 18 420</div>
-                <div className="j-dash-sub">↑ +3 580 vs mois précédent</div>
+                <div className="j-dash-sub">{t("revenueDelta")}</div>
                 <div className="j-dash-bars">
                   {BAR_HEIGHTS.map((h, i) => (
                     <DashBar key={i} h={h} statH={statH} />
@@ -303,18 +290,18 @@ export default function JourneySection() {
               {/* Stat orbs */}
               <motion.div className="j-orb j-orb-1" style={{ opacity: orb1Opacity, y: orb1Y, scale: orb1Scale }}>
                 <div className="j-orb-num">+187</div>
-                <div className="j-orb-lbl">nouveaux clients</div>
+                <div className="j-orb-lbl">{t("newCustomers")}</div>
               </motion.div>
               <motion.div className="j-orb j-orb-2" style={{ opacity: orb2Opacity, y: orb2Y, scale: orb2Scale }}>
                 <div className="j-orb-num">94 %</div>
-                <div className="j-orb-lbl">d&apos;ouverture</div>
+                <div className="j-orb-lbl">{t("openRate")}</div>
               </motion.div>
 
             </div>
           </div>
         </div>
 
-        <div className="journey-cue">SCROLL ↓</div>
+        <div className="journey-cue">{t("scroll")}</div>
       </div>
     </section>
   );

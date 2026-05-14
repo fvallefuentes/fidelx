@@ -177,6 +177,62 @@ html, body { overflow-x: clip; }
 .landing .nav-links a:hover { color: var(--ink); }
 .landing .nav-cta { display: flex; align-items: center; gap: 12px; }
 
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  color: var(--ink-2, #c9ccc3);
+}
+.language-switcher-icon {
+  width: 14px;
+  height: 14px;
+  margin-left: 6px;
+  color: var(--ink-4, #7e8379);
+}
+.language-switcher-btn {
+  min-width: 38px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-family: var(--font-jetbrains-mono, ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 700;
+}
+.language-switcher-btn:hover {
+  color: var(--ink, #f4f5f1);
+  background: rgba(255,255,255,0.06);
+}
+.language-switcher-btn.active {
+  color: #0a0d04;
+  background: var(--accent, #d4ff4e);
+}
+.language-switcher-btn:disabled {
+  cursor: default;
+  opacity: 1;
+}
+.language-switcher-check {
+  width: 12px;
+  height: 12px;
+}
+.language-switcher.compact .language-switcher-icon {
+  display: none;
+}
+.language-switcher.compact .language-switcher-btn {
+  min-width: 34px;
+  height: 28px;
+}
+
 /* ── Mobile hamburger (hidden on desktop) ── */
 .landing .nav-burger {
   display: none;
@@ -1554,11 +1610,18 @@ html, body { overflow-x: clip; }
   transition: color .2s;
 }
 .landing .auth-back:hover { color: var(--accent); }
+.landing .auth-language {
+  position: absolute;
+  top: 22px;
+  right: 28px;
+  z-index: 3;
+}
 
 @media (max-width: 540px) {
   .landing .auth-card { padding: 36px 24px; border-radius: 18px; }
   .landing .auth-title { font-size: 24px; }
   .landing .auth-back { top: 18px; left: 18px; }
+  .landing .auth-language { top: 14px; right: 18px; }
 }
 
 /* ═══════════════════════════════════════════════════════════

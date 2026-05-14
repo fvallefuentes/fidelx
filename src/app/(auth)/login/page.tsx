@@ -4,12 +4,16 @@ import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import LogoMark from "@/components/landing/LogoMark";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 
 const PAID_PLANS = ["essential", "growth", "multi_site"];
 
 function LoginForm() {
   const searchParams = useSearchParams();
+  const t = useTranslations("Auth.login");
+  const common = useTranslations("Auth");
   const plan = searchParams.get("plan") ?? "";
   const isPaidPlan = PAID_PLANS.includes(plan);
   const justVerified = searchParams.get("verified") === "1";
@@ -46,7 +50,7 @@ function LoginForm() {
         router.push(`/verify-email?${params.toString()}`);
         return;
       }
-      setError("Email ou mot de passe incorrect");
+      setError(t("invalidCredentials"));
       setLoading(false);
     } else if (isPaidPlan) {
       window.location.href = `/api/checkout?plan=${plan}`;
@@ -64,8 +68,11 @@ function LoginForm() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>
         </svg>
-        Accueil
+        {common("backHome")}
       </Link>
+      <div className="auth-language">
+        <LanguageSwitcher compact />
+      </div>
 
       <div className="auth-card">
         <div className="auth-head">
@@ -73,29 +80,29 @@ function LoginForm() {
             <LogoMark size={36} />
             <span>FIDLIFY</span>
           </Link>
-          <h1 className="auth-title">Connexion</h1>
+          <h1 className="auth-title">{t("title")}</h1>
           <p className="auth-desc">
             {isPaidPlan
-              ? "Connectez-vous pour finaliser votre abonnement"
-              : "Accédez à votre tableau de bord Fidlify"}
+              ? t("paidDescription")
+              : t("description")}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
           {justVerified && !error && (
             <div className="auth-success">
-              ✓ Email vérifié. Connectez-vous pour accéder à votre tableau de bord.
+              ✓ {t("verified")}
             </div>
           )}
           {error && <div className="auth-error">{error}</div>}
 
           <div className="auth-field">
-            <label htmlFor="email" className="auth-label">Email</label>
+            <label htmlFor="email" className="auth-label">{t("email")}</label>
             <input
               id="email"
               type="email"
               className="auth-input"
-              placeholder="votre@email.ch"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
@@ -105,7 +112,7 @@ function LoginForm() {
 
           <div className="auth-field">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-              <label htmlFor="password" className="auth-label">Mot de passe</label>
+              <label htmlFor="password" className="auth-label">{t("password")}</label>
               <Link
                 href="/forgot-password"
                 style={{
@@ -114,14 +121,14 @@ function LoginForm() {
                   textDecoration: "none",
                 }}
               >
-                Mot de passe oublié ?
+                {t("forgotPassword")}
               </Link>
             </div>
             <input
               id="password"
               type="password"
               className="auth-input"
-              placeholder="Votre mot de passe"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -130,7 +137,7 @@ function LoginForm() {
           </div>
 
           <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? "Connexion..." : isPaidPlan ? "Se connecter et payer" : "Se connecter"}
+            {loading ? t("loading") : isPaidPlan ? t("submitPaid") : t("submit")}
             {!loading && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0d04" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14"/><path d="m13 5 7 7-7 7"/>
@@ -140,8 +147,8 @@ function LoginForm() {
         </form>
 
         <div className="auth-foot">
-          Pas encore de compte ?{" "}
-          <Link href={plan ? `/register?plan=${plan}` : "/register"}>Créer un compte</Link>
+          {t("noAccount")}{" "}
+          <Link href={plan ? `/register?plan=${plan}` : "/register"}>{t("createAccount")}</Link>
         </div>
       </div>
     </div>

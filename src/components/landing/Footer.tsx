@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import LogoMark from "@/components/landing/LogoMark";
 import { LEGAL_PAGES, PUBLIC_CONTACT_EMAIL } from "@/lib/legal";
 import { useCookiePreferences } from "@/components/cookies/CookiePreferencesProvider";
@@ -13,6 +14,7 @@ import { useCookiePreferences } from "@/components/cookies/CookiePreferencesProv
  */
 export default function Footer() {
   const { open: openCookiePrefs } = useCookiePreferences();
+  const t = useTranslations("Landing.footer");
 
   return (
     <footer className="footer">
@@ -33,23 +35,21 @@ export default function Footer() {
                   margin: 0,
                 }}
               >
-                Logiciel de fidélisation SaaS pour les commerçants de Suisse romande.
-                Carte de fidélité digitale Apple Wallet et Google Wallet,
-                sans application à télécharger.
+                {t("description")}
               </p>
             </div>
 
             <div>
-              <h5>Produit</h5>
+              <h5>{t("product")}</h5>
               <ul>
                 <li>
-                  <Link href="/#features">Fonctionnalités</Link>
+                  <Link href="/#features">{t("links.features")}</Link>
                 </li>
                 <li>
-                  <Link href="/#pricing">Tarifs</Link>
+                  <Link href="/#pricing">{t("links.pricing")}</Link>
                 </li>
                 <li>
-                  <Link href="/#demo">Démo</Link>
+                  <Link href="/#demo">{t("links.demo")}</Link>
                 </li>
                 <li>
                   <Link href="/#faq">FAQ</Link>
@@ -58,26 +58,26 @@ export default function Footer() {
             </div>
 
             <div>
-              <h5>Compte</h5>
+              <h5>{t("account")}</h5>
               <ul>
                 <li>
-                  <Link href="/register">Créer un compte</Link>
+                  <Link href="/register">{t("createAccount")}</Link>
                 </li>
                 <li>
-                  <Link href="/login">Connexion</Link>
+                  <Link href="/login">{t("links.login")}</Link>
                 </li>
                 <li>
-                  <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`}>Contact</a>
+                  <a href={`mailto:${PUBLIC_CONTACT_EMAIL}`}>{t("contact")}</a>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h5>Légal</h5>
+              <h5>{t("legal")}</h5>
               <ul>
                 {LEGAL_PAGES.map((p) => (
                   <li key={p.href}>
-                    <Link href={p.href}>{p.short}</Link>
+                    <Link href={p.href}>{t(`legalLinks.${p.href.slice(1)}`)}</Link>
                   </li>
                 ))}
                 <li>
@@ -85,9 +85,9 @@ export default function Footer() {
                     type="button"
                     onClick={openCookiePrefs}
                     className="footer-link-btn"
-                    aria-label="Ouvrir la fenêtre de gestion des cookies"
+                    aria-label={t("manageCookiesLabel")}
                   >
-                    Gérer mes cookies
+                    {t("manageCookies")}
                   </button>
                 </li>
               </ul>
@@ -96,8 +96,7 @@ export default function Footer() {
 
           <div className="footer-bottom">
             <span>
-              © {new Date().getFullYear()} FIDLIFY · Conçu en Suisse romande 🇨🇭 ·
-              Conformité LPD/RGPD
+              © {new Date().getFullYear()} FIDLIFY · {t("madeIn")} · {t("compliance")}
             </span>
             <span style={{ color: "var(--ink-4)" }}>{PUBLIC_CONTACT_EMAIL}</span>
           </div>

@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 /**
  * Cookie management léger.
@@ -154,16 +155,15 @@ export function useCookiePreferences(): Ctx {
 /* ─── Bannière (1ère visite) ─────────────────────────────── */
 function CookieBanner() {
   const { acknowledge, open } = useCookiePreferences();
+  const t = useTranslations("Cookies");
 
   return (
-    <div role="dialog" aria-label="Information cookies" className="cookie-banner">
+    <div role="dialog" aria-label={t("bannerLabel")} className="cookie-banner">
       <div className="cookie-banner-inner">
         <p className="cookie-banner-text">
-          Ce site utilise uniquement des cookies <strong>strictement nécessaires</strong>{" "}
-          au fonctionnement (authentification, sécurité). Aucun cookie de mesure
-          d&apos;audience, de profilage ou de publicité.{" "}
+          {t("bannerText")}{" "}
           <Link href="/politique-cookies" className="cookie-banner-link">
-            En savoir plus
+            {t("learnMore")}
           </Link>
           .
         </p>
@@ -173,14 +173,14 @@ function CookieBanner() {
             onClick={open}
             className="cookie-banner-btn cookie-banner-btn-ghost"
           >
-            Préférences
+            {t("preferences")}
           </button>
           <button
             type="button"
             onClick={acknowledge}
             className="cookie-banner-btn cookie-banner-btn-primary"
           >
-            J&apos;ai compris
+            {t("understood")}
           </button>
         </div>
       </div>
@@ -191,6 +191,7 @@ function CookieBanner() {
 /* ─── Modal préférences (lien "Gérer mes cookies") ────────── */
 function CookiePreferencesModal() {
   const { close, acknowledge } = useCookiePreferences();
+  const t = useTranslations("Cookies");
 
   // Empêche le scroll du body quand la modal est ouverte
   useEffect(() => {
@@ -223,11 +224,11 @@ function CookiePreferencesModal() {
         onClick={(e) => e.stopPropagation()}
       >
         <header className="cookie-modal-head">
-          <h2 id="cookie-modal-title">Gérer mes cookies</h2>
+          <h2 id="cookie-modal-title">{t("manage")}</h2>
           <button
             type="button"
             onClick={close}
-            aria-label="Fermer"
+            aria-label={t("close")}
             className="cookie-modal-close"
           >
             <svg
@@ -248,45 +249,40 @@ function CookiePreferencesModal() {
         </header>
 
         <div className="cookie-modal-body">
-          <p>
-            Fidlify n&apos;utilise actuellement <strong>aucun cookie</strong> de
-            mesure d&apos;audience, de marketing ou de profilage. Seuls les cookies
-            strictement nécessaires au fonctionnement du Service sont déposés.
-          </p>
+          <p>{t("modalText")}</p>
 
           <div className="cookie-cat">
             <div className="cookie-cat-head">
               <div>
-                <h3>Cookies strictement nécessaires</h3>
+                <h3>{t("necessaryTitle")}</h3>
                 <p className="cookie-cat-sub">
-                  Authentification, sécurité (CSRF), session. Indispensables au
-                  fonctionnement du Site.
+                  {t("necessaryDescription")}
                 </p>
               </div>
-              <span className="cookie-cat-badge">Toujours actif</span>
+              <span className="cookie-cat-badge">{t("alwaysActive")}</span>
             </div>
             <ul className="cookie-cat-list">
               <li>
-                <code>next-auth.session-token</code> — Authentification
-                (30 jours)
+                <code>next-auth.session-token</code> — {t("auth")}
+                {" "}({t("days")})
               </li>
               <li>
-                <code>next-auth.csrf-token</code> — Protection CSRF (session)
+                <code>next-auth.csrf-token</code> — {t("csrf")} ({t("session")})
               </li>
               <li>
-                <code>next-auth.callback-url</code> — Redirection (session)
+                <code>next-auth.callback-url</code> — {t("redirect")} ({t("session")})
               </li>
             </ul>
           </div>
 
           <p className="cookie-modal-foot-note">
-            Pour plus de détails, consultez notre{" "}
+            {t("detailsPrefix")}{" "}
             <Link href="/politique-cookies" onClick={close}>
-              Politique cookies
+              {t("cookiePolicy")}
             </Link>{" "}
-            et notre{" "}
+            {t("and")}{" "}
             <Link href="/politique-de-confidentialite" onClick={close}>
-              Politique de confidentialité
+              {t("privacyPolicy")}
             </Link>
             .
           </p>
@@ -301,7 +297,7 @@ function CookiePreferencesModal() {
             }}
             className="cookie-banner-btn cookie-banner-btn-primary"
           >
-            Enregistrer mes préférences
+            {t("save")}
           </button>
         </footer>
       </div>

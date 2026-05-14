@@ -1,0 +1,548 @@
+{
+  "Common": {
+    "brand": "FIDLIFY",
+    "home": "Home",
+    "loading": "Loading...",
+    "language": "Language",
+    "languages": {
+      "fr": "Français",
+      "de": "Deutsch",
+      "en": "English"
+    }
+  },
+  "Cookies": {
+    "bannerLabel": "Cookie information",
+    "bannerText": "This site only uses strictly necessary cookies for operation, authentication and security. No analytics, profiling or advertising cookies are used.",
+    "learnMore": "Learn more",
+    "preferences": "Preferences",
+    "understood": "Got it",
+    "manage": "Manage cookies",
+    "close": "Close",
+    "modalText": "Fidlify currently uses no analytics, marketing or profiling cookies. Only cookies strictly necessary for the Service to work are set.",
+    "necessaryTitle": "Strictly necessary cookies",
+    "necessaryDescription": "Authentication, security (CSRF), session. Required for the Site to work.",
+    "alwaysActive": "Always active",
+    "auth": "Authentication",
+    "csrf": "CSRF protection",
+    "redirect": "Redirect",
+    "session": "session",
+    "days": "30 days",
+    "detailsPrefix": "For more details, see our",
+    "cookiePolicy": "Cookie policy",
+    "privacyPolicy": "Privacy policy",
+    "and": "and our",
+    "save": "Save preferences"
+  },
+  "Landing": {
+    "nav": {
+      "solution": "Solution",
+      "features": "Features",
+      "demo": "Demo",
+      "pricing": "Pricing",
+      "faq": "FAQ",
+      "login": "Log in",
+      "tryFree": "Try for free",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "navigation": "Navigation"
+    },
+    "hero": {
+      "eyebrow": "FIDLIFY · SCROLL",
+      "title": "Loyalty that makes",
+      "titleAccent": "customers come back.",
+      "lede": "Create a digital loyalty program for Apple Wallet and Google Wallet, with no app to download.",
+      "progress": "PROGRESS",
+      "reward": "REWARD",
+      "rewardText": "1 free coffee",
+      "featureLabel": "CHAPTER 02",
+      "featureTitle": "Apple Wallet · no app · no friction",
+      "ready": "READY IN 5 MINUTES",
+      "readyText": "Launch your program today.",
+      "createCard": "Create my loyalty card",
+      "demo": "▶ 90s demo",
+      "scroll": "SCROLL",
+      "shops": {
+        "bakery": "Pré Bakery",
+        "cafe": "Café Lumen"
+      }
+    },
+    "demoSection": {
+      "eyebrow": "PRODUCT EXPERIENCE",
+      "titleA": "Create. Share.",
+      "titleB": "Retain.",
+      "lede": "A simple journey, from merchant to customer — in 5 steps.",
+      "stepLabel": "STEP",
+      "cardName": "Loyalty card",
+      "rewardText": "1 free coffee on the 10th",
+      "now": "now",
+      "offer": "—15% on the whole menu until 5pm ☕",
+      "shops": {
+        "yourShop": "Your shop",
+        "cafe": "Café Lumen"
+      },
+      "steps": [
+        {
+          "title": "The merchant configures the card.",
+          "body": "Logo, colors, rewards. No code, no developer needed."
+        },
+        {
+          "title": "The customer scans the QR code.",
+          "body": "At checkout, on the table or on the receipt. One tap and it is installed."
+        },
+        {
+          "title": "The card is added to Wallet.",
+          "body": "Apple Wallet or Google Wallet. Always in the customer's pocket."
+        },
+        {
+          "title": "The merchant sends a notification.",
+          "body": "An offer, a reminder, a new item. Directly on the customer's phone."
+        },
+        {
+          "title": "The customer comes back to buy.",
+          "body": "The stamp count grows. And they come back again. That's loyalty."
+        }
+      ]
+    },
+    "journey": {
+      "eyebrow": "PRODUCT JOURNEY",
+      "wallet": "Wallet",
+      "cardName": "Loyalty card",
+      "rewardText": "1 free coffee",
+      "notificationTime": "now",
+      "notification": "Only 4 coffees left before the 10th is free ☕",
+      "revenueLabel": "REVENUE · 30 DAYS",
+      "revenueDelta": "↑ +3,580 vs previous month",
+      "newCustomers": "new customers",
+      "openRate": "open rate",
+      "scroll": "SCROLL ↓",
+      "scenes": [
+        {
+          "kicker": "STEP 01 · CREATION",
+          "title": "A loyalty card.",
+          "sub": "Designed to live in your customers' Wallet."
+        },
+        {
+          "kicker": "STEP 02 · INSTALLATION",
+          "title": "It lands on the phone.",
+          "sub": "Apple Wallet or Google Wallet — no app to download."
+        },
+        {
+          "kicker": "STEP 03 · ACTIVATION",
+          "title": "Always in the pocket.",
+          "sub": "Present at every visit, every purchase, every journey."
+        },
+        {
+          "kicker": "STEP 04 · ENGAGEMENT",
+          "title": "One notification, one return.",
+          "sub": "94% open rate. The most direct channel to your customers."
+        },
+        {
+          "kicker": "STEP 05 · GROWTH",
+          "title": "Retain. Notify. Sell more.",
+          "sub": "Sell more."
+        }
+      ]
+    },
+    "faq": {
+      "titleA": "Questions",
+      "titleB": "we often get.",
+      "items": [
+        {
+          "q": "Do my customers need to download an app?",
+          "a": "No. The Fidlify card is installed directly in Apple Wallet or Google Wallet, already available on most modern smartphones."
+        },
+        {
+          "q": "Does it work with Apple Wallet AND Google Wallet?",
+          "a": "Yes. Fidlify automatically generates the right version for your customer's device."
+        },
+        {
+          "q": "Can I send notifications to my customers?",
+          "a": "Yes. You can send push notifications directly to your customers' Wallet: offers, launches, birthdays and reminders."
+        },
+        {
+          "q": "Can I customize the card design?",
+          "a": "Fully. Logo, colors, background image, reward type and copy match your business."
+        },
+        {
+          "q": "How long does it take to create a digital loyalty card?",
+          "a": "About 3 minutes. Add your business information, choose the design and reward, and the card is ready to share."
+        },
+        {
+          "q": "Is it suited to small Swiss businesses?",
+          "a": "That is exactly why Fidlify exists. Start for free, then upgrade when you need more power."
+        },
+        {
+          "q": "Can I use a QR code in-store?",
+          "a": "Yes. Generate it from the dashboard, print it, and customers add the card to Wallet in one tap."
+        },
+        {
+          "q": "How much does a digital loyalty program cost with Fidlify?",
+          "a": "There are Gratuit, Essentiel, Croissance and Multi-sites plans. No hidden fees."
+        }
+      ]
+    },
+    "footer": {
+      "description": "SaaS loyalty software for local merchants in Switzerland. Digital loyalty cards for Apple Wallet and Google Wallet, with no app to download.",
+      "product": "Product",
+      "account": "Account",
+      "legal": "Legal",
+      "createAccount": "Create an account",
+      "contact": "Contact",
+      "manageCookies": "Manage cookies",
+      "manageCookiesLabel": "Open cookie preferences",
+      "madeIn": "Built in Switzerland",
+      "compliance": "FADP/GDPR compliance",
+      "links": {
+        "features": "Features",
+        "pricing": "Pricing",
+        "demo": "Demo",
+        "faq": "FAQ",
+        "login": "Log in"
+      },
+      "legalLinks": {
+        "mentions-legales": "Legal notice",
+        "politique-de-confidentialite": "Privacy",
+        "cgu": "Terms",
+        "politique-cookies": "Cookies"
+      }
+    }
+  },
+  "Auth": {
+    "backHome": "Home",
+    "login": {
+      "title": "Log in",
+      "paidDescription": "Log in to finish your subscription",
+      "description": "Access your Fidlify dashboard",
+      "verified": "Email verified. Log in to access your dashboard.",
+      "invalidCredentials": "Incorrect email or password",
+      "email": "Email",
+      "emailPlaceholder": "your@email.ch",
+      "password": "Password",
+      "passwordPlaceholder": "Your password",
+      "forgotPassword": "Forgot password?",
+      "submit": "Log in",
+      "submitPaid": "Log in and pay",
+      "loading": "Logging in...",
+      "noAccount": "No account yet?",
+      "createAccount": "Create an account"
+    },
+    "register": {
+      "title": "Create an account",
+      "description": "Launch your loyalty program in 5 minutes",
+      "genericError": "Registration error",
+      "businessName": "Business name",
+      "businessPlaceholder": "Lake Bakery",
+      "email": "Email",
+      "emailPlaceholder": "your@email.ch",
+      "password": "Password",
+      "passwordPlaceholder": "Minimum 8 characters",
+      "submit": "Create my free account",
+      "loading": "Creating...",
+      "fineprint": "By creating an account, you accept our terms of use and privacy policy.",
+      "hasAccount": "Already have an account?",
+      "login": "Log in"
+    },
+    "forgotPassword": {
+      "back": "Log in",
+      "title": "Forgot password",
+      "description": "Receive a secure link to reset your password.",
+      "sendError": "Error while sending",
+      "sentTitle": "Email sent.",
+      "sentBody": "If an account exists for {email}, you will receive a reset link in the next few minutes.",
+      "sentHint": "Check your spam folder if you do not see it. The link is valid for 24 hours.",
+      "emailLabel": "Account email",
+      "emailPlaceholder": "your@email.ch",
+      "sending": "Sending...",
+      "submit": "Send reset link",
+      "fineprint": "For security, we always confirm the send, even if the email is not linked to an account.",
+      "remember": "Remembered it?",
+      "backLogin": "Back to login"
+    },
+    "resetPassword": {
+      "title": "Reset password",
+      "description": "Set a new password for your account.",
+      "minLength": "Minimum 8 characters",
+      "mismatch": "Passwords do not match",
+      "genericError": "Error while resetting",
+      "invalidLink": "Invalid link — no token provided in the URL.",
+      "success": "Password changed. Redirecting to login...",
+      "newPassword": "New password",
+      "confirm": "Confirm",
+      "saving": "Updating...",
+      "submit": "Set new password",
+      "backLogin": "← Back to login"
+    },
+    "verifyEmail": {
+      "missingTitle": "Missing email",
+      "missingDescription": "This page requires an email parameter. Please restart registration.",
+      "backRegister": "Back to registration",
+      "title": "Verify your email",
+      "description": "We sent a code to {email}.",
+      "descriptionHint": "Enter it below (valid for 15 minutes).",
+      "invalidCode": "Invalid code",
+      "connectionError": "Connection error",
+      "resendError": "Error while sending the code",
+      "success": "Email verified! Redirecting to login...",
+      "otpLabel": "6-digit verification code",
+      "digitLabel": "Digit {number}",
+      "verifying": "Verifying...",
+      "submit": "Verify my email",
+      "resendIn": "Resend a code in {seconds}s",
+      "resending": "Sending...",
+      "resend": "Resend a code",
+      "spamHint": "Check your spam folder if you do not receive the code.",
+      "backLogin": "Back to login"
+    }
+  },
+  "Dashboard": {
+    "header": {
+      "eyebrow": "MERCHANT AREA",
+      "hello": "Hello,",
+      "fallbackName": "Merchant",
+      "search": "Search...",
+      "searchLabel": "Search (Ctrl+K)",
+      "openMenu": "Open menu"
+    },
+    "sidebar": {
+      "closeMenu": "Close menu",
+      "items": {
+        "dashboard": "Dashboard",
+        "program": "Program",
+        "scan": "Scan",
+        "clients": "Customers",
+        "stats": "Statistics",
+        "campaigns": "Campaigns",
+        "qrcode": "QR Code",
+        "settings": "Settings"
+      },
+      "logout": "Log out"
+    },
+    "commandPalette": {
+      "globalSearch": "Global search",
+      "placeholder": "Search a customer, program or campaign...",
+      "quickNav": "Quick navigation",
+      "navigation": "Navigation",
+      "program": "Program",
+      "noResult": "No results",
+      "tryAnother": "Try another search term.",
+      "searching": "Searching...",
+      "navigate": "navigate",
+      "open": "open",
+      "close": "close",
+      "items": {
+        "dashboard": "Dashboard",
+        "clients": "Customers",
+        "programs": "Programs",
+        "campaigns": "Campaigns",
+        "scan": "Scan",
+        "qrcode": "QR Code",
+        "stats": "Statistics",
+        "settings": "Settings"
+      }
+    },
+    "notifications": {
+      "title": "Notifications",
+      "unread": "{count, plural, =0 {Notifications} =1 {1 unread notification} other {# unread notifications}}",
+      "markAll": "Mark all",
+      "empty": "No notifications yet.",
+      "emptyHint": "Important activity will appear here.",
+      "markRead": "Mark as read",
+      "time": {
+        "now": "just now",
+        "minute": "{count} min ago",
+        "hour": "{count}h ago",
+        "day": "{count}d ago"
+      }
+    },
+    "export": {
+      "label": "Export CSV",
+      "lockedTitle": "CSV export is reserved for paid plans — click to upgrade to Essential",
+      "pro": "Pro",
+      "loading": "Export...",
+      "networkError": "Network error",
+      "statusError": "Error {status}"
+    },
+    "cardRecovery": {
+      "title": "Card recovery",
+      "close": "Close",
+      "explain": "If {name} lost their card or changed phone, scanning this QR code lets them reinstall it in their Wallet with the current progress preserved.",
+      "copied": "Copied",
+      "copy": "Copy link",
+      "print": "Print",
+      "printTitle": "Recover loyalty card",
+      "cardNumber": "Card no. {serialNumber}",
+      "printHint": "Scan this QR code to reinstall your card in your Wallet.",
+      "printProgress": "Your progress is preserved."
+    },
+    "clientPreview": {
+      "title": "Customer preview — {programName}",
+      "reloadTitle": "Reload preview",
+      "reload": "Reload",
+      "openTitle": "Open in a new tab (to test on a smartphone)",
+      "newTab": "New tab",
+      "close": "Close",
+      "warning": "If you fill out the form here, a real card will be created on your program. Use your own email/phone for a real test, or simply scroll to view the customer interface.",
+      "iframeTitle": "Customer preview"
+    },
+    "statsInsights": {
+      "lockedHeatmapTitle": "Hourly heatmap",
+      "lockedHeatmapDescription": "See the peak hours and busiest days of your business. Unlocked from the Essential plan.",
+      "lockedCohortTitle": "Cohort retention",
+      "lockedCohortDescription": "Track whether your January customers are still active in March. Available with a paid plan.",
+      "freeHint": "Upgrade to Essential or higher to unlock the heatmap and cohort retention.",
+      "periodTitle": "Period comparison",
+      "periodSub": "Last {days} days vs {from} → {to}",
+      "metrics": {
+        "newClients": "New customers",
+        "scans": "Scans",
+        "rewards": "Rewards",
+        "activeClients": "Active customers",
+        "avgScansPerClient": "Scans/customer"
+      },
+      "deltaPrevious": "vs {previous}{unit}",
+      "stable": " (stable)",
+      "heatmapTitle": "Hourly heatmap",
+      "heatmapSub": "Scans per hour × day over the last 30 days",
+      "less": "Less",
+      "more": "More",
+      "scanCount": "{day} {hour}:00: {count, plural, =0 {no scans} =1 {1 scan} other {# scans}}",
+      "cohortTitle": "Cohort retention",
+      "cohortSub": "Percentage of customers still active N weeks after signup",
+      "cohort": "Cohort",
+      "signups": "Signups",
+      "activeTitle": "{retained}/{signups} active customers in W+{week}",
+      "weekPrefix": "W+{week}",
+      "days": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    },
+    "home": {
+      "title": "Dashboard",
+      "subtitle": "Overview of your loyalty program — real-time data.",
+      "cards": {
+        "registeredClients": "Registered customers",
+        "newLast7": "New in the last 7 days",
+        "activeCards": "Active cards",
+        "onCards": "Out of {count} cards",
+        "totalVisits": "Total visits",
+        "visitsLast7": "Visits in the last 7 days",
+        "returnRate": "Return rate",
+        "returnedTwice": "Customers with ≥ 2 visits"
+      },
+      "charts": {
+        "visits30": "VISITS — LAST 30 DAYS",
+        "stampsDistributed": "stamps distributed",
+        "dailyVisits": "Daily visits",
+        "engagement": "ENGAGEMENT",
+        "newClients30": "NEW CUSTOMERS — 30 DAYS",
+        "signedUp": "signed up",
+        "cardProgress": "CARD PROGRESS",
+        "cards": "cards",
+        "topPrograms": "TOP PROGRAMS",
+        "recentClients": "RECENT CUSTOMERS"
+      },
+      "empty": {
+        "programs": "No active program",
+        "clients": "No customers yet.",
+        "clientsHint": "Share your QR code to get started."
+      },
+      "client": {
+        "anonymous": "Anonymous",
+        "noEmail": "No email"
+      },
+      "tooltip": {
+        "visits": "visit(s)",
+        "newClients": "new",
+        "cards": "card(s)"
+      }
+    },
+    "qrcode": {
+      "title": "QR Code",
+      "subtitle": "Display this QR code at checkout to register your customers",
+      "emptyTitle": "No program",
+      "emptyDescription": "Create a loyalty program first",
+      "cardTitle": "Your QR Code",
+      "cardDescription": "Customers scan this code to receive their loyalty card",
+      "download": "Download",
+      "copied": "Copied!",
+      "copy": "Copy link",
+      "howItWorks": "How it works",
+      "steps": [
+        { "title": "Display the QR code", "desc": "Print it or show it on a screen at checkout" },
+        { "title": "The customer scans", "desc": "They open their phone camera and scan the code" },
+        { "title": "Quick form", "desc": "First name + email or phone — that's all" },
+        { "title": "Card added to Wallet", "desc": "Apple Wallet or Google Wallet, automatically" }
+      ]
+    }
+  },
+  "Public": {
+    "join": {
+      "notFoundError": "Program not found",
+      "contactRequired": "Email or phone required",
+      "submitError": "Error while signing up",
+      "notFoundTitle": "Program not found",
+      "notFoundBody": "This program does not exist or is no longer active.",
+      "backHome": "Back to home",
+      "recoveryTitle": "You already have a card",
+      "recoveryBody": "A recovery email has just been sent to the address provided. Click the link in the email to reinstall your loyalty card in your Wallet — your current progress is preserved.",
+      "recoveryHint": "Check your spam folder if you do not receive the email in the next few minutes.",
+      "successTitle": "Card created!",
+      "successBody": "Add it to your Wallet now to keep it close at hand.",
+      "appleWallet": "Add to Apple Wallet",
+      "googleWallet": "Add to Google Wallet",
+      "walletHint": "No app needed — the card lives in your Wallet.",
+      "title": "Join the program.",
+      "subtitle": "Receive your loyalty card directly in your Wallet — no app download required.",
+      "firstName": "First name",
+      "firstNamePlaceholder": "Your first name",
+      "or": "or",
+      "phone": "Phone",
+      "birthDate": "Date of birth",
+      "birthDateHint": "(optional — for a birthday gift)",
+      "submitting": "Creating...",
+      "submit": "Get my card",
+      "fineprint": "By signing up, you accept the privacy policy. Your data is hosted in Switzerland.",
+      "madeIn": "Made in Switzerland"
+    },
+    "stamp": {
+      "loading": "Stamping in progress...",
+      "errorFallback": "Error while stamping",
+      "errorTitle": "Error",
+      "back": "Back",
+      "rewardUnlocked": "Reward unlocked!",
+      "stamped": "Stamped!",
+      "client": "Customer",
+      "stamps": "Stamps",
+      "visits": "Visits",
+      "close": "Close"
+    },
+    "cardRecovery": {
+      "unavailableTitle": "Card unavailable.",
+      "unavailableBody": "This card is no longer active. Please contact {merchantName} directly to learn more.",
+      "title": "Recover your card.",
+      "body": "Hello {firstName} — your progress is preserved. Reinstall your {programName} loyalty card in your Wallet in one tap.",
+      "progress": "YOUR PROGRESS",
+      "stamps": "stamps",
+      "points": "points",
+      "visits": "{count, plural, =0 {no visits recorded} =1 {1 visit recorded} other {# visits recorded}}",
+      "appleWallet": "Add to Apple Wallet",
+      "googleWallet": "Add to Google Wallet",
+      "fineprint": "Your card will be reinstalled identically with your current progress. Nothing to redo.",
+      "madeIn": "Made in Switzerland"
+    },
+    "checkoutSuccess": {
+      "title": "Payment confirmed!",
+      "waiting": "Activating your subscription...",
+      "ready": "Subscription active! Redirecting..."
+    },
+    "betaAccess": {
+      "wrongPassword": "Incorrect password",
+      "networkError": "Network error, please try again",
+      "badge": "PRIVATE BETA",
+      "title": "Restricted access",
+      "subtitle": "Fidlify is in closed testing. Enter the access password to continue.",
+      "placeholder": "Access password",
+      "checking": "Checking...",
+      "submit": "Enter",
+      "foot": "Do you represent a business and want to join the test?"
+    }
+  }
+}

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { Bell, Check, CheckCheck } from "lucide-react";
 
 type NotificationType =
@@ -38,6 +40,8 @@ const TYPE_COLOR: Record<NotificationType, string> = {
 const POLL_INTERVAL_MS = 60_000; // 60s
 
 export function NotificationsBell() {
+  const t = useTranslations("Dashboard.notifications");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -118,8 +122,8 @@ export function NotificationsBell() {
         onClick={() => setOpen((o) => !o)}
         aria-label={
           unreadCount > 0
-            ? `${unreadCount} notification${unreadCount > 1 ? "s" : ""} non lues`
-            : "Notifications"
+            ? t("unread", { count: unreadCount })
+            : t("title")
         }
       >
         <Bell className="h-[18px] w-[18px]" />
@@ -131,10 +135,10 @@ export function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="notif-dropdown" role="dialog" aria-label="Notifications">
+        <div className="notif-dropdown" role="dialog" aria-label={t("title")}>
           <div className="notif-dropdown-head">
             <span className="notif-dropdown-title">
-              Notifications
+              {t("title")}
               {unreadCount > 0 && (
                 <span className="notif-dropdown-count">{unreadCount}</span>
               )}
@@ -146,7 +150,7 @@ export function NotificationsBell() {
                 disabled={loading}
                 className="notif-dropdown-mark-all"
               >
-                <CheckCheck size={12} /> Tout marquer
+                <CheckCheck size={12} /> {t("markAll")}
               </button>
             )}
           </div>
@@ -155,8 +159,8 @@ export function NotificationsBell() {
             {notifs.length === 0 ? (
               <div className="notif-empty">
                 <Bell size={20} />
-                <p>Pas encore de notifications.</p>
-                <span>Vos activités importantes apparaîtront ici.</span>
+                <p>{t("empty")}</p>
+                <span>{t("emptyHint")}</span>
               </div>
             ) : (
               notifs.map((n) => {
@@ -174,7 +178,7 @@ export function NotificationsBell() {
                         <div className="notif-item-text">{n.body}</div>
                       )}
                       <div className="notif-item-time">
-                        {timeAgo(new Date(n.createdAt))}
+                        {timeAgo(new Date(n.createdAt), t, locale)}
                       </div>
                     </div>
                     {isUnread && (
@@ -186,7 +190,7 @@ export function NotificationsBell() {
                           markAsRead(n.id);
                         }}
                         className="notif-item-read-btn"
-                        aria-label="Marquer comme lu"
+                        aria-label={t("markRead")}
                       >
                         <Check size={12} />
                       </button>
@@ -222,14 +226,18 @@ export function NotificationsBell() {
   );
 }
 
-function timeAgo(date: Date): string {
+function timeAgo(
+  date: Date,
+  t: ReturnType<typeof useTranslations>,
+  locale: string
+): string {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (seconds < 60) return "à l'instant";
+  if (seconds < 60) return t("time.now");
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `il y a ${minutes} min`;
+  if (minutes < 60) return t("time.minute", { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `il y a ${hours}h`;
+  if (hours < 24) return t("time.hour", { count: hours });
   const days = Math.floor(hours / 24);
-  if (days < 7) return `il y a ${days}j`;
-  return date.toLocaleDateString("fr-CH", { day: "numeric", month: "short" });
+  if (days < 7) return t("time.day", { count: days });
+  return date.toLocaleDateString(locale, { day: "numeric", month: "short" });
 }

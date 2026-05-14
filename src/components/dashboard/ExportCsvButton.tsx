@@ -3,26 +3,25 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Download, Lock, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 /**
- * Bouton "Exporter CSV" réutilisable.
- * - Si plan FREE → affiche un cadenas + tooltip "Plan Essentiel requis"
- *   et redirige vers /dashboard/settings au clic.
- * - Si plan payant → déclenche le téléchargement via fetch + blob.
- *   On utilise fetch (et pas un lien direct) pour pouvoir gérer 403/500
- *   proprement et afficher une erreur si besoin.
+ * Reusable CSV export button.
+ * Free plans are redirected to settings; paid plans download through fetch so
+ * API errors can be displayed inline.
  */
 export function ExportCsvButton({
   endpoint,
   filename,
-  label = "Exporter CSV",
+  label,
   size = "sm",
 }: {
-  endpoint: string; // ex: "/api/merchants/export/clients"
-  filename: string; // ex: "fidlify-clients.csv" (fallback si pas dans Content-Disposition)
+  endpoint: string;
+  filename: string;
   label?: string;
   size?: "sm" | "md";
 }) {
+  const t = useTranslations("Dashboard.export");
   const { data: session } = useSession();
   const plan = (session?.user?.plan as string) || "FREE";
   const isFree = plan === "FREE";
@@ -40,7 +39,7 @@ export function ExportCsvButton({
       const res = await fetch(endpoint);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || `Erreur ${res.status}`);
+        setError(data.error || t("statusError", { status: res.status }));
         setTimeout(() => setError(""), 4000);
         return;
       }
@@ -48,7 +47,6 @@ export function ExportCsvButton({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      // Extraire filename du Content-Disposition s'il existe, sinon fallback
       const disposition = res.headers.get("Content-Disposition") || "";
       const match = disposition.match(/filename="([^"]+)"/);
       a.download = match ? match[1] : filename;
@@ -57,7 +55,7 @@ export function ExportCsvButton({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      setError((e as Error).message || "Erreur réseau");
+      setError((e as Error).message || t("networkError"));
       setTimeout(() => setError(""), 4000);
     } finally {
       setLoading(false);
@@ -66,17 +64,18 @@ export function ExportCsvButton({
 
   const sizeCls =
     size === "sm" ? "h-8 px-3 text-xs gap-1.5" : "h-9 px-4 text-sm gap-2";
+  const displayLabel = label ?? t("label");
 
   if (isFree) {
     return (
       <button
         type="button"
         onClick={handleExport}
-        title="Export CSV réservé aux plans payants — cliquez pour passer au plan Essentiel"
+        title={t("lockedTitle")}
         className={`export-btn export-btn-locked inline-flex items-center rounded-full ${sizeCls}`}
       >
         <Lock className="h-3 w-3" />
-        {label} <span className="export-btn-pill">🔒 Pro</span>
+        {displayLabel} <span className="export-btn-pill">{t("pro")}</span>
       </button>
     );
   }
@@ -94,7 +93,7 @@ export function ExportCsvButton({
         ) : (
           <Download className="h-3 w-3" />
         )}
-        {loading ? "Export…" : label}
+        {loading ? t("loading") : displayLabel}
       </button>
       {error && (
         <div className="export-btn-error" role="alert">

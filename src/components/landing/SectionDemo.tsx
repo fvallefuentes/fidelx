@@ -1,14 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 /* ─── Loyalty card (visual mock) ─────────────────────────── */
 function LoyaltyCard({
-  shop = "Café Lumen",
+  shop,
+  cardName,
+  rewardText,
   filled = 6,
   total = 10,
 }: {
-  shop?: string;
+  shop: string;
+  cardName: string;
+  rewardText: string;
   filled?: number;
   total?: number;
 }) {
@@ -18,7 +23,7 @@ function LoyaltyCard({
         <div className="loy-brand">FIDLIFY · WALLET</div>
         <div className="loy-icon" />
       </div>
-      <div className="loy-name">Carte de fidélité</div>
+      <div className="loy-name">{cardName}</div>
       <div className="loy-shop">{shop}</div>
       <div className="loy-stamps">
         {Array.from({ length: total }).map((_, i) => (
@@ -29,7 +34,7 @@ function LoyaltyCard({
       </div>
       <div className="loy-foot">
         <div className="loy-progress">
-          <strong>{filled}</strong>/{total} · 1 café offert au 10ᵉ
+          <strong>{filled}</strong>/{total} · {rewardText}
         </div>
         <div className="loy-qr" />
       </div>
@@ -41,6 +46,7 @@ function LoyaltyCard({
 export default function SectionDemo() {
   const [active, setActive] = useState(0);
   const itemsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const t = useTranslations("Landing.demoSection");
 
   useEffect(() => {
     const io = new IntersectionObserver(
@@ -58,32 +64,13 @@ export default function SectionDemo() {
     return () => io.disconnect();
   }, []);
 
-  const steps = [
-    {
-      title: "Le commerçant configure sa carte.",
-      body: "Logo, couleurs, récompenses. Sans code, sans dev.",
-    },
-    {
-      title: "Le client scanne le QR code.",
-      body: "En caisse, sur la table, sur l'addition. Un tap, c'est installé.",
-    },
-    {
-      title: "La carte s'ajoute au Wallet.",
-      body: "Apple Wallet ou Google Wallet. Toujours dans la poche du client.",
-    },
-    {
-      title: "Le commerçant envoie une notification.",
-      body: "Une offre, un rappel, une nouveauté. Direct dans son téléphone.",
-    },
-    {
-      title: "Le client revient acheter.",
-      body: "Et son tampon avance. Et il revient encore. Voilà la fidélité.",
-    },
-  ];
+  const steps = t.raw("steps") as Array<{ title: string; body: string }>;
+  const cardName = t("cardName");
+  const rewardText = t("rewardText");
 
   const visuals = [
     <div key="0" style={{ display: "flex", justifyContent: "center" }}>
-      <LoyaltyCard shop="Votre boutique" filled={0} total={10} />
+      <LoyaltyCard shop={t("shops.yourShop")} cardName={cardName} rewardText={rewardText} filled={0} total={10} />
     </div>,
     <div
       key="1"
@@ -146,7 +133,7 @@ export default function SectionDemo() {
           <path d="M21.8 10H12v4h5.6c-.5 2.5-2.5 4-5.6 4a6 6 0 1 1 0-12c1.5 0 2.8.5 3.8 1.5l3-3A10 10 0 1 0 12 22c5.5 0 10-4 10-10 0-.7-.1-1.3-.2-2Z" />
         </svg>
       </div>
-      <LoyaltyCard shop="Café Lumen" filled={1} total={10} />
+      <LoyaltyCard shop={t("shops.cafe")} cardName={cardName} rewardText={rewardText} filled={1} total={10} />
     </div>,
     <div key="3" style={{ width: 300, display: "flex", flexDirection: "column", gap: 10 }}>
       <div
@@ -189,19 +176,19 @@ export default function SectionDemo() {
               marginBottom: 2,
             }}
           >
-            <span>Café Lumen</span>
+            <span>{t("shops.cafe")}</span>
             <span style={{ fontSize: 11, color: "#8a8e84", fontWeight: 400 }}>
-              maintenant
+              {t("now")}
             </span>
           </div>
           <div style={{ fontSize: 12, color: "#c9ccc3", lineHeight: 1.35 }}>
-            —15% sur tout le menu jusqu&apos;à 17h ☕
+            {t("offer")}
           </div>
         </div>
       </div>
     </div>,
     <div key="4" style={{ display: "flex", justifyContent: "center" }}>
-      <LoyaltyCard shop="Café Lumen" filled={9} total={10} />
+      <LoyaltyCard shop={t("shops.cafe")} cardName={cardName} rewardText={rewardText} filled={9} total={10} />
     </div>,
   ];
 
@@ -211,14 +198,12 @@ export default function SectionDemo() {
         <div className="section-head reveal">
           <div className="eyebrow">
             <span className="dot" />
-            <span>EXPÉRIENCE PRODUIT</span>
+            <span>{t("eyebrow")}</span>
           </div>
           <h2 className="h-section">
-            Créer. Partager. <span className="accent">Fidéliser.</span>
+            {t("titleA")} <span className="accent">{t("titleB")}</span>
           </h2>
-          <p className="lede">
-            Un parcours simple, du commerçant au client — en 5 étapes.
-          </p>
+          <p className="lede">{t("lede")}</p>
         </div>
 
         <div className="demo-grid" style={{ marginTop: 80 }}>
@@ -235,7 +220,7 @@ export default function SectionDemo() {
                 className={`timeline-item${active === i ? " active" : ""}`}
               >
                 <span className="step">
-                  — ÉTAPE {String(i + 1).padStart(2, "0")}
+                  — {t("stepLabel")} {String(i + 1).padStart(2, "0")}
                 </span>
                 <h3>{s.title}</h3>
                 <p>{s.body}</p>
