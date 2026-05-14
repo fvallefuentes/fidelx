@@ -54,9 +54,19 @@ async function handleEvent(event: Stripe.Event) {
       await handleSubscriptionDeleted(sub);
       break;
     }
+    case "invoice.payment_succeeded": {
+      const invoice = event.data.object as Stripe.Invoice;
+      await handlePaymentSucceeded(invoice);
+      break;
+    }
     case "invoice.payment_failed": {
       const invoice = event.data.object as Stripe.Invoice;
       await handlePaymentFailed(invoice);
+      break;
+    }
+    case "charge.refunded": {
+      const charge = event.data.object as Stripe.Charge;
+      await handleChargeRefunded(charge);
       break;
     }
   }
@@ -110,6 +120,90 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
   // TODO: envoyer un email au commerçant
   console.warn(`[stripe] payment failed for user ${user.id} (${user.email})`);
+}
+
+/**
+ * 1ère facture payée du filleul → marque l'attribution prête à confirmer.
+ * Le crédit n'est PAS appliqué ici : un cron quotidien le fera après 14j
+ * de safety window pour éviter de créditer avant un refund éventuel.
+ *
+ * Détection "1ère facture" : `billing_reason: 'subscription_create'` est
+ * posé par Stripe sur la toute première facture d'un abonnement. Pour les
+ * renouvellements ce champ vaut `subscription_cycle`.
+ */
+async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
+  // On ne traite que les premières factures d'un nouvel abonnement.
+  if (invoice.billing_reason !== "subscription_create") return;
+
+  const customerId = invoice.customer as string;
+  if (!customerId) return;
+
+  const user = await prisma.user.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true, plan: true },
+  });
+  if (!user) return;
+
+  const attribution = await prisma.merchantReferralAttribution.findUnique({
+    where: { refereeId: user.id },
+    select: { id: true, status: true },
+  });
+  if (!attribution || attribution.status !== "PENDING") return;
+
+  // On enregistre la conversion "logique" mais on n'applique pas encore
+  // les crédits Stripe — c'est le cron qui le fera après 14j.
+  await prisma.merchantReferralAttribution.update({
+    where: { id: attribution.id },
+    data: {
+      confirmedAt: new Date(),
+      refereePlan: user.plan, // ESSENTIAL | GROWTH | MULTI_SITE
+    },
+  });
+  console.log(
+    `[referral] attribution ${attribution.id} → confirmedAt set (waiting safety window)`
+  );
+}
+
+/**
+ * Remboursement Stripe → si une attribution existe pour ce filleul et n'a
+ * pas encore eu son crédit appliqué, on la révoque. Si le crédit a déjà
+ * été appliqué (cas rare : refund > 14j après payment), on log et on
+ * laisse l'admin gérer manuellement.
+ */
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const customerId = charge.customer as string;
+  if (!customerId) return;
+
+  const user = await prisma.user.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true },
+  });
+  if (!user) return;
+
+  const attribution = await prisma.merchantReferralAttribution.findUnique({
+    where: { refereeId: user.id },
+  });
+  if (!attribution) return;
+
+  if (
+    attribution.referrerCreditApplied ||
+    attribution.refereeCreditApplied
+  ) {
+    console.warn(
+      `[referral] refund AFTER credit applied for ${attribution.id} — manual clawback required`
+    );
+    return;
+  }
+
+  await prisma.merchantReferralAttribution.update({
+    where: { id: attribution.id },
+    data: {
+      status: "REVOKED",
+      revokedAt: new Date(),
+      revokedReason: "REFUND",
+    },
+  });
+  console.log(`[referral] attribution ${attribution.id} → REVOKED (refund)`);
 }
 
 async function getPlanCodeFromPrice(price: Stripe.Price): Promise<string | null> {

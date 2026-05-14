@@ -13,6 +13,7 @@ function RegisterForm() {
   const t = useTranslations("Auth.register");
   const common = useTranslations("Auth");
   const plan = searchParams.get("plan") ?? "";
+  const ref = searchParams.get("ref") ?? "";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -29,7 +30,7 @@ function RegisterForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, ...(ref ? { ref } : {}) }),
       });
 
       const data = await res.json();
@@ -78,6 +79,23 @@ function RegisterForm() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           {error && <div className="auth-error">{error}</div>}
+
+          {ref && (
+            <div
+              role="status"
+              style={{
+                background: "rgba(168, 85, 247, 0.12)",
+                border: "1px solid rgba(168, 85, 247, 0.4)",
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontSize: 14,
+                color: "#a855f7",
+                fontWeight: 500,
+              }}
+            >
+              🎁 Tu profites d&apos;un parrainage — 1 mois Essential offert dès ta 1ère facture.
+            </div>
+          )}
 
           <div className="auth-field">
             <label htmlFor="name" className="auth-label">{t("businessName")}</label>

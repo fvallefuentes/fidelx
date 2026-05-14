@@ -123,6 +123,8 @@ enum MerchantNotificationType {
   CAMPAIGN_SENT           // Une campagne a été envoyée
   PLAN_LIMIT_WARNING      // Quota plan à 80%
   PLAN_LIMIT_REACHED      // Quota plan à 95% ou 100%
+  REFERRAL_SIGNUP         // Un confrère s'est inscrit via ton lien parrainage
+  REFERRAL_CONFIRMED      // Filleul a payé sa 1ère facture → crédit appliqué
   SYSTEM                  // Notification générique de Fidlify
 }
 
@@ -235,6 +237,10 @@ model User {
   establishments Establishment[]
   programs       LoyaltyProgram[]
   campaigns      NotificationCampaign[]
+
+  // Parrainage B2B (merchant → merchant)
+  merchantReferralLink        MerchantReferralLink?         @relation("MerchantReferrer")
+  merchantReferralAttribution MerchantReferralAttribution?  @relation("MerchantReferee")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -638,4 +644,61 @@ model ReferralLink {
   createdAt DateTime @default(now())
 
   @@index([code])
+}
+
+// =============================================
+// PARRAINAGE B2B (merchant → merchant)
+// =============================================
+// Un merchant invite un confrère commerçant. Quand le filleul paie sa
+// 1ère facture (+ 14j safety window contre les refunds), les deux reçoivent
+// 1 mois gratuit du plan du filleul, cumulable jusqu'à 12 mois pour le parrain.
+
+model MerchantReferralLink {
+  id          String  @id @default(cuid())
+  merchantId  String  @unique // 1 lien par merchant (auto-créé lazy)
+  code        String  @unique // slug ex: "cafe-bellini-r2x9"
+
+  // Tracking funnel
+  clicks      Int     @default(0)
+  signups     Int     @default(0) // clic → register
+  conversions Int     @default(0) // filleul a payé 1ère facture + safety
+
+  // Cap parrain : max 12 mois cumulés offerts
+  monthsEarnedTotal Int @default(0)
+
+  merchant      User                          @relation("MerchantReferrer", fields: [merchantId], references: [id], onDelete: Cascade)
+  attributions  MerchantReferralAttribution[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([code])
+}
+
+model MerchantReferralAttribution {
+  id          String  @id @default(cuid())
+  linkId      String
+  refereeId   String  @unique // un filleul ne peut être parrainé qu'1 fois
+
+  status      String  @default("PENDING") // PENDING | CONFIRMED | REVOKED
+
+  // Empreintes anti-fraude posées au moment du register (pas de PII brute)
+  refereeIpHash       String?
+  refereeFingerprint  String?
+
+  attributedAt DateTime  @default(now()) // moment du register avec le code
+  confirmedAt  DateTime?                 // 1ère facture payée + 14j
+  revokedAt    DateTime?
+  revokedReason String?
+
+  // Plan acheté par le filleul au moment de la confirmation (ESSENTIAL | GROWTH | MULTI_SITE)
+  refereePlan            String?
+  referrerCreditApplied  Boolean @default(false)
+  refereeCreditApplied   Boolean @default(false)
+
+  link    MerchantReferralLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  referee User                 @relation("MerchantReferee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([status])
 }

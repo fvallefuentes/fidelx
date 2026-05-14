@@ -91,10 +91,14 @@ export async function middleware(req: NextRequest) {
   // ─── BETA GATE (phase de test) ───
   // Tous les /api/* sont AUTORISÉS (webhooks Stripe, Apple/Google Wallet,
   // cron, NextAuth). Le gate ne s'applique qu'aux pages browser.
+  // /r/* (liens parrainage merchant) sont OUVERTS pour que le clic pose
+  // le cookie d'attribution avant la redirection (le filleul finira sur
+  // /register qui passera par /beta-access avec son cookie intact).
   const betaPassword = process.env.BETA_ACCESS_PASSWORD;
   if (
     betaPassword &&
     !pathname.startsWith("/api/") &&
+    !pathname.startsWith("/r/") &&
     !BETA_GATE_OPEN_PATHS.has(pathname)
   ) {
     const cookie = req.cookies.get(BETA_COOKIE);
