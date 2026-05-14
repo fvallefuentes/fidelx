@@ -34,6 +34,8 @@ interface LoyaltyObjectData {
   maxStamps: number;
   currentPoints: number;
   programType: string;
+  /** Base URL Fidlify (ex: https://www.fidlify.com) pour construire le heroImage. */
+  appUrl?: string;
 }
 
 /**
@@ -85,6 +87,22 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
         int: data.currentStamps,
       },
     };
+
+    // heroImage = bannière haute affichant les pastilles de tampons (1032×336).
+    // L'URL est versionnée par currentStamps pour forcer Google à refetch
+    // l'image après chaque ajout de tampon (sinon le cache CDN garde l'ancienne).
+    if (data.appUrl) {
+      const stripUrl = `${data.appUrl.replace(/\/$/, "")}/api/wallet/google/strip/${data.serialNumber}?v=${data.currentStamps}`;
+      object.heroImage = {
+        sourceUri: { uri: stripUrl },
+        contentDescription: {
+          defaultValue: {
+            language: "fr",
+            value: `${data.currentStamps} sur ${data.maxStamps} tampons`,
+          },
+        },
+      };
+    }
   } else if (data.programType === "POINTS") {
     object.loyaltyPoints = {
       label: "Points",
@@ -131,6 +149,8 @@ export async function generateGoogleWalletLink(
     bgColor: (design.bgColor as string) || "#1a1a2e",
   });
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
   const loyaltyObject = buildLoyaltyObject({
     serialNumber: card.serialNumber,
     classId,
@@ -139,13 +159,14 @@ export async function generateGoogleWalletLink(
     maxStamps: (config.maxStamps as number) || 10,
     currentPoints: card.currentPoints,
     programType: card.program.type,
+    appUrl,
   });
 
   // Créer le JWT
   const claims = {
     iss: GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL,
     aud: "google",
-    origins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
+    origins: [appUrl],
     typ: "savetowallet",
     payload: {
       loyaltyClasses: [loyaltyClass],
@@ -309,6 +330,7 @@ export async function updateGoogleWalletObject(
     maxStamps: (config.maxStamps as number) || 10,
     currentPoints: card.currentPoints,
     programType: card.program.type,
+    appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   });
 
   try {
