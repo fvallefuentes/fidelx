@@ -8,7 +8,9 @@
  *  - Au clic → cookie `fidlify_mref` posé pour 30 jours.
  *  - À l'inscription du filleul → `MerchantReferralAttribution(status: PENDING)`.
  *  - À la 1ère facture payée du filleul + 14j safety → CONFIRMED.
- *  - Crédit : 1 mois gratuit du plan du filleul, des deux côtés.
+ *  - Crédit : 1 mois gratuit appliqué à l'abonnement de chacun
+ *    (le parrain sur son plan actuel, le filleul sur le plan qu'il vient
+ *     de choisir).
  *  - Cap parrain : max 12 mois cumulés (plafond `monthsEarnedTotal`).
  */
 import { prisma } from "@/lib/prisma";

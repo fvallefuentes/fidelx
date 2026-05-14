@@ -62,7 +62,7 @@ export default function ParrainagePage() {
 
   const handleShare = useCallback(async () => {
     if (!stats) return;
-    const shareText = `Salut, j'utilise Fidlify pour mes cartes fidélité — pas de paperasse, pass directement dans Apple/Google Wallet. Via mon lien tu as 1 mois gratuit : ${stats.url}`;
+    const shareText = `Salut, j'utilise Fidlify pour mes cartes fidélité — pas de paperasse, pass directement dans Apple/Google Wallet. Via mon lien tu as 1 mois offert sur le plan que tu choisiras : ${stats.url}`;
     if (navigator.share) {
       try {
         await navigator.share({
@@ -85,7 +85,7 @@ export default function ParrainagePage() {
   const handleShareEmail = useCallback(() => {
     if (!stats) return;
     const subject = "Découvre Fidlify — 1 mois offert sur tes cartes fidélité";
-    const body = `Salut,\n\nJ'utilise Fidlify pour mes cartes de fidélité — pas de paperasse, le pass est directement dans Apple Wallet et Google Wallet. Mes clients adorent.\n\nVia mon lien parrainage, tu as 1 mois Essential offert :\n${stats.url}\n\nÀ bientôt`;
+    const body = `Salut,\n\nJ'utilise Fidlify pour mes cartes de fidélité — pas de paperasse, le pass est directement dans Apple Wallet et Google Wallet. Mes clients adorent.\n\nVia mon lien parrainage, tu as 1 mois offert sur le plan que tu choisiras :\n${stats.url}\n\nÀ bientôt`;
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }, [stats]);
 
@@ -120,7 +120,7 @@ export default function ParrainagePage() {
           Parrainage
         </h1>
         <p className="text-gray-500">
-          Parraine un confrère commerçant — vous recevez chacun 1 mois gratuit du plan choisi par ton filleul.
+          Parraine un confrère commerçant — vous recevez chacun 1 mois gratuit appliqué à votre propre abonnement.
         </p>
       </div>
 
@@ -238,7 +238,7 @@ export default function ParrainagePage() {
               Quand il paie sa 1ère facture, on attend 14 jours (sécurité contre les remboursements).
             </li>
             <li>
-              Vous recevez chacun automatiquement <strong>1 mois gratuit</strong> du plan qu&apos;il a choisi, appliqué à votre prochaine facture.
+              Vous recevez chacun automatiquement <strong>1 mois gratuit</strong> appliqué à votre prochaine facture : toi sur ton plan actuel, ton filleul sur le plan qu&apos;il vient de choisir.
             </li>
             <li>
               Tu peux cumuler jusqu&apos;à <strong>12 mois</strong> de réduction sur ton abonnement.

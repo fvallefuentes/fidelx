@@ -166,7 +166,7 @@ export async function GET(req: Request) {
             type: "REFERRAL_CONFIRMED",
             title: "Parrainage confirmé",
             body: referrerApplied
-              ? `Ton filleul vient de payer sa 1ère facture. +1 mois ${attr.refereePlan ?? ""} offert sur ton abonnement.`
+              ? `Ton filleul vient de payer sa 1ère facture. +1 mois offert sur ton plan actuel, appliqué à ta prochaine facture.`
               : `Ton filleul a payé sa 1ère facture. Souscris à un plan pour recevoir ton mois offert.`,
             link: "/dashboard/parrainage",
           });

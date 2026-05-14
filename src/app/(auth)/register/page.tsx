@@ -93,7 +93,7 @@ function RegisterForm() {
                 fontWeight: 500,
               }}
             >
-              🎁 Tu profites d&apos;un parrainage — 1 mois Essential offert dès ta 1ère facture.
+              🎁 Tu profites d&apos;un parrainage — 1 mois offert sur le plan que tu choisiras, dès ta 1ère facture.
             </div>
           )}
 
