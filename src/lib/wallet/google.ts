@@ -147,11 +147,17 @@ export async function generateGoogleWalletLink(
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
   // Google Wallet exige obligatoirement un programLogo lors de la création
-  // de la classe. Si le merchant n'a pas configuré de logo, fallback sur
-  // le logo Fidlify rasterisé en PNG (Google n'accepte pas SVG).
-  const logoUrl =
-    (design.logoUrl as string) ||
-    `${appUrl.replace(/\/$/, "")}/api/wallet/google/default-logo`;
+  // de la classe. 3 cas par ordre de priorité :
+  //  1. design.logoData (base64 uploadé par le merchant) → /logo/[programId]
+  //     décode et sert au format binaire
+  //  2. design.logoUrl (URL externe explicite, rare)
+  //  3. fallback /default-logo (logo Fidlify rasterisé)
+  //
+  // Google n'accepte ni data URI ni SVG, d'où les endpoints intermédiaires.
+  const base = appUrl.replace(/\/$/, "");
+  const logoUrl = design.logoData
+    ? `${base}/api/wallet/google/logo/${card.program.id}`
+    : ((design.logoUrl as string) || `${base}/api/wallet/google/default-logo`);
 
   const loyaltyClass = buildLoyaltyClass({
     programId: card.program.id,
@@ -272,10 +278,11 @@ export async function updateGoogleWalletClass(
   const classId = `${GOOGLE_WALLET_ISSUER_ID}.${programId}`;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-  // Fallback obligatoire vers le logo Fidlify si le merchant n'en a pas.
-  const logoUrl =
-    (design.logoUrl as string) ||
-    `${appUrl.replace(/\/$/, "")}/api/wallet/google/default-logo`;
+  // Mêmes 3 cas que generateGoogleWalletLink : logoData merchant > logoUrl externe > fallback Fidlify.
+  const base = appUrl.replace(/\/$/, "");
+  const logoUrl = design.logoData
+    ? `${base}/api/wallet/google/logo/${programId}`
+    : ((design.logoUrl as string) || `${base}/api/wallet/google/default-logo`);
 
   const updatedClass = buildLoyaltyClass({
     programId,
