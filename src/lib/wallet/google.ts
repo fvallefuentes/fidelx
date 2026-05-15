@@ -36,6 +36,9 @@ interface LoyaltyObjectData {
   programType: string;
   /** Base URL Fidlify (ex: https://www.fidlify.com) pour construire le heroImage. */
   appUrl?: string;
+  /** Token de version (ex: timestamp programme.updatedAt) — utilisé dans
+   *  l'URL ?v= pour invalider le cache CDN Google quand le design change. */
+  designVersion?: string;
 }
 
 /**
@@ -92,10 +95,14 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
     };
 
     // heroImage = bannière haute affichant les pastilles de tampons (1032×336).
-    // L'URL est versionnée par currentStamps pour forcer Google à refetch
-    // l'image après chaque ajout de tampon (sinon le cache CDN garde l'ancienne).
+    // L'URL est versionnée par currentStamps ET par designVersion (timestamp
+    // updatedAt du programme) → invalidation cache CDN Google à chaque tampon
+    // ajouté OU chaque modification de design par le merchant.
     if (data.appUrl) {
-      const stripUrl = `${data.appUrl.replace(/\/$/, "")}/api/wallet/google/strip/${data.serialNumber}?v=${data.currentStamps}`;
+      const version = data.designVersion
+        ? `${data.currentStamps}-${data.designVersion}`
+        : `${data.currentStamps}`;
+      const stripUrl = `${data.appUrl.replace(/\/$/, "")}/api/wallet/google/strip/${data.serialNumber}?v=${version}`;
       object.heroImage = {
         sourceUri: { uri: stripUrl },
         contentDescription: {
@@ -176,6 +183,7 @@ export async function generateGoogleWalletLink(
     currentPoints: card.currentPoints,
     programType: card.program.type,
     appUrl,
+    designVersion: String(card.program.updatedAt.getTime()),
   });
 
   // Créer le JWT
@@ -354,6 +362,7 @@ export async function updateGoogleWalletObject(
     currentPoints: card.currentPoints,
     programType: card.program.type,
     appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    designVersion: String(card.program.updatedAt.getTime()),
   });
 
   try {
