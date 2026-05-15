@@ -39,14 +39,35 @@ export async function GET(
     return new NextResponse("Invalid logoData format", { status: 500 });
   }
 
-  const contentType = m[1];
   const buf = Buffer.from(m[2], "base64");
 
-  return new NextResponse(new Uint8Array(buf), {
-    headers: {
-      "Content-Type": contentType,
-      // 1 jour de cache (le logo merchant change rarement)
-      "Cache-Control": "public, max-age=86400, s-maxage=86400",
-    },
-  });
+  // Google Wallet cadre le programLogo en CERCLE (avatar). Un logo
+  // rectangulaire ou horizontal (type "BODY PERFORMANCE") se fait couper
+  // sur les côtés. Solution : on rasterise dans un carré 512×512 avec
+  // fit:contain + padding transparent, pour que le logo entier reste
+  // visible à l'intérieur du cercle de Google.
+  try {
+    const sharp = (await import("sharp")).default;
+    const png = await sharp(buf)
+      .resize(512, 512, {
+        fit: "contain",
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+      })
+      .png()
+      .toBuffer();
+    return new NextResponse(new Uint8Array(png), {
+      headers: {
+        "Content-Type": "image/png",
+        "Cache-Control": "public, max-age=86400, s-maxage=86400",
+      },
+    });
+  } catch (err) {
+    console.error("[google/logo] sharp resize failed, serving raw:", err);
+    return new NextResponse(new Uint8Array(buf), {
+      headers: {
+        "Content-Type": m[1],
+        "Cache-Control": "public, max-age=86400, s-maxage=86400",
+      },
+    });
+  }
 }
