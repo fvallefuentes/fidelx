@@ -21,8 +21,9 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [totp, setTotp] = useState("");
-  const [totpRequired, setTotpRequired] = useState(false);
+  const [emailCode, setEmailCode] = useState("");
+  const [emailCodeRequired, setEmailCodeRequired] = useState(false);
+  const [resendInfo, setResendInfo] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +35,7 @@ function LoginForm() {
     const result = await signIn("credentials", {
       email,
       password,
-      totp: totp || undefined,
+      emailCode: emailCode || undefined,
       redirect: false,
     });
 
@@ -53,17 +54,34 @@ function LoginForm() {
         return;
       }
 
-      // 2FA requis : on garde le password et on affiche le champ TOTP
-      if (result.error === "TOTP_REQUIRED") {
-        setTotpRequired(true);
+      // 2FA email : code envoyé, demander à l'utilisateur de le saisir
+      if (result.error === "EMAIL_2FA_REQUIRED") {
+        setEmailCodeRequired(true);
         setError("");
+        setResendInfo(`Un code à 6 chiffres vient d'être envoyé sur ${email}.`);
         setLoading(false);
         return;
       }
 
-      // 2FA code invalide : on garde le formulaire ouvert, message clair
-      if (result.error === "TOTP_INVALID") {
-        setError("Code à deux facteurs incorrect. Réessayez ou utilisez un code de récupération.");
+      // 2FA email : rate limit atteint (3 codes/15min)
+      if (result.error === "EMAIL_2FA_RATE_LIMITED") {
+        setEmailCodeRequired(true);
+        setError("Trop de codes demandés. Patiente 15 minutes avant de réessayer.");
+        setLoading(false);
+        return;
+      }
+
+      // 2FA email : code invalide / expiré / épuisé / inconnu
+      if (result.error?.startsWith("EMAIL_2FA_")) {
+        const reasonMap: Record<string, string> = {
+          EMAIL_2FA_INVALID: "Code incorrect. Réessaie.",
+          EMAIL_2FA_EXPIRED: "Code expiré. Demande un nouveau code.",
+          EMAIL_2FA_EXHAUSTED: "Trop de tentatives. Demande un nouveau code.",
+          EMAIL_2FA_NOT_FOUND: "Aucun code actif. Demande un nouveau code.",
+          EMAIL_2FA_SEND_FAILED: "Impossible d'envoyer l'email. Réessaie plus tard.",
+        };
+        setEmailCodeRequired(true);
+        setError(reasonMap[result.error] ?? "Code à deux facteurs incorrect.");
         setLoading(false);
         return;
       }
@@ -75,6 +93,19 @@ function LoginForm() {
     } else {
       router.push("/dashboard");
     }
+  }
+
+  async function resendCode() {
+    if (!email || !password) return;
+    setResendInfo("Envoi en cours…");
+    await fetch("/api/auth/email-2fa/send-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    }).catch(() => {});
+    setResendInfo(`Un nouveau code a été envoyé sur ${email}.`);
+    setEmailCode("");
+    setError("");
   }
 
   return (
@@ -154,26 +185,45 @@ function LoginForm() {
             />
           </div>
 
-          {totpRequired && (
+          {emailCodeRequired && (
             <div className="auth-field">
-              <label htmlFor="totp" className="auth-label">
-                Code à deux facteurs
+              <label htmlFor="emailCode" className="auth-label">
+                Code reçu par email
               </label>
               <input
-                id="totp"
+                id="emailCode"
                 type="text"
                 className="auth-input"
-                placeholder="000000 ou XXXX-XXXX-XX"
-                value={totp}
-                onChange={(e) => setTotp(e.target.value)}
+                placeholder="000000"
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 autoComplete="one-time-code"
-                inputMode="text"
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
                 autoFocus
                 required
               />
-              <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 6 }}>
-                Code à 6 chiffres de votre app TOTP, ou code de récupération.
-              </p>
+              {resendInfo && (
+                <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 8 }}>
+                  {resendInfo}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={resendCode}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#d4ff4e",
+                  fontSize: 12,
+                  cursor: "pointer",
+                  padding: "8px 0 0",
+                  textDecoration: "underline",
+                }}
+              >
+                Renvoyer un nouveau code
+              </button>
             </div>
           )}
 

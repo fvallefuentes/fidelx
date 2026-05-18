@@ -7,13 +7,14 @@ import { z } from "zod";
 import { parseJsonBody } from "@/lib/api/validation";
 
 /**
- * POST /api/auth/totp/disable
+ * POST /api/auth/email-2fa/enable
  *
- * Désactive le 2FA pour l'utilisateur courant.
- * Exige le mot de passe en plus (defense in depth — un attaquant qui a
- * volé une session ne doit pas pouvoir désactiver le 2FA seul).
+ * Active la 2FA par email pour le user courant.
+ * Exige le mot de passe en plus pour défense en profondeur (un attaquant
+ * qui a volé une session ne peut pas activer le 2FA sans le password).
+ *
+ * Réservé aux ADMIN.
  */
-
 const schema = z.object({
   password: z.string().min(1, "Mot de passe requis"),
 });
@@ -35,16 +36,14 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, passwordHash: true, totpEnabled: true },
+    select: { id: true, passwordHash: true, email2faEnabled: true },
   });
-  if (!user) {
-    return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
-  }
-  if (!user.totpEnabled) {
-    return NextResponse.json({ ok: true, alreadyDisabled: true });
-  }
+  if (!user) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
   if (!user.passwordHash) {
     return NextResponse.json({ error: "Compte sans mot de passe" }, { status: 400 });
+  }
+  if (user.email2faEnabled) {
+    return NextResponse.json({ ok: true, alreadyEnabled: true });
   }
 
   const ok = await bcrypt.compare(parsed.data.password, user.passwordHash);
@@ -54,11 +53,7 @@ export async function POST(req: Request) {
 
   await prisma.user.update({
     where: { id: user.id },
-    data: {
-      totpEnabled: false,
-      totpSecret: null,
-      totpBackupCodes: null as never,
-    },
+    data: { email2faEnabled: true },
   });
 
   return NextResponse.json({ ok: true });

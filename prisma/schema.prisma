@@ -61,6 +61,31 @@ model EmailVerificationCode {
   @@index([expiresAt])
 }
 
+/// Code 2FA par email envoyé à chaque login d'un user qui a email2faEnabled=true.
+/// Distinct de EmailVerificationCode (qui sert à la vérification email à l'inscription)
+/// pour avoir un TTL plus court (10 min vs 24h) et un suivi anti-bruteforce séparé.
+///
+/// Sécurité :
+///  - Code 6 chiffres (= 1M combos, suffisant pour TTL 10min + rate limit 5 tries)
+///  - Stocké en hash sha256, jamais en clair
+///  - Usage unique (usedAt)
+///  - Max 5 tentatives par code (sinon = invalidé pour empêcher brute force)
+model EmailLoginCode {
+  id         String    @id @default(cuid())
+  userId     String
+  codeHash   String    // sha256 hex du code 6 chiffres
+  expiresAt  DateTime
+  usedAt     DateTime?
+  attempts   Int       @default(0)
+  ipPrefix   String?
+  createdAt  DateTime  @default(now())
+
+  user User @relation("UserEmailLoginCode", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
 // Tentative d'inscription via QR code : tracking anti-abus.
 // Chaque POST sur /api/programs/[id]/join est loggé ici, qu'il
 // réussisse ou non, avec le contexte (IP /24, UA, cookie device,
@@ -232,16 +257,12 @@ model User {
   loginLogs           LoginLog[]
   passwordResetTokens PasswordResetToken[]
 
-  // 2FA TOTP (RFC 6238 — compatible Google Authenticator / 1Password / Authy).
-  // Le secret est stocké tel quel : l'accès DB est déjà protégé et chiffrer
-  // les secrets sans HSM ne fait que déplacer le problème (la clé de chiffrement
-  // serait elle-même dans le .env). En cas de compromission DB, on rotate tous
-  // les secrets.
-  totpEnabled     Boolean   @default(false)
-  totpSecret      String?
-  // Hash sha256 des 10 backup codes générés à l'activation. Chacun à usage unique :
-  // utilisé → retiré de la liste. Remplacés par regénération via UI dédiée.
-  totpBackupCodes Json?
+  // 2FA par email : à chaque login, on envoie un code à 6 chiffres sur
+  // l'email du user. Bien plus simple que TOTP (pas d'app à installer)
+  // et suffisant pour des comptes ADMIN sur un SaaS lean. Les codes
+  // eux-mêmes sont stockés dans EmailLoginCode (hashés + TTL court).
+  email2faEnabled  Boolean          @default(false)
+  emailLoginCodes  EmailLoginCode[] @relation("UserEmailLoginCode")
 
   accounts       Account[]
   sessions       Session[]
