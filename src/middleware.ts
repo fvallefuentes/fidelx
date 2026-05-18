@@ -94,11 +94,17 @@ export async function middleware(req: NextRequest) {
   // /r/* (liens parrainage merchant) sont OUVERTS pour que le clic pose
   // le cookie d'attribution avant la redirection (le filleul finira sur
   // /register qui passera par /beta-access avec son cookie intact).
+  // /blog/* est OUVERT pour le SEO : Google doit pouvoir crawler les
+  // articles pendant la phase beta.
+  // /newsletter/* est OUVERT pour que les liens d'email (confirmation,
+  // désabo) fonctionnent sans demander le password beta aux abonnés.
   const betaPassword = process.env.BETA_ACCESS_PASSWORD;
   if (
     betaPassword &&
     !pathname.startsWith("/api/") &&
     !pathname.startsWith("/r/") &&
+    !pathname.startsWith("/blog") &&
+    !pathname.startsWith("/newsletter") &&
     !BETA_GATE_OPEN_PATHS.has(pathname)
   ) {
     const cookie = req.cookies.get(BETA_COOKIE);

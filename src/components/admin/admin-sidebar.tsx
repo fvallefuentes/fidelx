@@ -12,6 +12,7 @@ import {
   LogOut,
   X,
   ScrollText,
+  Mail,
 } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
 
@@ -21,6 +22,7 @@ const navigation = [
   { name: "Statistiques", href: "/admin/stats", icon: BarChart2 },
   { name: "Anti-abus", href: "/admin/abuse", icon: Shield },
   { name: "Audit", href: "/admin/audit", icon: ScrollText },
+  { name: "Newsletter", href: "/admin/newsletter", icon: Mail },
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ];
 

@@ -718,6 +718,49 @@ model MerchantReferralAttribution {
 }
 
 // =============================================
+// NEWSLETTER (capture email merchants intéressés)
+// =============================================
+// Double opt-in obligatoire pour conformité LPD/RGPD :
+//  1. Form public → POST /api/newsletter/subscribe → email avec lien confirm
+//  2. Click sur le lien → GET /api/newsletter/confirm?token=... → confirmedAt set
+// Tant que confirmedAt est null, on NE peut PAS envoyer de newsletter.
+//
+// Le confirmToken est sha256 d'un secret random (jamais stocké en clair).
+// L'unsubscribeToken permet de se désinscrire en 1 clic depuis n'importe
+// quel email (pas besoin d'être connecté).
+
+model NewsletterSubscriber {
+  id                String    @id @default(cuid())
+  email             String    @unique // normalisé (lowercase + trim)
+  locale            String    @default("fr") // fr | de | it | en
+
+  // Source de l'inscription (utile pour les stats)
+  source            String?   // "footer" | "blog" | "register" | "manual"
+  // Référent HTTP au moment de l'inscription (ex: /blog/carte-fidelite-...)
+  referer           String?
+
+  // Tokens hashés (sha256 hex)
+  confirmTokenHash      String?   // expire après 7 jours si pas confirmé
+  confirmTokenExpiresAt DateTime?
+  unsubscribeTokenHash  String    // permanent — utilisé pour 1-click unsub
+
+  // Lifecycle
+  confirmedAt       DateTime? // null = en attente de double opt-in
+  unsubscribedAt    DateTime? // null = encore abonné
+
+  // Anti-abuse
+  ipPrefix          String?
+  userAgent         String?   @db.Text
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([confirmedAt])
+  @@index([unsubscribedAt])
+  @@index([createdAt])
+}
+
+// =============================================
 // AUDIT LOG (actions admin)
 // =============================================
 // Trace immuable de toute action admin sensible : suspend/unsuspend user,

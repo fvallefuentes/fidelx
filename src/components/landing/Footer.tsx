@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import LogoMark from "@/components/landing/LogoMark";
 import { LEGAL_PAGES, PUBLIC_CONTACT_EMAIL } from "@/lib/legal";
 import { useCookiePreferences } from "@/components/cookies/CookiePreferencesProvider";
+import NewsletterForm from "@/components/newsletter/NewsletterForm";
 
 /**
  * Footer global utilisé sur la landing et toutes les pages publiques.
@@ -37,6 +38,15 @@ export default function Footer() {
               >
                 {t("description")}
               </p>
+              <div style={{ marginTop: 20 }}>
+                <h5 style={{ fontSize: 13, margin: "0 0 8px", color: "var(--ink-2)" }}>
+                  Newsletter
+                </h5>
+                <p style={{ fontSize: 12, color: "var(--ink-3)", margin: "0 0 10px", maxWidth: 280 }}>
+                  Articles fidélisation + nouveautés produit. 1-2 emails / mois max, désabo en 1 clic.
+                </p>
+                <NewsletterForm source="footer" />
+              </div>
             </div>
 
             <div>
@@ -53,6 +63,9 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link href="/#faq">FAQ</Link>
+                </li>
+                <li>
+                  <Link href="/blog">Blog</Link>
                 </li>
               </ul>
             </div>
