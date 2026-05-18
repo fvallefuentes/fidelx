@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAdminAction } from "@/lib/admin/audit";
 
 /**
  * POST /api/admin/users/[id]/suspend
@@ -43,7 +44,7 @@ export async function POST(
 
   const target = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, role: true, suspendedAt: true },
+    select: { id: true, email: true, role: true, suspendedAt: true },
   });
   if (!target) {
     return NextResponse.json({ error: "Compte introuvable" }, { status: 404 });
@@ -69,11 +70,22 @@ export async function POST(
       suspendedById: session.user?.id ?? null,
     },
   });
+
+  await logAdminAction({
+    adminId: session.user!.id!,
+    action: "SUSPEND_USER",
+    targetType: "USER",
+    targetId: target.id,
+    targetLabel: target.email,
+    metadata: { reason },
+    req,
+  });
+
   return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await ensureAdmin();
@@ -81,6 +93,11 @@ export async function DELETE(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const { id } = await params;
+
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { email: true },
+  });
 
   await prisma.user.update({
     where: { id },
@@ -90,5 +107,15 @@ export async function DELETE(
       suspendedById: null,
     },
   });
+
+  await logAdminAction({
+    adminId: session.user!.id!,
+    action: "UNSUSPEND_USER",
+    targetType: "USER",
+    targetId: id,
+    targetLabel: target?.email ?? null,
+    req,
+  });
+
   return NextResponse.json({ ok: true });
 }

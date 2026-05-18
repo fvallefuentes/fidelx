@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAdminAction } from "@/lib/admin/audit";
 
 /**
  * POST /api/admin/abuse/block-ip
@@ -85,6 +86,16 @@ export async function POST(req: Request) {
           blockedById: session.user?.id ?? null,
         },
       });
+
+  await logAdminAction({
+    adminId: session.user!.id!,
+    action: "BLOCK_IP",
+    targetType: "IP",
+    targetId: blocked.id,
+    targetLabel: ipPrefix,
+    metadata: { reason, expiresIn, expiresAt },
+    req,
+  });
 
   return NextResponse.json({ ok: true, blocked });
 }

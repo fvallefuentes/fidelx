@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createHash, randomBytes } from "crypto";
+import { logAdminAction } from "@/lib/admin/audit";
 
 /**
  * POST /api/admin/users/[id]/reset-password
@@ -15,7 +16,7 @@ import { createHash, randomBytes } from "crypto";
 const TTL_HOURS = 24;
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
@@ -54,6 +55,16 @@ export async function POST(
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.fidlify.com";
   const resetUrl = `${appUrl}/reset-password?token=${token}`;
+
+  await logAdminAction({
+    adminId: session.user!.id!,
+    action: "RESET_USER_PASSWORD",
+    targetType: "USER",
+    targetId: target.id,
+    targetLabel: target.email,
+    metadata: { ttlHours: TTL_HOURS },
+    req,
+  });
 
   return NextResponse.json({
     ok: true,

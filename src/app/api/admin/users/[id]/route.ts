@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { logAdminAction, type AdminActionType } from "@/lib/admin/audit";
 
 async function checkAdmin() {
   const session = await getServerSession(authOptions);
@@ -144,7 +145,14 @@ export async function PATCH(
 
   const existing = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      plan: true,
+      manualPlanUntil: true,
+      manualPlanReason: true,
+    },
   });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -183,11 +191,52 @@ export async function PATCH(
     },
   });
 
+  // Audit log : on logue séparément chaque dimension modifiée pour un
+  // historique lisible (sinon une seule action "UPDATE_USER" perd le détail).
+  const session = await getServerSession(authOptions);
+  const adminId = session?.user?.id;
+  if (adminId) {
+    const actions: Array<{ action: AdminActionType; meta: Record<string, unknown> }> = [];
+    if (updates.role !== undefined && updates.role !== existing.role) {
+      actions.push({
+        action: "UPDATE_USER_ROLE",
+        meta: { from: existing.role, to: updates.role },
+      });
+    }
+    if (
+      updates.manualPlanUntil !== undefined ||
+      updates.manualPlanReason !== undefined ||
+      (updates.plan !== undefined && updates.plan !== existing.plan)
+    ) {
+      const granted = !!(updates.manualPlanUntil && updates.manualPlanUntil > new Date());
+      actions.push({
+        action: granted ? "GRANT_MANUAL_PLAN" : "REVOKE_MANUAL_PLAN",
+        meta: {
+          plan: updates.plan ?? existing.plan,
+          until: updates.manualPlanUntil ?? null,
+          reason: updates.manualPlanReason ?? null,
+          previousPlan: existing.plan,
+        },
+      });
+    }
+    for (const { action, meta } of actions) {
+      await logAdminAction({
+        adminId,
+        action,
+        targetType: "USER",
+        targetId: existing.id,
+        targetLabel: existing.email,
+        metadata: meta,
+        req,
+      });
+    }
+  }
+
   return NextResponse.json(updated);
 }
 
 export async function DELETE(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await checkAdmin();
@@ -204,6 +253,23 @@ export async function DELETE(
     );
   }
 
+  // Capture label avant suppression pour conserver la trace lisible.
+  const target = await prisma.user.findUnique({
+    where: { id },
+    select: { email: true, role: true, plan: true },
+  });
+
   await prisma.user.delete({ where: { id } });
+
+  await logAdminAction({
+    adminId: session.user!.id!,
+    action: "DELETE_USER",
+    targetType: "USER",
+    targetId: id,
+    targetLabel: target?.email ?? null,
+    metadata: { role: target?.role, plan: target?.plan },
+    req,
+  });
+
   return NextResponse.json({ success: true });
 }

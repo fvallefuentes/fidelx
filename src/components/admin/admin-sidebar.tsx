@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   X,
+  ScrollText,
 } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
 
@@ -19,6 +20,7 @@ const navigation = [
   { name: "Utilisateurs", href: "/admin/users", icon: Users },
   { name: "Statistiques", href: "/admin/stats", icon: BarChart2 },
   { name: "Anti-abus", href: "/admin/abuse", icon: Shield },
+  { name: "Audit", href: "/admin/audit", icon: ScrollText },
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ];
 

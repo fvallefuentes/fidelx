@@ -232,6 +232,17 @@ model User {
   loginLogs           LoginLog[]
   passwordResetTokens PasswordResetToken[]
 
+  // 2FA TOTP (RFC 6238 — compatible Google Authenticator / 1Password / Authy).
+  // Le secret est stocké tel quel : l'accès DB est déjà protégé et chiffrer
+  // les secrets sans HSM ne fait que déplacer le problème (la clé de chiffrement
+  // serait elle-même dans le .env). En cas de compromission DB, on rotate tous
+  // les secrets.
+  totpEnabled     Boolean   @default(false)
+  totpSecret      String?
+  // Hash sha256 des 10 backup codes générés à l'activation. Chacun à usage unique :
+  // utilisé → retiré de la liste. Remplacés par regénération via UI dédiée.
+  totpBackupCodes Json?
+
   accounts       Account[]
   sessions       Session[]
   establishments Establishment[]
@@ -241,6 +252,9 @@ model User {
   // Parrainage B2B (merchant → merchant)
   merchantReferralLink        MerchantReferralLink?         @relation("MerchantReferrer")
   merchantReferralAttribution MerchantReferralAttribution?  @relation("MerchantReferee")
+
+  // Audit log (actions effectuées par cet admin sur d'autres ressources)
+  adminAuditEntries AdminAuditLog[] @relation("AdminAuditActor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -701,4 +715,41 @@ model MerchantReferralAttribution {
 
   @@index([linkId])
   @@index([status])
+}
+
+// =============================================
+// AUDIT LOG (actions admin)
+// =============================================
+// Trace immuable de toute action admin sensible : suspend/unsuspend user,
+// reset password, block/unblock IP, modification de plan, etc.
+// Obligatoire pour conformité LPD/RGPD ("qui a fait quoi quand").
+//
+// Pas de FK ON DELETE sur targetId : on accepte que la cible puisse être
+// supprimée plus tard, le log reste pour traçabilité.
+
+model AdminAuditLog {
+  id         String  @id @default(cuid())
+  adminId    String  // ID de l'admin qui a fait l'action
+  action     String  // Voir AdminActionType côté code (SUSPEND_USER, BLOCK_IP, ...)
+
+  // Cible de l'action
+  targetType String  // "USER" | "IP" | "PROGRAM" | "OTHER"
+  targetId   String? // ID Prisma ou IP/prefix selon targetType
+  targetLabel String? // Label lisible (email du user, IP, etc.) — utile si la cible est supprimée plus tard
+
+  // Détails libres (oldValue/newValue, reason, etc.)
+  metadata   Json?
+
+  // Contexte de la requête admin
+  ipPrefix   String?
+  userAgent  String? @db.Text
+
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AdminAuditActor", fields: [adminId], references: [id], onDelete: NoAction)
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([targetType, targetId])
 }

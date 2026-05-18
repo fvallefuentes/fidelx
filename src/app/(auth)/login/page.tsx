@@ -21,6 +21,8 @@ function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [totp, setTotp] = useState("");
+  const [totpRequired, setTotpRequired] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,6 +34,7 @@ function LoginForm() {
     const result = await signIn("credentials", {
       email,
       password,
+      totp: totp || undefined,
       redirect: false,
     });
 
@@ -39,7 +42,6 @@ function LoginForm() {
       // Cas spécial : email non vérifié → on relance un code et on redirige
       if (result.error.startsWith("EMAIL_NOT_VERIFIED:")) {
         const blockedEmail = result.error.split(":")[1] || email;
-        // Re-déclencher l'envoi du code (silencieux côté UI)
         await fetch("/api/auth/resend-code", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -50,6 +52,22 @@ function LoginForm() {
         router.push(`/verify-email?${params.toString()}`);
         return;
       }
+
+      // 2FA requis : on garde le password et on affiche le champ TOTP
+      if (result.error === "TOTP_REQUIRED") {
+        setTotpRequired(true);
+        setError("");
+        setLoading(false);
+        return;
+      }
+
+      // 2FA code invalide : on garde le formulaire ouvert, message clair
+      if (result.error === "TOTP_INVALID") {
+        setError("Code à deux facteurs incorrect. Réessayez ou utilisez un code de récupération.");
+        setLoading(false);
+        return;
+      }
+
       setError(t("invalidCredentials"));
       setLoading(false);
     } else if (isPaidPlan) {
@@ -135,6 +153,29 @@ function LoginForm() {
               required
             />
           </div>
+
+          {totpRequired && (
+            <div className="auth-field">
+              <label htmlFor="totp" className="auth-label">
+                Code à deux facteurs
+              </label>
+              <input
+                id="totp"
+                type="text"
+                className="auth-input"
+                placeholder="000000 ou XXXX-XXXX-XX"
+                value={totp}
+                onChange={(e) => setTotp(e.target.value)}
+                autoComplete="one-time-code"
+                inputMode="text"
+                autoFocus
+                required
+              />
+              <p style={{ fontSize: 12, color: "var(--ink-3)", marginTop: 6 }}>
+                Code à 6 chiffres de votre app TOTP, ou code de récupération.
+              </p>
+            </div>
+          )}
 
           <button type="submit" className="auth-submit" disabled={loading}>
             {loading ? t("loading") : isPaidPlan ? t("submitPaid") : t("submit")}

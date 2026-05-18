@@ -2,6 +2,10 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
+import {
+  verifyTotpCode,
+  findMatchingBackupHash,
+} from "./auth/totp";
 
 /**
  * Helper : log une tentative de connexion (fire-and-forget).
@@ -103,6 +107,9 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
+        // Code TOTP (6 chiffres) ou backup code (XXXX-XXXX-XX), envoyé en
+        // 2e étape de login uniquement si user.totpEnabled = true.
+        totp: { label: "Code à 6 chiffres", type: "text" },
       },
       async authorize(credentials, req) {
         // Extraction du contexte (IP / UA) pour le log
@@ -185,6 +192,58 @@ export const authOptions: NextAuthOptions = {
             "ACCOUNT_SUSPENDED:" +
               encodeURIComponent(user.suspendedReason || "Contactez l'équipe Fidlify")
           );
+        }
+
+        // 2FA TOTP : si activé, exiger le code après validation du password.
+        // Accepte soit un code TOTP 6 chiffres, soit un backup code à usage
+        // unique (XXXX-XXXX-XX).
+        if (user.totpEnabled && user.totpSecret) {
+          const submitted = (credentials.totp ?? "").trim();
+          if (!submitted) {
+            // Le password était bon, on signale au front qu'il faut afficher
+            // le champ TOTP. Pas de loginLog "fail" — c'est juste une étape.
+            throw new Error("TOTP_REQUIRED");
+          }
+
+          let totpOk = false;
+          let usedBackup = false;
+          let updatedBackup: string[] | null = null;
+
+          // 1. Tente le code TOTP standard (6 chiffres)
+          if (/^\d{6}$/.test(submitted.replace(/\s+/g, ""))) {
+            totpOk = await verifyTotpCode(user.totpSecret, submitted);
+          }
+
+          // 2. Fallback : tente comme backup code (10 chars alphanum)
+          if (!totpOk) {
+            const stored = (user.totpBackupCodes as string[] | null) ?? [];
+            const matched = findMatchingBackupHash(stored, submitted);
+            if (matched) {
+              totpOk = true;
+              usedBackup = true;
+              updatedBackup = stored.filter((h) => h !== matched);
+            }
+          }
+
+          if (!totpOk) {
+            void logLoginAttempt({
+              email: normalizedEmail,
+              userId: user.id,
+              result: "WRONG_PASSWORD", // on réutilise — TOTP fail compte aussi
+              reason: "wrong_totp",
+              ipPrefix,
+              userAgent,
+            });
+            throw new Error("TOTP_INVALID");
+          }
+
+          // Consomme le backup code utilisé (à usage unique)
+          if (usedBackup && updatedBackup) {
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { totpBackupCodes: updatedBackup as never },
+            });
+          }
         }
 
         void logLoginAttempt({
