@@ -28,6 +28,12 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
+  if ((session.user as { role?: string })?.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Le 2FA est réservé aux comptes administrateurs Fidlify." },
+      { status: 403 }
+    );
+  }
 
   const parsed = await parseJsonBody(req, schema);
   if (!parsed.ok) return parsed.response;

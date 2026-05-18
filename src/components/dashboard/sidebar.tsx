@@ -16,7 +16,6 @@ import {
   X,
   BarChart2,
   Gift,
-  Shield,
 } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
 
@@ -29,7 +28,6 @@ const navigation = [
   { key: "campaigns", href: "/dashboard/campaigns", icon: Bell },
   { key: "qrcode", href: "/dashboard/qrcode", icon: QrCode },
   { key: "referral", href: "/dashboard/parrainage", icon: Gift },
-  { key: "security", href: "/dashboard/security", icon: Shield },
   { key: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 

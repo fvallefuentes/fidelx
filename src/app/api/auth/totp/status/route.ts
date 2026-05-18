@@ -12,6 +12,14 @@ export async function GET() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
+  // Le statut TOTP n'est utile qu'aux admins (seuls eux peuvent l'activer).
+  // On retourne 403 pour les autres rôles plutôt que de leur dire "enabled: false".
+  if ((session.user as { role?: string })?.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Le 2FA est réservé aux comptes administrateurs Fidlify." },
+      { status: 403 }
+    );
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },

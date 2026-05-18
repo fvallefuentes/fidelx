@@ -25,6 +25,13 @@ export async function POST() {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
+  // 2FA réservé aux comptes ADMIN : les merchants (USER) et staff n'y ont pas accès.
+  if ((session.user as { role?: string })?.role !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Le 2FA est réservé aux comptes administrateurs Fidlify." },
+      { status: 403 }
+    );
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },

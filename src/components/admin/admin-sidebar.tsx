@@ -13,6 +13,7 @@ import {
   X,
   ScrollText,
   Mail,
+  ShieldCheck,
 } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
 
@@ -23,6 +24,7 @@ const navigation = [
   { name: "Anti-abus", href: "/admin/abuse", icon: Shield },
   { name: "Audit", href: "/admin/audit", icon: ScrollText },
   { name: "Newsletter", href: "/admin/newsletter", icon: Mail },
+  { name: "Sécurité 2FA", href: "/admin/security", icon: ShieldCheck },
   { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ];
 
