@@ -37,13 +37,14 @@ export default function Nav() {
               <span>FIDLIFY</span>
             </Link>
 
-            {/* Desktop links */}
+            {/* Desktop links — URLs absolues pour fonctionner depuis /blog aussi */}
             <div className="nav-links">
-              <a href="#solution">{t("solution")}</a>
-              <a href="#features">{t("features")}</a>
-              <a href="#demo">{t("demo")}</a>
-              <a href="#pricing">{t("pricing")}</a>
-              <a href="#faq">FAQ</a>
+              <Link href="/#solution">{t("solution")}</Link>
+              <Link href="/#features">{t("features")}</Link>
+              <Link href="/#demo">{t("demo")}</Link>
+              <Link href="/#pricing">{t("pricing")}</Link>
+              <Link href="/#faq">FAQ</Link>
+              <Link href="/blog">{t("blog")}</Link>
             </div>
 
             {/* Desktop CTAs */}
@@ -110,11 +111,12 @@ export default function Nav() {
         </div>
 
         <nav className="nav-drawer-links">
-          <a href="#solution" onClick={close}>{t("solution")}</a>
-          <a href="#features" onClick={close}>{t("features")}</a>
-          <a href="#demo" onClick={close}>{t("demo")}</a>
-          <a href="#pricing" onClick={close}>{t("pricing")}</a>
-          <a href="#faq" onClick={close}>FAQ</a>
+          <Link href="/#solution" onClick={close}>{t("solution")}</Link>
+          <Link href="/#features" onClick={close}>{t("features")}</Link>
+          <Link href="/#demo" onClick={close}>{t("demo")}</Link>
+          <Link href="/#pricing" onClick={close}>{t("pricing")}</Link>
+          <Link href="/#faq" onClick={close}>FAQ</Link>
+          <Link href="/blog" onClick={close}>{t("blog")}</Link>
         </nav>
 
         <div className="nav-drawer-cta">

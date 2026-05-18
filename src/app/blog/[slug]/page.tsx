@@ -5,14 +5,15 @@ import {
   getBlogPost,
   getBlogPostMeta,
   listBlogSlugs,
+  listBlogPosts,
 } from "@/lib/blog";
+import Nav from "@/components/landing/Nav";
 import Footer from "@/components/landing/Footer";
 import { SITE_URL, SITE_NAME, DEFAULT_OG_IMAGE } from "@/lib/seo";
 
 export const dynamic = "force-static";
-export const revalidate = 3600; // ISR : revalide 1 fois/h pour les drafts qui passent en publié
+export const revalidate = 3600;
 
-/** Génération statique de toutes les pages article au build. */
 export async function generateStaticParams() {
   const slugs = await listBlogSlugs();
   return slugs.map((slug) => ({ slug }));
@@ -61,7 +62,10 @@ export default async function BlogPostPage({
   const post = await getBlogPost(slug);
   if (!post) notFound();
 
-  // JSON-LD BlogPosting pour rich result Google
+  // Related articles (2 derniers hors article courant)
+  const all = await listBlogPosts();
+  const related = all.filter((p) => p.slug !== slug).slice(0, 2);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -92,70 +96,107 @@ export default async function BlogPostPage({
   };
 
   return (
-    <div className="blog-shell">
-      <header className="blog-header blog-header-article">
-        <div className="wrap">
-          <Link href="/blog" className="blog-back">
-            ← Tous les articles
-          </Link>
-        </div>
-      </header>
+    <div className="landing">
+      <div className="ambient" />
+      <div className="grid-overlay" />
+      <div style={{ position: "relative", zIndex: 1 }}>
+        <Nav />
 
-      <article className="wrap blog-article">
-        <div className="blog-article-meta">
-          <time dateTime={post.date}>
-            {new Date(post.date).toLocaleDateString("fr-CH", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
-          </time>
-          <span>·</span>
-          <span>{post.readingTimeMin} min de lecture</span>
-          {post.author && (
-            <>
-              <span>·</span>
-              <span>Par {post.author}</span>
-            </>
-          )}
-        </div>
+        <article className="blog-article">
+          <div className="wrap">
+            <div className="blog-article-head">
+              <Link href="/blog" className="blog-back">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5" />
+                  <path d="m12 19-7-7 7-7" />
+                </svg>
+                Tous les articles
+              </Link>
 
-        <h1 className="blog-article-title">{post.title}</h1>
-        <p className="blog-article-desc">{post.description}</p>
+              <div className="blog-article-meta">
+                <time dateTime={post.date}>
+                  {new Date(post.date).toLocaleDateString("fr-CH", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+                <span className="blog-meta-sep">·</span>
+                <span>{post.readingTimeMin} min de lecture</span>
+                {post.author && (
+                  <>
+                    <span className="blog-meta-sep">·</span>
+                    <span>Par {post.author}</span>
+                  </>
+                )}
+              </div>
 
-        {post.tags && post.tags.length > 0 && (
-          <div className="blog-article-tags">
-            {post.tags.map((t) => (
-              <span key={t} className="blog-tag">
-                #{t}
-              </span>
-            ))}
+              <h1 className="blog-article-title">{post.title}</h1>
+              <p className="blog-article-desc">{post.description}</p>
+
+              {post.tags && post.tags.length > 0 && (
+                <div className="blog-article-tags">
+                  {post.tags.map((t) => (
+                    <span key={t} className="blog-tag">
+                      #{t}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div
+              className="blog-prose"
+              dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+            />
+
+            <div className="blog-article-cta">
+              <h3>Prêt à digitaliser votre fidélité ?</h3>
+              <p>
+                Créez votre 1ère carte digitale en 3 minutes. Apple Wallet +
+                Google Wallet inclus. Plan gratuit pour démarrer.
+              </p>
+              <Link href="/register" className="btn btn-primary blog-cta-btn">
+                Démarrer gratuitement
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14" />
+                  <path d="m13 5 7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+
+            {related.length > 0 && (
+              <aside className="blog-related">
+                <h3>Articles à lire ensuite</h3>
+                <ul>
+                  {related.map((r) => (
+                    <li key={r.slug}>
+                      <Link href={`/blog/${r.slug}`} className="blog-related-card">
+                        <span className="blog-related-date">
+                          {new Date(r.date).toLocaleDateString("fr-CH", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                        <span className="blog-related-title">{r.title}</span>
+                        <span className="blog-related-desc">{r.description}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </aside>
+            )}
           </div>
-        )}
+        </article>
 
-        <div
-          className="blog-prose"
-          dangerouslySetInnerHTML={{ __html: post.contentHtml }}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
 
-        <div className="blog-article-cta">
-          <h3>Prêt à digitaliser votre fidélité ?</h3>
-          <p>
-            Créez votre 1ère carte digitale en 3 minutes. Apple Wallet + Google
-            Wallet inclus. Plan gratuit pour démarrer.
-          </p>
-          <Link href="/register" className="blog-cta-btn">
-            Démarrer gratuitement →
-          </Link>
-        </div>
-      </article>
-
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }
