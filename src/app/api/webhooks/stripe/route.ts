@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe, STRIPE_PLAN_CODE_MAP } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import type Stripe from "stripe";
+import { trackServerEvent, identifyServerUser } from "@/lib/analytics/posthog-server";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,12 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
   const periodStart = rawStart ? new Date(rawStart * 1000) : null;
   const periodEnd   = rawEnd   ? new Date(rawEnd   * 1000) : null;
 
+  // Capture l'ancien plan pour détecter upgrade/downgrade
+  const before = await prisma.user.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true, plan: true },
+  });
+
   await prisma.user.updateMany({
     where: { stripeCustomerId: customerId },
     data: {
@@ -97,10 +104,36 @@ async function handleSubscriptionUpsert(sub: Stripe.Subscription) {
       ...(plan ? { plan: plan as never } : {}),
     },
   });
+
+  // Analytics : track plan changes (upgrade / downgrade)
+  if (before?.id && plan && plan !== before.plan) {
+    const isUpgrade = planRank(plan) > planRank(before.plan);
+    void trackServerEvent(before.id, isUpgrade ? "plan.upgraded" : "plan.downgraded", {
+      from: before.plan,
+      to: plan,
+      priceId,
+    });
+    void identifyServerUser(before.id, { plan });
+  }
+}
+
+function planRank(plan: string | null | undefined): number {
+  const order: Record<string, number> = {
+    FREE: 0,
+    ESSENTIAL: 1,
+    GROWTH: 2,
+    MULTI_SITE: 3,
+  };
+  return order[plan ?? "FREE"] ?? 0;
 }
 
 async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
   const customerId = sub.customer as string;
+
+  const user = await prisma.user.findFirst({
+    where: { stripeCustomerId: customerId },
+    select: { id: true, plan: true },
+  });
 
   await prisma.user.updateMany({
     where: { stripeCustomerId: customerId },
@@ -111,6 +144,11 @@ async function handleSubscriptionDeleted(sub: Stripe.Subscription) {
       stripeCurrentPeriodEnd: null,
     },
   });
+
+  if (user?.id) {
+    void trackServerEvent(user.id, "plan.cancelled", { from: user.plan });
+    void identifyServerUser(user.id, { plan: "FREE" });
+  }
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
@@ -120,6 +158,11 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
 
   // TODO: envoyer un email au commerçant
   console.warn(`[stripe] payment failed for user ${user.id} (${user.email})`);
+
+  void trackServerEvent(user.id, "payment.failed", {
+    invoiceId: invoice.id,
+    amountDue: invoice.amount_due,
+  });
 }
 
 /**

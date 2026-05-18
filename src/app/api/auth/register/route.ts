@@ -10,6 +10,7 @@ import {
   buildClearReferralCookieHeader,
   readReferralCookie,
 } from "@/lib/referral/merchant";
+import { trackServerEvent } from "@/lib/analytics/posthog-server";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Nom requis").max(120, "Nom trop long"),
@@ -59,6 +60,12 @@ export async function POST(req: Request) {
         language,
       },
       select: { id: true },
+    });
+
+    // Analytics : événement signup (email pas encore vérifié à ce stade)
+    void trackServerEvent(created.id, "merchant.signed_up", {
+      language,
+      hasRef: !!refFromBody,
     });
 
     // ── Parrainage B2B ────────────────────────────────────────────

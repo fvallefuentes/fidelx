@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
+import { trackServerEvent } from "@/lib/analytics/posthog-server";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -62,6 +63,13 @@ export async function POST(req: Request) {
       metadata: { cardId: card.id },
     });
   }
+
+  // Analytics : récompense réclamée = signal métier majeur (= cycle complet)
+  void trackServerEvent(card.program.merchant.id, "reward.claimed", {
+    cardId: card.id,
+    programId: card.program.id,
+    isFirstReward,
+  });
 
   return NextResponse.json({
     success: true,

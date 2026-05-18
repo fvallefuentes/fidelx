@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPlanLimits, type ProgramType } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
+import { trackServerEvent } from "@/lib/analytics/posthog-server";
 import type { Prisma } from "@/generated/prisma/client";
 import type { RewardType } from "@/generated/prisma/enums";
 
@@ -128,6 +129,14 @@ export async function POST(req: Request) {
         : undefined,
     },
     include: { rewards: true },
+  });
+
+  void trackServerEvent(session.user.id, "program.created", {
+    programId: program.id,
+    type,
+    rewardsCount: program.rewards.length,
+    googleReviewEnabled,
+    hasEstablishment: !!establishmentId,
   });
 
   return NextResponse.json(program, { status: 201 });

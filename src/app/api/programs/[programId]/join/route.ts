@@ -11,6 +11,7 @@ import {
 } from "@/lib/anti-abuse/fingerprint";
 import { evaluateRateLimits } from "@/lib/anti-abuse/rate-limit";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
+import { trackServerEvent } from "@/lib/analytics/posthog-server";
 
 export async function POST(
   req: Request,
@@ -260,6 +261,15 @@ export async function POST(
       currentPoints: referralBonus,
       // status: PENDING (default)
     },
+  });
+
+  // Analytics : un client a rejoint un programme. Distinct ID = merchantId
+  // pour attribuer la métrique au merchant. clientId reste anonyme.
+  void trackServerEvent(program.merchantId, "card.distributed", {
+    programId,
+    cardId: card.id,
+    programType: program.type,
+    hasReferralBonus: referralBonus > 0,
   });
 
   if (referralBonus > 0) {

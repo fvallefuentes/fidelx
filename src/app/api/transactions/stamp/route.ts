@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getPlanLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { parseJsonBody } from "@/lib/api/validation";
+import { trackServerEvent } from "@/lib/analytics/posthog-server";
 
 const stampSchema = z.object({
   serialNumber: z.string().trim().min(1, "Numéro de série requis"),
@@ -208,6 +209,15 @@ export async function POST(req: Request) {
       value: stampCount,
       amountSpent: amountSpent || undefined,
     },
+  });
+
+  // Analytics : un tampon = signal d'engagement très important (= LE moment où
+  // le merchant utilise réellement Fidlify en boutique avec un vrai client).
+  void trackServerEvent(session.user.id, "transaction.stamp_added", {
+    programType: card.program.type,
+    cardId: card.id,
+    stampCount,
+    hasAmount: !!amountSpent,
   });
 
   try {
