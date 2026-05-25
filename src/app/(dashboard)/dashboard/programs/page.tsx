@@ -535,6 +535,7 @@ function CreateProgramForm({
   const [logoError, setLogoError] = useState<string>("");
   const [googleReviewEnabled, setGoogleReviewEnabled] = useState(false);
   const [googleReviewBonus, setGoogleReviewBonus] = useState(1);
+  const [googleReviewMinVisits, setGoogleReviewMinVisits] = useState(3);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -611,6 +612,7 @@ function CreateProgramForm({
             : [],
         googleReviewEnabled,
         googleReviewBonus: googleReviewEnabled ? googleReviewBonus : 0,
+        googleReviewMinVisits: googleReviewEnabled ? googleReviewMinVisits : 3,
       }),
     });
 
@@ -823,22 +825,49 @@ function CreateProgramForm({
                 className="rounded"
               />
               <span className="text-sm font-medium">
-                Bonus pour avis Google
+                Récompenser un avis Google
               </span>
             </label>
             {googleReviewEnabled && (
-              <div className="ml-6 space-y-2">
-                <label className="text-sm text-gray-500">
-                  Tampons/points bonus par avis
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={5}
-                  value={googleReviewBonus}
-                  onChange={(e) => setGoogleReviewBonus(parseInt(e.target.value))}
-                  className="w-24"
-                />
+              <div className="ml-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-500">
+                    Bonus par avis ({type === "POINTS" || type === "CASHBACK" ? "points" : "tampons"})
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={googleReviewBonus}
+                    onChange={(e) => setGoogleReviewBonus(parseInt(e.target.value) || 1)}
+                    className="w-24"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Type déterminé automatiquement selon le programme :{" "}
+                    {type === "POINTS" || type === "CASHBACK" ? "points" : "tampons"}.
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-500">
+                    Proposer l&apos;avis après combien de visites ?
+                  </label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={googleReviewMinVisits}
+                    onChange={(e) => setGoogleReviewMinVisits(parseInt(e.target.value) || 1)}
+                    className="w-24"
+                  />
+                  <p className="text-xs text-gray-400">
+                    Le client ne verra la proposition qu&apos;après ce nombre de visites.
+                  </p>
+                </div>
+                <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2.5">
+                  ⚠️ Nécessite un <strong>Google Place ID</strong> configuré sur votre
+                  établissement (Paramètres). La validation se fait manuellement
+                  depuis l&apos;onglet « Avis Google ».
+                </div>
               </div>
             )}
           </div>

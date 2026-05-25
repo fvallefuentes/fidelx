@@ -6497,3 +6497,22 @@ html, body { overflow-x: clip; }
 .newsletter-form-msg.success {
   color: #d4ff4e;
 }
+
+/* ─────────────── AVIS GOOGLE (page client) ─────────────── */
+.review-cta {
+  margin-top: 8px;
+}
+.review-btn {
+  width: 100%;
+  justify-content: center;
+}
+.review-done {
+  margin-top: 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #2e7d32;
+  background: rgba(52, 168, 83, 0.1);
+  border: 1px solid rgba(52, 168, 83, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+}

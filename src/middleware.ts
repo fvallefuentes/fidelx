@@ -105,6 +105,8 @@ export async function middleware(req: NextRequest) {
     !pathname.startsWith("/r/") &&
     !pathname.startsWith("/blog") &&
     !pathname.startsWith("/newsletter") &&
+    !pathname.startsWith("/avis/") &&
+    !pathname.startsWith("/carte/") &&
     !BETA_GATE_OPEN_PATHS.has(pathname)
   ) {
     const cookie = req.cookies.get(BETA_COOKIE);

@@ -567,9 +567,10 @@ model GoogleReviewRequest {
 }
 
 enum ReviewStatus {
-  SENT
-  CONFIRMED
-  EXPIRED
+  SENT       // Le client a cliqué "J'ai laissé un avis" → en attente de validation merchant
+  CONFIRMED  // Merchant a vérifié l'avis sur Google + bonus crédité
+  REJECTED   // Merchant n'a pas trouvé l'avis → bonus refusé
+  EXPIRED    // Demande trop ancienne, jamais traitée
 }
 
 // =============================================
