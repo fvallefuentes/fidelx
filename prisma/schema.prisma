@@ -439,6 +439,7 @@ model LoyaltyCard {
   lastMessageAt  DateTime?
   lastCampaignLogo String?  @db.Text // data URL (base64) du logo override pour la dernière campagne
   merchantNotes  String?    @db.Text // notes libres du commerçant sur ce client (drill-down)
+  reviewInvitedAt DateTime? // moment où on a invité ce client à laisser un avis Google (anti-spam : 1 seule invitation)
 
   client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
   program       LoyaltyProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)

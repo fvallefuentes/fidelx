@@ -256,6 +256,100 @@ export async function confirmReviewRequest(
   return { ok: true };
 }
 
+/* ============================================================
+ * INVITATION AUTO (au moment où le client atteint le seuil)
+ * ============================================================ */
+
+/**
+ * À appeler après l'ajout d'un tampon/point. Si le client vient d'atteindre
+ * le seuil de visites configuré ET qu'il n'a pas déjà été invité, on lui
+ * pousse une notification Wallet (Apple + Google) l'invitant à laisser un
+ * avis Google, avec le lien vers /avis/[serialNumber].
+ *
+ * Idempotent via le flag reviewInvitedAt : 1 seule invitation par carte
+ * (sinon on spammerait à chaque visite après le seuil).
+ *
+ * @returns true si une invitation a été envoyée
+ */
+export async function maybeInviteToReview(cardId: string): Promise<boolean> {
+  const card = await prisma.loyaltyCard.findUnique({
+    where: { id: cardId },
+    select: {
+      id: true,
+      serialNumber: true,
+      totalVisits: true,
+      reviewInvitedAt: true,
+      program: {
+        select: {
+          type: true,
+          googleReviewEnabled: true,
+          googleReviewBonus: true,
+          googleReviewMinVisits: true,
+          establishment: { select: { googlePlaceId: true } },
+        },
+      },
+    },
+  });
+
+  if (!card) return false;
+  const p = card.program;
+
+  // Conditions d'invitation
+  if (!p.googleReviewEnabled) return false;
+  if (!p.establishment?.googlePlaceId) return false;
+  if (card.reviewInvitedAt) return false; // déjà invité
+  if (card.totalVisits < p.googleReviewMinVisits) return false;
+
+  // Pas d'invitation si déjà confirmé (bonus déjà reçu)
+  const confirmed = await prisma.googleReviewRequest.findFirst({
+    where: { cardId: card.id, status: "CONFIRMED" },
+    select: { id: true },
+  });
+  if (confirmed) return false;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.fidlify.com";
+  const bonusType = bonusTypeForProgram(p.type);
+  const bonusLabel =
+    bonusType === "stamps"
+      ? `${p.googleReviewBonus} tampon${p.googleReviewBonus > 1 ? "s" : ""}`
+      : `${p.googleReviewBonus} point${p.googleReviewBonus > 1 ? "s" : ""}`;
+
+  const reviewLink = `${appUrl.replace(/\/$/, "")}/avis/${card.serialNumber}`;
+  const message = `Laissez un avis Google et gagnez ${bonusLabel} ! ${reviewLink}`;
+
+  // 1. Marque la carte comme invitée + stocke le message (affiché au verso du pass)
+  await prisma.loyaltyCard.update({
+    where: { id: card.id },
+    data: {
+      reviewInvitedAt: new Date(),
+      lastMessage: message,
+      lastMessageAt: new Date(),
+    },
+  });
+
+  // 2. Push Apple (APNs background → refetch) + sync Google object
+  try {
+    const { notifyPassUpdate } = await import("@/lib/wallet/push");
+    await notifyPassUpdate(card.id);
+  } catch (e) {
+    console.error("[review-invite] notifyPassUpdate failed:", e);
+  }
+
+  // 3. Notification visible Google Wallet (addMessage = vraie notif Android)
+  try {
+    const { sendGoogleWalletMessage } = await import("@/lib/wallet/google");
+    await sendGoogleWalletMessage(
+      card.serialNumber,
+      `Gagnez ${bonusLabel} 🎁`,
+      message
+    );
+  } catch (e) {
+    console.error("[review-invite] sendGoogleWalletMessage failed:", e);
+  }
+
+  return true;
+}
+
 /** Rejette une demande d'avis (le merchant n'a pas trouvé l'avis). */
 export async function rejectReviewRequest(
   requestId: string,
