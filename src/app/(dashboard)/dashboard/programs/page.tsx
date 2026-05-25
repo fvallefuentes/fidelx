@@ -162,12 +162,45 @@ export default function ProgramsPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [previewingProgram, setPreviewingProgram] = useState<Program | null>(null);
+  const [togglingReviewId, setTogglingReviewId] = useState<string | null>(null);
 
   async function fetchPrograms() {
     const res = await fetch("/api/programs");
     const data = await res.json();
     setPrograms(data);
     setLoading(false);
+  }
+
+  /**
+   * Toggle rapide de l'avis Google directement depuis la liste (sans ouvrir
+   * la modal). Update optimiste de l'état local + PATCH.
+   */
+  async function toggleReview(program: Program) {
+    const next = !program.googleReviewEnabled;
+    setTogglingReviewId(program.id);
+    // Optimiste
+    setPrograms((prev) =>
+      prev.map((p) =>
+        p.id === program.id ? { ...p, googleReviewEnabled: next } : p
+      )
+    );
+    try {
+      const res = await fetch(`/api/programs/${program.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ googleReviewEnabled: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      // Rollback si échec
+      setPrograms((prev) =>
+        prev.map((p) =>
+          p.id === program.id ? { ...p, googleReviewEnabled: !next } : p
+        )
+      );
+    } finally {
+      setTogglingReviewId(null);
+    }
   }
 
   useEffect(() => {
@@ -285,11 +318,56 @@ export default function ProgramsPage() {
                       ))}
                     </div>
                   )}
-                  {program.googleReviewEnabled && (
-                    <div className="mt-3 flex items-center gap-1 text-xs text-green-600">
-                      <Award className="h-3 w-3" />
-                      Bonus avis Google activé
+                  {/* Toggle rapide Avis Google */}
+                  <div className="mt-3 flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
+                    <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                      <Award className="h-3.5 w-3.5 text-amber-500" />
+                      <span>
+                        Bonus avis Google
+                        <span className={`ml-1.5 font-medium ${program.googleReviewEnabled ? "text-green-600" : "text-gray-400"}`}>
+                          {program.googleReviewEnabled ? "Activé" : "Désactivé"}
+                        </span>
+                      </span>
                     </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={program.googleReviewEnabled}
+                      disabled={togglingReviewId === program.id}
+                      onClick={() => toggleReview(program)}
+                      title={program.googleReviewEnabled ? "Désactiver" : "Activer"}
+                      style={{
+                        position: "relative",
+                        width: 38,
+                        height: 22,
+                        borderRadius: 999,
+                        border: "none",
+                        cursor: togglingReviewId === program.id ? "wait" : "pointer",
+                        background: program.googleReviewEnabled ? "#22c55e" : "#d1d5db",
+                        transition: "background 0.2s",
+                        opacity: togglingReviewId === program.id ? 0.6 : 1,
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          position: "absolute",
+                          top: 2,
+                          left: program.googleReviewEnabled ? 18 : 2,
+                          width: 18,
+                          height: 18,
+                          borderRadius: "50%",
+                          background: "#fff",
+                          transition: "left 0.2s",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                        }}
+                      />
+                    </button>
+                  </div>
+                  {program.googleReviewEnabled && !program.establishmentId && (
+                    <p className="mt-1.5 text-xs text-amber-600">
+                      ⚠️ Liez un établissement avec un Google Place ID (Modifier le design) pour que les avis fonctionnent.
+                    </p>
                   )}
                   <div className="mt-4 flex gap-2 flex-wrap items-center">
                     <button
