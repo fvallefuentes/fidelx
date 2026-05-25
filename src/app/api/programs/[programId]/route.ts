@@ -53,6 +53,12 @@ export async function PATCH(
       logoData?: string | null;
       description?: string;
     };
+    // Avis Google — modifiables sur un programme existant (ne casse aucune
+    // progression de carte, contrairement au type/maxStamps).
+    googleReviewEnabled?: boolean;
+    googleReviewBonus?: number;
+    googleReviewMinVisits?: number;
+    establishmentId?: string | null;
   };
 
   // Gating : logo personnalisé réservé aux plans payants
@@ -103,6 +109,20 @@ export async function PATCH(
     }
   }
 
+  // Validation de l'établissement : doit appartenir au merchant.
+  let establishmentUpdate: string | null | undefined = undefined;
+  if (body.establishmentId !== undefined) {
+    if (body.establishmentId === null || body.establishmentId === "") {
+      establishmentUpdate = null;
+    } else {
+      const est = await prisma.establishment.findFirst({
+        where: { id: body.establishmentId, merchantId: session.user.id },
+        select: { id: true },
+      });
+      establishmentUpdate = est ? est.id : undefined; // ignore si pas au merchant
+    }
+  }
+
   const updated = await prisma.loyaltyProgram.update({
     where: { id: programId },
     data: {
@@ -110,6 +130,18 @@ export async function PATCH(
         ? body.name.trim()
         : program.name,
       cardDesign: nextDesign as Prisma.InputJsonValue,
+      ...(typeof body.googleReviewEnabled === "boolean"
+        ? { googleReviewEnabled: body.googleReviewEnabled }
+        : {}),
+      ...(typeof body.googleReviewBonus === "number"
+        ? { googleReviewBonus: Math.max(0, Math.min(100, Math.round(body.googleReviewBonus))) }
+        : {}),
+      ...(typeof body.googleReviewMinVisits === "number"
+        ? { googleReviewMinVisits: Math.max(1, Math.min(100, Math.round(body.googleReviewMinVisits))) }
+        : {}),
+      ...(establishmentUpdate !== undefined
+        ? { establishmentId: establishmentUpdate }
+        : {}),
     },
     select: {
       id: true,

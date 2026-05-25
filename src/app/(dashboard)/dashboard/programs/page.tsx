@@ -17,6 +17,9 @@ interface Program {
   config: Record<string, unknown>;
   cardDesign: Record<string, unknown>;
   googleReviewEnabled: boolean;
+  googleReviewBonus?: number;
+  googleReviewMinVisits?: number;
+  establishmentId?: string | null;
   rewards: { id: string; name: string; threshold: number; rewardType: string }[];
   _count: { cards: number };
 }
@@ -934,6 +937,24 @@ function EditProgramDesignModal({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Avis Google
+  const [reviewEnabled, setReviewEnabled] = useState(program.googleReviewEnabled);
+  const [reviewBonus, setReviewBonus] = useState(program.googleReviewBonus ?? 2);
+  const [reviewMinVisits, setReviewMinVisits] = useState(program.googleReviewMinVisits ?? 3);
+  const [establishmentId, setEstablishmentId] = useState(program.establishmentId ?? "");
+  const [establishments, setEstablishments] = useState<
+    { id: string; name: string; googlePlaceId: string }[]
+  >([]);
+  const isPointsType = program.type === "POINTS" || program.type === "CASHBACK";
+
+  // Charge les établissements du merchant pour le sélecteur
+  useEffect(() => {
+    fetch("/api/merchants/settings")
+      .then((r) => r.json())
+      .then((d) => setEstablishments(d.establishments ?? []))
+      .catch(() => {});
+  }, []);
+
   // Bloque scroll body + escape pour fermer
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -998,6 +1019,10 @@ function EditProgramDesignModal({
           // de toute façon, mais évite un round-trip d'erreur)
           ...(isFree ? {} : { logoData: logoData || null }),
         },
+        googleReviewEnabled: reviewEnabled,
+        googleReviewBonus: reviewBonus,
+        googleReviewMinVisits: reviewMinVisits,
+        establishmentId: establishmentId || null,
       }),
     });
 
@@ -1185,6 +1210,77 @@ function EditProgramDesignModal({
                 <ColorPicker label="✓ tampon" value={stampCheckColor} onChange={setStampCheckColor} />
                 <ColorPicker label="Cercle vide" value={stampEmptyColor} onChange={setStampEmptyColor} />
                 <ColorPicker label="Étiquettes" value={labelColor} onChange={setLabelColor} />
+              </div>
+
+              {/* Avis Google */}
+              <div
+                className="space-y-3 rounded-lg p-3"
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={reviewEnabled}
+                    onChange={(e) => setReviewEnabled(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="text-sm font-medium">⭐ Récompenser un avis Google</span>
+                </label>
+
+                {reviewEnabled && (
+                  <div className="space-y-3 pl-6">
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500">
+                        Bonus par avis ({isPointsType ? "points" : "tampons"})
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={reviewBonus}
+                        onChange={(e) => setReviewBonus(parseInt(e.target.value) || 1)}
+                        className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500">
+                        Proposer après combien de visites ?
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={reviewMinVisits}
+                        onChange={(e) => setReviewMinVisits(parseInt(e.target.value) || 1)}
+                        className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500">
+                        Établissement (pour le lien d&apos;avis Google)
+                      </label>
+                      <select
+                        value={establishmentId}
+                        onChange={(e) => setEstablishmentId(e.target.value)}
+                        className="w-full rounded border border-gray-300 px-2 py-1 text-sm bg-white"
+                      >
+                        <option value="">— Aucun —</option>
+                        {establishments.map((est) => (
+                          <option key={est.id} value={est.id}>
+                            {est.name} {est.googlePlaceId ? "✓ Place ID" : "⚠️ sans Place ID"}
+                          </option>
+                        ))}
+                      </select>
+                      {establishmentId &&
+                        !establishments.find((e) => e.id === establishmentId)?.googlePlaceId && (
+                          <p className="text-xs text-amber-600">
+                            ⚠️ Cet établissement n&apos;a pas de Google Place ID. Ajoutez-le dans
+                            Paramètres → établissement, sinon les avis ne fonctionneront pas.
+                          </p>
+                        )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
