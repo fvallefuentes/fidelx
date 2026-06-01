@@ -6516,3 +6516,76 @@ html, body { overflow-x: clip; }
   border-radius: 10px;
   padding: 12px 14px;
 }
+
+/* ─────────────── JOIN-ALL (multi-programmes) ─────────────── */
+.join-all-programs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.join-all-prog {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  cursor: pointer;
+  background: #fafafa;
+  transition: border-color 0.15s, background 0.15s;
+}
+.join-all-prog:hover {
+  border-color: rgba(212, 255, 78, 0.5);
+  background: #fff;
+}
+.join-all-prog.checked {
+  border-color: #6dba00;
+  background: rgba(212, 255, 78, 0.08);
+}
+.join-all-prog input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #6dba00;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.join-all-prog-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.join-all-prog-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: #0a0d04;
+}
+.join-all-prog-reward {
+  font-size: 12px;
+  color: #5a5e54;
+}
+
+/* Page de confirmation : liste de cartes avec liens Wallet */
+.join-all-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin: 20px 0 8px;
+}
+.join-all-card-row {
+  padding: 14px 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: #fafafa;
+}
+.join-all-card-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #0a0d04;
+}
+.join-all-existing {
+  font-weight: 400;
+  font-size: 12px;
+  color: #888;
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useSession } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -9,7 +10,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, QrCode, Copy, Check } from "lucide-react";
+import { Download, QrCode, Copy, Check, Layers } from "lucide-react";
 import { useTranslations } from "next-intl";
 import QRCode from "qrcode";
 
@@ -25,12 +26,55 @@ interface Step {
 
 export default function QRCodePage() {
   const t = useTranslations("Dashboard.qrcode");
+  const { data: session } = useSession();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const merchantId = (session?.user as any)?.merchantId || (session?.user as any)?.id || "";
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgram, setSelectedProgram] = useState<string>("");
   const [qrDataUrl, setQrDataUrl] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Multi-programmes (1 QR = N cartes)
+  const [allQrDataUrl, setAllQrDataUrl] = useState<string>("");
+  const [copiedAll, setCopiedAll] = useState(false);
+  const allCanvasRef = useRef<HTMLCanvasElement>(null);
   const steps = t.raw("steps") as Step[];
+
+  const joinAllUrl = merchantId
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/join-all/${merchantId}`
+    : "";
+
+  useEffect(() => {
+    if (!merchantId || programs.length < 2) return;
+    const url = `${window.location.origin}/join-all/${merchantId}`;
+    QRCode.toDataURL(url, {
+      width: 512,
+      margin: 2,
+      color: { dark: "#0a0d04", light: "#ffffff" },
+    }).then(setAllQrDataUrl);
+    if (allCanvasRef.current) {
+      QRCode.toCanvas(allCanvasRef.current, url, {
+        width: 300,
+        margin: 2,
+        color: { dark: "#0a0d04", light: "#ffffff" },
+      });
+    }
+  }, [merchantId, programs.length]);
+
+  function handleDownloadAll() {
+    if (!allQrDataUrl) return;
+    const link = document.createElement("a");
+    link.download = `fidelify-qrcode-tous-programmes.png`;
+    link.href = allQrDataUrl;
+    link.click();
+  }
+
+  function handleCopyAll() {
+    navigator.clipboard.writeText(joinAllUrl);
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2000);
+  }
 
   useEffect(() => {
     fetch("/api/programs")
@@ -161,6 +205,59 @@ export default function QRCodePage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* QR multi-programmes — affiché seulement si 2+ programmes */}
+      {programs.length >= 2 && merchantId && (
+        <Card className="border-2 border-amber-200 bg-amber-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Layers className="h-5 w-5 text-amber-600" />
+              QR multi-programmes
+            </CardTitle>
+            <CardDescription>
+              Un seul QR qui propose à vos clients de rejoindre <strong>tous vos programmes
+              en une seule fois</strong>. Ils cochent les cartes qu&apos;ils veulent.
+              Parfait pour la caisse ou la vitrine.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="flex flex-col items-center gap-3">
+              <canvas ref={allCanvasRef} className="rounded-xl" />
+              <div className="flex gap-2 w-full">
+                <Button onClick={handleDownloadAll} className="flex-1">
+                  <Download className="mr-2 h-4 w-4" />
+                  Télécharger
+                </Button>
+                <Button variant="outline" onClick={handleCopyAll} className="flex-1">
+                  {copiedAll ? (
+                    <Check className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Copy className="mr-2 h-4 w-4" />
+                  )}
+                  {copiedAll ? "Copié" : "Copier"}
+                </Button>
+              </div>
+              <div className="w-full rounded-lg bg-white p-2.5">
+                <p className="text-xs text-gray-500 break-all font-mono">{joinAllUrl}</p>
+              </div>
+            </div>
+            <div className="text-sm text-gray-700 space-y-2.5">
+              <p className="font-medium">Comment ça marche</p>
+              <ul className="list-disc list-inside space-y-1.5 text-gray-600 text-sm">
+                <li>Le client scanne ce QR</li>
+                <li>Il voit la liste de tous vos programmes</li>
+                <li>Il décoche ceux qu&apos;il ne veut pas (tout coché par défaut)</li>
+                <li>Il remplit son prénom + email/téléphone</li>
+                <li>Il reçoit autant de cartes Wallet que de programmes cochés</li>
+              </ul>
+              <p className="text-xs text-gray-500 pt-2">
+                💡 Pratique pour un café qui a une carte café, une carte croissant, une
+                carte sandwich — le client peut tout récupérer en un scan.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
