@@ -82,6 +82,7 @@ export default function AdminAuditPage() {
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     load(null, true).finally(() => setLoading(false));
   }, [load]);

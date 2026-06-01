@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X, Eye } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive } from "lucide-react";
 import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
 
 interface Program {
@@ -226,13 +226,18 @@ export default function ProgramsPage() {
   async function deleteProgram(id: string) {
     setDeletingId(id);
     const res = await fetch(`/api/programs/${id}`, { method: "DELETE" });
+    const data = await res.json().catch(() => ({}));
     setDeletingId(null);
     setConfirmDeleteId(null);
     if (res.ok) {
+      if (data.action === "archived") {
+        alert(
+          `Programme archivÃ©. ${data.expiredCards ?? 0} carte(s) client ont Ã©tÃ© rendues obsolÃ¨tes.`
+        );
+      }
       fetchPrograms();
     } else {
-      const data = await res.json();
-      alert(data.error || "Erreur lors de la suppression");
+      alert(data.error || "Erreur lors de l'archivage");
     }
   }
 
@@ -396,9 +401,13 @@ export default function ProgramsPage() {
                       Modifier le design
                     </button>
                     <div className="flex-1" />
-                    {confirmDeleteId === program.id ? (
+                    {!program.isActive ? (
+                      <span className="text-xs text-gray-400">ArchivÃ©</span>
+                    ) : confirmDeleteId === program.id ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">Confirmer ?</span>
+                        <span className="text-xs text-gray-500">
+                          {program._count.cards > 0 ? "Archiver ce programme ?" : "Supprimer ce programme ?"}
+                        </span>
                         <Button
                           size="sm"
                           variant="destructive"
@@ -406,7 +415,11 @@ export default function ProgramsPage() {
                           disabled={deletingId === program.id}
                           className="h-7 px-2 text-xs"
                         >
-                          {deletingId === program.id ? "..." : "Oui, supprimer"}
+                          {deletingId === program.id
+                            ? "..."
+                            : program._count.cards > 0
+                              ? "Oui, archiver"
+                              : "Oui, supprimer"}
                         </Button>
                         <Button
                           size="sm"
@@ -424,8 +437,12 @@ export default function ProgramsPage() {
                         onClick={() => setConfirmDeleteId(program.id)}
                         className="h-7 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
                       >
-                        <Trash2 className="h-3 w-3 mr-1" />
-                        Supprimer
+                        {program._count.cards > 0 ? (
+                          <Archive className="h-3 w-3 mr-1" />
+                        ) : (
+                          <Trash2 className="h-3 w-3 mr-1" />
+                        )}
+                        {program._count.cards > 0 ? "Archiver" : "Supprimer"}
                       </Button>
                     )}
                   </div>

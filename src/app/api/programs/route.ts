@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   // Limite du nombre de programmes
   if (limits.maxPrograms !== null) {
     const existingCount = await prisma.loyaltyProgram.count({
-      where: { merchantId: session.user.id },
+      where: { merchantId: session.user.id, isActive: true },
     });
     if (existingCount >= limits.maxPrograms) {
       return NextResponse.json(

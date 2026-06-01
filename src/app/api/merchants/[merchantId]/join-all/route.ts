@@ -165,7 +165,7 @@ export async function POST(
       select: { id: true, serialNumber: true },
     });
 
-    let alreadyExisted = !!card;
+    const alreadyExisted = !!card;
 
     if (!card) {
       const serialNumber = generateSerialNumber();

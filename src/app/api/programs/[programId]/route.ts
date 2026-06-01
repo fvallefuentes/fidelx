@@ -187,12 +187,11 @@ export async function DELETE(
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+    return NextResponse.json({ error: "Non autorise" }, { status: 401 });
   }
 
   const { programId } = await params;
 
-  // Vérifier que le programme appartient bien au marchand connecté
   const program = await prisma.loyaltyProgram.findUnique({
     where: { id: programId },
     select: { merchantId: true },
@@ -203,36 +202,65 @@ export async function DELETE(
   }
 
   if (program.merchantId !== session.user.id) {
-    return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+    return NextResponse.json({ error: "Non autorise" }, { status: 403 });
   }
 
   try {
-    // 1. Récupérer les IDs des récompenses du programme
-    const rewards = await prisma.reward.findMany({
-      where: { programId },
-      select: { id: true },
-    });
-    const rewardIds = rewards.map((r) => r.id);
+    const [cardsCount, transactionsCount, campaignsCount, rewardClaimsCount] =
+      await prisma.$transaction([
+        prisma.loyaltyCard.count({ where: { programId } }),
+        prisma.transaction.count({ where: { card: { programId } } }),
+        prisma.notificationCampaign.count({ where: { programId } }),
+        prisma.rewardClaim.count({ where: { reward: { programId } } }),
+      ]);
 
-    // 2. Supprimer les RewardClaims liés (pas de cascade sur rewardId)
-    if (rewardIds.length > 0) {
-      await prisma.rewardClaim.deleteMany({
-        where: { rewardId: { in: rewardIds } },
-      });
+    const hasHistoricalData =
+      cardsCount > 0 ||
+      transactionsCount > 0 ||
+      campaignsCount > 0 ||
+      rewardClaimsCount > 0;
+
+    if (!hasHistoricalData) {
+      await prisma.loyaltyProgram.delete({ where: { id: programId } });
+      return NextResponse.json({ success: true, action: "deleted" });
     }
 
-    // 3. Dissocier les campagnes liées (programId optionnel, pas de cascade)
-    await prisma.notificationCampaign.updateMany({
-      where: { programId },
-      data: { programId: null },
+    const cardsToExpire = await prisma.loyaltyCard.findMany({
+      where: {
+        programId,
+        status: { notIn: ["EXPIRED", "REVOKED"] },
+      },
+      select: { id: true },
     });
 
-    // 4. Supprimer le programme (cascade sur cards, rewards, transactions...)
-    await prisma.loyaltyProgram.delete({ where: { id: programId } });
-  } catch (err) {
-    console.error("Delete program error:", err);
-    return NextResponse.json({ error: "Erreur lors de la suppression" }, { status: 500 });
-  }
+    await prisma.$transaction([
+      prisma.loyaltyProgram.update({
+        where: { id: programId },
+        data: { isActive: false },
+      }),
+      prisma.loyaltyCard.updateMany({
+        where: {
+          programId,
+          status: { notIn: ["EXPIRED", "REVOKED"] },
+        },
+        data: { status: "EXPIRED" },
+      }),
+    ]);
 
-  return NextResponse.json({ success: true });
+    void Promise.allSettled(
+      cardsToExpire.map((card) => notifyPassUpdate(card.id))
+    ).catch(() => {});
+
+    return NextResponse.json({
+      success: true,
+      action: "archived",
+      expiredCards: cardsToExpire.length,
+    });
+  } catch (err) {
+    console.error("Archive/delete program error:", err);
+    return NextResponse.json(
+      { error: "Erreur lors de l'archivage du programme" },
+      { status: 500 }
+    );
+  }
 }

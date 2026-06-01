@@ -17,6 +17,7 @@ import QRCode from "qrcode";
 interface Program {
   id: string;
   name: string;
+  isActive?: boolean;
 }
 
 interface Step {
@@ -80,8 +81,9 @@ export default function QRCodePage() {
     fetch("/api/programs")
       .then((res) => res.json())
       .then((data: Program[]) => {
-        setPrograms(data);
-        if (data.length > 0) setSelectedProgram(data[0].id);
+        const activePrograms = data.filter((program) => program.isActive !== false);
+        setPrograms(activePrograms);
+        if (activePrograms.length > 0) setSelectedProgram(activePrograms[0].id);
       });
   }, []);
 
