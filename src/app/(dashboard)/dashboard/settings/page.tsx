@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard, TrendingUp, Users } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2 } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 
 interface UsageStat { current: number; max: number | null; }
@@ -50,6 +50,7 @@ export default function SettingsPage() {
   const [estPhone, setEstPhone] = useState("");
   const [estGoogleId, setEstGoogleId] = useState("");
   const [savingEst, setSavingEst] = useState(false);
+  const [deletingEstId, setDeletingEstId] = useState<string | null>(null);
 
   // Staff
   const [staffList, setStaffList] = useState<{id:string;name:string|null;email:string}[]>([]);
@@ -117,6 +118,38 @@ export default function SettingsPage() {
     }
 
     setSavingEst(false);
+  }
+
+  async function handleDeleteEstablishment(id: string, name: string) {
+    if (
+      !confirm(
+        `Supprimer l'établissement "${name}" ? Les programmes et scans liés seront conservés, mais détachés de cet établissement.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingEstId(id);
+
+    const res = await fetch(`/api/merchants/establishments/${id}`, {
+      method: "DELETE",
+    });
+
+    if (res.ok) {
+      setSettings((s) =>
+        s
+          ? {
+              ...s,
+              establishments: s.establishments.filter((est) => est.id !== id),
+            }
+          : s
+      );
+    } else {
+      const data = await res.json().catch(() => null);
+      alert(data?.error ?? "Erreur lors de la suppression de l'établissement");
+    }
+
+    setDeletingEstId(null);
   }
 
   async function handleAddStaff(e: React.FormEvent) {
@@ -348,13 +381,26 @@ export default function SettingsPage() {
                     key={est.id}
                     className="flex items-center justify-between rounded-lg border p-3"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">{est.name}</p>
                       <p className="text-sm text-gray-500">{est.address}</p>
                     </div>
-                    {est.googlePlaceId && (
-                      <Badge variant="outline">Google connecté</Badge>
-                    )}
+                    <div className="flex shrink-0 items-center gap-2">
+                      {est.googlePlaceId && (
+                        <Badge variant="outline">Google connecté</Badge>
+                      )}
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDeleteEstablishment(est.id, est.name)}
+                        disabled={deletingEstId === est.id}
+                        title="Supprimer l'établissement"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">Supprimer</span>
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
