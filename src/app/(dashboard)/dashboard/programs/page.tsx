@@ -163,6 +163,7 @@ export default function ProgramsPage() {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [previewingProgram, setPreviewingProgram] = useState<Program | null>(null);
   const [togglingReviewId, setTogglingReviewId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
 
   async function fetchPrograms() {
     const res = await fetch("/api/programs");
@@ -249,6 +250,13 @@ export default function ProgramsPage() {
     );
   }
 
+  const activeCount = programs.filter((p) => p.isActive).length;
+  const archivedCount = programs.length - activeCount;
+  const visiblePrograms =
+    activeTab === "active"
+      ? programs.filter((p) => p.isActive)
+      : programs.filter((p) => !p.isActive);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -261,6 +269,35 @@ export default function ProgramsPage() {
           Nouveau programme
         </Button>
       </div>
+
+      {/* Tabs Actifs / Archivés (cachés si pas de programme du tout) */}
+      {programs.length > 0 && (
+        <div className="flex gap-1 border-b border-gray-200">
+          <button
+            type="button"
+            onClick={() => setActiveTab("active")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+              activeTab === "active"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Actifs ({activeCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("archived")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition flex items-center gap-1.5 ${
+              activeTab === "archived"
+                ? "border-blue-600 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <Archive className="h-3.5 w-3.5" />
+            Archivés ({archivedCount})
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <CreateProgramForm
@@ -286,9 +323,40 @@ export default function ProgramsPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : visiblePrograms.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            {activeTab === "archived" ? (
+              <>
+                <Archive className="h-12 w-12 text-gray-300 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Aucun programme archivé
+                </h3>
+                <p className="text-gray-500 mt-1">
+                  Les programmes que tu archives apparaîtront ici.
+                </p>
+              </>
+            ) : (
+              <>
+                <Stamp className="h-12 w-12 text-gray-300 mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Aucun programme actif
+                </h3>
+                <p className="text-gray-500 mt-1 mb-4">
+                  Tous tes programmes sont archivés. Crée-en un nouveau ou consulte
+                  l&apos;onglet Archivés.
+                </p>
+                <Button onClick={() => setShowForm(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Créer un programme
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {programs.map((program) => {
+          {visiblePrograms.map((program) => {
             const typeInfo = typeLabels[program.type] || typeLabels.STAMPS;
             const Icon = typeInfo.icon;
             return (
