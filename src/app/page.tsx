@@ -512,11 +512,11 @@ const tiers = [
     price: "0 CHF",
     sub: "/ mois · gratuit pour toujours",
     features: [
-      "50 clients actifs",
+      "10 clients actifs",
       "1 point de vente",
       "300 scans / mois",
       "Mode tampons",
-      "2 campagnes manuelles / mois",
+      "1 campagne manuelle / mois",
       "Statistiques (7 derniers jours)",
     ],
     cta: "Commencer gratuitement",

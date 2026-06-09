@@ -16,12 +16,12 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
   FREE: {
-    maxActiveCards: 50,
+    maxActiveCards: 10,
     maxStampsPerMonth: 300,
     allowedProgramTypes: ["STAMPS"],
     showFidlifyBranding: true,
     maxPrograms: 1,
-    maxCampaignsPerMonth: 2,
+    maxCampaignsPerMonth: 1,
     canExportCsv: false,
   },
   ESSENTIAL: {
