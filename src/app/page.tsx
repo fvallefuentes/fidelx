@@ -575,7 +575,11 @@ function SectionPricing() {
         <div className="pricing-grid">
           {tiers.map((t, i) => (
             <div className={`price-card reveal${t.featured ? " featured" : ""}`} key={i} style={{ transitionDelay: `${i * 80}ms` }}>
-              {t.featured && <div className="featured-badge">Recommandé</div>}
+              {t.featured && (
+                <div className="featured-badge">
+                  Recommandé pour développer votre base client
+                </div>
+              )}
               <div className="name">{t.name}</div>
               <div className="desc">{t.desc}</div>
               <div className="price-val">{t.price}</div>
