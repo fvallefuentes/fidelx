@@ -63,13 +63,7 @@ export function SoftwareApplicationJsonLd() {
           {
             "@type": "Offer",
             name: "Croissance",
-            price: "89",
-            priceCurrency: "CHF",
-          },
-          {
-            "@type": "Offer",
-            name: "Multi-sites",
-            price: "199",
+            price: "59",
             priceCurrency: "CHF",
           },
         ],

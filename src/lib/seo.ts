@@ -61,6 +61,6 @@ export const FAQ_ITEMS: { q: string; a: string }[] = [
   },
   {
     q: "Combien coûte un programme de fidélité digital avec Fidlify ?",
-    a: "Quatre offres : Gratuit (0 CHF), Essentiel (39 CHF/mois), Croissance (89 CHF/mois) et Multi-sites (199 CHF/mois). Toutes facturées annuellement. Pas d'engagement, pas de frais cachés.",
+    a: "Trois offres : Gratuit (0 CHF), Essentiel (39 CHF/mois) et Croissance (59 CHF/mois). Facturées annuellement. Pas d'engagement, pas de frais cachés.",
   },
 ];

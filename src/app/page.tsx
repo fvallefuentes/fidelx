@@ -545,7 +545,7 @@ const tiers = [
   {
     name: "Croissance",
     desc: "Pour les commerces qui veulent automatiser leur fidélisation.",
-    price: "89 CHF",
+    price: "59 CHF",
     sub: "/ mois — facturé annuellement",
     features: [
       "5 000 clients actifs",
@@ -559,24 +559,6 @@ const tiers = [
     cta: "Choisir Croissance",
     href: "/register?plan=growth",
     featured: true,
-  },
-  {
-    name: "Multi-sites",
-    desc: "Pour les commerces avec plusieurs points de vente.",
-    price: "199 CHF",
-    sub: "/ mois — facturé annuellement",
-    features: [
-      "25 000 clients actifs",
-      "Jusqu'à 10 points de vente",
-      "Campagnes illimitées",
-      "Utilisateurs multiples & rôles",
-      "Reporting consolidé multi-sites",
-      "Onboarding assisté",
-      "Support prioritaire dédié",
-    ],
-    cta: "Choisir Multi-sites",
-    href: "/register?plan=multi_site",
-    featured: false,
   },
 ];
 
