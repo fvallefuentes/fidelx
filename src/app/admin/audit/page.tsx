@@ -174,13 +174,17 @@ export default function AdminAuditPage() {
                         <span className="text-gray-400 text-xs">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap">
+                    <td
+                      className="px-4 py-3 text-xs text-gray-600 whitespace-nowrap font-mono"
+                      title={new Date(e.createdAt).toISOString()}
+                    >
                       {new Date(e.createdAt).toLocaleString("fr-CH", {
                         day: "2-digit",
                         month: "2-digit",
                         year: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
+                        second: "2-digit",
                       })}
                     </td>
                     <td className="px-4 py-3 text-xs font-mono text-gray-500">

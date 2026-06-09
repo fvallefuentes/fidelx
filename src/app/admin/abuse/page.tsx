@@ -339,10 +339,17 @@ export default function AbusePage() {
               <tbody className="divide-y">
                 {data.attempts.map((a) => (
                   <tr key={a.id} className="hover:bg-white/[0.02]">
-                    <td className="py-2 px-2 text-xs text-gray-400 font-mono">
+                    <td
+                      className="py-2 px-2 text-xs text-gray-400 font-mono whitespace-nowrap"
+                      title={new Date(a.createdAt).toISOString()}
+                    >
                       {new Date(a.createdAt).toLocaleString("fr-CH", {
-                        dateStyle: "short",
-                        timeStyle: "short",
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
                       })}
                     </td>
                     <td className="py-2 px-2">
@@ -549,8 +556,18 @@ function BlockedIpRow({
     if (res.ok) onUnblocked();
   }
 
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleString("fr-CH", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  const blockedAtLabel = `bloquée le ${fmt(blocked.createdAt)}`;
   const expiresLabel = blocked.expiresAt
-    ? `expire le ${new Date(blocked.expiresAt).toLocaleString("fr-CH", { dateStyle: "short", timeStyle: "short" })}`
+    ? `expire le ${fmt(blocked.expiresAt)}`
     : "permanent";
   const isAutoBlock = !blocked.blockedById;
 
@@ -570,7 +587,13 @@ function BlockedIpRow({
         )}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="text-[11px] text-gray-500 font-mono">{expiresLabel}</span>
+        <span
+          className="text-[11px] text-gray-500 font-mono text-right leading-tight"
+          title={`${blockedAtLabel}\n${expiresLabel}`}
+        >
+          <span className="block">{blockedAtLabel}</span>
+          <span className="block">{expiresLabel}</span>
+        </span>
         <button
           type="button"
           onClick={unblock}
