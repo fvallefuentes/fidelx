@@ -157,19 +157,27 @@ export default function AbusePage() {
         />
       </div>
 
-      {/* IPs actuellement bloquées */}
-      {data.blockedIps.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Ban className="h-4 w-4 text-red-400" />
-              IPs actuellement bloquées ({data.blockedIps.length})
-            </CardTitle>
-            <CardDescription>
-              Les requêtes depuis ces IPs reçoivent un 403 (cache 60s par worker)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+      {/* IPs actuellement bloquées — toujours visible pour pouvoir débloquer */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Ban className="h-4 w-4 text-red-400" />
+            IPs actuellement bloquées ({data.blockedIps.length})
+          </CardTitle>
+          <CardDescription>
+            Les requêtes depuis ces IPs reçoivent un 403 (cache 60s par worker)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {/* Déblocage manuel par prefix — pratique si l'IP n'apparaît pas */}
+          <ManualUnblockForm onUnblocked={() => window.location.reload()} />
+
+          {data.blockedIps.length === 0 ? (
+            <p className="text-xs text-gray-500 italic">
+              Aucune IP actuellement bloquée. Les IP bloquées automatiquement
+              ou manuellement apparaîtront ici avec un bouton « Débloquer ».
+            </p>
+          ) : (
             <div className="space-y-1.5">
               {data.blockedIps.map((b) => (
                 <BlockedIpRow
@@ -179,9 +187,9 @@ export default function AbusePage() {
                 />
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       {/* Top IPs / cookies suspects */}
       {(data.suspicious.ips.length > 0 ||
@@ -397,6 +405,90 @@ export default function AbusePage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/* ─── Form de déblocage manuel par prefix IP ─────────────── */
+function ManualUnblockForm({ onUnblocked }: { onUnblocked: () => void }) {
+  const [value, setValue] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<"idle" | "ok" | "error">("idle");
+  const [message, setMessage] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const ipPrefix = value.trim();
+    if (!ipPrefix) return;
+    if (!confirm(`Débloquer le prefix « ${ipPrefix} » ?`)) return;
+
+    setLoading(true);
+    setStatus("idle");
+    try {
+      const res = await fetch("/api/admin/abuse/block-ip", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ipPrefix }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setStatus("ok");
+        setMessage(`Prefix « ${ipPrefix} » débloqué.`);
+        setValue("");
+        // Reload après une petite pause pour laisser voir la confirmation
+        setTimeout(onUnblocked, 700);
+      } else {
+        setStatus("error");
+        setMessage(data?.error || "Erreur lors du déblocage");
+      }
+    } catch {
+      setStatus("error");
+      setMessage("Erreur réseau");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+    >
+      <label className="text-xs text-gray-500 block mb-1.5">
+        Débloquer une IP manuellement (prefix /24 ou /48)
+      </label>
+      <div className="flex gap-2 items-stretch">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setStatus("idle");
+          }}
+          placeholder="Ex: 89.47.50.0/24"
+          className="flex-1 h-9 px-3 rounded-md border border-gray-300 text-sm font-mono bg-white"
+          disabled={loading}
+        />
+        <button
+          type="submit"
+          disabled={loading || !value.trim()}
+          className="ip-block-unblock-btn"
+          style={{ padding: "6px 14px", whiteSpace: "nowrap" }}
+        >
+          {loading ? (
+            <RotateCcw size={11} className="animate-spin" />
+          ) : (
+            <X size={11} />
+          )}
+          Débloquer
+        </button>
+      </div>
+      {status === "ok" && (
+        <p className="text-xs text-green-600 mt-1.5">{message}</p>
+      )}
+      {status === "error" && (
+        <p className="text-xs text-red-500 mt-1.5">{message}</p>
+      )}
+    </form>
   );
 }
 

@@ -99,3 +99,47 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true, blocked });
 }
+
+/**
+ * DELETE /api/admin/abuse/block-ip
+ * Body: { ipPrefix: string }
+ * Débloquer une IP en tapant son prefix manuellement (sans avoir besoin de l'id
+ * dans la liste). Utile quand l'IP est blockée mais n'apparaît plus dans l'UI
+ * (cache navigateur, blocage expiré, etc).
+ *
+ * Pour débloquer via un ID connu, utiliser /api/admin/abuse/block-ip/[id].
+ */
+export async function DELETE(req: Request) {
+  const session = await ensureAdmin();
+  if (!session) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const ipPrefix = String(body?.ipPrefix || "").trim();
+  if (!ipPrefix) {
+    return NextResponse.json({ error: "ipPrefix requis" }, { status: 400 });
+  }
+
+  const existing = await prisma.blockedIp.findUnique({ where: { ipPrefix } });
+  if (!existing) {
+    return NextResponse.json(
+      { error: "Aucun blocage trouvé pour ce prefix" },
+      { status: 404 }
+    );
+  }
+
+  await prisma.blockedIp.delete({ where: { id: existing.id } });
+
+  await logAdminAction({
+    adminId: session.user!.id!,
+    action: "UNBLOCK_IP",
+    targetType: "IP",
+    targetId: existing.id,
+    targetLabel: ipPrefix,
+    metadata: { manual: true },
+    req,
+  });
+
+  return NextResponse.json({ ok: true });
+}
