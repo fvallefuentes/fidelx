@@ -569,7 +569,7 @@ function SectionPricing() {
         <div className="section-head center reveal">
           <div className="eyebrow"><span className="dot" /><span>TARIFS</span></div>
           <h2 className="h-section">Une formule pour <em>chaque commerce.</em></h2>
-          <p className="lede">14 jours d&apos;essai gratuit. Sans carte bancaire. Sans engagement.</p>
+          <p className="lede">Compte gratuit pour tester.</p>
         </div>
 
         <div className="pricing-grid">
@@ -626,7 +626,7 @@ function SectionFinalCTA() {
               </Link>
             </div>
             <div style={{ marginTop: 28, fontSize: 12, color: "var(--ink-3)", fontFamily: "var(--font-geist-mono, monospace)", letterSpacing: "0.05em", textAlign: "center" }}>
-              14 JOURS GRATUITS · SANS CARTE BANCAIRE · SANS ENGAGEMENT
+              COMPTE GRATUIT POUR TESTER
             </div>
           </div>
         </div>
