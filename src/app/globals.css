@@ -444,7 +444,8 @@ html, body { overflow-x: clip; }
 
 /* ── Pricing section ── */
 .landing .pricing-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 64px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;
+  margin: 64px auto 0; max-width: 1080px;
 }
 .landing .price-card {
   padding: 32px 24px; border-radius: var(--radius-lg);
@@ -556,16 +557,12 @@ html, body { overflow-x: clip; }
 }
 
 /* ── Responsive ── */
-@media (max-width: 1280px) {
-  .landing .pricing-grid { grid-template-columns: repeat(2, 1fr); }
-}
 @media (max-width: 1024px) {
   .landing .features-grid { grid-template-columns: repeat(2, 1fr); }
   .landing .feature-card.span-2 { grid-column: span 2; }
   .landing .footer-top { grid-template-columns: 1fr 1fr; }
-}
-@media (max-width: 640px) {
-  .landing .pricing-grid { grid-template-columns: 1fr; }
+  /* 3 cartes pricing : on saute le 2-col (sinon orphelin) → direct en 1 col */
+  .landing .pricing-grid { grid-template-columns: 1fr; max-width: 480px; }
 }
 @media (max-width: 768px) {
   .landing .problem-grid { grid-template-columns: 1fr 1fr; }
