@@ -161,7 +161,18 @@ export default function OnboardingPage() {
         {step === 1 && (
           <Step1
             onSelect={selectTemplate}
-            onSkipToCustom={() => {
+            onSkipToCustom={async () => {
+              // Marquer l'onboarding comme terminé AVANT de rediriger.
+              // Sinon le layout (dashboard)/layout.tsx voit needsOnboarding=true
+              // et bounce direct vers /dashboard/onboarding → boucle infinie.
+              try {
+                await fetch("/api/merchants/onboarding/complete", {
+                  method: "POST",
+                });
+              } catch {
+                /* non bloquant — pire cas on bounce, mais le merchant
+                   peut retenter ou créer un programme classique */
+              }
               router.push("/dashboard/programs?new=1");
             }}
           />
