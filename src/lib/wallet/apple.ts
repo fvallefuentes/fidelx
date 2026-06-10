@@ -35,6 +35,20 @@ function isBgDark(hex: string): boolean {
   return 0.299 * r + 0.587 * g + 0.114 * b < 140;
 }
 
+function hasValidLocation(location?: {
+  latitude: number | null;
+  longitude: number | null;
+} | null): location is { latitude: number; longitude: number; name?: string } {
+  return (
+    typeof location?.latitude === "number" &&
+    typeof location.longitude === "number" &&
+    location.latitude >= -90 &&
+    location.latitude <= 90 &&
+    location.longitude >= -180 &&
+    location.longitude <= 180
+  );
+}
+
 interface PassData {
   serialNumber: string;
   programName: string;
@@ -52,6 +66,9 @@ interface PassData {
   description: string;
   lastMessage?: string | null;
   logoData?: string | null; // data URL "data:image/png;base64,..."
+  heroImage?: string | null; // data URL — pour POINTS, remplace le strip à pastilles
+  programType?: string;
+  pointsTarget?: number; // pour POINTS : seuil pour la récompense
   showFidlifyBranding?: boolean;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
@@ -95,12 +112,17 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     // d'une campagne ne sert qu'à l'aperçu côté merchant — iOS
     // utilise toujours sa propre icône Wallet pour les notifications.
     logoData: (design.logoData as string) || null,
+    heroImage: (design.heroImage as string) || null,
+    programType: card.program.type,
+    pointsTarget:
+      ((config.tiers as { points?: number }[] | undefined)?.[0]?.points) ||
+      undefined,
     showFidlifyBranding: (card.program.merchant.plan || "FREE") === "FREE",
-    locations: card.program.establishment
+    locations: hasValidLocation(card.program.establishment)
       ? [
           {
-            latitude: card.program.establishment.latitude || 0,
-            longitude: card.program.establishment.longitude || 0,
+            latitude: card.program.establishment.latitude,
+            longitude: card.program.establishment.longitude,
             relevantText: `Vous êtes près de ${card.program.establishment.name} !`,
           },
         ]
@@ -135,7 +157,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     labelColor: passData.labelColor || passData.textColor,
     // barcodes set via pass.setBarcodes() below — passkit-generator
     // ne les prend pas toujours via passProps
-    locations: passData.locations?.filter((l) => l.latitude !== 0) || [],
+    locations: passData.locations || [],
     webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple`,
     authenticationToken: passData.serialNumber.replace(/-/g, "") + "0000",
   };
@@ -173,11 +195,15 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
 
   // Sous le strip : 2 secondary fields côte à côte (gauche + droite)
   // — pas de primary qui s'afficherait en gros et écraserait le strip
-  if (passData.maxStamps) {
+  const isPointsProgram = passData.programType === "POINTS";
+  if (isPointsProgram) {
     pass.secondaryFields.push({
-      key: "stamps_required",
-      label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
-      value: `${passData.maxStamps}`,
+      key: "points",
+      label: "POINTS",
+      value: passData.pointsTarget
+        ? `${passData.currentPoints} / ${passData.pointsTarget}`
+        : `${passData.currentPoints}`,
+      changeMessage: "Vous avez maintenant %@ points !",
     });
     pass.secondaryFields.push({
       key: "program",
@@ -187,10 +213,9 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     });
   } else {
     pass.secondaryFields.push({
-      key: "points",
-      label: "POINTS",
-      value: `${passData.currentPoints}`,
-      changeMessage: "Vous avez maintenant %@ points !",
+      key: "stamps_required",
+      label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
+      value: `${passData.maxStamps}`,
     });
     pass.secondaryFields.push({
       key: "program",
@@ -285,8 +310,30 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     pass.addBuffer("icon@3x.png", DEFAULT_ICON_87);
   }
 
-  // Strip image — pastilles de tampons générées dynamiquement
-  if (passData.maxStamps && passData.maxStamps > 0) {
+  // Strip image — POINTS avec heroImage : on l'utilise telle quelle.
+  // Sinon (STAMPS / HYBRID, ou POINTS sans heroImage) : pastilles dynamiques.
+  if (passData.programType === "POINTS" && passData.heroImage) {
+    try {
+      const sharp = (await import("sharp")).default;
+      const heroBuf = decodeDataUrl(passData.heroImage);
+      if (heroBuf) {
+        // Strip dimensions @3x = 1125x432, cover/center pour respecter le ratio
+        const stripBuf = await sharp(heroBuf)
+          .resize(1125, 432, { fit: "cover", position: "center" })
+          .png()
+          .toBuffer();
+        pass.addBuffer("strip.png", stripBuf);
+        pass.addBuffer("strip@2x.png", stripBuf);
+        pass.addBuffer("strip@3x.png", stripBuf);
+      }
+    } catch (err) {
+      console.error("[apple] hero strip generation failed:", err);
+    }
+  } else if (
+    !isPointsProgram &&
+    passData.maxStamps &&
+    passData.maxStamps > 0
+  ) {
     try {
       const stripBuf = await generateStripImage({
         currentStamps: passData.currentStamps,

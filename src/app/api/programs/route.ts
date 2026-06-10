@@ -34,7 +34,6 @@ const createProgramSchema = z
       .optional(),
   })
   // Validation : nombre de tampons entre 1 et 20 pour STAMPS/HYBRID.
-  // (Le client doit envoyer config.maxStamps comme un entier dans cette plage.)
   .refine(
     (data) => {
       if (data.type !== "STAMPS" && data.type !== "HYBRID") return true;
@@ -49,6 +48,27 @@ const createProgramSchema = z
     {
       message: "Le nombre de tampons doit être un entier entre 1 et 20",
       path: ["config", "maxStamps"],
+    }
+  )
+  // Validation : seuil de points entre 10 et 10'000 pour POINTS.
+  // (Le client envoie config.tiers[0].points qui sert de seuil principal.)
+  .refine(
+    (data) => {
+      if (data.type !== "POINTS") return true;
+      const tiers = (data.config as Record<string, unknown>).tiers as
+        | { points?: unknown }[]
+        | undefined;
+      const target = tiers?.[0]?.points;
+      return (
+        typeof target === "number" &&
+        Number.isInteger(target) &&
+        target >= 10 &&
+        target <= 10_000
+      );
+    },
+    {
+      message: "Le seuil de points doit être un entier entre 10 et 10'000",
+      path: ["config", "tiers", 0, "points"],
     }
   );
 

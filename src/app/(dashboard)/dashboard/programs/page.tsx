@@ -43,6 +43,8 @@ function ProgramCardPreview({ program }: { program: Program }) {
         stampEmptyColor={design.stampEmptyColor as string | undefined}
         labelColor={design.labelColor as string | undefined}
         logoData={(design.logoData as string) || undefined}
+        heroImage={(design.heroImage as string) || undefined}
+        programType={program.type}
         programName={program.name}
         maxStamps={max}
       />
@@ -581,6 +583,9 @@ function WalletCardPreview({
   programName,
   maxStamps,
   logoData,
+  programType = "STAMPS",
+  heroImage,
+  samplePoints,
 }: {
   bgColor: string;
   textColor: string;
@@ -591,6 +596,9 @@ function WalletCardPreview({
   programName: string;
   maxStamps: number;
   logoData?: string;
+  programType?: string;
+  heroImage?: string;
+  samplePoints?: number;
 }) {
   const total = Math.max(1, Math.min(20, maxStamps || 10));
   const rows = total <= 5 ? 1 : 2;
@@ -626,40 +634,87 @@ function WalletCardPreview({
         </div>
       </div>
 
-      {/* Strip : 1 ou 2 rangées de cercles */}
-      <div
-        className="wcp-stamps"
-        style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}
-      >
-        {Array.from({ length: total }).map((_, i) => {
-          const filled = i < sampleFilled;
-          return (
-            <span
-              key={i}
-              className="wcp-stamp"
+      {/* Strip : hero image pour POINTS, sinon pastilles tampons */}
+      {programType === "POINTS" ? (
+        heroImage ? (
+          <div
+            className="wcp-stamps"
+            style={{
+              padding: 0,
+              display: "block",
+              height: 120,
+              borderRadius: 6,
+              overflow: "hidden",
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroImage}
+              alt=""
               style={{
-                borderColor: filled ? sFill : sEmpty,
-                background: filled ? sFill : "transparent",
-                color: sCheck,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display: "block",
               }}
-            >
-              {filled && (
-                <svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              )}
+            />
+          </div>
+        ) : (
+          <div
+            className="wcp-stamps"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 120,
+              border: `2px dashed ${lblColor}`,
+              borderRadius: 6,
+            }}
+          >
+            <span style={{ fontSize: 11, opacity: 0.65, color: lblColor }}>
+              IMAGE DE LA CARTE (à uploader)
             </span>
-          );
-        })}
-      </div>
+          </div>
+        )
+      ) : (
+        <div
+          className="wcp-stamps"
+          style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}
+        >
+          {Array.from({ length: total }).map((_, i) => {
+            const filled = i < sampleFilled;
+            return (
+              <span
+                key={i}
+                className="wcp-stamp"
+                style={{
+                  borderColor: filled ? sFill : sEmpty,
+                  background: filled ? sFill : "transparent",
+                  color: sCheck,
+                }}
+              >
+                {filled && (
+                  <svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                )}
+              </span>
+            );
+          })}
+        </div>
+      )}
 
-      {/* Secondary fields : TAMPONS REQUIS + PROGRAMME */}
+      {/* Secondary fields */}
       <div className="wcp-fields">
         <div className="wcp-field">
           <span className="wcp-label" style={{ color: lblColor }}>
-            TAMPONS REQUIS POUR LA RÉCOMPENSE
+            {programType === "POINTS" ? "POINTS" : "TAMPONS REQUIS POUR LA RÉCOMPENSE"}
           </span>
-          <span className="wcp-value">{maxStamps}</span>
+          <span className="wcp-value">
+            {programType === "POINTS"
+              ? `${samplePoints ?? 0} / ${maxStamps}`
+              : maxStamps}
+          </span>
         </div>
         <div className="wcp-field" style={{ textAlign: "right" }}>
           <span className="wcp-label" style={{ color: lblColor }}>
@@ -699,6 +754,8 @@ function CreateProgramForm({
   const [labelColor, setLabelColor] = useState("#a0a3aa"); // texte OFFRE / TAMPONS REQUIS
   const [logoData, setLogoData] = useState<string>("");
   const [logoError, setLogoError] = useState<string>("");
+  const [heroImage, setHeroImage] = useState<string>("");
+  const [heroError, setHeroError] = useState<string>("");
   const [googleReviewEnabled, setGoogleReviewEnabled] = useState(false);
   const [googleReviewBonus, setGoogleReviewBonus] = useState(1);
   const [googleReviewMinVisits, setGoogleReviewMinVisits] = useState(3);
@@ -735,6 +792,28 @@ function CreateProgramForm({
     reader.readAsDataURL(file);
   }
 
+  function handleHeroChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setHeroError("");
+    const file = e.target.files?.[0];
+    if (!file) {
+      setHeroImage("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setHeroError("Le fichier doit être une image");
+      return;
+    }
+    // Hero image plus grande que le logo (affichée sur toute la largeur du strip)
+    if (file.size > 1.5 * 1024 * 1024) {
+      setHeroError("Image trop lourde (max 1.5 MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setHeroImage(reader.result as string);
+    reader.onerror = () => setHeroError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -764,6 +843,8 @@ function CreateProgramForm({
           stampEmptyColor,
           labelColor,
           logoData: logoData || undefined,
+          // heroImage uniquement utile pour POINTS (remplace le strip à pastilles)
+          heroImage: type === "POINTS" && heroImage ? heroImage : undefined,
           description: `Programme ${name}`,
         },
         rewards:
@@ -870,9 +951,15 @@ function CreateProgramForm({
                 <Input
                   type="number"
                   min={10}
+                  max={10000}
                   value={maxStamps}
-                  onChange={(e) => setMaxStamps(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    if (Number.isNaN(v)) return;
+                    setMaxStamps(Math.max(10, Math.min(10000, v)));
+                  }}
                 />
+                <p className="text-xs text-gray-400">Entre 10 et 10&apos;000 points.</p>
               </div>
             )}
 
@@ -961,6 +1048,76 @@ function CreateProgramForm({
               {logoError && <p className="text-xs text-red-500">{logoError}</p>}
             </div>
 
+            {/* Hero image — uniquement pour POINTS et plan payant */}
+            {type === "POINTS" && !isFree && (
+              <div className="space-y-2">
+                <label className="text-xs text-gray-500">
+                  Image de la carte (remplace la zone des tampons)
+                </label>
+                {heroImage ? (
+                  <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={heroImage}
+                      alt="Hero"
+                      className="h-16 w-24 rounded object-cover border bg-white"
+                    />
+                    <div className="flex-1 text-xs text-gray-600">
+                      Image ajoutée. Affichée au centre de la carte avec le nombre de points au-dessus.
+                    </div>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setHeroImage("")}>
+                      <X className="h-3.5 w-3.5 mr-1" /> Retirer
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer block">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleHeroChange}
+                      className="sr-only"
+                    />
+                    <div
+                      className="flex items-center gap-3 rounded-lg transition-colors"
+                      style={{
+                        padding: "16px 18px",
+                        background: "#0a0d04",
+                        border: "2px dashed #d4ff4e",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#15170d";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#0a0d04";
+                      }}
+                    >
+                      <div
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                        style={{ background: "rgba(212,255,78,0.18)", color: "#d4ff4e" }}
+                      >
+                        <ImagePlus className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium" style={{ color: "#f4f5f1" }}>
+                          Ajouter l&apos;image de la carte
+                        </div>
+                        <div className="text-xs mt-0.5" style={{ color: "#8a8e84" }}>
+                          PNG, JPG ou WebP · max 1.5 MB · ratio paysage recommandé (ex. 1125×432)
+                        </div>
+                      </div>
+                      <div
+                        className="hidden sm:block text-xs font-medium whitespace-nowrap"
+                        style={{ color: "#d4ff4e" }}
+                      >
+                        Choisir un fichier →
+                      </div>
+                    </div>
+                  </label>
+                )}
+                {heroError && <p className="text-xs text-red-500">{heroError}</p>}
+              </div>
+            )}
+
             {/* Presets */}
             <div className="space-y-2">
               <label className="text-xs text-gray-500">Thèmes prêts à l&apos;emploi</label>
@@ -1017,6 +1174,11 @@ function CreateProgramForm({
                   programName={name || "Mon programme"}
                   maxStamps={maxStamps}
                   logoData={logoData}
+                  programType={type}
+                  heroImage={heroImage}
+                  samplePoints={
+                    type === "POINTS" ? Math.floor(maxStamps * 0.3) : undefined
+                  }
                 />
               </div>
             </div>
@@ -1137,6 +1299,8 @@ function EditProgramDesignModal({
   );
   const [logoData, setLogoData] = useState<string>(design.logoData || "");
   const [logoError, setLogoError] = useState("");
+  const [heroImage, setHeroImage] = useState<string>(design.heroImage || "");
+  const [heroError, setHeroError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -1200,6 +1364,24 @@ function EditProgramDesignModal({
     reader.readAsDataURL(file);
   }
 
+  function handleHeroChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setHeroError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setHeroError("Le fichier doit être une image");
+      return;
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      setHeroError("Image trop lourde (max 1.5 MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setHeroImage(reader.result as string);
+    reader.onerror = () => setHeroError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -1219,9 +1401,12 @@ function EditProgramDesignModal({
           stampEmptyColor,
           labelColor,
           description,
-          // Sur plan FREE, on n'envoie pas logoData (l'API le rejetterait
-          // de toute façon, mais évite un round-trip d'erreur)
+          // Sur plan FREE, on n'envoie pas logoData ni heroImage (réservés payants)
           ...(isFree ? {} : { logoData: logoData || null }),
+          // heroImage : uniquement pertinent pour POINTS
+          ...(isFree || program.type !== "POINTS"
+            ? {}
+            : { heroImage: heroImage || null }),
         },
         googleReviewEnabled: reviewEnabled,
         googleReviewBonus: reviewBonus,
@@ -1426,6 +1611,96 @@ function EditProgramDesignModal({
                 )}
               </div>
 
+              {/* Hero image — uniquement pour POINTS et plan payant */}
+              {program.type === "POINTS" && !isFree && (
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500">
+                    Image de la carte (remplace la zone des tampons)
+                  </label>
+                  {heroImage ? (
+                    <div
+                      className="flex items-center gap-3 rounded-lg p-3"
+                      style={{
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                      }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={heroImage}
+                        alt="Hero preview"
+                        style={{
+                          height: 44,
+                          width: 66,
+                          objectFit: "cover",
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 6,
+                        }}
+                      />
+                      <div className="flex-1 text-xs" style={{ color: "#c4c8be" }}>
+                        Image importée. Affichée sur toute la largeur du strip.
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHeroImage("")}
+                        className="text-xs flex items-center gap-1 hover:opacity-80"
+                        style={{ color: "#ff7a6b" }}
+                      >
+                        <X size={11} /> Retirer
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer block">
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={handleHeroChange}
+                        className="sr-only"
+                      />
+                      <div
+                        className="flex items-center gap-3 rounded-lg transition-colors"
+                        style={{
+                          padding: "16px 18px",
+                          background: "#0a0d04",
+                          border: "2px dashed #d4ff4e",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "#15170d";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "#0a0d04";
+                        }}
+                      >
+                        <div
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                          style={{ background: "rgba(212,255,78,0.18)", color: "#d4ff4e" }}
+                        >
+                          <ImagePlus size={18} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium" style={{ color: "#f4f5f1" }}>
+                            Ajouter l&apos;image de la carte
+                          </div>
+                          <div className="text-[11px] mt-0.5" style={{ color: "#8a8e84" }}>
+                            PNG, JPG ou WebP · max 1.5 MB · ratio paysage recommandé
+                          </div>
+                        </div>
+                        <div
+                          className="hidden sm:block text-xs font-medium whitespace-nowrap"
+                          style={{ color: "#d4ff4e" }}
+                        >
+                          Choisir un fichier →
+                        </div>
+                      </div>
+                    </label>
+                  )}
+                  {heroError && (
+                    <p className="text-xs text-red-500">{heroError}</p>
+                  )}
+                </div>
+              )}
+
               {/* Presets */}
               <div className="space-y-1">
                 <label className="text-xs text-gray-500">Palette rapide</label>
@@ -1550,6 +1825,13 @@ function EditProgramDesignModal({
                 programName={name}
                 maxStamps={maxStamps}
                 logoData={logoData || undefined}
+                programType={program.type}
+                heroImage={heroImage || undefined}
+                samplePoints={
+                  program.type === "POINTS"
+                    ? Math.floor(maxStamps * 0.3)
+                    : undefined
+                }
               />
             </div>
           </div>

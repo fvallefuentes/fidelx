@@ -39,6 +39,23 @@ interface LoyaltyObjectData {
   /** Token de version (ex: timestamp programme.updatedAt) — utilisé dans
    *  l'URL ?v= pour invalider le cache CDN Google quand le design change. */
   designVersion?: string;
+  /** Indique qu'un hero image custom existe en DB pour les programmes POINTS. */
+  hasHeroImage?: boolean;
+  merchantLocations?: { latitude: number; longitude: number }[];
+}
+
+function hasValidLocation(location?: {
+  latitude: number | null;
+  longitude: number | null;
+} | null): location is { latitude: number; longitude: number } {
+  return (
+    typeof location?.latitude === "number" &&
+    typeof location.longitude === "number" &&
+    location.latitude >= -90 &&
+    location.latitude <= 90 &&
+    location.longitude >= -180 &&
+    location.longitude <= 180
+  );
 }
 
 /**
@@ -120,6 +137,30 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
         int: Math.floor(data.currentPoints),
       },
     };
+
+    // Hero image custom uploadée par le merchant pour POINTS.
+    // URL pointe vers /api/wallet/google/hero/[serialNumber] qui décode
+    // le data URL stocké en DB et le renvoie en PNG 1032×336.
+    if (data.appUrl && data.hasHeroImage) {
+      const version = data.designVersion ?? "1";
+      const heroUrl = `${data.appUrl.replace(/\/$/, "")}/api/wallet/google/hero/${data.serialNumber}?v=${version}`;
+      object.heroImage = {
+        sourceUri: { uri: heroUrl },
+        contentDescription: {
+          defaultValue: {
+            language: "fr",
+            value: `Carte ${data.programType}`,
+          },
+        },
+      };
+    }
+  }
+
+  if (data.merchantLocations?.length) {
+    object.merchantLocations = data.merchantLocations.map((location) => ({
+      latitude: location.latitude,
+      longitude: location.longitude,
+    }));
   }
 
   return object;
@@ -140,7 +181,7 @@ export async function generateGoogleWalletLink(
     include: {
       client: true,
       program: {
-        include: { merchant: true },
+        include: { merchant: true, establishment: true },
       },
     },
   });
@@ -186,6 +227,15 @@ export async function generateGoogleWalletLink(
     programType: card.program.type,
     appUrl,
     designVersion: String(card.program.updatedAt.getTime()),
+    hasHeroImage: typeof design.heroImage === "string" && design.heroImage.length > 0,
+    merchantLocations: hasValidLocation(card.program.establishment)
+      ? [
+          {
+            latitude: card.program.establishment.latitude,
+            longitude: card.program.establishment.longitude,
+          },
+        ]
+      : undefined,
   });
 
   // Créer le JWT
@@ -348,13 +398,16 @@ export async function updateGoogleWalletObject(
     where: { serialNumber },
     include: {
       client: true,
-      program: true,
+      program: {
+        include: { establishment: true },
+      },
     },
   });
 
   if (!card) return false;
 
   const config = card.program.config as Record<string, unknown>;
+  const design = card.program.cardDesign as Record<string, unknown>;
   const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${serialNumber}`;
 
   const updatedObject = buildLoyaltyObject({
@@ -367,6 +420,15 @@ export async function updateGoogleWalletObject(
     programType: card.program.type,
     appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     designVersion: String(card.program.updatedAt.getTime()),
+    hasHeroImage: typeof design.heroImage === "string" && design.heroImage.length > 0,
+    merchantLocations: hasValidLocation(card.program.establishment)
+      ? [
+          {
+            latitude: card.program.establishment.latitude,
+            longitude: card.program.establishment.longitude,
+          },
+        ]
+      : undefined,
   });
 
   try {

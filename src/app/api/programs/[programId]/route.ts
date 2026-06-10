@@ -51,6 +51,7 @@ export async function PATCH(
       stampEmptyColor?: string;
       labelColor?: string;
       logoData?: string | null;
+      heroImage?: string | null;
       description?: string;
     };
     // Avis Google — modifiables sur un programme existant (ne casse aucune
@@ -105,6 +106,12 @@ export async function PATCH(
         delete nextDesign.logoData;
       } else if (typeof body.cardDesign.logoData === "string") {
         nextDesign.logoData = body.cardDesign.logoData;
+      }
+      // heroImage : même gating que logoData (plan payant uniquement)
+      if (body.cardDesign.heroImage === null) {
+        delete nextDesign.heroImage;
+      } else if (typeof body.cardDesign.heroImage === "string") {
+        nextDesign.heroImage = body.cardDesign.heroImage;
       }
     }
   }
