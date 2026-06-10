@@ -41,6 +41,9 @@ interface LoyaltyObjectData {
   designVersion?: string;
   /** Indique qu'un hero image custom existe en DB pour les programmes POINTS. */
   hasHeroImage?: boolean;
+  /** État Google Wallet : "ACTIVE", "EXPIRED", ou "INACTIVE".
+   *  EXPIRED = carte caduque (programme archivé), INACTIVE = revoquée par admin. */
+  cardState?: "ACTIVE" | "EXPIRED" | "INACTIVE";
   merchantLocations?: { latitude: number; longitude: number }[];
 }
 
@@ -94,7 +97,7 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
   const object: Record<string, unknown> = {
     id: `${GOOGLE_WALLET_ISSUER_ID}.${data.serialNumber}`,
     classId: data.classId,
-    state: "ACTIVE",
+    state: data.cardState || "ACTIVE",
     accountId: data.serialNumber,
     accountName: data.clientName,
     barcode: {
@@ -228,6 +231,12 @@ export async function generateGoogleWalletLink(
     appUrl,
     designVersion: String(card.program.updatedAt.getTime()),
     hasHeroImage: typeof design.heroImage === "string" && design.heroImage.length > 0,
+    cardState:
+      (card.status as string) === "EXPIRED"
+        ? "EXPIRED"
+        : (card.status as string) === "REVOKED"
+          ? "INACTIVE"
+          : "ACTIVE",
     merchantLocations: hasValidLocation(card.program.establishment)
       ? [
           {
@@ -421,6 +430,12 @@ export async function updateGoogleWalletObject(
     appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     designVersion: String(card.program.updatedAt.getTime()),
     hasHeroImage: typeof design.heroImage === "string" && design.heroImage.length > 0,
+    cardState:
+      (card.status as string) === "EXPIRED"
+        ? "EXPIRED"
+        : (card.status as string) === "REVOKED"
+          ? "INACTIVE"
+          : "ACTIVE",
     merchantLocations: hasValidLocation(card.program.establishment)
       ? [
           {

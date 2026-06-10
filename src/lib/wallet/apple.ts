@@ -70,6 +70,9 @@ interface PassData {
   programType?: string;
   pointsTarget?: number; // pour POINTS : seuil pour la récompense
   showFidlifyBranding?: boolean;
+  /** Marque le pass comme expiré → iOS le déplace dans la section "Expirés"
+   *  du Wallet et le grise. Branché sur card.status (EXPIRED ou REVOKED). */
+  voided?: boolean;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -118,6 +121,9 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
       ((config.tiers as { points?: number }[] | undefined)?.[0]?.points) ||
       undefined,
     showFidlifyBranding: (card.program.merchant.plan || "FREE") === "FREE",
+    voided:
+      (card.status as string) === "EXPIRED" ||
+      (card.status as string) === "REVOKED",
     locations: hasValidLocation(card.program.establishment)
       ? [
           {
@@ -160,6 +166,9 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     locations: passData.locations || [],
     webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple`,
     authenticationToken: passData.serialNumber.replace(/-/g, "") + "0000",
+    // voided : iOS déplace le pass dans la section "Expirés" du Wallet et le grise.
+    // À la prochaine notif push, le device refetch le pass et voit voided=true.
+    ...(passData.voided ? { voided: true } : {}),
   };
 
   // Empty string passphrase → undefined (sinon node-forge throw
