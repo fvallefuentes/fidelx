@@ -626,7 +626,7 @@ function SectionFinalCTA() {
               </Link>
             </div>
             <div style={{ marginTop: 28, fontSize: 12, color: "var(--ink-3)", fontFamily: "var(--font-geist-mono, monospace)", letterSpacing: "0.05em", textAlign: "center" }}>
-              LANCEZ-VOUS GRATUITEMENT · SANS ENGAGEMENT · SANS CB
+              LANCEZ-VOUS GRATUITEMENT · SANS ENGAGEMENT · SANS CARTE BANCAIRE
             </div>
           </div>
         </div>
