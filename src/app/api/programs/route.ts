@@ -14,7 +14,7 @@ const jsonObject = z.record(z.string(), z.unknown());
 const createProgramSchema = z
   .object({
     name: z.string().trim().min(1, "Nom du programme requis").max(120, "Nom du programme trop long"),
-    type: z.enum(["STAMPS", "POINTS", "CASHBACK", "HYBRID"]),
+    type: z.enum(["STAMPS", "POINTS", "CASHBACK"]),
     config: jsonObject,
     cardDesign: jsonObject,
     establishmentId: z.string().trim().min(1).optional().nullable(),
@@ -33,10 +33,10 @@ const createProgramSchema = z
       )
       .optional(),
   })
-  // Validation : nombre de tampons entre 1 et 20 pour STAMPS/HYBRID.
+  // Validation : nombre de tampons entre 1 et 20 pour STAMPS.
   .refine(
     (data) => {
-      if (data.type !== "STAMPS" && data.type !== "HYBRID") return true;
+      if (data.type !== "STAMPS") return true;
       const max = (data.config as Record<string, unknown>).maxStamps;
       return (
         typeof max === "number" &&
@@ -135,7 +135,7 @@ export async function POST(req: Request) {
   if (!limits.allowedProgramTypes.includes(type as ProgramType)) {
     return NextResponse.json(
       {
-        error: `Le type "${type}" n'est pas disponible dans votre plan. Le plan FREE n'autorise que les cartes à tampons. Passez à un plan supérieur pour débloquer Points, Cashback et Hybride.`,
+        error: `Le type "${type}" n'est pas disponible dans votre plan. Le plan FREE n'autorise que les cartes à tampons. Passez à un plan supérieur pour débloquer Points et Cashback.`,
       },
       { status: 403 }
     );

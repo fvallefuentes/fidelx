@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export type ProgramType = "STAMPS" | "POINTS" | "CASHBACK" | "HYBRID";
+export type ProgramType = "STAMPS" | "POINTS" | "CASHBACK";
 
 export { PLAN_LABELS } from "@/lib/plan-labels";
 export interface PlanLimits {
@@ -27,7 +27,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
   ESSENTIAL: {
     maxActiveCards: 1000,
     maxStampsPerMonth: 2500,
-    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK", "HYBRID"],
+    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK"],
     showFidlifyBranding: false,
     maxPrograms: 10,
     maxCampaignsPerMonth: 4,
@@ -36,7 +36,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
   GROWTH: {
     maxActiveCards: 5000,
     maxStampsPerMonth: null,
-    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK", "HYBRID"],
+    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK"],
     showFidlifyBranding: false,
     maxPrograms: 10,
     maxCampaignsPerMonth: null,
@@ -45,7 +45,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
   MULTI_SITE: {
     maxActiveCards: 25000,
     maxStampsPerMonth: null,
-    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK", "HYBRID"],
+    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK"],
     showFidlifyBranding: false,
     maxPrograms: null,
     maxCampaignsPerMonth: null,

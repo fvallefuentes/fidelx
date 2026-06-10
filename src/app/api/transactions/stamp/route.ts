@@ -127,7 +127,7 @@ export async function POST(req: Request) {
   const config = card.program.config as Record<string, unknown>;
   let rewardUnlocked = null;
 
-  if (card.program.type === "STAMPS" || card.program.type === "HYBRID") {
+  if (card.program.type === "STAMPS") {
     const maxStamps = (config.maxStamps as number) || 10;
     const newStamps = card.currentStamps + stampCount;
     const reachedMax = newStamps >= maxStamps;
@@ -163,7 +163,7 @@ export async function POST(req: Request) {
     }
   }
 
-  if (card.program.type === "POINTS" || card.program.type === "HYBRID") {
+  if (card.program.type === "POINTS") {
     const pointsPerChf = (config.pointsPerChf as number) || 1;
     const pointsValue = amountSpent ? amountSpent * pointsPerChf : pointsPerChf;
     const newPoints = card.currentPoints + pointsValue;

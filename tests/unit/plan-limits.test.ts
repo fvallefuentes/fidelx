@@ -31,12 +31,11 @@ describe("Plan limits", () => {
     expect(PLAN_LIMITS.MULTI_SITE.showFidlifyBranding).toBe(false);
   });
 
-  it("Tous les plans payants autorisent les 4 types de programme", () => {
+  it("Tous les plans payants autorisent les 3 types de programme", () => {
     for (const tier of ["ESSENTIAL", "GROWTH", "MULTI_SITE"] as const) {
       expect(PLAN_LIMITS[tier].allowedProgramTypes).toContain("STAMPS");
       expect(PLAN_LIMITS[tier].allowedProgramTypes).toContain("POINTS");
       expect(PLAN_LIMITS[tier].allowedProgramTypes).toContain("CASHBACK");
-      expect(PLAN_LIMITS[tier].allowedProgramTypes).toContain("HYBRID");
     }
   });
 

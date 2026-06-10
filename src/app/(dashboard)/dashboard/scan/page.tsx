@@ -471,7 +471,7 @@ export default function ScanPage() {
 
   // ─── Confirm stamp ────────────────────────────────────────────────────────
   if (step === "confirm" && cardInfo) {
-    const isStamps = cardInfo.programType === "STAMPS" || cardInfo.programType === "HYBRID";
+    const isStamps = cardInfo.programType === "STAMPS";
     const isPoints = cardInfo.programType === "POINTS";
     // Libellés contextualisés selon le type (tampons vs points)
     const unitSing = isPoints ? "point" : "tampon";

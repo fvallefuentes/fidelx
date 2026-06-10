@@ -21,7 +21,7 @@ function buildRewardLabel(program: {
     return `${r.name} (${r.threshold} ${program.type === "POINTS" ? "points" : "tampons"})`;
   }
   const config = program.config as Record<string, unknown>;
-  if (program.type === "STAMPS" || program.type === "HYBRID") {
+  if (program.type === "STAMPS") {
     const max = (config.maxStamps as number) || 10;
     return `Récompense après ${max} tampons`;
   }

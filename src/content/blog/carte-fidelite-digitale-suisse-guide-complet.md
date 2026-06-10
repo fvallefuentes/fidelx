@@ -78,7 +78,7 @@ Recherchez une plateforme :
 
 ### 2. Configurer votre programme
 
-- Type de fidélité : **tampons** (carte à 10 cases classique), **points** (1 CHF = 1 point), **cashback** (% retour sur achats), ou **hybride**
+- Type de fidélité : **tampons** (carte à 10 cases classique), **points** (1 CHF = 1 point), ou **cashback** (% retour sur achats)
 - Récompense : café offert, % de réduction, produit gratuit, etc.
 - Design : logo, couleurs, photo de fond
 

@@ -14,7 +14,7 @@
  *  - LCD suisse : transparence — le client sait que c'est une incitation.
  *
  * Le type de bonus (tampons vs points) est déterminé automatiquement par
- * le type de programme : STAMPS/HYBRID → tampons, POINTS/CASHBACK → points.
+ * le type de programme : STAMPS → tampons, POINTS/CASHBACK → points.
  */
 import { prisma } from "@/lib/prisma";
 

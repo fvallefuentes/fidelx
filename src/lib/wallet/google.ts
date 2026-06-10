@@ -103,7 +103,7 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
     },
   };
 
-  if (data.programType === "STAMPS" || data.programType === "HYBRID") {
+  if (data.programType === "STAMPS") {
     object.loyaltyPoints = {
       label: "Tampons",
       balance: {

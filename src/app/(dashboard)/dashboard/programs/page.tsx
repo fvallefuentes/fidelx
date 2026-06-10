@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive, ImagePlus } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive, ImagePlus } from "lucide-react";
 import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
 
 interface Program {
@@ -69,7 +69,6 @@ const typeLabels: Record<string, { label: string; icon: typeof Stamp }> = {
   STAMPS: { label: "Tampons", icon: Stamp },
   POINTS: { label: "Points", icon: Award },
   CASHBACK: { label: "Cashback", icon: Percent },
-  HYBRID: { label: "Hybride", icon: Layers },
 };
 
 /* ─── Thèmes pré-configurés ─────────────────────────────── */
@@ -824,9 +823,7 @@ function CreateProgramForm({
         ? { maxStamps, reward: rewardName }
         : type === "POINTS"
           ? { pointsPerChf: 1, tiers: [{ points: maxStamps, reward: rewardName }] }
-          : type === "CASHBACK"
-            ? { percentage: 5, minSpend: 10 }
-            : { maxStamps, pointsPerChf: 1 };
+          : { percentage: 5, minSpend: 10 }; // CASHBACK
 
     const res = await fetch("/api/programs", {
       method: "POST",
@@ -911,19 +908,16 @@ function CreateProgramForm({
                 <option value="CASHBACK" disabled={isFree}>
                   Cashback{isFree ? " — 🔒 Pro" : ""}
                 </option>
-                <option value="HYBRID" disabled={isFree}>
-                  Hybride{isFree ? " — 🔒 Pro" : ""}
-                </option>
               </select>
               {isFree && (
                 <p className="text-xs text-gray-400 flex items-center gap-1">
                   <Lock className="h-3 w-3" />
-                  Plan Gratuit : tampons uniquement. Essentiel débloque points, cashback et hybride.
+                  Plan Gratuit : tampons uniquement. Essentiel débloque points et cashback.
                 </p>
               )}
             </div>
 
-            {(type === "STAMPS" || type === "HYBRID") && (
+            {type === "STAMPS" && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">
                   Nombre de tampons pour la récompense

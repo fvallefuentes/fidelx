@@ -320,7 +320,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   }
 
   // Strip image — POINTS avec heroImage : on l'utilise telle quelle.
-  // Sinon (STAMPS / HYBRID, ou POINTS sans heroImage) : pastilles dynamiques.
+  // Sinon (STAMPS, ou POINTS sans heroImage) : pastilles dynamiques.
   if (passData.programType === "POINTS" && passData.heroImage) {
     try {
       const sharp = (await import("sharp")).default;

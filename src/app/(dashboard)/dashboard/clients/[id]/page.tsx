@@ -192,8 +192,7 @@ export default function ClientProfilePage() {
 
   const config = data.program.config as { maxStamps?: number };
   const maxStamps = config.maxStamps || 10;
-  const isStamps =
-    data.program.type === "STAMPS" || data.program.type === "HYBRID";
+  const isStamps = data.program.type === "STAMPS";
 
   return (
     <div className="space-y-6">

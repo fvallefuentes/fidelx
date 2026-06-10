@@ -364,7 +364,6 @@ enum ProgramType {
   STAMPS
   POINTS
   CASHBACK
-  HYBRID
 }
 
 // =============================================
