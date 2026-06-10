@@ -43,27 +43,14 @@ export async function GET(req: Request) {
       ? (pointsTarget ?? 0)
       : ((config.maxStamps as number) || 10);
 
-  // On clamp les valeurs affichées au seuil pour ne jamais montrer "12/10".
-  // La DB peut contenir des valeurs au-dessus quand la carte est en
-  // REWARD_PENDING — les tampons "en trop" sont reportés au cycle suivant
-  // après validation merchant.
-  const displayStamps =
-    maxStamps > 0
-      ? Math.min(card.currentStamps, maxStamps)
-      : card.currentStamps;
-  const displayPoints =
-    isUnlimitedPoints || pointsTarget === null
-      ? card.currentPoints
-      : Math.min(card.currentPoints, pointsTarget);
-
   return NextResponse.json({
     clientName: card.client.firstName,
     programName: card.program.name,
     merchantName: card.program.merchant.name || "Commerce",
     programType: card.program.type,
-    currentStamps: displayStamps,
+    currentStamps: card.currentStamps,
     maxStamps,
-    currentPoints: displayPoints,
+    currentPoints: card.currentPoints,
     unlimited: isUnlimitedPoints,
     status: card.status,
   });

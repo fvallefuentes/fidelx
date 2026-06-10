@@ -95,28 +95,14 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
   const config = card.program.config as Record<string, unknown>;
   const design = card.program.cardDesign as Record<string, unknown>;
 
-  const _maxStampsRaw = (config.maxStamps as number) || 10;
-  const _pointsTargetRaw =
-    (config.tiers as { points?: number }[] | undefined)?.[0]?.points;
-  // Clamp les valeurs au seuil pour ne jamais afficher "12/10" sur le pass.
-  // Les valeurs réelles (>seuil) restent en DB pour le report après claim.
-  const _displayStamps =
-    card.program.type === "STAMPS"
-      ? Math.min(card.currentStamps, _maxStampsRaw)
-      : card.currentStamps;
-  const _displayPoints =
-    card.program.type === "POINTS" && typeof _pointsTargetRaw === "number"
-      ? Math.min(card.currentPoints, _pointsTargetRaw)
-      : card.currentPoints;
-
   const passData: PassData = {
     serialNumber: card.serialNumber,
     programName: card.program.name,
     merchantName: card.program.merchant.name || "Commerce",
     clientName: card.client.firstName,
-    currentStamps: _displayStamps,
-    maxStamps: _maxStampsRaw,
-    currentPoints: _displayPoints,
+    currentStamps: card.currentStamps,
+    maxStamps: (config.maxStamps as number) || 10,
+    currentPoints: card.currentPoints,
     bgColor: (design.bgColor as string) || "#1a1a2e",
     textColor: (design.textColor as string) || "#ffffff",
     stampColor: (design.stampColor as string) || undefined,

@@ -132,11 +132,13 @@ export async function POST(req: Request) {
 
   if (card.program.type === "STAMPS") {
     const maxStamps = (config.maxStamps as number) || 10;
-    // On garde la VRAIE somme en DB (peut dépasser maxStamps). À la validation
-    // de la récompense, claim-reward soustrait maxStamps → les tampons "en trop"
-    // sont reportés sur le cycle suivant.
     const newStamps = card.currentStamps + stampCount;
     const reachedMax = newStamps >= maxStamps;
+    // Quand on dépasse, on cap currentStamps au seuil et on stocke l'excédent
+    // dans pendingExtraStamps. À la validation, claim-reward repassera ces
+    // extras dans currentStamps → ils démarrent le cycle suivant.
+    const cappedStamps = Math.min(newStamps, maxStamps);
+    const extra = Math.max(0, newStamps - maxStamps);
 
     // Check reward threshold
     const reward = card.program.rewards.find(
@@ -150,7 +152,8 @@ export async function POST(req: Request) {
     await prisma.loyaltyCard.update({
       where: { id: card.id },
       data: {
-        currentStamps: newStamps,
+        currentStamps: cappedStamps,
+        pendingExtraStamps: extra > 0 ? { increment: extra } : undefined,
         status: reachedMax ? "REWARD_PENDING" : "ACTIVE",
         totalVisits: { increment: 1 },
         totalSpent: amountSpent ? { increment: amountSpent } : undefined,
@@ -193,10 +196,24 @@ export async function POST(req: Request) {
       await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: reward.id } });
     }
 
+    // POINTS limité : cap currentPoints au seuil + excess dans pendingExtraPoints.
+    // POINTS illimité : pas de cap, juste incrément.
+    let pointsUpdate: { currentPoints?: { set: number } | { increment: number }; pendingExtraPoints?: { increment: number } };
+    if (pointsTarget !== null && reachedMax) {
+      const extraPoints = newPoints - pointsTarget;
+      pointsUpdate = {
+        currentPoints: { set: pointsTarget },
+        pendingExtraPoints:
+          extraPoints > 0 ? { increment: extraPoints } : undefined,
+      };
+    } else {
+      pointsUpdate = { currentPoints: { increment: pointsValue } };
+    }
+
     await prisma.loyaltyCard.update({
       where: { id: card.id },
       data: {
-        currentPoints: { increment: pointsValue },
+        ...pointsUpdate,
         // Même logique que STAMPS : on lock la carte en REWARD_PENDING quand
         // le seuil est atteint, pour forcer la validation merchant avant
         // d'ajouter d'autres points. En unlimited, on reste toujours ACTIVE.

@@ -430,6 +430,11 @@ model LoyaltyCard {
   currentStamps  Int    @default(0)
   currentPoints  Float  @default(0)
   cashbackBalance Float @default(0)
+  /// Tampons gagnés au-delà du seuil pendant un état REWARD_PENDING.
+  /// Reportés sur le prochain cycle quand le merchant valide la récompense.
+  pendingExtraStamps Int  @default(0)
+  /// Points gagnés au-delà du seuil pendant un état REWARD_PENDING (POINTS limité).
+  pendingExtraPoints Float @default(0)
   totalVisits    Int    @default(0)
   totalSpent     Float  @default(0)
   status         CardStatus @default(PENDING)

@@ -38,25 +38,23 @@ export async function POST(req: Request) {
       where: { cardId: card.id, redeemedAt: { not: null } },
     })) === 0;
 
-  // À la validation, on soustrait le seuil (et non plus reset à 0) → les
-  // tampons / points "en trop" gagnés au-delà du seuil sont reportés sur
-  // le cycle suivant. Ex: 9/10 puis +3 → 12 stockés → claim → 12-10 = 2/10.
-  const config = card.program.config as Record<string, unknown>;
+  // À la validation, on injecte les extras (gagnés au-dessus du seuil pendant
+  // le REWARD_PENDING) comme nouveau point de départ → ex 9/10 +3 → 10/10
+  // REWARD_PENDING avec pendingExtraStamps=2 → claim → 2/10 ACTIVE, pending reset.
   const updateData: {
     currentStamps?: number;
+    pendingExtraStamps?: number;
     currentPoints?: number;
+    pendingExtraPoints?: number;
     status: "ACTIVE";
   } = { status: "ACTIVE" };
 
   if (card.program.type === "STAMPS") {
-    const maxStamps = (config.maxStamps as number) || 10;
-    updateData.currentStamps = Math.max(0, card.currentStamps - maxStamps);
+    updateData.currentStamps = card.pendingExtraStamps;
+    updateData.pendingExtraStamps = 0;
   } else if (card.program.type === "POINTS") {
-    const pointsTarget =
-      (config.tiers as { points?: number }[] | undefined)?.[0]?.points;
-    if (typeof pointsTarget === "number" && pointsTarget > 0) {
-      updateData.currentPoints = Math.max(0, card.currentPoints - pointsTarget);
-    }
+    updateData.currentPoints = card.pendingExtraPoints;
+    updateData.pendingExtraPoints = 0;
   }
 
   await prisma.loyaltyCard.update({
