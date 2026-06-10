@@ -530,6 +530,7 @@ const tiers = [
     sub: "/ mois — facturé annuellement",
     features: [
       "1 000 clients actifs",
+      "Jusqu'à 10 programmes",
       "2 500 scans / mois",
       "Mode tampons & points",
       "Branding complet (logo personnalisé)",
@@ -549,6 +550,7 @@ const tiers = [
     sub: "/ mois — facturé annuellement",
     features: [
       "5 000 clients actifs",
+      "Jusqu'à 10 programmes",
       "Scans illimités",
       "Campagnes illimitées",
       "Automatisations & relances inactifs",
