@@ -285,18 +285,16 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   }
 
   // Champs verso
-  // Le CTA Avis Google est tout en haut du verso pour qu'il soit visible
-  // dès que le client retourne le pass. attributedValue avec <a href> est
-  // l'API documentée et fiable d'Apple Wallet pour les liens.
+  // CTA Avis Google : on met l'URL brute dans `value` plutôt qu'un
+  // attributedValue HTML. iOS détecte automatiquement les URLs en texte
+  // brut dans les backFields et les rend cliquables (data detector).
+  // attributedValue avec <a href> a un parsing inconsistant selon les
+  // versions iOS — on évite.
   if (passData.reviewUrl) {
-    const safeUrl = passData.reviewUrl
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;");
     pass.backFields.push({
       key: "review_link",
       label: "⭐ Laisser un avis Google",
-      value: "Touchez ici pour ouvrir Google",
-      attributedValue: `<a href="${safeUrl}">Touchez ici pour ouvrir Google</a>`,
+      value: passData.reviewUrl,
     });
   }
 
