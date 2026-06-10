@@ -526,13 +526,18 @@ export default function ScanPage() {
       isUnlimited
         ? null
         : Math.max(0, cardInfo.maxStamps - cardInfo.currentPoints);
-    // Pour POINTS, on permet jusqu'à 100 unités d'un coup (ex: achat de 100 CHF)
+    // Le cap d'ajout = le seuil de la carte (pas le restant). Ex: programme à 8
+    // tampons → on peut toujours ajouter 1-8 d'un coup, peu importe l'état
+    // actuel. Si on dépasse le seuil (ex 5/8 + 8 = 13), l'excédent est
+    // reporté sur le cycle suivant via pendingExtraStamps.
+    // Pour POINTS limité : même logique sur le seuil, cappé à 100 en sécurité.
+    // POINTS illimité : 100 max par scan.
     const incrementCap = isStamps
-      ? remaining
+      ? Math.max(1, cardInfo.maxStamps)
       : isPoints
         ? isUnlimited
           ? 100
-          : Math.min(100, Math.max(1, remainingPoints || 100))
+          : Math.min(100, Math.max(1, cardInfo.maxStamps || 100))
         : 10;
     return (
       <div className="space-y-4">
