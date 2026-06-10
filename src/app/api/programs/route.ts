@@ -52,12 +52,14 @@ const createProgramSchema = z
   )
   // Validation : seuil de points entre 10 et 10'000 pour POINTS.
   // (Le client envoie config.tiers[0].points qui sert de seuil principal.)
+  // Exception : si config.unlimited === true, le programme accumule sans seuil
+  // — on saute alors cette validation.
   .refine(
     (data) => {
       if (data.type !== "POINTS") return true;
-      const tiers = (data.config as Record<string, unknown>).tiers as
-        | { points?: unknown }[]
-        | undefined;
+      const cfg = data.config as Record<string, unknown>;
+      if (cfg.unlimited === true) return true;
+      const tiers = cfg.tiers as { points?: unknown }[] | undefined;
       const target = tiers?.[0]?.points;
       return (
         typeof target === "number" &&

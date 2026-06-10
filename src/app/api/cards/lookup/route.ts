@@ -32,6 +32,12 @@ export async function GET(req: Request) {
   }
 
   const config = card.program.config as Record<string, unknown>;
+  // Pour un programme POINTS, le seuil de récompense est dans config.tiers[0].points
+  // (et pas dans config.maxStamps). En mode unlimited, il n'y a aucun seuil.
+  const pointsTarget =
+    (config.tiers as { points?: number }[] | undefined)?.[0]?.points ?? null;
+  const isUnlimitedPoints =
+    card.program.type === "POINTS" && config.unlimited === true;
 
   return NextResponse.json({
     clientName: card.client.firstName,
@@ -39,8 +45,12 @@ export async function GET(req: Request) {
     merchantName: card.program.merchant.name || "Commerce",
     programType: card.program.type,
     currentStamps: card.currentStamps,
-    maxStamps: (config.maxStamps as number) || 10,
+    maxStamps:
+      card.program.type === "POINTS"
+        ? (pointsTarget ?? 0)
+        : ((config.maxStamps as number) || 10),
     currentPoints: card.currentPoints,
+    unlimited: isUnlimitedPoints,
     status: card.status,
   });
 }

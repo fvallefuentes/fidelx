@@ -47,6 +47,9 @@ function ProgramCardPreview({ program }: { program: Program }) {
         programType={program.type}
         programName={program.name}
         maxStamps={max}
+        unlimited={
+          program.type === "POINTS" && config.unlimited === true
+        }
       />
       <span className="wcp-tag">APERÇU</span>
     </div>
@@ -585,6 +588,7 @@ function WalletCardPreview({
   programType = "STAMPS",
   heroImage,
   samplePoints,
+  unlimited = false,
 }: {
   bgColor: string;
   textColor: string;
@@ -598,6 +602,7 @@ function WalletCardPreview({
   programType?: string;
   heroImage?: string;
   samplePoints?: number;
+  unlimited?: boolean;
 }) {
   const total = Math.max(1, Math.min(20, maxStamps || 10));
   const rows = total <= 5 ? 1 : 2;
@@ -711,7 +716,9 @@ function WalletCardPreview({
           </span>
           <span className="wcp-value">
             {programType === "POINTS"
-              ? `${samplePoints ?? 0} / ${maxStamps}`
+              ? unlimited
+                ? `${samplePoints ?? 0} pts`
+                : `${samplePoints ?? 0} / ${maxStamps}`
               : maxStamps}
           </span>
         </div>
@@ -744,6 +751,7 @@ function CreateProgramForm({
   const [name, setName] = useState("");
   const [type, setType] = useState("STAMPS");
   const [maxStamps, setMaxStamps] = useState(10);
+  const [pointsUnlimited, setPointsUnlimited] = useState(false);
   const [rewardName, setRewardName] = useState("");
   const [bgColor, setBgColor] = useState("#1a1a2e");
   const [textColor, setTextColor] = useState("#ffffff");
@@ -822,7 +830,9 @@ function CreateProgramForm({
       type === "STAMPS"
         ? { maxStamps, reward: rewardName }
         : type === "POINTS"
-          ? { pointsPerChf: 1, tiers: [{ points: maxStamps, reward: rewardName }] }
+          ? pointsUnlimited
+            ? { pointsPerChf: 1, unlimited: true }
+            : { pointsPerChf: 1, tiers: [{ points: maxStamps, reward: rewardName }] }
           : { percentage: 5, minSpend: 10 }; // CASHBACK
 
     const res = await fetch("/api/programs", {
@@ -845,7 +855,7 @@ function CreateProgramForm({
           description: `Programme ${name}`,
         },
         rewards:
-          rewardName
+          rewardName && !(type === "POINTS" && pointsUnlimited)
             ? [
                 {
                   name: rewardName,
@@ -939,32 +949,58 @@ function CreateProgramForm({
 
             {type === "POINTS" && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Points nécessaires pour la récompense
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={pointsUnlimited}
+                    onChange={(e) => setPointsUnlimited(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span className="font-medium">
+                    Points cumulables à l&apos;infini (pas de seuil)
+                  </span>
                 </label>
-                <Input
-                  type="number"
-                  min={10}
-                  max={10000}
-                  value={maxStamps}
-                  onChange={(e) => {
-                    const v = parseInt(e.target.value);
-                    if (Number.isNaN(v)) return;
-                    setMaxStamps(Math.max(10, Math.min(10000, v)));
-                  }}
-                />
-                <p className="text-xs text-gray-400">Entre 10 et 10&apos;000 points.</p>
+                {!pointsUnlimited && (
+                  <>
+                    <label className="text-sm font-medium block">
+                      Points nécessaires pour la récompense
+                    </label>
+                    <Input
+                      type="number"
+                      min={10}
+                      max={10000}
+                      value={maxStamps}
+                      onChange={(e) => {
+                        const v = parseInt(e.target.value);
+                        if (Number.isNaN(v)) return;
+                        setMaxStamps(Math.max(10, Math.min(10000, v)));
+                      }}
+                    />
+                    <p className="text-xs text-gray-400">
+                      Entre 10 et 10&apos;000 points.
+                    </p>
+                  </>
+                )}
+                {pointsUnlimited && (
+                  <p className="text-xs text-gray-500">
+                    Les clients accumulent des points sans plafond. Aucune
+                    récompense n&apos;est déclenchée automatiquement — gérez les
+                    récompenses manuellement depuis les fiches clients.
+                  </p>
+                )}
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Récompense</label>
-              <Input
-                placeholder="1 café offert"
-                value={rewardName}
-                onChange={(e) => setRewardName(e.target.value)}
-              />
-            </div>
+            {!(type === "POINTS" && pointsUnlimited) && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Récompense</label>
+                <Input
+                  placeholder="1 café offert"
+                  value={rewardName}
+                  onChange={(e) => setRewardName(e.target.value)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Card Design */}
@@ -1170,8 +1206,13 @@ function CreateProgramForm({
                   logoData={logoData}
                   programType={type}
                   heroImage={heroImage}
+                  unlimited={type === "POINTS" && pointsUnlimited}
                   samplePoints={
-                    type === "POINTS" ? Math.floor(maxStamps * 0.3) : undefined
+                    type === "POINTS"
+                      ? pointsUnlimited
+                        ? 123
+                        : Math.floor(maxStamps * 0.3)
+                      : undefined
                   }
                 />
               </div>
@@ -1821,9 +1862,14 @@ function EditProgramDesignModal({
                 logoData={logoData || undefined}
                 programType={program.type}
                 heroImage={heroImage || undefined}
+                unlimited={
+                  program.type === "POINTS" && config.unlimited === true
+                }
                 samplePoints={
                   program.type === "POINTS"
-                    ? Math.floor(maxStamps * 0.3)
+                    ? config.unlimited === true
+                      ? 123
+                      : Math.floor(maxStamps * 0.3)
                     : undefined
                 }
               />

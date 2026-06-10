@@ -14,6 +14,8 @@ interface CardInfo {
   currentStamps: number;
   maxStamps: number;
   currentPoints: number;
+  /** True pour un programme POINTS sans seuil (accumulation infinie). */
+  unlimited?: boolean;
   status: string;
 }
 
@@ -473,16 +475,23 @@ export default function ScanPage() {
   if (step === "confirm" && cardInfo) {
     const isStamps = cardInfo.programType === "STAMPS";
     const isPoints = cardInfo.programType === "POINTS";
+    const isUnlimited = isPoints && cardInfo.unlimited === true;
     // Libellés contextualisés selon le type (tampons vs points)
     const unitSing = isPoints ? "point" : "tampon";
     const unitPlur = isPoints ? "points" : "tampons";
     const remaining = Math.max(0, cardInfo.maxStamps - cardInfo.currentStamps);
-    const remainingPoints = Math.max(
-      0,
-      cardInfo.maxStamps - cardInfo.currentPoints
-    );
+    const remainingPoints =
+      isUnlimited
+        ? null
+        : Math.max(0, cardInfo.maxStamps - cardInfo.currentPoints);
     // Pour POINTS, on permet jusqu'à 100 unités d'un coup (ex: achat de 100 CHF)
-    const incrementCap = isStamps ? remaining : isPoints ? Math.min(100, Math.max(1, remainingPoints || 100)) : 10;
+    const incrementCap = isStamps
+      ? remaining
+      : isPoints
+        ? isUnlimited
+          ? 100
+          : Math.min(100, Math.max(1, remainingPoints || 100))
+        : 10;
     return (
       <div className="space-y-4">
         <div>
@@ -517,9 +526,16 @@ export default function ScanPage() {
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Points</p>
                   <p className="text-3xl font-bold text-blue-600">
                     {cardInfo.currentPoints}
-                    <span className="text-base text-gray-400 font-normal">
-                      /{cardInfo.maxStamps}
-                    </span>
+                    {!isUnlimited && (
+                      <span className="text-base text-gray-400 font-normal">
+                        /{cardInfo.maxStamps}
+                      </span>
+                    )}
+                    {isUnlimited && (
+                      <span className="ml-1 text-base text-gray-400 font-normal">
+                        pts
+                      </span>
+                    )}
                   </p>
                 </div>
               )}
@@ -538,13 +554,18 @@ export default function ScanPage() {
                 <p className="text-sm font-medium text-amber-700">Plus que {remaining} tampon{remaining > 1 ? "s" : ""} pour la récompense !</p>
               </div>
             )}
-            {isPoints && remainingPoints > 0 && remainingPoints <= 20 && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-center">
-                <p className="text-sm font-medium text-amber-700">
-                  Plus que {remainingPoints} point{remainingPoints > 1 ? "s" : ""} pour la récompense !
-                </p>
-              </div>
-            )}
+            {isPoints &&
+              !isUnlimited &&
+              remainingPoints !== null &&
+              remainingPoints > 0 &&
+              remainingPoints <= 20 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-center">
+                  <p className="text-sm font-medium text-amber-700">
+                    Plus que {remainingPoints} point
+                    {remainingPoints > 1 ? "s" : ""} pour la récompense !
+                  </p>
+                </div>
+              )}
           </CardContent>
         </Card>
         <Card className="shadow-sm">
