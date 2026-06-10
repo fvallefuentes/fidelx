@@ -849,11 +849,16 @@ function CreateProgramForm({
                 </label>
                 <Input
                   type="number"
-                  min={2}
-                  max={50}
+                  min={1}
+                  max={20}
                   value={maxStamps}
-                  onChange={(e) => setMaxStamps(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    if (Number.isNaN(v)) return;
+                    setMaxStamps(Math.max(1, Math.min(20, v)));
+                  }}
                 />
+                <p className="text-xs text-gray-400">Entre 1 et 20 tampons.</p>
               </div>
             )}
 

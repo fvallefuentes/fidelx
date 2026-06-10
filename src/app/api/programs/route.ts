@@ -11,27 +11,46 @@ import type { RewardType } from "@/generated/prisma/enums";
 
 const jsonObject = z.record(z.string(), z.unknown());
 
-const createProgramSchema = z.object({
-  name: z.string().trim().min(1, "Nom du programme requis").max(120, "Nom du programme trop long"),
-  type: z.enum(["STAMPS", "POINTS", "CASHBACK", "HYBRID"]),
-  config: jsonObject,
-  cardDesign: jsonObject,
-  establishmentId: z.string().trim().min(1).optional().nullable(),
-  googleReviewEnabled: z.boolean().optional().default(false),
-  googleReviewBonus: z.coerce.number().int().min(0).max(100).optional().default(0),
-  googleReviewMinVisits: z.coerce.number().int().min(1).max(100).optional().default(3),
-  rewards: z
-    .array(
-      z.object({
-        name: z.string().trim().min(1, "Nom de récompense requis").max(120, "Nom de récompense trop long"),
-        description: z.string().trim().max(500, "Description trop longue").optional(),
-        threshold: z.coerce.number().int().positive("Seuil de récompense invalide"),
-        rewardType: z.enum(["FREE_ITEM", "DISCOUNT_CHF", "DISCOUNT_PCT", "CUSTOM"]),
-        rewardValue: z.coerce.number().min(0).optional(),
-      })
-    )
-    .optional(),
-});
+const createProgramSchema = z
+  .object({
+    name: z.string().trim().min(1, "Nom du programme requis").max(120, "Nom du programme trop long"),
+    type: z.enum(["STAMPS", "POINTS", "CASHBACK", "HYBRID"]),
+    config: jsonObject,
+    cardDesign: jsonObject,
+    establishmentId: z.string().trim().min(1).optional().nullable(),
+    googleReviewEnabled: z.boolean().optional().default(false),
+    googleReviewBonus: z.coerce.number().int().min(0).max(100).optional().default(0),
+    googleReviewMinVisits: z.coerce.number().int().min(1).max(100).optional().default(3),
+    rewards: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1, "Nom de récompense requis").max(120, "Nom de récompense trop long"),
+          description: z.string().trim().max(500, "Description trop longue").optional(),
+          threshold: z.coerce.number().int().positive("Seuil de récompense invalide"),
+          rewardType: z.enum(["FREE_ITEM", "DISCOUNT_CHF", "DISCOUNT_PCT", "CUSTOM"]),
+          rewardValue: z.coerce.number().min(0).optional(),
+        })
+      )
+      .optional(),
+  })
+  // Validation : nombre de tampons entre 1 et 20 pour STAMPS/HYBRID.
+  // (Le client doit envoyer config.maxStamps comme un entier dans cette plage.)
+  .refine(
+    (data) => {
+      if (data.type !== "STAMPS" && data.type !== "HYBRID") return true;
+      const max = (data.config as Record<string, unknown>).maxStamps;
+      return (
+        typeof max === "number" &&
+        Number.isInteger(max) &&
+        max >= 1 &&
+        max <= 20
+      );
+    },
+    {
+      message: "Le nombre de tampons doit être un entier entre 1 et 20",
+      path: ["config", "maxStamps"],
+    }
+  );
 
 export async function GET() {
   const session = await getServerSession(authOptions);
