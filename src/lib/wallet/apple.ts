@@ -280,7 +280,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     (pass as any).auxiliaryFields.push({
       key: "review_cta",
       label: "⭐ AVIS GOOGLE",
-      value: "Détails au verso ↻",
+      // Pas de flèche qui suggère un tap direct (ne marche pas sur le
+      // front d'un storeCard). On indique clairement comment accéder au
+      // lien : taper le bouton ⋯ en haut à droite du pass.
+      value: "Touchez ⋯ en haut",
     });
   }
 
