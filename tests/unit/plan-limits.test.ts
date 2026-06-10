@@ -10,9 +10,10 @@ describe("Plan limits", () => {
 
   it("FREE plan limits sont restrictifs", () => {
     const free = PLAN_LIMITS.FREE;
-    expect(free.maxActiveCards).toBe(50);
+    expect(free.maxActiveCards).toBe(10);
     expect(free.maxStampsPerMonth).toBe(300);
     expect(free.maxPrograms).toBe(1);
+    expect(free.maxCampaignsPerMonth).toBe(1);
     expect(free.allowedProgramTypes).toEqual(["STAMPS"]);
     expect(free.showFidlifyBranding).toBe(true);
     expect(free.canExportCsv).toBe(false);
