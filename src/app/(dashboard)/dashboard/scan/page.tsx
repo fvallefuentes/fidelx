@@ -18,7 +18,12 @@ interface CardInfo {
 }
 
 interface StampResult {
-  card: { currentStamps: number; totalVisits: number; status: string };
+  card: {
+    currentStamps: number;
+    currentPoints: number;
+    totalVisits: number;
+    status: string;
+  };
   client: { firstName: string };
   rewardUnlocked: { name: string } | null;
   rewardPending: boolean;
@@ -369,7 +374,11 @@ export default function ScanPage() {
       <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
           <div className="h-10 w-10 mx-auto animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="mt-4 text-gray-500">{step === "claiming" ? "Validation de la récompense..." : "Ajout des tampons..."}</p>
+          <p className="mt-4 text-gray-500">
+            {step === "claiming"
+              ? "Validation de la récompense..."
+              : `Ajout des ${cardInfo?.programType === "POINTS" ? "points" : "tampons"}...`}
+          </p>
         </div>
       </div>
     );
@@ -463,12 +472,26 @@ export default function ScanPage() {
   // ─── Confirm stamp ────────────────────────────────────────────────────────
   if (step === "confirm" && cardInfo) {
     const isStamps = cardInfo.programType === "STAMPS" || cardInfo.programType === "HYBRID";
+    const isPoints = cardInfo.programType === "POINTS";
+    // Libellés contextualisés selon le type (tampons vs points)
+    const unitSing = isPoints ? "point" : "tampon";
+    const unitPlur = isPoints ? "points" : "tampons";
     const remaining = Math.max(0, cardInfo.maxStamps - cardInfo.currentStamps);
+    const remainingPoints = Math.max(
+      0,
+      cardInfo.maxStamps - cardInfo.currentPoints
+    );
+    // Pour POINTS, on permet jusqu'à 100 unités d'un coup (ex: achat de 100 CHF)
+    const incrementCap = isStamps ? remaining : isPoints ? Math.min(100, Math.max(1, remainingPoints || 100)) : 10;
     return (
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ajouter des tampons</h1>
-          <p className="text-sm text-gray-500">Carte identifiée — confirmez le tamponnage</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Ajouter des {unitPlur}
+          </h1>
+          <p className="text-sm text-gray-500">
+            Carte identifiée — confirmez l&apos;ajout
+          </p>
         </div>
         <Card className="overflow-hidden shadow-sm">
           <div className="bg-blue-600 px-5 py-4 text-white">
@@ -489,6 +512,17 @@ export default function ScanPage() {
                   </p>
                 </div>
               )}
+              {isPoints && (
+                <div className="text-right">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Points</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    {cardInfo.currentPoints}
+                    <span className="text-base text-gray-400 font-normal">
+                      /{cardInfo.maxStamps}
+                    </span>
+                  </p>
+                </div>
+              )}
             </div>
             {isStamps && (
               <div className="grid grid-cols-5 gap-2">
@@ -504,23 +538,51 @@ export default function ScanPage() {
                 <p className="text-sm font-medium text-amber-700">Plus que {remaining} tampon{remaining > 1 ? "s" : ""} pour la récompense !</p>
               </div>
             )}
+            {isPoints && remainingPoints > 0 && remainingPoints <= 20 && (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-center">
+                <p className="text-sm font-medium text-amber-700">
+                  Plus que {remainingPoints} point{remainingPoints > 1 ? "s" : ""} pour la récompense !
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
         <Card className="shadow-sm">
           <CardContent className="pt-5 pb-5">
-            <p className="text-sm font-medium text-gray-700 text-center mb-4">Nombre de tampons à ajouter</p>
+            <p className="text-sm font-medium text-gray-700 text-center mb-4">
+              Nombre de {unitPlur} à ajouter
+            </p>
             <div className="flex items-center justify-center gap-6">
               <button onClick={() => setStampCount((n) => Math.max(1, n - 1))} disabled={stampCount <= 1} className="h-12 w-12 rounded-full border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors disabled:opacity-30">
                 <Minus className="h-5 w-5" />
               </button>
-              <span className="text-4xl font-bold text-gray-900 w-12 text-center">{stampCount}</span>
-              <button onClick={() => setStampCount((n) => Math.min(isStamps ? remaining : 10, n + 1))} disabled={isStamps && stampCount >= remaining} className="h-12 w-12 rounded-full border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors disabled:opacity-30">
+              <span className="text-4xl font-bold text-gray-900 w-16 text-center">{stampCount}</span>
+              <button onClick={() => setStampCount((n) => Math.min(incrementCap, n + 1))} disabled={stampCount >= incrementCap} className="h-12 w-12 rounded-full border-2 border-gray-200 flex items-center justify-center text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors disabled:opacity-30">
                 <Plus className="h-5 w-5" />
               </button>
             </div>
+            {isPoints && (
+              <div className="mt-3 flex justify-center gap-2">
+                {[5, 10, 50, 100].map((bump) => (
+                  <button
+                    key={bump}
+                    type="button"
+                    onClick={() =>
+                      setStampCount((n) => Math.min(incrementCap, n + bump))
+                    }
+                    className="px-3 py-1 text-xs font-medium rounded-full border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+                  >
+                    +{bump}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="mt-5 flex gap-3">
               <Button variant="outline" className="flex-1" onClick={reset}><RotateCcw className="mr-2 h-4 w-4" /> Annuler</Button>
-              <Button className="flex-1 gap-2" onClick={handleStamp}><Check className="h-4 w-4" />Confirmer {stampCount} tampon{stampCount > 1 ? "s" : ""}</Button>
+              <Button className="flex-1 gap-2" onClick={handleStamp}>
+                <Check className="h-4 w-4" />
+                Confirmer {stampCount} {stampCount > 1 ? unitPlur : unitSing}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -530,6 +592,9 @@ export default function ScanPage() {
 
   // ─── Success ──────────────────────────────────────────────────────────────
   if (step === "success" && result) {
+    const isPointsSuccess = cardInfo?.programType === "POINTS";
+    const unitSing = isPointsSuccess ? "point" : "tampon";
+    const unitPlur = isPointsSuccess ? "points" : "tampons";
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-4">
         <div className="w-full max-w-sm">
@@ -538,15 +603,25 @@ export default function ScanPage() {
               <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
                 <Check className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="text-xl font-bold">{stampCount > 1 ? `${stampCount} tampons ajoutés !` : "Tampon ajouté !"}</h2>
+              <h2 className="text-xl font-bold">
+                {stampCount > 1
+                  ? `${stampCount} ${unitPlur} ajoutés !`
+                  : `${unitSing.charAt(0).toUpperCase() + unitSing.slice(1)} ajouté !`}
+              </h2>
               <div className="mt-5 rounded-xl bg-gray-50 border border-gray-100 p-4 space-y-2 text-left">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Client</span>
                   <span className="text-sm font-semibold">{result.client.firstName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-500">Tampons</span>
-                  <span className="text-sm font-bold text-blue-600">{result.card.currentStamps}</span>
+                  <span className="text-sm text-gray-500">
+                    {isPointsSuccess ? "Points" : "Tampons"}
+                  </span>
+                  <span className="text-sm font-bold text-blue-600">
+                    {isPointsSuccess
+                      ? result.card.currentPoints
+                      : result.card.currentStamps}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-500">Visites</span>
