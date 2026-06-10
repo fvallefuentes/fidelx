@@ -1537,7 +1537,7 @@ function EditProgramDesignModal({
               >
                 <Lock size={12} style={{ flexShrink: 0, marginTop: 2 }} />
                 <span>
-                  Le nombre de tampons ({maxStamps}) et le type de programme ne sont pas modifiables — cela casserait
+                  Le type de programme n&apos;est pas modifiable — cela casserait
                   les progressions des cartes déjà émises. Pour changer ces paramètres, créez un nouveau programme.
                 </span>
               </div>
