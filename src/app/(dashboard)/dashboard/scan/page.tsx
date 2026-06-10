@@ -126,11 +126,34 @@ export default function ScanPage() {
     lastScanRef.current = "";
 
     async function startCamera() {
+      let cancelled = false;
+      // Essai 1 : caméra arrière (mobile). Fallback : n'importe quelle caméra (desktop).
+      async function getStream(): Promise<MediaStream> {
+        try {
+          return await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
+            audio: false,
+          });
+        } catch {
+          // facingMode peut bloquer sur certains desktops sans rear camera —
+          // on retente avec une contrainte minimale.
+          return await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+        }
+      }
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-          audio: false,
-        });
+        const stream = await getStream();
+        if (cancelled) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
         const track = stream.getVideoTracks()[0];
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -141,22 +164,41 @@ export default function ScanPage() {
           }
         } catch { /* ignore */ }
         streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play();
-            setCameraReady(true);
-            rafRef.current = requestAnimationFrame(tick);
-          };
+        const video = videoRef.current;
+        if (!video) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
         }
+        video.srcObject = stream;
+        // On attend `play()` plutôt que `onloadedmetadata` : ça évite la race
+        // condition où la metadata se charge plus vite que l'attachement du
+        // handler (qui laissait le spinner "Activation caméra..." infini sur
+        // certains desktops).
+        try {
+          await video.play();
+        } catch {
+          /* autoplay peut être bloqué — on continue quand même, la vidéo
+             affichera le 1er frame statique et le scan tournera dessus */
+        }
+        if (cancelled) return;
+        setCameraReady(true);
+        rafRef.current = requestAnimationFrame(tick);
       } catch (err) {
+        if (cancelled) return;
         const msg = err instanceof Error ? err.message : String(err);
+        const low = msg.toLowerCase();
         setCameraError(
-          msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("denied")
+          low.includes("permission") || low.includes("denied") || low.includes("notallowed")
             ? "Accès à la caméra refusé. Autorisez la caméra dans les réglages du navigateur."
-            : "Impossible d'accéder à la caméra : " + msg
+            : low.includes("notfound") || low.includes("notreadable")
+              ? "Aucune caméra disponible (ou utilisée par une autre app). Vérifiez vos périphériques."
+              : "Impossible d'accéder à la caméra : " + msg
         );
       }
+
+      return () => {
+        cancelled = true;
+      };
     }
     startCamera();
     return () => stopCamera();
