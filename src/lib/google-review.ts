@@ -307,14 +307,18 @@ export async function maybeInviteToReview(cardId: string): Promise<boolean> {
   });
   if (confirmed) return false;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.fidlify.com";
   const bonusType = bonusTypeForProgram(p.type);
   const bonusLabel =
     bonusType === "stamps"
       ? `${p.googleReviewBonus} tampon${p.googleReviewBonus > 1 ? "s" : ""}`
       : `${p.googleReviewBonus} point${p.googleReviewBonus > 1 ? "s" : ""}`;
 
-  const reviewLink = `${appUrl.replace(/\/$/, "")}/avis/${card.serialNumber}`;
+  // Lien direct vers la page d'écriture d'avis Google — l'ancien lien
+  // /avis/[serialNumber] ajoutait une étape Fidlify intermédiaire que le
+  // client devait cliquer pour qu'on crée le GoogleReviewRequest. Maintenant
+  // on crée la demande dès l'invitation (voir plus bas) et le lien envoie
+  // direct sur Google.
+  const reviewLink = buildGoogleReviewUrl(p.establishment.googlePlaceId);
   const message = `Laissez un avis Google et gagnez ${bonusLabel} ! ${reviewLink}`;
 
   // 1. Marque la carte comme invitée + stocke le message (affiché au verso du pass)
@@ -326,6 +330,30 @@ export async function maybeInviteToReview(cardId: string): Promise<boolean> {
       lastMessageAt: new Date(),
     },
   });
+
+  // 1bis. Crée immédiatement la GoogleReviewRequest (status SENT) → le client
+  // apparaît dans /dashboard/avis dès qu'il est invité, sans devoir cliquer
+  // sur un bouton Fidlify. Le merchant vérifie ensuite manuellement sur sa
+  // fiche Google si l'avis a été déposé puis valide/rejette.
+  // Idempotent : on skip si une demande SENT/CONFIRMED existe déjà.
+  try {
+    const already = await prisma.googleReviewRequest.findFirst({
+      where: { cardId: card.id, status: { in: ["SENT", "CONFIRMED"] } },
+      select: { id: true },
+    });
+    if (!already) {
+      await prisma.googleReviewRequest.create({
+        data: {
+          cardId: card.id,
+          status: "SENT",
+          bonusStamps: bonusType === "stamps" ? p.googleReviewBonus : 0,
+          bonusPoints: bonusType === "points" ? p.googleReviewBonus : 0,
+        },
+      });
+    }
+  } catch (e) {
+    console.error("[review-invite] reviewRequest create failed:", e);
+  }
 
   // 2. Push Apple (APNs background → refetch) + sync Google object
   try {
