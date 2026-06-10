@@ -281,6 +281,15 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       logoBuf = decodeDataUrl(passData.logoData);
     }
 
+    // Fallback : plan payant sans logo perso (ou logoData invalide) →
+    // on affiche quand même le logo Fidlify pour que l'emplacement haut-gauche
+    // du pass ne reste pas vide.
+    if (!logoBuf) {
+      const dark = isBgDark(passData.bgColor);
+      const logoFile = dark ? "fidlify_logo_white.png" : "fidlify_logo_black.svg";
+      logoBuf = readFileSync(join(process.cwd(), `src/lib/wallet/${logoFile}`));
+    }
+
     if (logoBuf) {
       try {
         const logo1x = await sharp(logoBuf).resize({ height: 50, fit: "inside", withoutEnlargement: true }).png().toBuffer();
