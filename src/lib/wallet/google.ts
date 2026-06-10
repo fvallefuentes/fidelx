@@ -220,13 +220,24 @@ export async function generateGoogleWalletLink(
     logoUrl,
   });
 
+  const _maxStampsRawA = (config.maxStamps as number) || 10;
+  const _pointsTargetRawA =
+    (config.tiers as { points?: number }[] | undefined)?.[0]?.points;
+  const _displayStampsA =
+    card.program.type === "STAMPS"
+      ? Math.min(card.currentStamps, _maxStampsRawA)
+      : card.currentStamps;
+  const _displayPointsA =
+    card.program.type === "POINTS" && typeof _pointsTargetRawA === "number"
+      ? Math.min(card.currentPoints, _pointsTargetRawA)
+      : card.currentPoints;
   const loyaltyObject = buildLoyaltyObject({
     serialNumber: card.serialNumber,
     classId,
     clientName: card.client.firstName,
-    currentStamps: card.currentStamps,
-    maxStamps: (config.maxStamps as number) || 10,
-    currentPoints: card.currentPoints,
+    currentStamps: _displayStampsA,
+    maxStamps: _maxStampsRawA,
+    currentPoints: _displayPointsA,
     programType: card.program.type,
     appUrl,
     designVersion: String(card.program.updatedAt.getTime()),
@@ -419,13 +430,24 @@ export async function updateGoogleWalletObject(
   const design = card.program.cardDesign as Record<string, unknown>;
   const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${serialNumber}`;
 
+  const _maxStampsRawU = (config.maxStamps as number) || 10;
+  const _pointsTargetRawU =
+    (config.tiers as { points?: number }[] | undefined)?.[0]?.points;
+  const _displayStampsU =
+    card.program.type === "STAMPS"
+      ? Math.min(card.currentStamps, _maxStampsRawU)
+      : card.currentStamps;
+  const _displayPointsU =
+    card.program.type === "POINTS" && typeof _pointsTargetRawU === "number"
+      ? Math.min(card.currentPoints, _pointsTargetRawU)
+      : card.currentPoints;
   const updatedObject = buildLoyaltyObject({
     serialNumber,
     classId: `${GOOGLE_WALLET_ISSUER_ID}.${card.program.id}`,
     clientName: card.client.firstName,
-    currentStamps: card.currentStamps,
-    maxStamps: (config.maxStamps as number) || 10,
-    currentPoints: card.currentPoints,
+    currentStamps: _displayStampsU,
+    maxStamps: _maxStampsRawU,
+    currentPoints: _displayPointsU,
     programType: card.program.type,
     appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     designVersion: String(card.program.updatedAt.getTime()),

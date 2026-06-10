@@ -132,6 +132,9 @@ export async function POST(req: Request) {
 
   if (card.program.type === "STAMPS") {
     const maxStamps = (config.maxStamps as number) || 10;
+    // On garde la VRAIE somme en DB (peut dépasser maxStamps). À la validation
+    // de la récompense, claim-reward soustrait maxStamps → les tampons "en trop"
+    // sont reportés sur le cycle suivant.
     const newStamps = card.currentStamps + stampCount;
     const reachedMax = newStamps >= maxStamps;
 
@@ -147,8 +150,7 @@ export async function POST(req: Request) {
     await prisma.loyaltyCard.update({
       where: { id: card.id },
       data: {
-        // Cap at maxStamps, don't reset — wait for merchant to validate
-        currentStamps: reachedMax ? maxStamps : newStamps,
+        currentStamps: newStamps,
         status: reachedMax ? "REWARD_PENDING" : "ACTIVE",
         totalVisits: { increment: 1 },
         totalSpent: amountSpent ? { increment: amountSpent } : undefined,
@@ -169,11 +171,19 @@ export async function POST(req: Request) {
   if (card.program.type === "POINTS") {
     const pointsPerChf = (config.pointsPerChf as number) || 1;
     // Priorité : si amountSpent est fourni → on convertit en points via pointsPerChf.
-    // Sinon → on respecte le `count` choisi par le merchant (boutons +/- ou +5/+10/+50/+100
-    // dans l'UI de scan). L'ancien comportement ajoutait toujours 1 point quel que soit
-    // le count, ce qui était un bug.
+    // Sinon → on respecte le `count` choisi par le merchant.
     const pointsValue = amountSpent ? amountSpent * pointsPerChf : stampCount;
     const newPoints = card.currentPoints + pointsValue;
+
+    // Seuil de récompense : config.tiers[0].points pour les programmes limités.
+    // En mode unlimited (config.unlimited === true), il n'y a aucun seuil — la
+    // carte ne passe jamais en REWARD_PENDING.
+    const isUnlimited = config.unlimited === true;
+    const pointsTarget = isUnlimited
+      ? null
+      : ((config.tiers as { points?: number }[] | undefined)?.[0]?.points ?? null);
+    const reachedMax =
+      pointsTarget !== null && newPoints >= pointsTarget;
 
     const reward = card.program.rewards.find(
       (r) => newPoints >= r.threshold && card.currentPoints < r.threshold
@@ -187,11 +197,24 @@ export async function POST(req: Request) {
       where: { id: card.id },
       data: {
         currentPoints: { increment: pointsValue },
-        totalVisits: card.program.type === "POINTS" ? { increment: 1 } : undefined,
+        // Même logique que STAMPS : on lock la carte en REWARD_PENDING quand
+        // le seuil est atteint, pour forcer la validation merchant avant
+        // d'ajouter d'autres points. En unlimited, on reste toujours ACTIVE.
+        status: reachedMax ? "REWARD_PENDING" : undefined,
+        totalVisits: { increment: 1 },
         totalSpent: amountSpent ? { increment: amountSpent } : undefined,
         lastVisitAt: new Date(),
       },
     });
+
+    if (reachedMax && !rewardUnlocked) {
+      // Auto-create reward claim si aucune reward.threshold spécifique n'a matché
+      const defaultReward = card.program.rewards[0];
+      if (defaultReward) {
+        rewardUnlocked = { id: defaultReward.id, name: defaultReward.name };
+        await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: defaultReward.id } });
+      }
+    }
   }
 
   if (card.program.type === "CASHBACK") {
