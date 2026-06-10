@@ -40,7 +40,19 @@ const schema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format date invalide")
     .optional()
-    .or(z.literal("")),
+    .or(z.literal(""))
+    // Refuser les dates futures ou < 1900. Un client peut bypasser le max= de
+    // l'<input> côté front en éditant le DOM — on revalide donc côté API.
+    .refine(
+      (v) => {
+        if (!v) return true;
+        const d = new Date(v);
+        if (isNaN(d.getTime())) return false;
+        if (d.getFullYear() < 1900) return false;
+        return d.getTime() <= Date.now();
+      },
+      { message: "Date de naissance future : refusée" },
+    ),
   programIds: z.array(z.string().trim().min(1)).min(1, "Au moins 1 programme requis").max(20),
 });
 

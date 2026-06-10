@@ -115,17 +115,27 @@ export async function POST(
   const email = normalizeEmail(rawEmail);
   const phone = normalizePhone(rawPhone);
 
-  // Parse birthDate : YYYY-MM-DD → Date à minuit UTC. Bornes : 1900..aujourd'hui
+  // Parse birthDate : YYYY-MM-DD → Date à minuit UTC. Bornes : 1900..aujourd'hui.
+  // Une date invalide ou dans le futur est refusée explicitement (un user mal
+  // intentionné pourrait sinon contourner le max= du <input type="date">).
   let birthDate: Date | null = null;
   if (rawBirthDate && typeof rawBirthDate === "string") {
     const parsed = new Date(rawBirthDate);
-    if (
-      !isNaN(parsed.getTime()) &&
-      parsed.getFullYear() >= 1900 &&
-      parsed.getTime() <= Date.now()
-    ) {
-      birthDate = parsed;
+    if (isNaN(parsed.getTime()) || parsed.getFullYear() < 1900) {
+      return respond(
+        { error: "Date de naissance invalide" },
+        { status: 400 },
+        { result: "VALIDATION_ERROR", blockedReason: "birthDate_invalid" },
+      );
     }
+    if (parsed.getTime() > Date.now()) {
+      return respond(
+        { error: "Date de naissance future : refusée" },
+        { status: 400 },
+        { result: "VALIDATION_ERROR", blockedReason: "birthDate_future" },
+      );
+    }
+    birthDate = parsed;
   }
 
   if (!email && !phone) {
