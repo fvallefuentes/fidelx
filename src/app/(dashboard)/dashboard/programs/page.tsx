@@ -914,26 +914,45 @@ function CreateProgramForm({
                   </Button>
                 </div>
               ) : (
-                <label className="logo-dropzone cursor-pointer block">
+                <label className="cursor-pointer block">
                   <input
                     type="file"
                     accept="image/png,image/jpeg,image/svg+xml,image/webp"
                     onChange={handleLogoChange}
                     className="sr-only"
                   />
-                  <div className="flex items-center gap-3 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/40 hover:bg-blue-50 hover:border-blue-400 transition-colors px-4 py-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                  <div
+                    className="flex items-center gap-3 rounded-lg transition-colors"
+                    style={{
+                      padding: "16px 18px",
+                      background: "#0a0d04",
+                      border: "2px dashed #d4ff4e",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#15170d";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#0a0d04";
+                    }}
+                  >
+                    <div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+                      style={{ background: "rgba(212,255,78,0.18)", color: "#d4ff4e" }}
+                    >
                       <ImagePlus className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium" style={{ color: "#f4f5f1" }}>
                         Ajouter un logo personnalisé
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs mt-0.5" style={{ color: "#8a8e84" }}>
                         PNG, JPG, SVG ou WebP · max 500 KB · affiché en haut-gauche de la carte Wallet
                       </div>
                     </div>
-                    <div className="hidden sm:block text-xs font-medium text-blue-600 whitespace-nowrap">
+                    <div
+                      className="hidden sm:block text-xs font-medium whitespace-nowrap"
+                      style={{ color: "#d4ff4e" }}
+                    >
                       Choisir un fichier →
                     </div>
                   </div>
@@ -1368,17 +1387,15 @@ function EditProgramDesignModal({
                     <div
                       className="flex items-center gap-3 rounded-lg transition-colors"
                       style={{
-                        padding: "14px 16px",
-                        background: "rgba(212,255,78,0.06)",
-                        border: "2px dashed rgba(212,255,78,0.35)",
+                        padding: "16px 18px",
+                        background: "#0a0d04",
+                        border: "2px dashed #d4ff4e",
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(212,255,78,0.1)";
-                        e.currentTarget.style.borderColor = "rgba(212,255,78,0.6)";
+                        e.currentTarget.style.background = "#15170d";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "rgba(212,255,78,0.06)";
-                        e.currentTarget.style.borderColor = "rgba(212,255,78,0.35)";
+                        e.currentTarget.style.background = "#0a0d04";
                       }}
                     >
                       <div
