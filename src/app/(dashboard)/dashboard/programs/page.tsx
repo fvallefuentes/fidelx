@@ -235,11 +235,8 @@ export default function ProgramsPage() {
     setDeletingId(null);
     setConfirmDeleteId(null);
     if (res.ok) {
-      if (data.action === "archived") {
-        alert(
-          `Programme archivÃ©. ${data.expiredCards ?? 0} carte(s) client ont Ã©tÃ© rendues obsolÃ¨tes.`
-        );
-      }
+      // L'archivage se reflète directement dans l'onglet Archivés —
+      // pas de popup natif (le label de la carte passe à "Archivé").
       fetchPrograms();
     } else {
       alert(data.error || "Erreur lors de l'archivage");
