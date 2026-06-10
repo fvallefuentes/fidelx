@@ -266,24 +266,40 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     });
   }
 
-  // CTA "Avis Google" en auxiliaryField : visible sur la face du pass,
-  // tappable directement (attributedValue avec <a href>) → ouvre Google
-  // sans avoir à retourner la carte. Disparaît automatiquement quand la
-  // GoogleReviewRequest passe en CONFIRMED ou REJECTED côté merchant.
+  // CTA "Avis Google" :
+  // - Sur la face (auxiliaryField) : on affiche une étiquette visible mais
+  //   PAS tappable. Apple Wallet n'interprète <a href> dans attributedValue
+  //   que sur backFields ; mettre un lien en auxiliaryField provoque juste
+  //   une désélection du pass au tap. On indique donc "Détails au verso ↻".
+  // - Sur le verso (backField) : un attributedValue avec <a href> qui marche
+  //   à 100% sur iOS. 2 taps au total (flip puis tap) mais fiable.
+  // Le CTA disparaît automatiquement quand la GoogleReviewRequest passe en
+  // CONFIRMED ou REJECTED côté merchant.
   if (passData.reviewUrl) {
-    const safeUrl = passData.reviewUrl
-      .replace(/&/g, "&amp;")
-      .replace(/"/g, "&quot;");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (pass as any).auxiliaryFields.push({
       key: "review_cta",
       label: "⭐ AVIS GOOGLE",
-      value: "Laisser un avis →",
-      attributedValue: `<a href="${safeUrl}">Laisser un avis →</a>`,
+      value: "Détails au verso ↻",
     });
   }
 
   // Champs verso
+  // Le CTA Avis Google est tout en haut du verso pour qu'il soit visible
+  // dès que le client retourne le pass. attributedValue avec <a href> est
+  // l'API documentée et fiable d'Apple Wallet pour les liens.
+  if (passData.reviewUrl) {
+    const safeUrl = passData.reviewUrl
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;");
+    pass.backFields.push({
+      key: "review_link",
+      label: "⭐ Laisser un avis Google",
+      value: "Touchez ici pour ouvrir Google",
+      attributedValue: `<a href="${safeUrl}">Touchez ici pour ouvrir Google</a>`,
+    });
+  }
+
   pass.backFields.push({
     key: "merchant",
     label: "Commerce",
