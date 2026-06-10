@@ -73,6 +73,11 @@ interface PassData {
   /** Marque le pass comme expiré → iOS le déplace dans la section "Expirés"
    *  du Wallet et le grise. Branché sur card.status (EXPIRED ou REVOKED). */
   voided?: boolean;
+  /** Lien direct vers la page d'écriture d'avis Google — si non null,
+   *  un champ "Laisser un avis" tappable est ajouté sur la face avant
+   *  du pass (auxiliaryField avec attributedValue). Visible tant que la
+   *  GoogleReviewRequest est en statut SENT. */
+  reviewUrl?: string | null;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -94,6 +99,22 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
 
   const config = card.program.config as Record<string, unknown>;
   const design = card.program.cardDesign as Record<string, unknown>;
+
+  // CTA "Laisser un avis Google" sur la face du pass : on l'affiche tant
+  // qu'une GoogleReviewRequest est en attente (status SENT) et qu'on a un
+  // Place ID. Disparaît dès que le merchant valide ou rejette.
+  let reviewUrl: string | null = null;
+  const placeId = card.program.establishment?.googlePlaceId ?? null;
+  if (placeId) {
+    const pendingReview = await prisma.googleReviewRequest.findFirst({
+      where: { cardId: card.id, status: "SENT" },
+      select: { id: true },
+    });
+    if (pendingReview) {
+      const { buildGoogleReviewUrl } = await import("@/lib/google-review");
+      reviewUrl = buildGoogleReviewUrl(placeId);
+    }
+  }
 
   const passData: PassData = {
     serialNumber: card.serialNumber,
@@ -124,6 +145,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     voided:
       (card.status as string) === "EXPIRED" ||
       (card.status as string) === "REVOKED",
+    reviewUrl,
     locations: hasValidLocation(card.program.establishment)
       ? [
           {
@@ -241,6 +263,23 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       label: "OFFRE",
       value: passData.lastMessage || "",
       changeMessage: "%@",
+    });
+  }
+
+  // CTA "Avis Google" en auxiliaryField : visible sur la face du pass,
+  // tappable directement (attributedValue avec <a href>) → ouvre Google
+  // sans avoir à retourner la carte. Disparaît automatiquement quand la
+  // GoogleReviewRequest passe en CONFIRMED ou REJECTED côté merchant.
+  if (passData.reviewUrl) {
+    const safeUrl = passData.reviewUrl
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (pass as any).auxiliaryFields.push({
+      key: "review_cta",
+      label: "⭐ AVIS GOOGLE",
+      value: "Laisser un avis →",
+      attributedValue: `<a href="${safeUrl}">Laisser un avis →</a>`,
     });
   }
 

@@ -385,7 +385,12 @@ export async function rejectReviewRequest(
 ): Promise<{ ok: boolean; reason?: string }> {
   const request = await prisma.googleReviewRequest.findFirst({
     where: { id: requestId, card: { program: { merchantId } } },
-    select: { id: true, status: true },
+    select: {
+      id: true,
+      status: true,
+      cardId: true,
+      card: { select: { serialNumber: true } },
+    },
   });
   if (!request) return { ok: false, reason: "not_found" };
   if (request.status !== "SENT") return { ok: false, reason: "already_processed" };
@@ -394,6 +399,17 @@ export async function rejectReviewRequest(
     where: { id: request.id },
     data: { status: "REJECTED" },
   });
+
+  // Push pour faire disparaître le CTA "Avis Google" sur la face du pass
+  // (le pkpass et le LoyaltyObject regénérés n'inclueront plus le lien).
+  try {
+    const { notifyPassUpdate } = await import("@/lib/wallet/push");
+    await notifyPassUpdate(request.cardId);
+  } catch { /* non bloquant */ }
+  try {
+    const { updateGoogleWalletObject } = await import("@/lib/wallet/google");
+    await updateGoogleWalletObject(request.card.serialNumber);
+  } catch { /* non bloquant */ }
 
   return { ok: true };
 }
