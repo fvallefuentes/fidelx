@@ -12,7 +12,10 @@ const stampSchema = z.object({
   serialNumber: z.string().trim().min(1, "Numéro de série requis"),
   establishmentId: z.string().trim().min(1).optional().nullable(),
   amountSpent: z.coerce.number().min(0, "Montant invalide").optional(),
-  count: z.coerce.number().int().min(1).max(20).optional().default(1),
+  // 1-100 : couvre les programmes POINTS (où le merchant peut ajouter
+  // par ex. 50 points pour un achat de 50 CHF). Les programmes STAMPS
+  // restent capés en pratique par le seuil de récompense (1-20).
+  count: z.coerce.number().int().min(1).max(100).optional().default(1),
 });
 
 export async function POST(req: Request) {
@@ -165,7 +168,11 @@ export async function POST(req: Request) {
 
   if (card.program.type === "POINTS") {
     const pointsPerChf = (config.pointsPerChf as number) || 1;
-    const pointsValue = amountSpent ? amountSpent * pointsPerChf : pointsPerChf;
+    // Priorité : si amountSpent est fourni → on convertit en points via pointsPerChf.
+    // Sinon → on respecte le `count` choisi par le merchant (boutons +/- ou +5/+10/+50/+100
+    // dans l'UI de scan). L'ancien comportement ajoutait toujours 1 point quel que soit
+    // le count, ce qui était un bug.
+    const pointsValue = amountSpent ? amountSpent * pointsPerChf : stampCount;
     const newPoints = card.currentPoints + pointsValue;
 
     const reward = card.program.rewards.find(
