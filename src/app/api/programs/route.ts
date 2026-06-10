@@ -97,18 +97,17 @@ export async function POST(req: Request) {
   });
   const limits = getPlanLimits(user?.plan);
 
-  // Limite du nombre de programmes
+  // Limite du nombre de programmes actifs
   if (limits.maxPrograms !== null) {
     const existingCount = await prisma.loyaltyProgram.count({
       where: { merchantId: session.user.id, isActive: true },
     });
     if (existingCount >= limits.maxPrograms) {
-      return NextResponse.json(
-        {
-          error: `Votre plan est limité à ${limits.maxPrograms} programme${limits.maxPrograms > 1 ? "s" : ""}. Passez à un plan supérieur pour en créer plus.`,
-        },
-        { status: 403 }
-      );
+      const isFree = (user?.plan ?? "FREE") === "FREE";
+      const error = isFree
+        ? `Votre plan Gratuit est limité à ${limits.maxPrograms} programme actif. Passez à un plan payant pour en créer plus.`
+        : `Vous avez atteint la limite de ${limits.maxPrograms} programmes actifs.\n\nPour créer un nouveau programme, archivez un programme existant en le rendant inactif, ou contactez notre support afin de débloquer la limite :\nsupport@fidlify.com`;
+      return NextResponse.json({ error }, { status: 403 });
     }
   }
 

@@ -800,7 +800,7 @@ function CreateProgramForm({
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 whitespace-pre-line">
               {error}
             </div>
           )}
