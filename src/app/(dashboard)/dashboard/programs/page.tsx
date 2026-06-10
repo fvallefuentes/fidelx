@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive } from "lucide-react";
+import { Plus, Stamp, Award, Percent, Layers, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive, ImagePlus } from "lucide-react";
 import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
 
 interface Program {
@@ -892,35 +892,52 @@ function CreateProgramForm({
 
             {/* Logo upload */}
             <div className="space-y-2">
-              <label className="text-xs text-gray-500">Logo (haut-gauche de la carte) — PNG/JPG, max 500 KB</label>
+              <label className="text-xs text-gray-500">Logo de la carte (optionnel)</label>
               {isFree ? (
                 <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-xs text-gray-400">
                   Logo personnalisé non disponible sur le plan Gratuit — le logo Fidlify est affiché à la place.
                 </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  {logoData ? (
-                    <div className="flex items-center gap-3">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={logoData}
-                        alt="Logo"
-                        className="h-14 w-14 rounded-lg object-contain border"
-                        style={{ background: bgColor }}
-                      />
-                      <Button type="button" variant="outline" size="sm" onClick={() => setLogoData("")}>
-                        Retirer
-                      </Button>
-                    </div>
-                  ) : (
-                    <input
-                      type="file"
-                      accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                      onChange={handleLogoChange}
-                      className="text-sm"
-                    />
-                  )}
+              ) : logoData ? (
+                <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={logoData}
+                    alt="Logo"
+                    className="h-14 w-14 rounded-lg object-contain border bg-white"
+                    style={{ background: bgColor }}
+                  />
+                  <div className="flex-1 text-xs text-gray-600">
+                    Logo ajouté. Visible en haut-gauche de la carte Wallet.
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setLogoData("")}>
+                    <X className="h-3.5 w-3.5 mr-1" /> Retirer
+                  </Button>
                 </div>
+              ) : (
+                <label className="logo-dropzone cursor-pointer block">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    onChange={handleLogoChange}
+                    className="sr-only"
+                  />
+                  <div className="flex items-center gap-3 rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/40 hover:bg-blue-50 hover:border-blue-400 transition-colors px-4 py-4">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                      <ImagePlus className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-gray-900">
+                        Ajouter un logo personnalisé
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5">
+                        PNG, JPG, SVG ou WebP · max 500 KB · affiché en haut-gauche de la carte Wallet
+                      </div>
+                    </div>
+                    <div className="hidden sm:block text-xs font-medium text-blue-600 whitespace-nowrap">
+                      Choisir un fichier →
+                    </div>
+                  </div>
+                </label>
               )}
               {logoError && <p className="text-xs text-red-500">{logoError}</p>}
             </div>
@@ -1289,7 +1306,7 @@ function EditProgramDesignModal({
               {/* Logo */}
               <div className="space-y-1">
                 <label className="text-xs text-gray-500">
-                  Logo (haut-gauche de la carte) — PNG/JPG, max 500 KB
+                  Logo de la carte (optionnel)
                 </label>
                 {isFree ? (
                   <div
@@ -1303,43 +1320,92 @@ function EditProgramDesignModal({
                     <Lock size={11} style={{ display: "inline", marginRight: 4, verticalAlign: -1 }} />
                     Logo personnalisé réservé aux plans payants. Passez au plan Essentiel pour débloquer.
                   </div>
+                ) : logoData ? (
+                  <div
+                    className="flex items-center gap-3 rounded-lg p-3"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={logoData}
+                      alt="Logo preview"
+                      style={{
+                        height: 44,
+                        width: 44,
+                        objectFit: "contain",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        padding: 4,
+                      }}
+                    />
+                    <div className="flex-1 text-xs" style={{ color: "#c4c8be" }}>
+                      Logo importé. Visible en haut-gauche de la carte Wallet.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setLogoData("")}
+                      className="text-xs flex items-center gap-1 hover:opacity-80"
+                      style={{ color: "#ff7a6b" }}
+                    >
+                      <X size={11} /> Retirer
+                    </button>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
+                  <label
+                    className="cursor-pointer block"
+                    style={{ display: "block" }}
+                  >
                     <input
                       type="file"
                       accept="image/png,image/jpeg,image/webp,image/svg+xml"
                       onChange={handleLogoChange}
-                      className="text-xs"
+                      className="sr-only"
                     />
-                    {logoError && (
-                      <p className="text-xs text-red-500">{logoError}</p>
-                    )}
-                    {logoData && (
-                      <div className="flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={logoData}
-                          alt="Logo preview"
-                          style={{
-                            height: 36,
-                            maxWidth: 110,
-                            objectFit: "contain",
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                            borderRadius: 6,
-                            padding: 4,
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setLogoData("")}
-                          className="text-xs text-red-400 hover:text-red-300"
-                        >
-                          Retirer
-                        </button>
+                    <div
+                      className="flex items-center gap-3 rounded-lg transition-colors"
+                      style={{
+                        padding: "14px 16px",
+                        background: "rgba(212,255,78,0.06)",
+                        border: "2px dashed rgba(212,255,78,0.35)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(212,255,78,0.1)";
+                        e.currentTarget.style.borderColor = "rgba(212,255,78,0.6)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(212,255,78,0.06)";
+                        e.currentTarget.style.borderColor = "rgba(212,255,78,0.35)";
+                      }}
+                    >
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                        style={{ background: "rgba(212,255,78,0.18)", color: "#d4ff4e" }}
+                      >
+                        <ImagePlus size={18} />
                       </div>
-                    )}
-                  </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium" style={{ color: "#f4f5f1" }}>
+                          Ajouter un logo personnalisé
+                        </div>
+                        <div className="text-[11px] mt-0.5" style={{ color: "#8a8e84" }}>
+                          PNG, JPG, SVG ou WebP · max 500 KB · haut-gauche de la carte Wallet
+                        </div>
+                      </div>
+                      <div
+                        className="hidden sm:block text-xs font-medium whitespace-nowrap"
+                        style={{ color: "#d4ff4e" }}
+                      >
+                        Choisir un fichier →
+                      </div>
+                    </div>
+                  </label>
+                )}
+                {logoError && (
+                  <p className="text-xs text-red-500">{logoError}</p>
                 )}
               </div>
 
