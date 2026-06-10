@@ -22,10 +22,17 @@ const createCampaignSchema = z.object({
     "BIRTHDAY",
   ]),
   triggerConfig: z
-    .object({ sendAt: z.string().datetime().optional() })
+    .object({
+      sendAt: z.string().datetime().optional(),
+      // Titre de la notif : obligatoire. Affiché en gras sur le lockscreen.
+      notifTitle: z
+        .string()
+        .trim()
+        .min(1, "Titre de la notification requis")
+        .max(80, "Titre trop long (80 caractères max)"),
+    })
     .catchall(z.unknown())
-    .optional()
-    .default({}),
+    .default({ notifTitle: "" }),
   targetSegment: z.enum(["ALL", "ACTIVE", "DORMANT", "NEW", "VIP"]).optional().default("ALL"),
 });
 
@@ -74,6 +81,16 @@ export async function POST(req: Request) {
 
   if (isFree && triggerType !== "IMMEDIATE") {
     return NextResponse.json({ error: "Le plan Gratuit ne permet que l'envoi immédiat." }, { status: 403 });
+  }
+
+  if (triggerType === "GEOFENCE") {
+    return NextResponse.json(
+      {
+        error:
+          "La proximite Wallet ne declenche pas encore d'envoi automatique. Ajoutez une position a l'etablissement pour afficher la carte Wallet a proximite.",
+      },
+      { status: 400 }
+    );
   }
 
   if (limits.maxCampaignsPerMonth !== null) {

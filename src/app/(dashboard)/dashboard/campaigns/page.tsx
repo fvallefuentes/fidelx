@@ -57,7 +57,7 @@ const triggerIcons: Record<string, typeof Send> = {
 const triggerLabels: Record<string, string> = {
   IMMEDIATE: "Immédiat",
   SCHEDULED: "Programmé",
-  GEOFENCE: "Géolocalisé",
+  GEOFENCE: "Position Wallet",
   INACTIVITY: "Win-back",
   POST_STAMP: "Après tampon",
   MILESTONE: "Palier atteint",
@@ -383,6 +383,14 @@ function CreateCampaignForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // Le titre de la notif est obligatoire — refus côté UI avant l'appel API.
+    const trimmedTitle = notifTitle.trim();
+    if (!trimmedTitle) {
+      setError("Le titre de la notification est obligatoire.");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
@@ -391,8 +399,6 @@ function CreateCampaignForm({
       triggerConfig = { sendAt: `${scheduledDate}T${scheduledTime}:00Z` };
     } else if (triggerType === "INACTIVITY") {
       triggerConfig = { daysInactive: inactivityDays };
-    } else if (triggerType === "GEOFENCE") {
-      triggerConfig = { radiusM: 500, message };
     }
 
     const res = await fetch("/api/campaigns", {
@@ -405,7 +411,7 @@ function CreateCampaignForm({
         triggerType,
         triggerConfig: {
           ...triggerConfig,
-          notifTitle: notifTitle || undefined,
+          notifTitle: trimmedTitle,
           notifLogo: notifLogo || undefined,
         },
         targetSegment,
@@ -506,15 +512,18 @@ function CreateCampaignForm({
 
           <div className="space-y-2">
             <label className="text-sm font-medium">
-              Titre de la notification <span className="text-gray-400 font-normal">(optionnel)</span>
+              Titre de la notification <span className="text-red-500">*</span>
             </label>
             <Input
-              placeholder={selectedProgram?.name || "Nom du programme par défaut"}
+              placeholder={selectedProgram?.name || "Ex : Nouvelle offre disponible"}
               value={notifTitle}
               onChange={(e) => setNotifTitle(e.target.value)}
+              required
+              maxLength={80}
             />
             <p className="text-xs text-gray-400">
-              Si laissé vide, le nom du programme s&apos;affiche
+              C&apos;est le texte en gras affiché sur l&apos;écran de verrouillage
+              du téléphone du client.
             </p>
           </div>
 
@@ -580,7 +589,6 @@ function CreateCampaignForm({
               >
                 <option value="IMMEDIATE">Envoi immédiat</option>
                 {!isFree && <option value="SCHEDULED">Date/heure précise</option>}
-                {!isFree && <option value="GEOFENCE">Proximité du commerce</option>}
                 {!isFree && <option value="INACTIVITY">Client inactif (win-back)</option>}
                 {!isFree && <option value="POST_STAMP">Après tamponnage</option>}
                 {!isFree && <option value="MILESTONE">Palier de tampons atteint</option>}
@@ -642,14 +650,6 @@ function CreateCampaignForm({
                 value={inactivityDays}
                 onChange={(e) => setInactivityDays(parseInt(e.target.value))}
               />
-            </div>
-          )}
-
-          {triggerType === "GEOFENCE" && (
-            <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-700">
-              La notification sera envoyée automatiquement quand le client passe
-              à proximité de votre commerce (rayon de 500m). Cette fonctionnalité
-              utilise les capacités natives d&apos;Apple Wallet — aucun tracking du client.
             </div>
           )}
 
