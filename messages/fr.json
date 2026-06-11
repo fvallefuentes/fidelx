@@ -238,6 +238,7 @@
       "password": "Mot de passe",
       "passwordPlaceholder": "Minimum 8 caractères",
       "submit": "Créer mon compte gratuit",
+      "submitPaid": "Créer mon compte et payer",
       "loading": "Création...",
       "fineprint": "En créant un compte, vous acceptez nos conditions d'utilisation et notre politique de confidentialité.",
       "hasAccount": "Déjà un compte ?",

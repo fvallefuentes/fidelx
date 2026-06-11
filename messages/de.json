@@ -238,6 +238,7 @@
       "password": "Passwort",
       "passwordPlaceholder": "Mindestens 8 Zeichen",
       "submit": "Kostenloses Konto erstellen",
+      "submitPaid": "Konto erstellen und bezahlen",
       "loading": "Erstellung...",
       "fineprint": "Mit der Erstellung eines Kontos akzeptieren Sie unsere Nutzungsbedingungen und unsere Datenschutzerklärung.",
       "hasAccount": "Sie haben bereits ein Konto?",

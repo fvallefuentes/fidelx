@@ -20,13 +20,21 @@ const registerSchema = z.object({
   // Code parrain optionnel envoyé par le form si visible (query ?ref). Sinon
   // on lit le cookie posé par /r/[code].
   ref: z.string().trim().toLowerCase().max(60).optional(),
+  // Si le user vient d'un click "Choisir Croissance" ou "Choisir Essentiel"
+  // sur la landing, on saute la vérification email pour le rediriger direct
+  // vers Stripe Checkout. Le paiement par CB est en lui-même un signal de
+  // trust plus fort qu'un code 6 chiffres.
+  plan: z.enum(["essential", "growth", "multi_site"]).optional(),
 });
+
+const PAID_PLAN_CODES = new Set(["essential", "growth", "multi_site"]);
 
 export async function POST(req: Request) {
   try {
     const parsed = await parseJsonBody(req, registerSchema);
     if (!parsed.ok) return parsed.response;
-    const { name, email: normalizedEmail, password, language, ref: refFromBody } = parsed.data;
+    const { name, email: normalizedEmail, password, language, ref: refFromBody, plan } = parsed.data;
+    const isPaidPlanFlow = !!plan && PAID_PLAN_CODES.has(plan);
 
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
@@ -58,6 +66,12 @@ export async function POST(req: Request) {
         email: normalizedEmail,
         passwordHash,
         language,
+        // Sur un flow plan payant, on marque l'email vérifié direct : le
+        // user va passer par Stripe Checkout immédiatement après et le
+        // paiement par CB est un signal de trust suffisant. Sans ça,
+        // l'auto-login serait bloqué par le check emailVerified dans
+        // authorize() de NextAuth.
+        ...(isPaidPlanFlow ? { emailVerified: new Date() } : {}),
       },
       select: { id: true },
     });
@@ -85,11 +99,15 @@ export async function POST(req: Request) {
       attributedOk = !!attribution;
     }
 
-    await issueVerificationCode(normalizedEmail);
+    // Skip l'envoi du code OTP si flow payant — le user n'en a pas besoin.
+    if (!isPaidPlanFlow) {
+      await issueVerificationCode(normalizedEmail);
+    }
 
     const res = NextResponse.json(
       {
-        requiresVerification: true,
+        // Flag pour le frontend : false = redirect direct, true = page OTP
+        requiresVerification: !isPaidPlanFlow,
         email: normalizedEmail,
       },
       { status: 201 }

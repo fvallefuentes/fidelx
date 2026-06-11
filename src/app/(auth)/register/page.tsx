@@ -2,10 +2,13 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import LogoMark from "@/components/landing/LogoMark";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+
+const PAID_PLANS = new Set(["essential", "growth", "multi_site"]);
 
 function RegisterForm() {
   const router = useRouter();
@@ -14,6 +17,7 @@ function RegisterForm() {
   const common = useTranslations("Auth");
   const plan = searchParams.get("plan") ?? "";
   const ref = searchParams.get("ref") ?? "";
+  const isPaidPlan = PAID_PLANS.has(plan);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,7 +34,15 @@ function RegisterForm() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, ...(ref ? { ref } : {}) }),
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          ...(ref ? { ref } : {}),
+          // L'API saute la verif email pour les plans payants et marque
+          // emailVerified immédiatement → on peut auto-login.
+          ...(isPaidPlan ? { plan } : {}),
+        }),
       });
 
       const data = await res.json();
@@ -41,7 +53,23 @@ function RegisterForm() {
         return;
       }
 
-      // Le compte est créé mais l'email n'est pas encore vérifié.
+      // Flow plan payant : auto-login + redirect direct vers Stripe Checkout.
+      // L'API a marqué emailVerified=true, donc signIn() passe le check de
+      // NextAuth credentials.
+      if (isPaidPlan && !data.requiresVerification) {
+        const signInRes = await signIn("credentials", {
+          email,
+          password,
+          redirect: false,
+        });
+        if (signInRes?.ok) {
+          window.location.href = `/api/checkout?plan=${encodeURIComponent(plan)}`;
+          return;
+        }
+        // Si signIn échoue (rare), on retombe sur le flow standard
+      }
+
+      // Flow gratuit : le compte est créé mais l'email n'est pas vérifié.
       // On redirige vers /verify-email où l'utilisateur saisit le code OTP.
       const params = new URLSearchParams({ email: data.email || email });
       if (plan) params.set("plan", plan);
@@ -141,7 +169,7 @@ function RegisterForm() {
           </div>
 
           <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? t("loading") : t("submit")}
+            {loading ? t("loading") : isPaidPlan ? t("submitPaid") : t("submit")}
             {!loading && (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a0d04" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14"/><path d="m13 5 7 7-7 7"/>
