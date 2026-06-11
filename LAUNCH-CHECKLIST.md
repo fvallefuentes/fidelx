@@ -39,9 +39,9 @@
 
 | URL | Statut | Détail |
 |---|---|---|
-| `/` (homepage) | ⚠️ | HTTP 307 = beta gate actif (normal en pré-launch) |
-| `/blog` | ✅ | 200 (exclu du beta gate, accessible Google) |
-| `/login`, `/register`, légales | ⚠️ | 307 = beta gate. Quand tu retires `BETA_ACCESS_PASSWORD`, tout sera 200 |
+| `/` (homepage) | OK | 200 public attendu |
+| `/blog` | OK | 200 public attendu |
+| `/login`, `/register`, legales | OK | Pages publiques |
 | `/robots.txt` | ✅ | 200, Disallow `/api/ /admin /dashboard /checkout /stamp /join` |
 | `/sitemap.xml` | ✅ | 200, **11 URLs** (home + blog index + 3 articles + login/register + 4 légales) |
 | `/manifest.webmanifest` | ✅ | 200 |
@@ -156,7 +156,7 @@
 | Sitemap inclut articles | ✅ | 11 URLs dans sitemap |
 | JSON-LD BlogPosting par article | ✅ | Vérifié via meta-tags (Organization, SoftwareApplication, FAQPage, BlogPosting) |
 | OG tags blog | ✅ | `<meta property="og:..." />` présents |
-| `/blog` exclu du beta gate | ✅ | HTTP 200 même avec beta actif |
+| `/blog` public | OK | HTTP 200 attendu |
 | Articles liés (2 cards) | 👤 | À vérifier visuellement |
 | CTA "Démarrer gratuitement" → /register | 👤 | |
 | Google Search Console submission | 👤 | À soumettre sitemap.xml |
@@ -202,7 +202,7 @@
 | Test | Statut | Détail |
 |---|---|---|
 | Mentions légales avec cofondateurs réels | ✅ | Testé via E2E (Fabian Valle Fuentes + Ludovic Pavesi) |
-| Politique de confidentialité publiée | ✅ | Page 200 (derrière beta gate) |
+| Politique de confidentialite publiee | OK | Page 200 publique |
 | Politique cookies | ✅ | Page 200 |
 | CGU publiées | ✅ | Page 200 |
 | **CGV** | ❌ | **NON PUBLIÉES** — obligatoire pour vendre du SaaS payant |
@@ -299,8 +299,8 @@ Ces points ont été identifiés comme **bloquants** par la checklist automatiqu
 **Stripe `sk_live_`, `pk_live_`, `whsec_`, Google Wallet JSON key, SSH** ont transité par nos conversations Claude.
 **Fix** : `docs/rotation.md` à créer + faire dans la semaine.
 
-## 4. ⚠️ Beta gate encore actif
-**Pour le launch** : retirer `BETA_ACCESS_PASSWORD=""` du `.env` VPS + restart.
+## 4. OK Beta gate retire
+Le site est public : le middleware ne bloque plus les pages publiques.
 
 ## 5. ⚠️ Better Uptime / monitoring externe pas confirmé
 **Risque** : si VPS tombe à 3h du matin, personne ne le sait avant le 1er client mécontent.
@@ -324,14 +324,6 @@ Tester immédiatement :
 pg_dump -h 127.0.0.1 -U fidlify fidelx_prod | gzip > /tmp/test-dump.sql.gz && ls -lh /tmp/test-dump.sql.gz
 ```
 
-## Retirer le beta gate au moment du launch
-
-```bash
-ssh debian@89.47.50.125
-cd /var/www/fidelx
-sed -i 's|^BETA_ACCESS_PASSWORD=.*|BETA_ACCESS_PASSWORD=""|' .env
-pm2 restart fidelx
-```
 
 ## Mettre une alerte calendrier pour le cert Apple
 
@@ -378,7 +370,7 @@ Titre : "Renouveler Pass Type ID Apple Wallet — Fidlify"
 5. ✅ Faire le test paiement réel CB CHF
 
 ## La veille du launch
-6. Désactiver le beta gate
+6. Verifier que les pages publiques repondent en 200
 7. Soumettre sitemap à Google Search Console
 8. Test E2E manuel complet (1 vrai client de bout en bout)
 9. Tester sur 1 iPhone + 1 Android

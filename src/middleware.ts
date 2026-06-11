@@ -2,21 +2,6 @@ import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const BETA_COOKIE = "fidlify_beta_ok";
-
-// Routes laissées ouvertes même quand le beta gate est actif :
-const BETA_GATE_OPEN_PATHS = new Set([
-  "/beta-access",
-  "/api/beta-access",
-  "/robots.txt",
-  "/sitemap.xml",
-  "/icon.svg",
-  "/favicon.ico",
-  "/manifest.webmanifest",
-  "/sw.js",
-  "/reset-password", // user reçoit le lien par email, doit pouvoir l'ouvrir
-  "/forgot-password", // page publique pour demander un reset
-]);
 
 /* ─── IP block cache (TTL 60s, partagé entre requêtes du même worker) ─── */
 let ipCache: { set: Set<string>; fetchedAt: number } | null = null;
@@ -70,9 +55,7 @@ export async function middleware(req: NextRequest) {
 
   // ─── IP BLOCK CHECK (priorité absolue) ───
   // L'IP du visiteur est comparée à la liste des prefixes bloqués (cache 60s).
-  // Le /beta-access est OUVERT pour permettre à l'admin de débloquer une IP
-  // via /admin/abuse même si elle est bloquée. Sauf que /admin nécessite
-  // une connexion donc en pratique pas un risque.
+  // Les visiteurs bloques voient une page 403 avant les regles de role.
   const ip = extractIp(req);
   const ipPrefix = anonymizeIp(ip);
   if (ipPrefix) {
@@ -88,37 +71,6 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // ─── BETA GATE (phase de test) ───
-  // Tous les /api/* sont AUTORISÉS (webhooks Stripe, Apple/Google Wallet,
-  // cron, NextAuth). Le gate ne s'applique qu'aux pages browser.
-  // /r/* (liens parrainage merchant) sont OUVERTS pour que le clic pose
-  // le cookie d'attribution avant la redirection (le filleul finira sur
-  // /register qui passera par /beta-access avec son cookie intact).
-  // /blog/* est OUVERT pour le SEO : Google doit pouvoir crawler les
-  // articles pendant la phase beta.
-  // /newsletter/* est OUVERT pour que les liens d'email (confirmation,
-  // désabo) fonctionnent sans demander le password beta aux abonnés.
-  const betaPassword = process.env.BETA_ACCESS_PASSWORD;
-  if (
-    betaPassword &&
-    !pathname.startsWith("/api/") &&
-    !pathname.startsWith("/r/") &&
-    !pathname.startsWith("/blog") &&
-    !pathname.startsWith("/newsletter") &&
-    !pathname.startsWith("/avis/") &&
-    !pathname.startsWith("/carte/") &&
-    !pathname.startsWith("/join/") &&
-    !pathname.startsWith("/join-all/") &&
-    !BETA_GATE_OPEN_PATHS.has(pathname)
-  ) {
-    const cookie = req.cookies.get(BETA_COOKIE);
-    if (cookie?.value !== "1") {
-      const url = req.nextUrl.clone();
-      url.pathname = "/beta-access";
-      url.searchParams.set("next", pathname);
-      return NextResponse.redirect(url);
-    }
-  }
 
   // ─── ROLE-BASED ACCESS (utilisateurs connectés) ───
   const token = await getToken({ req });
