@@ -20,6 +20,7 @@ interface MerchantSettings {
   createdAt: string;
   stripeCurrentPeriodStart: string | null;
   stripeCurrentPeriodEnd: string | null;
+  stripeCustomerId: string | null;
   usage: {
     periodStart: string;
     programs:    UsageStat;
@@ -457,7 +458,7 @@ export default function SettingsPage() {
                 mettre à jour la CB, voir les factures. L'annulation est
                 "à la fin de période" par défaut → le merchant conserve son
                 plan jusqu'à la date de renouvellement déjà payée. */}
-            {settings?.plan !== "FREE" && (
+            {settings?.plan !== "FREE" && settings?.stripeCustomerId && (
               <div className="pt-2">
                 <a
                   href="/api/billing-portal"
@@ -469,6 +470,16 @@ export default function SettingsPage() {
                 <p className="mt-2 text-xs text-gray-400">
                   Si tu annules en cours de période, tu conserves ton plan
                   jusqu&apos;à la prochaine date de renouvellement.
+                </p>
+              </div>
+            )}
+            {settings?.plan !== "FREE" && !settings?.stripeCustomerId && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="font-medium">Abonnement active manuellement</p>
+                <p className="mt-1">
+                  Ce compte n&apos;est pas lie a Stripe. La carte bancaire, les factures
+                  et l&apos;annulation ne sont donc pas disponibles depuis le portail Stripe.
+                  Contacte le support Fidlify pour modifier ou annuler cet abonnement.
                 </p>
               </div>
             )}

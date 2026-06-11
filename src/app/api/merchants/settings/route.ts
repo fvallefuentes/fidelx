@@ -22,6 +22,7 @@ export async function GET() {
       createdAt: true,
       stripeCurrentPeriodStart: true,
       stripeCurrentPeriodEnd: true,
+      stripeCustomerId: true,
       establishments: {
         select: {
           id: true,

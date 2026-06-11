@@ -35,10 +35,9 @@ export async function GET(req: Request) {
   });
 
   if (!user?.stripeCustomerId) {
-    return NextResponse.json(
-      { error: "Aucun abonnement Stripe lié à ce compte" },
-      { status: 404 }
-    );
+    const settingsUrl = new URL("/dashboard/settings", req.url);
+    settingsUrl.searchParams.set("billing", "manual");
+    return NextResponse.redirect(settingsUrl);
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL!;
