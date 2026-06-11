@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2 } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, LocateFixed } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 
 interface UsageStat { current: number; max: number | null; }
@@ -34,11 +33,12 @@ interface MerchantSettings {
     address: string;
     phone: string;
     googlePlaceId: string;
+    latitude: number | null;
+    longitude: number | null;
   }[];
 }
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
   const [settings, setSettings] = useState<MerchantSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -49,8 +49,16 @@ export default function SettingsPage() {
   const [estAddress, setEstAddress] = useState("");
   const [estPhone, setEstPhone] = useState("");
   const [estGoogleId, setEstGoogleId] = useState("");
+  const [estLatitude, setEstLatitude] = useState("");
+  const [estLongitude, setEstLongitude] = useState("");
   const [savingEst, setSavingEst] = useState(false);
   const [deletingEstId, setDeletingEstId] = useState<string | null>(null);
+  const [locatingEst, setLocatingEst] = useState(false);
+  const [editingEstId, setEditingEstId] = useState<string | null>(null);
+  const [editLatitude, setEditLatitude] = useState("");
+  const [editLongitude, setEditLongitude] = useState("");
+  const [savingEditEst, setSavingEditEst] = useState(false);
+  const [locatingEditEst, setLocatingEditEst] = useState(false);
 
   // Staff
   const [staffList, setStaffList] = useState<{id:string;name:string|null;email:string}[]>([]);
@@ -103,6 +111,8 @@ export default function SettingsPage() {
         address: estAddress,
         phone: estPhone,
         googlePlaceId: estGoogleId,
+        latitude: estLatitude ? Number(estLatitude) : null,
+        longitude: estLongitude ? Number(estLongitude) : null,
       }),
     });
 
@@ -115,9 +125,92 @@ export default function SettingsPage() {
       setEstAddress("");
       setEstPhone("");
       setEstGoogleId("");
+      setEstLatitude("");
+      setEstLongitude("");
     }
 
     setSavingEst(false);
+  }
+
+  function fillCurrentLocation() {
+    if (!navigator.geolocation) {
+      alert("La géolocalisation n'est pas disponible dans ce navigateur.");
+      return;
+    }
+
+    setLocatingEst(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setEstLatitude(position.coords.latitude.toFixed(6));
+        setEstLongitude(position.coords.longitude.toFixed(6));
+        setLocatingEst(false);
+      },
+      () => {
+        alert("Impossible de récupérer votre position. Vous pouvez saisir les coordonnées manuellement.");
+        setLocatingEst(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  function startEditLocation(est: MerchantSettings["establishments"][number]) {
+    setEditingEstId(est.id);
+    setEditLatitude(est.latitude?.toString() ?? "");
+    setEditLongitude(est.longitude?.toString() ?? "");
+  }
+
+  function fillCurrentEditLocation() {
+    if (!navigator.geolocation) {
+      alert("La geolocalisation n'est pas disponible dans ce navigateur.");
+      return;
+    }
+
+    setLocatingEditEst(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setEditLatitude(position.coords.latitude.toFixed(6));
+        setEditLongitude(position.coords.longitude.toFixed(6));
+        setLocatingEditEst(false);
+      },
+      () => {
+        alert("Impossible de recuperer votre position. Vous pouvez saisir les coordonnees manuellement.");
+        setLocatingEditEst(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  async function saveEstablishmentLocation(id: string) {
+    setSavingEditEst(true);
+
+    const res = await fetch(`/api/merchants/establishments/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        latitude: editLatitude ? Number(editLatitude) : null,
+        longitude: editLongitude ? Number(editLongitude) : null,
+      }),
+    });
+
+    if (res.ok) {
+      const updated = await res.json();
+      setSettings((s) =>
+        s
+          ? {
+              ...s,
+              establishments: s.establishments.map((est) =>
+                est.id === id ? { ...est, ...updated } : est
+              ),
+            }
+          : s
+      );
+      setEditingEstId(null);
+    } else {
+      const data = await res.json().catch(() => null);
+      alert(data?.error ?? "Erreur lors de la mise a jour de la position");
+    }
+
+    setSavingEditEst(false);
   }
 
   async function handleDeleteEstablishment(id: string, name: string) {
@@ -359,6 +452,26 @@ export default function SettingsPage() {
                 Passer à Essentiel — 39 CHF/mois →
               </a>
             )}
+
+            {/* Bouton vers Stripe Customer Portal — annuler, changer de plan,
+                mettre à jour la CB, voir les factures. L'annulation est
+                "à la fin de période" par défaut → le merchant conserve son
+                plan jusqu'à la date de renouvellement déjà payée. */}
+            {settings?.plan !== "FREE" && (
+              <div className="pt-2">
+                <a
+                  href="/api/billing-portal"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  Gérer mon abonnement (annuler, CB, factures)
+                </a>
+                <p className="mt-2 text-xs text-gray-400">
+                  Si tu annules en cours de période, tu conserves ton plan
+                  jusqu&apos;à la prochaine date de renouvellement.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -379,16 +492,34 @@ export default function SettingsPage() {
                 {settings.establishments.map((est) => (
                   <div
                     key={est.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="rounded-lg border p-3"
                   >
+                    <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium">{est.name}</p>
                       <p className="text-sm text-gray-500">{est.address}</p>
+                      {est.latitude !== null && est.longitude !== null ? (
+                        <p className="text-xs text-gray-400">
+                          Position Wallet : {est.latitude.toFixed(5)}, {est.longitude.toFixed(5)}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400">Position Wallet non definie</p>
+                      )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {est.googlePlaceId && (
                         <Badge variant="outline">Google connecté</Badge>
                       )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEditLocation(est)}
+                        title="Modifier la position Wallet"
+                      >
+                        <LocateFixed className="h-4 w-4" />
+                        <span className="sr-only">Modifier la position</span>
+                      </Button>
                       <Button
                         type="button"
                         variant="destructive"
@@ -401,6 +532,55 @@ export default function SettingsPage() {
                         <span className="sr-only">Supprimer</span>
                       </Button>
                     </div>
+                    </div>
+                    {editingEstId === est.id && (
+                      <div className="mt-3 grid gap-2 border-t pt-3 md:grid-cols-[1fr_1fr_auto]">
+                        <Input
+                          type="number"
+                          step="any"
+                          min={-90}
+                          max={90}
+                          placeholder="Latitude Wallet"
+                          value={editLatitude}
+                          onChange={(e) => setEditLatitude(e.target.value)}
+                        />
+                        <Input
+                          type="number"
+                          step="any"
+                          min={-180}
+                          max={180}
+                          placeholder="Longitude Wallet"
+                          value={editLongitude}
+                          onChange={(e) => setEditLongitude(e.target.value)}
+                        />
+                        <div className="flex flex-wrap gap-2 md:flex-nowrap">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={fillCurrentEditLocation}
+                            disabled={locatingEditEst}
+                          >
+                            <LocateFixed className="mr-2 h-4 w-4" />
+                            {locatingEditEst ? "Localisation..." : "Ma position"}
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => saveEstablishmentLocation(est.id)}
+                            disabled={savingEditEst}
+                          >
+                            {savingEditEst ? "Enregistrement..." : "Enregistrer"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setEditingEstId(null)}
+                            disabled={savingEditEst}
+                          >
+                            Annuler
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -430,10 +610,43 @@ export default function SettingsPage() {
                   value={estGoogleId}
                   onChange={(e) => setEstGoogleId(e.target.value)}
                 />
+                <Input
+                  type="number"
+                  step="any"
+                  min={-90}
+                  max={90}
+                  placeholder="Latitude Wallet"
+                  value={estLatitude}
+                  onChange={(e) => setEstLatitude(e.target.value)}
+                />
+                <Input
+                  type="number"
+                  step="any"
+                  min={-180}
+                  max={180}
+                  placeholder="Longitude Wallet"
+                  value={estLongitude}
+                  onChange={(e) => setEstLongitude(e.target.value)}
+                />
               </div>
-              <Button type="submit" variant="outline" disabled={savingEst}>
-                {savingEst ? "Ajout..." : "Ajouter l'établissement"}
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fillCurrentLocation}
+                  disabled={locatingEst}
+                >
+                  <LocateFixed className="mr-2 h-4 w-4" />
+                  {locatingEst ? "Localisation..." : "Utiliser ma position"}
+                </Button>
+                <Button type="submit" variant="outline" disabled={savingEst}>
+                  {savingEst ? "Ajout..." : "Ajouter l'établissement"}
+                </Button>
+              </div>
+              <p className="text-xs text-gray-400">
+                Ces coordonnées permettent aux cartes Apple Wallet et Google Wallet
+                d&apos;apparaître près de votre commerce quand le téléphone le juge pertinent.
+              </p>
             </form>
           </CardContent>
         </Card>
