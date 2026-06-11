@@ -399,7 +399,12 @@ export async function updateGoogleWalletClass(
     const accessToken = await getGoogleAccessToken();
     if (!accessToken) return false;
 
-    const res = await fetch(
+    // Upsert : PATCH si la class existe déjà dans notre namespace API Google,
+    // sinon POST insert. Quand un user enregistre la carte via le JWT, Google
+    // utilise les données inline pour SA copie mais ne crée pas toujours la
+    // class côté API → toute opération PATCH ultérieure retournait 404 et le
+    // design / les tampons n'étaient jamais répliqués sur les cartes existantes.
+    const patchRes = await fetch(
       `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass/${classId}`,
       {
         method: "PATCH",
@@ -411,14 +416,36 @@ export async function updateGoogleWalletClass(
       }
     );
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(
-        `[GoogleWallet] class update failed (${res.status}):`,
-        text.slice(0, 200)
+    if (patchRes.ok) return true;
+
+    if (patchRes.status === 404) {
+      const insertRes = await fetch(
+        `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedClass),
+        }
       );
+      if (!insertRes.ok) {
+        const text = await insertRes.text();
+        console.error(
+          `[GoogleWallet] class insert failed (${insertRes.status}):`,
+          text.slice(0, 200)
+        );
+      }
+      return insertRes.ok;
     }
-    return res.ok;
+
+    const text = await patchRes.text();
+    console.error(
+      `[GoogleWallet] class update failed (${patchRes.status}):`,
+      text.slice(0, 200)
+    );
+    return false;
   } catch (error) {
     console.error("Google Wallet class update error:", error);
     return false;
@@ -498,7 +525,12 @@ export async function updateGoogleWalletObject(
     const accessToken = await getGoogleAccessToken();
     if (!accessToken) return false;
 
-    const res = await fetch(
+    // Upsert : si l'objet existe → PATCH, sinon → POST insert. Le JWT
+    // "save to wallet" ne garantit pas que l'objet est créé côté API
+    // (il l'est dans la copie privée du user), donc tout PATCH ultérieur
+    // peut tomber sur un 404. Dans ce cas on POST pour créer l'objet
+    // côté API ; les prochains push (tampons, design, etc.) marcheront.
+    const patchRes = await fetch(
       `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${objectId}`,
       {
         method: "PATCH",
@@ -510,7 +542,42 @@ export async function updateGoogleWalletObject(
       }
     );
 
-    return res.ok;
+    if (patchRes.ok) return true;
+
+    if (patchRes.status === 404) {
+      // Assurer la class avant de POST l'objet — sans class existante
+      // l'insert objet retournerait aussi 404.
+      try {
+        await updateGoogleWalletClass(card.program.id);
+      } catch { /* non bloquant */ }
+
+      const insertRes = await fetch(
+        `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedObject),
+        }
+      );
+      if (!insertRes.ok) {
+        const text = await insertRes.text();
+        console.error(
+          `[GoogleWallet] object insert failed (${insertRes.status}):`,
+          text.slice(0, 200)
+        );
+      }
+      return insertRes.ok;
+    }
+
+    const text = await patchRes.text();
+    console.error(
+      `[GoogleWallet] object update failed (${patchRes.status}):`,
+      text.slice(0, 200)
+    );
+    return false;
   } catch (error) {
     console.error("Google Wallet update error:", error);
     return false;
