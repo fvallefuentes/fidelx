@@ -23,7 +23,15 @@ export async function GET() {
       stripeCurrentPeriodStart: true,
       stripeCurrentPeriodEnd: true,
       establishments: {
-        select: { id: true, name: true, address: true, phone: true, googlePlaceId: true },
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          phone: true,
+          googlePlaceId: true,
+          latitude: true,
+          longitude: true,
+        },
       },
     },
   });
