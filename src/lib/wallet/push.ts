@@ -3,24 +3,30 @@ import { updateGoogleWalletObject } from "./google";
 import * as http2 from "http2";
 
 export async function notifyPassUpdate(cardId: string) {
+  // Apple : on n'envoie l'APNs push QUE si on a une registration (le device
+  // s'est enregistré via le web service Apple Wallet en téléchargeant le pass).
   const registrations = await prisma.passRegistration.findMany({
-    where: { cardId },
+    where: { cardId, platform: "APPLE" },
   });
 
-  const results = await Promise.allSettled(
-    registrations.map(async (reg) => {
-      if (reg.platform === "APPLE") {
-        return sendApplePushNotification(reg.pushToken);
-      } else if (reg.platform === "GOOGLE") {
-        const card = await prisma.loyaltyCard.findUnique({
-          where: { id: cardId },
-          select: { serialNumber: true },
-        });
-        if (card) return updateGoogleWalletObject(card.serialNumber);
-      }
-    })
+  const applePushes = registrations.map((reg) =>
+    sendApplePushNotification(reg.pushToken)
   );
 
+  // Google : pas de notion de "registration" — Google Wallet ne notifie
+  // jamais l'issuer quand un user ajoute un pass. On patch toujours l'objet
+  // côté API ; si la carte existe dans le wallet d'un user, Google la
+  // resynchronise automatiquement. updateGoogleWalletObject est lui-même
+  // un upsert qui crée l'objet via POST insert s'il n'existe pas encore.
+  const card = await prisma.loyaltyCard.findUnique({
+    where: { id: cardId },
+    select: { serialNumber: true },
+  });
+  const googleUpdate = card
+    ? updateGoogleWalletObject(card.serialNumber)
+    : Promise.resolve(false);
+
+  const results = await Promise.allSettled([...applePushes, googleUpdate]);
   return results;
 }
 
