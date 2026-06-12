@@ -1,8 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { updateGoogleWalletObject } from "./google";
+import { sendGoogleWalletMessage, updateGoogleWalletObject } from "./google";
 import * as http2 from "http2";
 
-export async function notifyPassUpdate(cardId: string) {
+type GoogleVisibleMessage = {
+  header: string;
+  body: string;
+};
+
+export async function notifyPassUpdate(
+  cardId: string,
+  googleMessage?: GoogleVisibleMessage
+) {
   // Apple : on n'envoie l'APNs push QUE si on a une registration (le device
   // s'est enregistré via le web service Apple Wallet en téléchargeant le pass).
   const registrations = await prisma.passRegistration.findMany({
@@ -23,7 +31,16 @@ export async function notifyPassUpdate(cardId: string) {
     select: { serialNumber: true },
   });
   const googleUpdate = card
-    ? updateGoogleWalletObject(card.serialNumber)
+    ? updateGoogleWalletObject(card.serialNumber).then(async (updated) => {
+        if (googleMessage?.body && updated) {
+          await sendGoogleWalletMessage(
+            card.serialNumber,
+            googleMessage.header,
+            googleMessage.body
+          );
+        }
+        return updated;
+      })
     : Promise.resolve(false);
 
   const results = await Promise.allSettled([...applePushes, googleUpdate]);
@@ -120,7 +137,8 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
 export async function notifyAllCardsInProgram(
   programId: string,
   message: string,
-  segment?: string
+  segment?: string,
+  title?: string
 ) {
   const where: Record<string, unknown> = { programId, status: "ACTIVE" };
 
@@ -139,7 +157,10 @@ export async function notifyAllCardsInProgram(
 
   const cards = await prisma.loyaltyCard.findMany({
     where,
-    select: { id: true },
+    select: {
+      id: true,
+      program: { select: { name: true } },
+    },
   });
 
   // Mettre à jour le champ message sur chaque carte pour déclencher la notif
@@ -149,7 +170,12 @@ export async function notifyAllCardsInProgram(
       prisma.loyaltyCard.update({
         where: { id: card.id },
         data: { lastMessage: message },
-      }).then(() => notifyPassUpdate(card.id))
+      }).then(() =>
+        notifyPassUpdate(card.id, {
+          header: title || card.program.name,
+          body: message,
+        })
+      )
     )
   );
 

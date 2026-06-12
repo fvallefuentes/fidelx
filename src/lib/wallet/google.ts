@@ -349,6 +349,7 @@ export async function sendGoogleWalletMessage(
       );
       return false;
     }
+    console.log("[Google Wallet] addMessage sent:", objectId);
     return true;
   } catch (err) {
     console.error("[Google Wallet] addMessage error:", err);

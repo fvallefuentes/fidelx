@@ -117,7 +117,10 @@ export async function GET(req: Request) {
         where: { id: card.id },
         data: { lastMessage: campaign.message, lastMessageAt: now },
       });
-      await notifyPassUpdate(card.id);
+      await notifyPassUpdate(card.id, {
+        header: campaign.name || card.program.name,
+        body: campaign.message,
+      });
 
       await prisma.notificationLog.create({
         data: {

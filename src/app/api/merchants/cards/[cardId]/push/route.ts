@@ -38,7 +38,7 @@ export async function POST(
     select: {
       id: true,
       status: true,
-      program: { select: { merchantId: true } },
+      program: { select: { merchantId: true, name: true } },
     },
   });
   if (!card) {
@@ -61,7 +61,10 @@ export async function POST(
   });
 
   try {
-    await notifyPassUpdate(card.id);
+    await notifyPassUpdate(card.id, {
+      header: card.program.name,
+      body: message.trim(),
+    });
   } catch (e) {
     console.error("[card/push] notifyPassUpdate failed:", (e as Error).message);
   }

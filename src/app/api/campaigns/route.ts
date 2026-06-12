@@ -141,7 +141,8 @@ export async function POST(req: Request) {
     const result = await notifyAllCardsInProgram(
       programId,
       message,
-      targetSegment
+      targetSegment,
+      name
     );
 
     await prisma.notificationCampaign.update({

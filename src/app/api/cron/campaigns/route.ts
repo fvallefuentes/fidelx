@@ -58,7 +58,8 @@ export async function GET(req: Request) {
       const r = await notifyAllCardsInProgram(
         c.programId!,
         c.message,
-        c.targetSegment
+        c.targetSegment,
+        c.name
       );
       await prisma.notificationCampaign.update({
         where: { id: c.id },
