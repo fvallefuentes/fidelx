@@ -3296,10 +3296,18 @@ html, body { overflow-x: clip; }
   transition: transform 0.2s;
 }
 .h3d-btn:hover { transform: translateY(-2px); }
+.landing .h3d-btn-primary,
 .h3d-btn-primary {
   background: #d4ff4e;
-  color: #0a0d04;
+  /* !important pour battre la règle plus spécifique .landing a { color: inherit }
+     qui faisait hériter le blanc cassé du parent et rendait le texte illisible. */
+  color: #000 !important;
   box-shadow: 0 12px 30px -8px rgba(212, 255, 78, 0.5);
+}
+.landing .h3d-btn-primary svg,
+.h3d-btn-primary svg {
+  stroke: #000;
+  color: #000;
 }
 .h3d-btn-light {
   background: rgba(255, 255, 255, 0.08);
