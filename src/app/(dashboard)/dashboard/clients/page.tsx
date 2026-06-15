@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Users,
   Search,
@@ -14,6 +15,8 @@ import {
   ArrowUp,
   ArrowDown,
   RotateCcw,
+  UserPlus,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CardRecoveryModal from "@/components/dashboard/CardRecoveryModal";
@@ -30,7 +33,7 @@ interface ClientCard {
   createdAt: string;
   walletStatus: "installed" | "removed" | "never_installed";
   walletDevices: { apple: number; google: number; total: number };
-  client: { id: string; firstName: string; email: string | null; phone: string | null };
+  client: { id: string; firstName: string; lastName?: string | null; email: string | null; phone: string | null };
   program: { name: string; type: string; config: Record<string, unknown> };
 }
 
@@ -64,6 +67,16 @@ export default function ClientsPage() {
   const [walletFilter, setWalletFilter] = useState<WalletFilter>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [recoveryCard, setRecoveryCard] = useState<ClientCard | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Refresh sans toucher au loading (utilisé après création manuelle d'une
+  // carte — pas besoin de re-bloquer toute la page sur un spinner).
+  function refreshCards() {
+    fetch("/api/cards")
+      .then((r) => r.json())
+      .then(setCards)
+      .catch(console.error);
+  }
 
   useEffect(() => {
     fetch("/api/cards")
@@ -79,19 +92,28 @@ export default function ClientsPage() {
   }
 
   const filtered = cards
-    .filter((c) =>
-      (c.client.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      c.client.email?.toLowerCase().includes(search.toLowerCase()) ||
-      c.serialNumber.toLowerCase().includes(search.toLowerCase())) &&
-      (walletFilter === "all" || c.walletStatus === walletFilter) &&
-      (statusFilter === "all" || c.status === statusFilter)
-    )
+    .filter((c) => {
+      const q = search.toLowerCase();
+      const matchesSearch =
+        c.client.firstName.toLowerCase().includes(q) ||
+        c.client.lastName?.toLowerCase().includes(q) ||
+        c.client.email?.toLowerCase().includes(q) ||
+        c.serialNumber.toLowerCase().includes(q);
+      return (
+        matchesSearch &&
+        (walletFilter === "all" || c.walletStatus === walletFilter) &&
+        (statusFilter === "all" || c.status === statusFilter)
+      );
+    })
     .sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
-        case "firstName":
-          cmp = a.client.firstName.localeCompare(b.client.firstName);
+        case "firstName": {
+          const fa = `${a.client.firstName} ${a.client.lastName ?? ""}`.trim();
+          const fb = `${b.client.firstName} ${b.client.lastName ?? ""}`.trim();
+          cmp = fa.localeCompare(fb);
           break;
+        }
         case "progression":
           cmp = getProgression(a) - getProgression(b);
           break;
@@ -130,6 +152,13 @@ export default function ClientsPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            className="gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
+            Créer une carte (sans smartphone)
+          </Button>
           <ExportCsvButton
             endpoint="/api/merchants/export/clients"
             filename="fidlify-clients.csv"
@@ -252,7 +281,10 @@ export default function ClientsPage() {
                         onClick={() => router.push(`/dashboard/clients/${card.id}`)}
                       >
                         <td className="py-3 px-2">
-                          <p className="font-medium">{card.client.firstName}</p>
+                          <p className="font-medium">
+                            {card.client.firstName}
+                            {card.client.lastName ? ` ${card.client.lastName}` : ""}
+                          </p>
                           <p className="text-xs text-gray-400">{card.client.email || card.client.phone || "—"}</p>
                         </td>
                         <td className="py-3 px-2 text-gray-600">{card.program.name}</td>
@@ -318,6 +350,279 @@ export default function ClientsPage() {
           serialNumber={recoveryCard.serialNumber}
         />
       )}
+
+      {showCreateModal && (
+        <CreateManualCardModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={() => {
+            setShowCreateModal(false);
+            refreshCards();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ── Modal de création manuelle de carte (client sans smartphone) ─── */
+function CreateManualCardModal({
+  onClose,
+  onCreated,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+}) {
+  type Program = { id: string; name: string; isActive: boolean };
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [programId, setProgramId] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/programs")
+      .then((r) => r.json())
+      .then((data: Program[]) => {
+        const active = data.filter((p) => p.isActive !== false);
+        setPrograms(active);
+        if (active.length === 1) setProgramId(active[0].id);
+      })
+      .catch(console.error);
+  }, []);
+
+  // Verrouille le scroll body + escape pour fermer
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!programId) {
+      setError("Choisis un programme.");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/merchants/cards/create-manual", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          programId,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
+          birthDate: birthDate || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Erreur lors de la création");
+        setSaving(false);
+        return;
+      }
+      onCreated();
+    } catch {
+      setError("Erreur réseau");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(7,7,7,0.8)",
+        zIndex: 1100,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 16,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#0c0d0c",
+          border: "1px solid rgba(255,255,255,0.12)",
+          borderRadius: 14,
+          padding: 24,
+          maxWidth: 480,
+          width: "100%",
+          color: "#f4f5f1",
+        }}
+      >
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>
+              <UserPlus
+                size={16}
+                style={{ display: "inline", marginRight: 8, verticalAlign: -3 }}
+              />
+              Créer une carte manuelle
+            </h2>
+            <p
+              className="mt-1"
+              style={{ fontSize: 12, color: "#8a8e84", margin: 0 }}
+            >
+              Pour un client sans smartphone — c&apos;est toi qui gères la carte
+              ensuite.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            style={{
+              background: "none",
+              border: 0,
+              color: "#8a8e84",
+              cursor: "pointer",
+              padding: 4,
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3 mt-4">
+          {error && (
+            <div
+              className="rounded-lg px-3 py-2 text-sm"
+              style={{
+                background: "rgba(255,80,80,0.1)",
+                border: "1px solid rgba(255,80,80,0.3)",
+                color: "#ff7a6b",
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label
+              className="text-xs"
+              style={{ color: "#c4c8be" }}
+            >
+              Programme {programs.length > 1 && "*"}
+            </label>
+            <select
+              value={programId}
+              onChange={(e) => setProgramId(e.target.value)}
+              required
+              style={{
+                width: "100%",
+                height: 38,
+                padding: "0 10px",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "#f4f5f1",
+                borderRadius: 8,
+                fontFamily: "inherit",
+              }}
+            >
+              <option value="">— Choisis un programme —</option>
+              {programs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs" style={{ color: "#c4c8be" }}>
+                Prénom *
+              </label>
+              <Input
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Marie"
+                required
+                maxLength={50}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs" style={{ color: "#c4c8be" }}>
+                Nom *
+              </label>
+              <Input
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Dupont"
+                required
+                maxLength={50}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs" style={{ color: "#c4c8be" }}>
+              Email (optionnel)
+            </label>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="marie@example.ch"
+              maxLength={200}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs" style={{ color: "#c4c8be" }}>
+              Téléphone (optionnel)
+            </label>
+            <Input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+41 79 ..."
+              maxLength={40}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs" style={{ color: "#c4c8be" }}>
+              Date de naissance (optionnel)
+            </label>
+            <Input
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Annuler
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Création..." : "Créer la carte"}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

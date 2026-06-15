@@ -40,7 +40,7 @@ interface ManualCard {
   totalVisits: number;
   status: string;
   lastVisitAt: string | null;
-  client: { firstName: string; email: string | null; phone: string | null };
+  client: { firstName: string; lastName?: string | null; email: string | null; phone: string | null };
   program: { name: string };
 }
 
@@ -325,6 +325,7 @@ export default function ScanPage() {
       const q = manualSearch.toLowerCase();
       return (
         c.client.firstName?.toLowerCase().includes(q) ||
+        c.client.lastName?.toLowerCase().includes(q) ||
         c.client.email?.toLowerCase().includes(q) ||
         c.client.phone?.toLowerCase().includes(q) ||
         c.serialNumber.toLowerCase().includes(q) ||
@@ -378,7 +379,10 @@ export default function ScanPage() {
                           {initials}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{c.client.firstName || "Anonyme"}</p>
+                          <p className="font-medium truncate">
+                            {c.client.firstName || "Anonyme"}
+                            {c.client.lastName ? ` ${c.client.lastName}` : ""}
+                          </p>
                           <p className="text-xs text-gray-500 truncate">
                             {c.client.email || c.client.phone || c.serialNumber}
                             {" · "}

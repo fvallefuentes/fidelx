@@ -44,6 +44,7 @@ export async function GET(req: Request) {
           client: {
             OR: [
               { firstName: { contains: q, mode: "insensitive" } },
+              { lastName: { contains: q, mode: "insensitive" } },
               { email: { contains: q, mode: "insensitive" } },
               { phone: { contains: q, mode: "insensitive" } },
             ],
@@ -52,7 +53,7 @@ export async function GET(req: Request) {
       ],
     },
     include: {
-      client: { select: { firstName: true, email: true, phone: true } },
+      client: { select: { firstName: true, lastName: true, email: true, phone: true } },
       program: { select: { name: true } },
     },
     take: 5,
@@ -87,6 +88,7 @@ export async function GET(req: Request) {
     clients: cards.map((c) => ({
       id: c.id,
       firstName: c.client.firstName,
+      lastName: c.client.lastName,
       email: c.client.email,
       phone: c.client.phone,
       serialNumber: c.serialNumber,

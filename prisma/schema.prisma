@@ -400,6 +400,10 @@ enum RewardType {
 model Client {
   id            String    @id @default(cuid())
   firstName     String
+  /// Nom de famille — saisi par le merchant via la création manuelle de carte
+  /// (clients sans smartphone) pour pouvoir distinguer plusieurs clients
+  /// avec le même prénom dans la recherche manuelle.
+  lastName      String?
   email         String?
   phone         String?
   birthDate     DateTime? // Date d'anniversaire (J-M-A) pour campagne anniversaire automatique

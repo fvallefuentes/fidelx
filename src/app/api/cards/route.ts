@@ -20,7 +20,7 @@ export async function GET() {
     where: { programId: { in: programIds } },
     include: {
       client: {
-        select: { id: true, firstName: true, email: true, phone: true },
+        select: { id: true, firstName: true, lastName: true, email: true, phone: true },
       },
       program: {
         select: { name: true, type: true, config: true },
