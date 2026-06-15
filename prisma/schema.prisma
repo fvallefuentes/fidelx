@@ -539,13 +539,20 @@ enum TransactionType {
 model RewardClaim {
   id         String      @id @default(cuid())
   cardId     String
-  rewardId   String
+  /// Optionnel : un programme peut déclencher une récompense sans avoir de
+  /// Reward configuré (juste un seuil maxStamps). On garde alors le nom dans
+  /// rewardName. rewardId reste nullable pour ce cas + si le Reward est
+  /// supprimé plus tard, le claim historique survit.
+  rewardId   String?
+  /// Snapshot du nom de la récompense au moment du claim (résiste à la
+  /// suppression du Reward et couvre les programmes sans Reward).
+  rewardName String?
   status     ClaimStatus @default(CLAIMED)
   claimedAt  DateTime    @default(now())
   redeemedAt DateTime?
 
   card   LoyaltyCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
-  reward Reward      @relation(fields: [rewardId], references: [id])
+  reward Reward?     @relation(fields: [rewardId], references: [id])
 
   @@index([cardId])
 }

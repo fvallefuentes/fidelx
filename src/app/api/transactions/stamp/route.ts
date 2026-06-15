@@ -146,7 +146,9 @@ export async function POST(req: Request) {
     );
     if (reward) {
       rewardUnlocked = { id: reward.id, name: reward.name };
-      await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: reward.id } });
+      await prisma.rewardClaim.create({
+        data: { cardId: card.id, rewardId: reward.id, rewardName: reward.name },
+      });
     }
 
     await prisma.loyaltyCard.update({
@@ -162,12 +164,25 @@ export async function POST(req: Request) {
     });
 
     if (reachedMax && !rewardUnlocked) {
-      // Auto-create reward claim if no specific reward threshold matched
+      // Seuil atteint mais aucun Reward configuré (ou aucun threshold matché).
+      // On crée quand même un rewardClaim avec un nom : soit le Reward par
+      // défaut s'il existe, soit le libellé stocké dans config.reward, soit
+      // un fallback générique. Ainsi la section "Récompenses" du client
+      // reflète toujours la récompense débloquée.
       const defaultReward = card.program.rewards[0];
-      if (defaultReward) {
-        rewardUnlocked = { id: defaultReward.id, name: defaultReward.name };
-        await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: defaultReward.id } });
-      }
+      const fallbackName =
+        (typeof config.reward === "string" && config.reward.trim()) ||
+        "Récompense";
+      rewardUnlocked = defaultReward
+        ? { id: defaultReward.id, name: defaultReward.name }
+        : { id: "", name: fallbackName };
+      await prisma.rewardClaim.create({
+        data: {
+          cardId: card.id,
+          rewardId: defaultReward?.id ?? null,
+          rewardName: defaultReward?.name ?? fallbackName,
+        },
+      });
     }
   }
 
@@ -193,7 +208,9 @@ export async function POST(req: Request) {
     );
     if (reward) {
       rewardUnlocked = { id: reward.id, name: reward.name };
-      await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: reward.id } });
+      await prisma.rewardClaim.create({
+        data: { cardId: card.id, rewardId: reward.id, rewardName: reward.name },
+      });
     }
 
     // POINTS limité : cap currentPoints au seuil + excess dans pendingExtraPoints.
@@ -225,12 +242,24 @@ export async function POST(req: Request) {
     });
 
     if (reachedMax && !rewardUnlocked) {
-      // Auto-create reward claim si aucune reward.threshold spécifique n'a matché
+      // Seuil atteint sans Reward configuré → on crée quand même le claim
+      // (même logique que STAMPS) pour que la section "Récompenses" du client
+      // affiche bien la récompense débloquée.
       const defaultReward = card.program.rewards[0];
-      if (defaultReward) {
-        rewardUnlocked = { id: defaultReward.id, name: defaultReward.name };
-        await prisma.rewardClaim.create({ data: { cardId: card.id, rewardId: defaultReward.id } });
-      }
+      const tier0 = (config.tiers as { reward?: unknown }[] | undefined)?.[0];
+      const fallbackName =
+        (typeof tier0?.reward === "string" && tier0.reward.trim()) ||
+        "Récompense";
+      rewardUnlocked = defaultReward
+        ? { id: defaultReward.id, name: defaultReward.name }
+        : { id: "", name: fallbackName };
+      await prisma.rewardClaim.create({
+        data: {
+          cardId: card.id,
+          rewardId: defaultReward?.id ?? null,
+          rewardName: defaultReward?.name ?? fallbackName,
+        },
+      });
     }
   }
 

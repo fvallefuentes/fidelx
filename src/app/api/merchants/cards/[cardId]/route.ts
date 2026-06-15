@@ -139,7 +139,9 @@ export async function GET(
     })),
     rewards: card.rewardClaims.map((rc) => ({
       id: rc.id,
-      name: rc.reward.name,
+      // rewardName (snapshot) en priorité ; fallback sur le Reward lié si
+      // présent ; sinon libellé générique. Couvre les programmes sans Reward.
+      name: rc.rewardName ?? rc.reward?.name ?? "Récompense",
       status: rc.status,
       claimedAt: rc.claimedAt,
       redeemedAt: rc.redeemedAt,
