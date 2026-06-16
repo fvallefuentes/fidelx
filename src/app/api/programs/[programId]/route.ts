@@ -53,6 +53,7 @@ export async function PATCH(
       logoData?: string | null;
       heroImage?: string | null;
       stampIcon?: string;
+      stampSpacing?: string;
       stampBgType?: "none" | "color" | "image";
       stampBgColor?: string | null;
       stampBgColor2?: string | null;
@@ -122,6 +123,9 @@ export async function PATCH(
       // Personnalisation tampons (plan payant uniquement).
       if (typeof body.cardDesign.stampIcon === "string") {
         nextDesign.stampIcon = body.cardDesign.stampIcon;
+      }
+      if (typeof body.cardDesign.stampSpacing === "string") {
+        nextDesign.stampSpacing = body.cardDesign.stampSpacing;
       }
       if (typeof body.cardDesign.stampBgType === "string") {
         nextDesign.stampBgType = body.cardDesign.stampBgType;

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, Stamp, Award, Percent, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive, ImagePlus } from "lucide-react";
 import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
-import { getStampIcon, STAMP_ICON_LIST } from "@/lib/wallet/stamp-icons";
+import { getStampIcon, STAMP_ICON_LIST, STAMP_SPACING_LIST, getStampSpacingMult } from "@/lib/wallet/stamp-icons";
 
 interface Program {
   id: string;
@@ -46,6 +46,7 @@ function ProgramCardPreview({ program }: { program: Program }) {
         logoData={(design.logoData as string) || undefined}
         heroImage={(design.heroImage as string) || undefined}
         stampIcon={(design.stampIcon as string) || undefined}
+        stampSpacing={(design.stampSpacing as string) || undefined}
         stampBgType={(design.stampBgType as "none" | "color" | "image") || undefined}
         stampBgColor={design.stampBgColor as string | undefined}
         stampBgColor2={design.stampBgColor2 as string | undefined}
@@ -585,6 +586,8 @@ function StampCustomizer({
   dark = false,
   stampIcon,
   setStampIcon,
+  stampSpacing,
+  setStampSpacing,
   stampBgType,
   setStampBgType,
   stampBgColor,
@@ -599,6 +602,8 @@ function StampCustomizer({
   dark?: boolean;
   stampIcon: string;
   setStampIcon: (v: string) => void;
+  stampSpacing: string;
+  setStampSpacing: (v: string) => void;
   stampBgType: "none" | "color" | "image";
   setStampBgType: (v: "none" | "color" | "image") => void;
   stampBgColor: string;
@@ -654,6 +659,24 @@ function StampCustomizer({
               </button>
             );
           })}
+        </div>
+      </div>
+
+      {/* Espacement des tampons */}
+      <div className="space-y-1.5">
+        <label className={`text-xs ${lbl}`}>Espacement des tampons</label>
+        <div className="flex gap-1.5">
+          {STAMP_SPACING_LIST.map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setStampSpacing(key)}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border transition"
+              style={stampSpacing === key ? segActive : segIdle}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -786,6 +809,7 @@ function WalletCardPreview({
   samplePoints,
   unlimited = false,
   stampIcon = "check",
+  stampSpacing = "normal",
   stampBgType = "none",
   stampBgColor,
   stampBgColor2,
@@ -805,6 +829,7 @@ function WalletCardPreview({
   samplePoints?: number;
   unlimited?: boolean;
   stampIcon?: string;
+  stampSpacing?: string;
   stampBgType?: "none" | "color" | "image";
   stampBgColor?: string;
   stampBgColor2?: string;
@@ -826,6 +851,8 @@ function WalletCardPreview({
 
   // Icône du tampon obtenu (depuis le module partagé)
   const iconDef = getStampIcon(stampIcon);
+  // Espacement : gap CSS dérivé du multiplicateur (gap de base = 8px)
+  const stampGap = 8 * getStampSpacingMult(stampSpacing);
 
   // Fond derrière les ronds (couleur / dégradé / image)
   const stampBg: string | undefined =
@@ -904,6 +931,7 @@ function WalletCardPreview({
           className="wcp-stamps"
           style={{
             gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`,
+            gap: stampGap,
             position: "relative",
             background: stampBg,
             borderRadius: stampBgType !== "none" ? 8 : undefined,
@@ -1027,6 +1055,7 @@ function CreateProgramForm({
   const [heroError, setHeroError] = useState<string>("");
   // Personnalisation des tampons (plans payants)
   const [stampIcon, setStampIcon] = useState<string>("check");
+  const [stampSpacing, setStampSpacing] = useState<string>("normal");
   const [stampBgType, setStampBgType] = useState<"none" | "color" | "image">("none");
   const [stampBgColor, setStampBgColor] = useState("#1a1a2e");
   const [stampBgColor2, setStampBgColor2] = useState("");
@@ -1146,6 +1175,7 @@ function CreateProgramForm({
           ...(type === "STAMPS" && !isFree
             ? {
                 stampIcon,
+                stampSpacing,
                 stampBgType,
                 stampBgColor: stampBgType === "color" ? stampBgColor : undefined,
                 stampBgColor2:
@@ -1466,6 +1496,8 @@ function CreateProgramForm({
                 <StampCustomizer
                   stampIcon={stampIcon}
                   setStampIcon={setStampIcon}
+                  stampSpacing={stampSpacing}
+                  setStampSpacing={setStampSpacing}
                   stampBgType={stampBgType}
                   setStampBgType={setStampBgType}
                   stampBgColor={stampBgColor}
@@ -1539,6 +1571,7 @@ function CreateProgramForm({
                   programType={type}
                   heroImage={heroImage}
                   stampIcon={stampIcon}
+                  stampSpacing={stampSpacing}
                   stampBgType={type === "STAMPS" && !isFree ? stampBgType : "none"}
                   stampBgColor={stampBgColor}
                   stampBgColor2={stampBgColor2 || undefined}
@@ -1675,6 +1708,7 @@ function EditProgramDesignModal({
   const [heroError, setHeroError] = useState("");
   // Personnalisation tampons
   const [stampIcon, setStampIcon] = useState<string>(design.stampIcon || "check");
+  const [stampSpacing, setStampSpacing] = useState<string>(design.stampSpacing || "normal");
   const [stampBgType, setStampBgType] = useState<"none" | "color" | "image">(
     (design.stampBgType as "none" | "color" | "image") || "none"
   );
@@ -1815,6 +1849,7 @@ function EditProgramDesignModal({
             ? {}
             : {
                 stampIcon,
+                stampSpacing,
                 stampBgType,
                 stampBgColor: stampBgType === "color" ? stampBgColor : null,
                 stampBgColor2:
@@ -2169,6 +2204,8 @@ function EditProgramDesignModal({
                     dark
                     stampIcon={stampIcon}
                     setStampIcon={setStampIcon}
+                    stampSpacing={stampSpacing}
+                    setStampSpacing={setStampSpacing}
                     stampBgType={stampBgType}
                     setStampBgType={setStampBgType}
                     stampBgColor={stampBgColor}
@@ -2273,6 +2310,7 @@ function EditProgramDesignModal({
                 programType={program.type}
                 heroImage={heroImage || undefined}
                 stampIcon={stampIcon}
+                stampSpacing={stampSpacing}
                 stampBgType={program.type === "STAMPS" && !isFree ? stampBgType : "none"}
                 stampBgColor={stampBgColor}
                 stampBgColor2={stampBgColor2 || undefined}

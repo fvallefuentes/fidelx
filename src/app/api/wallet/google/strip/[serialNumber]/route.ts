@@ -32,6 +32,7 @@ export async function GET(
   const stampCheck = (design.stampCheckColor as string) || bg;
   const stampEmptyStroke = (design.stampEmptyColor as string) || fg;
   const stampIcon = (design.stampIcon as string) || "check";
+  const stampSpacing = (design.stampSpacing as string) || "normal";
 
   // Fond derrière les ronds (même logique que le strip Apple).
   const stampBgType = (design.stampBgType as string) || "none";
@@ -46,7 +47,10 @@ export async function GET(
   const availH = H - padding * 2;
   const cellW = availW / perRow;
   const cellH = availH / rows;
-  const radius = Math.min(cellW, cellH) * 0.36;
+  // Espacement : un rayon plus petit laisse plus de vide entre les ronds.
+  const radiusFactor =
+    stampSpacing === "tight" ? 0.42 : stampSpacing === "wide" ? 0.28 : 0.36;
+  const radius = Math.min(cellW, cellH) * radiusFactor;
 
   let circles = "";
   for (let i = 0; i < maxStamps; i++) {

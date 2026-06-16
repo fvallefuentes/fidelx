@@ -73,6 +73,27 @@ export const STAMP_ICONS: Record<StampIconKey, StampIconDef> = {
 
 export const DEFAULT_STAMP_ICON: StampIconKey = "check";
 
+/* ─── Espacement des tampons ──────────────────────────────
+   Multiplicateur appliqué à l'écart entre les ronds. "normal" = 1
+   (comportement historique). Partagé entre preview / Apple / Google. */
+export type StampSpacing = "tight" | "normal" | "wide";
+
+export const STAMP_SPACING_MULT: Record<StampSpacing, number> = {
+  tight: 0.45,
+  normal: 1,
+  wide: 1.7,
+};
+
+export const STAMP_SPACING_LIST: { key: StampSpacing; label: string }[] = [
+  { key: "tight", label: "Serré" },
+  { key: "normal", label: "Normal" },
+  { key: "wide", label: "Large" },
+];
+
+export function getStampSpacingMult(key: string | undefined | null): number {
+  return STAMP_SPACING_MULT[(key as StampSpacing)] ?? STAMP_SPACING_MULT.normal;
+}
+
 export function getStampIcon(key: string | undefined | null): StampIconDef {
   return STAMP_ICONS[(key as StampIconKey)] ?? STAMP_ICONS[DEFAULT_STAMP_ICON];
 }

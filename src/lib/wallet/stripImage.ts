@@ -13,7 +13,7 @@
  */
 
 import sharp from "sharp";
-import { stampIconSvg } from "./stamp-icons";
+import { stampIconSvg, getStampSpacingMult } from "./stamp-icons";
 
 interface StripOptions {
   currentStamps: number;
@@ -23,6 +23,7 @@ interface StripOptions {
   stampCheckColor?: string;
   stampEmptyColor?: string;
   stampIcon?: string;
+  stampSpacing?: string;
   stampBgType?: "none" | "color" | "image";
   stampBgColor?: string;
   stampBgColor2?: string;
@@ -51,6 +52,7 @@ export async function generateStripImage({
   stampCheckColor,
   stampEmptyColor,
   stampIcon,
+  stampSpacing,
   stampBgType = "none",
   stampBgColor,
   stampBgColor2,
@@ -69,11 +71,12 @@ export async function generateStripImage({
   const rows = total <= 5 ? 1 : 2;
   const perRow = Math.ceil(total / rows);
 
-  // Espacement
+  // Espacement (multiplicateur choisi par le merchant)
+  const spacingMult = getStampSpacingMult(stampSpacing);
   const padX = 90;
   const padY = 40;
-  const gapX = 40;
-  const gapY = 40;
+  const gapX = Math.round(40 * spacingMult);
+  const gapY = Math.round(40 * spacingMult);
 
   const availW = STRIP_W - padX * 2;
   const availH = STRIP_H - padY * 2;
