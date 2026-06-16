@@ -846,8 +846,8 @@ function WalletCardPreview({
   const sEmpty = stampEmptyColor || sFill;
   const lblColor = labelColor || (isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)");
 
-  // 3 tampons remplis pour donner une idée
-  const sampleFilled = Math.min(3, total);
+  // Aperçu proche d'Apple Wallet : un tampon rempli, le reste en anneaux.
+  const sampleFilled = Math.min(1, total);
 
   // Icône du tampon obtenu (depuis le module partagé)
   const iconDef = getStampIcon(stampIcon);
@@ -876,7 +876,7 @@ function WalletCardPreview({
           <img
             src={isDarkBg ? "/powered_by_fidlify_white.png" : "/powered_by_fidlify_black.svg"}
             alt="Powered by Fidlify"
-            style={{ height: 22, width: "auto", objectFit: "contain", display: "block" }}
+            className="wcp-logo"
           />
         )}
         <div className="wcp-offer">
@@ -934,8 +934,7 @@ function WalletCardPreview({
             gap: stampGap,
             position: "relative",
             background: stampBg,
-            borderRadius: stampBgType !== "none" ? 8 : undefined,
-            padding: stampBgType !== "none" ? 8 : undefined,
+            borderRadius: 0,
             overflow: "hidden",
           }}
         >
@@ -1022,7 +1021,10 @@ function WalletCardPreview({
 
       {/* Mock QR */}
       <div className="wcp-qr-wrap">
-        <span className="wcp-qr" />
+        <span className="wcp-qr-card">
+          <span className="wcp-qr" />
+          <span className="wcp-qr-code">L3J2-NT1N-HWHV</span>
+        </span>
       </div>
     </div>
   );

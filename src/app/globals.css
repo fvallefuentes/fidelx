@@ -2373,20 +2373,24 @@ html, body { overflow-x: clip; }
 /* ─── Live wallet card preview (form) ────────────────────── */
 .dashboard .wcp {
   width: 100%;
-  max-width: 320px;
-  padding: 16px 18px 22px;
+  max-width: 368px;
+  min-height: 506px;
+  padding: 0 18px 22px;
   border-radius: 18px;
   box-shadow: 0 20px 50px -10px rgba(0,0,0,0.45),
               0 0 0 1px rgba(255,255,255,0.04) inset;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro", "Helvetica Neue", sans-serif;
-  display: flex; flex-direction: column; gap: 14px;
+  display: flex; flex-direction: column;
+  overflow: hidden;
 }
 .dashboard .wcp-head {
   display: flex; justify-content: space-between; align-items: flex-start;
-  gap: 12px; min-height: 28px;
+  gap: 12px;
+  min-height: 76px;
+  padding-top: 19px;
 }
 .dashboard .wcp-logo {
-  height: 26px; max-width: 130px; object-fit: contain;
+  height: 34px; max-width: 170px; object-fit: contain;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 .dashboard .wcp-logo-empty {
@@ -2394,53 +2398,95 @@ html, body { overflow-x: clip; }
   font-weight: 500; opacity: 0.6;
 }
 .dashboard .wcp-offer {
-  font-size: 10px; letter-spacing: 0.18em;
+  font-size: 13px; letter-spacing: 0.16em;
   text-transform: uppercase; font-weight: 600;
   text-align: right;
+  padding-top: 2px;
 }
 .dashboard .wcp-stamps {
-  display: grid; gap: 8px;
-  margin: 4px 0 8px;
+  display: grid; gap: 10px 18px;
+  place-items: center;
+  align-content: center;
+  min-height: 146px;
+  margin: 0 -18px 0;
+  box-shadow: 0 -1px 0 rgba(0,0,0,0.06) inset, 0 1px 0 rgba(255,255,255,0.06) inset;
 }
 .dashboard .wcp-stamp {
+  width: clamp(56px, 19%, 76px);
+  max-width: 100%;
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 1.5px solid;
+  border: 3px solid;
   background: transparent;
   display: flex; align-items: center; justify-content: center;
   transition: background .2s, border-color .2s;
 }
 .dashboard .wcp-fields {
   display: grid; grid-template-columns: 1fr auto;
-  gap: 8px 12px;
+  gap: 8px 26px;
+  align-items: start;
+  margin-top: 18px;
 }
 .dashboard .wcp-field { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .dashboard .wcp-label {
-  font-size: 9px; letter-spacing: 0.08em;
+  font-size: 11px; letter-spacing: 0.06em;
   text-transform: uppercase; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: 22ch;
 }
 .dashboard .wcp-value {
-  font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
+  font-size: 22px; font-weight: 500; letter-spacing: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .dashboard .wcp-qr-wrap {
-  display: flex; justify-content: center; padding-top: 8px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin-top: auto;
+  padding-top: 34px;
+}
+.dashboard .wcp-qr-card {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 10px 12px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 .dashboard .wcp-qr {
   display: block;
-  width: 76px; height: 76px;
-  border-radius: 6px;
-  background: #fff;
+  position: relative;
+  width: 130px; height: 130px;
+  border-radius: 4px;
+  background-color: #fff;
   background-image:
-    linear-gradient(45deg, #0a0d04 25%, transparent 25%),
-    linear-gradient(-45deg, #0a0d04 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #0a0d04 75%),
-    linear-gradient(-45deg, transparent 75%, #0a0d04 75%);
-  background-size: 8px 8px;
-  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
-  box-shadow: 0 0 0 6px rgba(255,255,255,0.95);
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#fff 0 0),
+    linear-gradient(#fff 0 0),
+    linear-gradient(#fff 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    linear-gradient(#000 0 0),
+    repeating-conic-gradient(#000 0 25%, transparent 0 50%);
+  background-size:
+    22px 22px, 22px 22px, 22px 22px,
+    14px 14px, 14px 14px, 14px 14px,
+    6px 6px, 6px 6px, 6px 6px,
+    10px 10px;
+  background-position:
+    10px 10px, 72px 10px, 10px 72px,
+    14px 14px, 76px 14px, 14px 76px,
+    18px 18px, 80px 18px, 18px 80px,
+    0 0;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
+}
+.dashboard .wcp-qr-code {
+  margin-top: 8px;
+  color: #111;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
