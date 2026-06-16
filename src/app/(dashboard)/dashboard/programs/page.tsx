@@ -819,16 +819,32 @@ function StampCustomizer({
 
 /* ─── Aperçu live de la carte Apple Wallet (utilisé dans le formulaire) ─ */
 function WalletPreviewPair(props: WalletPreviewProps) {
+  const [selectedWallet, setSelectedWallet] = useState<"apple" | "google">("apple");
+
   return (
     <div className="wallet-preview-pair">
-      <div className="wallet-preview-item">
-        <span className="wallet-preview-label">Apple Wallet</span>
+      <div className="wallet-preview-switch" aria-label="Choisir le type d'aperçu Wallet">
+        <button
+          type="button"
+          className={selectedWallet === "apple" ? "is-active" : undefined}
+          onClick={() => setSelectedWallet("apple")}
+        >
+          Apple Wallet
+        </button>
+        <button
+          type="button"
+          className={selectedWallet === "google" ? "is-active" : undefined}
+          onClick={() => setSelectedWallet("google")}
+        >
+          Google Wallet
+        </button>
+      </div>
+
+      {selectedWallet === "apple" ? (
         <WalletCardPreview {...props} />
-      </div>
-      <div className="wallet-preview-item">
-        <span className="wallet-preview-label">Google Wallet</span>
+      ) : (
         <GoogleWalletPreview {...props} />
-      </div>
+      )}
     </div>
   );
 }

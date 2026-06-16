@@ -2374,25 +2374,43 @@ html, body { overflow-x: clip; }
 .dashboard .wallet-preview-pair {
   width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 18px;
-}
-.dashboard .wallet-preview-item {
-  min-width: min(100%, 300px);
-  display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 12px;
 }
-.dashboard .wallet-preview-label {
+.dashboard .wallet-preview-switch {
+  width: min(100%, 320px);
+  min-height: 36px;
+  padding: 3px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  display: flex;
+  gap: 3px;
+}
+.dashboard .wallet-preview-switch button {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 10px;
+  background: transparent;
+  color: var(--ink-3);
   font-family: var(--font-geist-mono, monospace);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .18s, color .18s, box-shadow .18s;
+}
+.dashboard .wallet-preview-switch button.is-active {
+  background: var(--accent);
+  color: #0a0d04;
+  box-shadow: 0 8px 22px rgba(212,255,78,0.18);
 }
 .dashboard .wcp {
   width: 100%;
