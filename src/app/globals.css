@@ -2438,55 +2438,21 @@ html, body { overflow-x: clip; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .dashboard .wcp-qr-wrap {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  margin-top: auto;
-  padding-top: 34px;
-}
-.dashboard .wcp-qr-card {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px 10px 12px;
-  border-radius: 6px;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  display: flex; justify-content: center; padding-top: 8px;
 }
 .dashboard .wcp-qr {
   display: block;
-  position: relative;
-  width: 130px; height: 130px;
-  border-radius: 4px;
-  background-color: #fff;
+  width: 76px; height: 76px;
+  border-radius: 6px;
+  background: #fff;
   background-image:
-    linear-gradient(#000 0 0),
-    linear-gradient(#000 0 0),
-    linear-gradient(#000 0 0),
-    linear-gradient(#fff 0 0),
-    linear-gradient(#fff 0 0),
-    linear-gradient(#fff 0 0),
-    linear-gradient(#000 0 0),
-    linear-gradient(#000 0 0),
-    linear-gradient(#000 0 0),
-    repeating-conic-gradient(#000 0 25%, transparent 0 50%);
-  background-size:
-    22px 22px, 22px 22px, 22px 22px,
-    14px 14px, 14px 14px, 14px 14px,
-    6px 6px, 6px 6px, 6px 6px,
-    10px 10px;
-  background-position:
-    10px 10px, 72px 10px, 10px 72px,
-    14px 14px, 76px 14px, 14px 76px,
-    18px 18px, 80px 18px, 18px 80px,
-    0 0;
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, repeat;
-}
-.dashboard .wcp-qr-code {
-  margin-top: 8px;
-  color: #111;
-  font-size: 16px;
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: 0.02em;
+    linear-gradient(45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(-45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #0a0d04 75%),
+    linear-gradient(-45deg, transparent 75%, #0a0d04 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  box-shadow: 0 0 0 6px rgba(255,255,255,0.95);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

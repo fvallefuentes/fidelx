@@ -1021,10 +1021,7 @@ function WalletCardPreview({
 
       {/* Mock QR */}
       <div className="wcp-qr-wrap">
-        <span className="wcp-qr-card">
-          <span className="wcp-qr" />
-          <span className="wcp-qr-code">L3J2-NT1N-HWHV</span>
-        </span>
+        <span className="wcp-qr" />
       </div>
     </div>
   );
