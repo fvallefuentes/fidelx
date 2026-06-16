@@ -52,6 +52,11 @@ export async function PATCH(
       labelColor?: string;
       logoData?: string | null;
       heroImage?: string | null;
+      stampIcon?: string;
+      stampBgType?: "none" | "color" | "image";
+      stampBgColor?: string | null;
+      stampBgColor2?: string | null;
+      stampBgImage?: string | null;
       description?: string;
     };
     // Avis Google — modifiables sur un programme existant (ne casse aucune
@@ -112,6 +117,22 @@ export async function PATCH(
         delete nextDesign.heroImage;
       } else if (typeof body.cardDesign.heroImage === "string") {
         nextDesign.heroImage = body.cardDesign.heroImage;
+      }
+
+      // Personnalisation tampons (plan payant uniquement).
+      if (typeof body.cardDesign.stampIcon === "string") {
+        nextDesign.stampIcon = body.cardDesign.stampIcon;
+      }
+      if (typeof body.cardDesign.stampBgType === "string") {
+        nextDesign.stampBgType = body.cardDesign.stampBgType;
+      }
+      // Couleurs / image du fond : null = suppression, string = set.
+      for (const k of ["stampBgColor", "stampBgColor2", "stampBgImage"] as const) {
+        if (body.cardDesign[k] === null) {
+          delete nextDesign[k];
+        } else if (typeof body.cardDesign[k] === "string") {
+          nextDesign[k] = body.cardDesign[k];
+        }
       }
     }
   }

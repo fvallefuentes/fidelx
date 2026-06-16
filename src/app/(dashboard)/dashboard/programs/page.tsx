@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, Stamp, Award, Percent, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive, ImagePlus } from "lucide-react";
 import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
+import { getStampIcon, STAMP_ICON_LIST } from "@/lib/wallet/stamp-icons";
 
 interface Program {
   id: string;
@@ -44,6 +45,11 @@ function ProgramCardPreview({ program }: { program: Program }) {
         labelColor={design.labelColor as string | undefined}
         logoData={(design.logoData as string) || undefined}
         heroImage={(design.heroImage as string) || undefined}
+        stampIcon={(design.stampIcon as string) || undefined}
+        stampBgType={(design.stampBgType as "none" | "color" | "image") || undefined}
+        stampBgColor={design.stampBgColor as string | undefined}
+        stampBgColor2={design.stampBgColor2 as string | undefined}
+        stampBgImage={(design.stampBgImage as string) || undefined}
         programType={program.type}
         programName={program.name}
         maxStamps={max}
@@ -571,6 +577,199 @@ function ColorPicker({
   );
 }
 
+/* ─── Personnalisation des tampons : icône + fond ───────────
+   Partagé entre le formulaire de création (thème clair) et le modal
+   d'édition (thème sombre via prop `dark`). Réservé aux plans payants
+   et aux programmes STAMPS. */
+function StampCustomizer({
+  dark = false,
+  stampIcon,
+  setStampIcon,
+  stampBgType,
+  setStampBgType,
+  stampBgColor,
+  setStampBgColor,
+  stampBgColor2,
+  setStampBgColor2,
+  stampBgImage,
+  onStampBgImageChange,
+  setStampBgImage,
+  stampBgError,
+}: {
+  dark?: boolean;
+  stampIcon: string;
+  setStampIcon: (v: string) => void;
+  stampBgType: "none" | "color" | "image";
+  setStampBgType: (v: "none" | "color" | "image") => void;
+  stampBgColor: string;
+  setStampBgColor: (v: string) => void;
+  stampBgColor2: string;
+  setStampBgColor2: (v: string) => void;
+  stampBgImage: string;
+  onStampBgImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  setStampBgImage: (v: string) => void;
+  stampBgError: string;
+}) {
+  const lbl = dark ? "text-gray-400" : "text-gray-500";
+  const segActive = dark
+    ? { background: "#d4ff4e", color: "#0a0d04", borderColor: "#d4ff4e" }
+    : { background: "#111", color: "#fff", borderColor: "#111" };
+  const segIdle = dark
+    ? { background: "transparent", color: "#8a8e84", borderColor: "rgba(255,255,255,0.15)" }
+    : { background: "#fff", color: "#555", borderColor: "#d1d5db" };
+
+  return (
+    <div className="space-y-3">
+      {/* Icône du tampon */}
+      <div className="space-y-1.5">
+        <label className={`text-xs ${lbl}`}>Forme du tampon obtenu</label>
+        <div className="flex flex-wrap gap-2">
+          {STAMP_ICON_LIST.map(({ key, def }) => {
+            const active = key === stampIcon;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setStampIcon(key)}
+                title={def.label}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border transition"
+                style={
+                  active
+                    ? { borderColor: "#d4ff4e", borderWidth: 2, background: dark ? "rgba(212,255,78,0.12)" : "#f3ffd6" }
+                    : { borderColor: dark ? "rgba(255,255,255,0.15)" : "#e5e7eb" }
+                }
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill={def.mode === "fill" ? (dark ? "#f4f5f1" : "#111") : "none"}
+                  stroke={def.mode === "stroke" ? (dark ? "#f4f5f1" : "#111") : "none"}
+                  strokeWidth={def.mode === "stroke" ? 2.5 : 0}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d={def.path} />
+                </svg>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Fond derrière les ronds */}
+      <div className="space-y-1.5">
+        <label className={`text-xs ${lbl}`}>Fond derrière les tampons</label>
+        <div className="flex gap-1.5">
+          {([
+            { v: "none", l: "Aucun" },
+            { v: "color", l: "Couleur" },
+            { v: "image", l: "Image" },
+          ] as const).map(({ v, l }) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setStampBgType(v)}
+              className="px-3 py-1.5 text-xs font-medium rounded-md border transition"
+              style={stampBgType === v ? segActive : segIdle}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {stampBgType === "color" && (
+          <div className="flex items-center gap-3 pt-1">
+            <ColorPicker label="Couleur" value={stampBgColor} onChange={setStampBgColor} />
+            {stampBgColor2 ? (
+              <>
+                <ColorPicker label="Dégradé vers" value={stampBgColor2} onChange={setStampBgColor2} />
+                <button
+                  type="button"
+                  onClick={() => setStampBgColor2("")}
+                  className="text-xs text-red-400 hover:text-red-300"
+                >
+                  Retirer dégradé
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setStampBgColor2("#000000")}
+                className="text-xs font-medium"
+                style={{ color: "#d4ff4e" }}
+              >
+                + Ajouter un dégradé
+              </button>
+            )}
+          </div>
+        )}
+
+        {stampBgType === "image" && (
+          <div className="pt-1">
+            {stampBgImage ? (
+              <div
+                className="flex items-center gap-3 rounded-lg p-2.5"
+                style={{
+                  background: dark ? "rgba(255,255,255,0.04)" : "#f9fafb",
+                  border: dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #e5e7eb",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={stampBgImage}
+                  alt="Fond tampons"
+                  className="h-12 w-20 rounded object-cover border"
+                />
+                <span className={`flex-1 text-xs ${lbl}`}>
+                  Image affichée en fond de la zone des tampons.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setStampBgImage("")}
+                  className="text-xs flex items-center gap-1 hover:opacity-80"
+                  style={{ color: "#ff7a6b" }}
+                >
+                  <X size={11} /> Retirer
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer block">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={onStampBgImageChange}
+                  className="sr-only"
+                />
+                <div
+                  className="flex items-center gap-3 rounded-lg transition-colors"
+                  style={{ padding: "12px 14px", background: "#0a0d04", border: "2px dashed #d4ff4e" }}
+                >
+                  <div
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                    style={{ background: "rgba(212,255,78,0.18)", color: "#d4ff4e" }}
+                  >
+                    <ImagePlus size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium" style={{ color: "#f4f5f1" }}>
+                      Ajouter une image de fond
+                    </div>
+                    <div className="text-[11px] mt-0.5" style={{ color: "#8a8e84" }}>
+                      PNG, JPG ou WebP · max 1.5 MB
+                    </div>
+                  </div>
+                </div>
+              </label>
+            )}
+          </div>
+        )}
+        {stampBgError && <p className="text-xs text-red-500">{stampBgError}</p>}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Aperçu live de la carte Apple Wallet (utilisé dans le formulaire) ─ */
 function WalletCardPreview({
   bgColor,
@@ -586,6 +785,11 @@ function WalletCardPreview({
   heroImage,
   samplePoints,
   unlimited = false,
+  stampIcon = "check",
+  stampBgType = "none",
+  stampBgColor,
+  stampBgColor2,
+  stampBgImage,
 }: {
   bgColor: string;
   textColor: string;
@@ -600,6 +804,11 @@ function WalletCardPreview({
   heroImage?: string;
   samplePoints?: number;
   unlimited?: boolean;
+  stampIcon?: string;
+  stampBgType?: "none" | "color" | "image";
+  stampBgColor?: string;
+  stampBgColor2?: string;
+  stampBgImage?: string;
 }) {
   const total = Math.max(1, Math.min(20, maxStamps || 10));
   const rows = total <= 5 ? 1 : 2;
@@ -614,6 +823,19 @@ function WalletCardPreview({
 
   // 3 tampons remplis pour donner une idée
   const sampleFilled = Math.min(3, total);
+
+  // Icône du tampon obtenu (depuis le module partagé)
+  const iconDef = getStampIcon(stampIcon);
+
+  // Fond derrière les ronds (couleur / dégradé / image)
+  const stampBg: string | undefined =
+    stampBgType === "image" && stampBgImage
+      ? undefined // l'image est rendue via <img> en absolute
+      : stampBgType === "color" && stampBgColor
+        ? stampBgColor2
+          ? `linear-gradient(135deg, ${stampBgColor}, ${stampBgColor2})`
+          : stampBgColor
+        : undefined;
 
   return (
     <div className="wcp" style={{ background: bgColor, color: textColor }}>
@@ -680,8 +902,40 @@ function WalletCardPreview({
       ) : (
         <div
           className="wcp-stamps"
-          style={{ gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))` }}
+          style={{
+            gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`,
+            position: "relative",
+            background: stampBg,
+            borderRadius: stampBgType !== "none" ? 8 : undefined,
+            padding: stampBgType !== "none" ? 8 : undefined,
+            overflow: "hidden",
+          }}
         >
+          {stampBgType === "image" && stampBgImage && (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={stampBgImage}
+                alt=""
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  zIndex: 0,
+                }}
+              />
+              <span
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: "rgba(0,0,0,0.18)",
+                  zIndex: 0,
+                }}
+              />
+            </>
+          )}
           {Array.from({ length: total }).map((_, i) => {
             const filled = i < sampleFilled;
             return (
@@ -689,14 +943,25 @@ function WalletCardPreview({
                 key={i}
                 className="wcp-stamp"
                 style={{
+                  position: "relative",
+                  zIndex: 1,
                   borderColor: filled ? sFill : sEmpty,
                   background: filled ? sFill : "transparent",
                   color: sCheck,
                 }}
               >
                 {filled && (
-                  <svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6 9 17l-5-5" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="60%"
+                    height="60%"
+                    fill={iconDef.mode === "fill" ? "currentColor" : "none"}
+                    stroke={iconDef.mode === "stroke" ? "currentColor" : "none"}
+                    strokeWidth={iconDef.mode === "stroke" ? 3.5 : 0}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d={iconDef.path} />
                   </svg>
                 )}
               </span>
@@ -760,11 +1025,39 @@ function CreateProgramForm({
   const [logoError, setLogoError] = useState<string>("");
   const [heroImage, setHeroImage] = useState<string>("");
   const [heroError, setHeroError] = useState<string>("");
+  // Personnalisation des tampons (plans payants)
+  const [stampIcon, setStampIcon] = useState<string>("check");
+  const [stampBgType, setStampBgType] = useState<"none" | "color" | "image">("none");
+  const [stampBgColor, setStampBgColor] = useState("#1a1a2e");
+  const [stampBgColor2, setStampBgColor2] = useState("");
+  const [stampBgImage, setStampBgImage] = useState<string>("");
+  const [stampBgError, setStampBgError] = useState<string>("");
   const [googleReviewEnabled, setGoogleReviewEnabled] = useState(false);
   const [googleReviewBonus, setGoogleReviewBonus] = useState(1);
   const [googleReviewMinVisits, setGoogleReviewMinVisits] = useState(3);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  function handleStampBgImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setStampBgError("");
+    const file = e.target.files?.[0];
+    if (!file) {
+      setStampBgImage("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setStampBgError("Le fichier doit être une image");
+      return;
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      setStampBgError("Image trop lourde (max 1.5 MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setStampBgImage(reader.result as string);
+    reader.onerror = () => setStampBgError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
 
   function applyPreset(p: typeof CARD_PRESETS[number]) {
     setBgColor(p.bgColor);
@@ -849,6 +1142,22 @@ function CreateProgramForm({
           logoData: logoData || undefined,
           // heroImage uniquement utile pour POINTS (remplace le strip à pastilles)
           heroImage: type === "POINTS" && heroImage ? heroImage : undefined,
+          // Personnalisation tampons (STAMPS) — réservé aux plans payants
+          ...(type === "STAMPS" && !isFree
+            ? {
+                stampIcon,
+                stampBgType,
+                stampBgColor: stampBgType === "color" ? stampBgColor : undefined,
+                stampBgColor2:
+                  stampBgType === "color" && stampBgColor2
+                    ? stampBgColor2
+                    : undefined,
+                stampBgImage:
+                  stampBgType === "image" && stampBgImage
+                    ? stampBgImage
+                    : undefined,
+              }
+            : {}),
           description: `Programme ${name}`,
         },
         rewards:
@@ -1145,6 +1454,32 @@ function CreateProgramForm({
               </div>
             )}
 
+            {/* Personnalisation des tampons — STAMPS + plan payant */}
+            {type === "STAMPS" && !isFree && (
+              <div
+                className="space-y-2 rounded-lg border border-gray-200 p-3"
+                style={{ background: "#fafafa" }}
+              >
+                <label className="text-xs font-medium text-gray-600">
+                  Tampons personnalisés
+                </label>
+                <StampCustomizer
+                  stampIcon={stampIcon}
+                  setStampIcon={setStampIcon}
+                  stampBgType={stampBgType}
+                  setStampBgType={setStampBgType}
+                  stampBgColor={stampBgColor}
+                  setStampBgColor={setStampBgColor}
+                  stampBgColor2={stampBgColor2}
+                  setStampBgColor2={setStampBgColor2}
+                  stampBgImage={stampBgImage}
+                  onStampBgImageChange={handleStampBgImageChange}
+                  setStampBgImage={setStampBgImage}
+                  stampBgError={stampBgError}
+                />
+              </div>
+            )}
+
             {/* Presets */}
             <div className="space-y-2">
               <label className="text-xs text-gray-500">Thèmes prêts à l&apos;emploi</label>
@@ -1203,6 +1538,11 @@ function CreateProgramForm({
                   logoData={logoData}
                   programType={type}
                   heroImage={heroImage}
+                  stampIcon={stampIcon}
+                  stampBgType={type === "STAMPS" && !isFree ? stampBgType : "none"}
+                  stampBgColor={stampBgColor}
+                  stampBgColor2={stampBgColor2 || undefined}
+                  stampBgImage={stampBgImage || undefined}
                   unlimited={type === "POINTS" && pointsUnlimited}
                   samplePoints={
                     type === "POINTS"
@@ -1333,9 +1673,40 @@ function EditProgramDesignModal({
   const [logoError, setLogoError] = useState("");
   const [heroImage, setHeroImage] = useState<string>(design.heroImage || "");
   const [heroError, setHeroError] = useState("");
+  // Personnalisation tampons
+  const [stampIcon, setStampIcon] = useState<string>(design.stampIcon || "check");
+  const [stampBgType, setStampBgType] = useState<"none" | "color" | "image">(
+    (design.stampBgType as "none" | "color" | "image") || "none"
+  );
+  const [stampBgColor, setStampBgColor] = useState<string>(
+    design.stampBgColor || "#1a1a2e"
+  );
+  const [stampBgColor2, setStampBgColor2] = useState<string>(
+    design.stampBgColor2 || ""
+  );
+  const [stampBgImage, setStampBgImage] = useState<string>(design.stampBgImage || "");
+  const [stampBgError, setStampBgError] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  function handleStampBgImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setStampBgError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setStampBgError("Le fichier doit être une image");
+      return;
+    }
+    if (file.size > 1.5 * 1024 * 1024) {
+      setStampBgError("Image trop lourde (max 1.5 MB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setStampBgImage(reader.result as string);
+    reader.onerror = () => setStampBgError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
 
   // Avis Google
   const [reviewEnabled, setReviewEnabled] = useState(program.googleReviewEnabled);
@@ -1439,6 +1810,18 @@ function EditProgramDesignModal({
           ...(isFree || program.type !== "POINTS"
             ? {}
             : { heroImage: heroImage || null }),
+          // Personnalisation tampons : STAMPS + plan payant.
+          ...(isFree || program.type !== "STAMPS"
+            ? {}
+            : {
+                stampIcon,
+                stampBgType,
+                stampBgColor: stampBgType === "color" ? stampBgColor : null,
+                stampBgColor2:
+                  stampBgType === "color" && stampBgColor2 ? stampBgColor2 : null,
+                stampBgImage:
+                  stampBgType === "image" && stampBgImage ? stampBgImage : null,
+              }),
         },
         googleReviewEnabled: reviewEnabled,
         googleReviewBonus: reviewBonus,
@@ -1770,6 +2153,36 @@ function EditProgramDesignModal({
                 <ColorPicker label="Étiquettes" value={labelColor} onChange={setLabelColor} />
               </div>
 
+              {/* Personnalisation des tampons — STAMPS + plan payant */}
+              {program.type === "STAMPS" && !isFree && (
+                <div
+                  className="space-y-2 rounded-lg p-3"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <label className="text-xs font-medium" style={{ color: "#c4c8be" }}>
+                    Tampons personnalisés
+                  </label>
+                  <StampCustomizer
+                    dark
+                    stampIcon={stampIcon}
+                    setStampIcon={setStampIcon}
+                    stampBgType={stampBgType}
+                    setStampBgType={setStampBgType}
+                    stampBgColor={stampBgColor}
+                    setStampBgColor={setStampBgColor}
+                    stampBgColor2={stampBgColor2}
+                    setStampBgColor2={setStampBgColor2}
+                    stampBgImage={stampBgImage}
+                    onStampBgImageChange={handleStampBgImageChange}
+                    setStampBgImage={setStampBgImage}
+                    stampBgError={stampBgError}
+                  />
+                </div>
+              )}
+
               {/* Avis Google */}
               <div
                 className="space-y-3 rounded-lg p-3"
@@ -1859,6 +2272,11 @@ function EditProgramDesignModal({
                 logoData={logoData || undefined}
                 programType={program.type}
                 heroImage={heroImage || undefined}
+                stampIcon={stampIcon}
+                stampBgType={program.type === "STAMPS" && !isFree ? stampBgType : "none"}
+                stampBgColor={stampBgColor}
+                stampBgColor2={stampBgColor2 || undefined}
+                stampBgImage={stampBgImage || undefined}
                 unlimited={
                   program.type === "POINTS" && config.unlimited === true
                 }

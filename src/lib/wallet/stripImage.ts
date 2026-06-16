@@ -4,11 +4,16 @@
  * Couleurs personnalisables via cardDesign :
  * - bgColor          : fond du strip (= fond de la carte)
  * - stampColor       : fill des cercles tampons obtenus
- * - stampCheckColor  : couleur du ✓ à l'intérieur
+ * - stampCheckColor  : couleur de l'icône à l'intérieur
  * - stampEmptyColor  : couleur du contour des cercles vides
+ * - stampIcon        : clé de l'icône du tampon obtenu (check par défaut)
+ * - stampBgType      : "none" | "color" | "image" — fond derrière les ronds
+ * - stampBgColor / stampBgColor2 : couleur(s) du fond (dégradé si 2)
+ * - stampBgImage     : data URL image de fond (cover)
  */
 
 import sharp from "sharp";
+import { stampIconSvg } from "./stamp-icons";
 
 interface StripOptions {
   currentStamps: number;
@@ -17,11 +22,26 @@ interface StripOptions {
   stampColor?: string;
   stampCheckColor?: string;
   stampEmptyColor?: string;
+  stampIcon?: string;
+  stampBgType?: "none" | "color" | "image";
+  stampBgColor?: string;
+  stampBgColor2?: string;
+  stampBgImage?: string | null; // data URL
 }
 
 // Apple Wallet storeCard strip dimensions @3x
 const STRIP_W = 1125;
 const STRIP_H = 432;
+
+function decodeDataUrl(dataUrl: string): Buffer | null {
+  const m = dataUrl.match(/^data:image\/[\w+.-]+;base64,(.+)$/);
+  if (!m) return null;
+  try {
+    return Buffer.from(m[1], "base64");
+  } catch {
+    return null;
+  }
+}
 
 export async function generateStripImage({
   currentStamps,
@@ -30,6 +50,11 @@ export async function generateStripImage({
   stampColor,
   stampCheckColor,
   stampEmptyColor,
+  stampIcon,
+  stampBgType = "none",
+  stampBgColor,
+  stampBgColor2,
+  stampBgImage,
 }: StripOptions): Promise<Buffer> {
   const total = Math.max(1, Math.min(20, maxStamps));
   const filled = Math.max(0, Math.min(total, currentStamps));
@@ -76,7 +101,9 @@ export async function generateStripImage({
       dots.push(
         `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${escapeXml(fillColor)}"/>`
       );
-      dots.push(buildCheckPath(cx, cy, dotSize * 0.45, escapeXml(checkColor)));
+      dots.push(
+        stampIconSvg(stampIcon, cx, cy, dotSize * 0.5, escapeXml(checkColor))
+      );
     } else {
       dots.push(
         `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${escapeXml(emptyStroke)}" stroke-width="6" stroke-opacity="0.85"/>`
@@ -84,34 +111,56 @@ export async function generateStripImage({
     }
   }
 
-  const svg = `
+  // ─── Fond derrière les ronds ───
+  // "image" → on composite l'image en cover sous le SVG des ronds.
+  // "color" → rect plein ou dégradé. "none" → bgColor uni (historique).
+  let backgroundSvg: string;
+  let baseImageBuf: Buffer | null = null;
+
+  if (stampBgType === "image" && stampBgImage) {
+    const raw = decodeDataUrl(stampBgImage);
+    if (raw) {
+      baseImageBuf = await sharp(raw)
+        .resize(STRIP_W, STRIP_H, { fit: "cover", position: "center" })
+        .png()
+        .toBuffer();
+      // Léger voile sombre pour garder les ronds lisibles sur l'image.
+      backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="rgba(0,0,0,0.18)"/>`;
+    } else {
+      backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(bgColor)}"/>`;
+    }
+  } else if (stampBgType === "color" && stampBgColor) {
+    if (stampBgColor2) {
+      backgroundSvg = `<defs><linearGradient id="sbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${escapeXml(
+        stampBgColor
+      )}"/><stop offset="1" stop-color="${escapeXml(
+        stampBgColor2
+      )}"/></linearGradient></defs><rect width="${STRIP_W}" height="${STRIP_H}" fill="url(#sbg)"/>`;
+    } else {
+      backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(stampBgColor)}"/>`;
+    }
+  } else {
+    backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(bgColor)}"/>`;
+  }
+
+  const overlaySvg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="${STRIP_W}" height="${STRIP_H}" viewBox="0 0 ${STRIP_W} ${STRIP_H}">
-  <rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(bgColor)}"/>
+  ${backgroundSvg}
   ${dots.join("\n  ")}
 </svg>`;
 
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  if (baseImageBuf) {
+    // Composite : image de fond + overlay (voile + ronds).
+    return sharp(baseImageBuf)
+      .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
+      .png()
+      .toBuffer();
+  }
+
+  return sharp(Buffer.from(overlaySvg)).png().toBuffer();
 }
 
 /* ─── Helpers ──────────────────────────────────────────────── */
-
-function buildCheckPath(
-  cx: number,
-  cy: number,
-  size: number,
-  color: string
-): string {
-  const w = size;
-  const x1 = cx - w * 0.42;
-  const y1 = cy + w * 0.04;
-  const x2 = cx - w * 0.08;
-  const y2 = cy + w * 0.34;
-  const x3 = cx + w * 0.46;
-  const y3 = cy - w * 0.32;
-  const stroke = Math.max(8, w * 0.16);
-
-  return `<path d="M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)} L ${x3.toFixed(1)} ${y3.toFixed(1)}" fill="none" stroke="${color}" stroke-width="${stroke.toFixed(1)}" stroke-linecap="round" stroke-linejoin="round"/>`;
-}
 
 function isDark(hex: string): boolean {
   const m = hex.match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);

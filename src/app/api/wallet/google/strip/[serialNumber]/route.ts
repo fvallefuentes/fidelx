@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { stampIconSvg } from "@/lib/wallet/stamp-icons";
 
 export async function GET(
   _req: Request,
@@ -30,6 +31,13 @@ export async function GET(
   const stampFill = (design.stampColor as string) || fg;
   const stampCheck = (design.stampCheckColor as string) || bg;
   const stampEmptyStroke = (design.stampEmptyColor as string) || fg;
+  const stampIcon = (design.stampIcon as string) || "check";
+
+  // Fond derrière les ronds (même logique que le strip Apple).
+  const stampBgType = (design.stampBgType as string) || "none";
+  const stampBgColor = design.stampBgColor as string | undefined;
+  const stampBgColor2 = design.stampBgColor2 as string | undefined;
+  const stampBgImage = design.stampBgImage as string | undefined;
 
   const perRow = maxStamps <= 5 ? maxStamps : 5;
   const rows = Math.ceil(maxStamps / perRow);
@@ -51,22 +59,58 @@ export async function GET(
 
     if (filled) {
       circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${stampFill}"/>`;
-      const ck = radius * 0.45;
-      circles += `<polyline points="${cx - ck * 0.6},${cy} ${cx - ck * 0.1},${cy + ck * 0.55} ${cx + ck * 0.7},${cy - ck * 0.55}" fill="none" stroke="${stampCheck}" stroke-width="${sw * 1.4}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      circles += stampIconSvg(stampIcon, cx, cy, radius * 1.1, stampCheck);
     } else {
       circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="${stampEmptyStroke}" opacity="0.12"/>`;
       circles += `<circle cx="${cx}" cy="${cy}" r="${radius}" fill="none" stroke="${stampEmptyStroke}" stroke-width="${sw}" opacity="0.55"/>`;
     }
   }
 
+  // ─── Fond : couleur / dégradé / image (cover) ───
+  let backgroundSvg: string;
+  let baseImageBuf: Buffer | null = null;
+  if (stampBgType === "image" && stampBgImage) {
+    const m = stampBgImage.match(/^data:image\/[\w+.-]+;base64,(.+)$/);
+    if (m) {
+      try {
+        const sharp = (await import("sharp")).default;
+        baseImageBuf = await sharp(Buffer.from(m[1], "base64"))
+          .resize(W, H, { fit: "cover", position: "center" })
+          .png()
+          .toBuffer();
+        backgroundSvg = `<rect width="${W}" height="${H}" fill="rgba(0,0,0,0.18)"/>`;
+      } catch {
+        backgroundSvg = `<rect width="${W}" height="${H}" fill="${bg}"/>`;
+      }
+    } else {
+      backgroundSvg = `<rect width="${W}" height="${H}" fill="${bg}"/>`;
+    }
+  } else if (stampBgType === "color" && stampBgColor) {
+    if (stampBgColor2) {
+      backgroundSvg = `<defs><linearGradient id="sbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${stampBgColor}"/><stop offset="1" stop-color="${stampBgColor2}"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#sbg)"/>`;
+    } else {
+      backgroundSvg = `<rect width="${W}" height="${H}" fill="${stampBgColor}"/>`;
+    }
+  } else {
+    backgroundSvg = `<rect width="${W}" height="${H}" fill="${bg}"/>`;
+  }
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <rect width="${W}" height="${H}" fill="${bg}"/>
+  ${backgroundSvg}
   ${circles}
 </svg>`;
 
   try {
     const sharp = (await import("sharp")).default;
-    const png = await sharp(Buffer.from(svg)).png().toBuffer();
+    let png: Buffer;
+    if (baseImageBuf) {
+      png = await sharp(baseImageBuf)
+        .composite([{ input: Buffer.from(svg), top: 0, left: 0 }])
+        .png()
+        .toBuffer();
+    } else {
+      png = await sharp(Buffer.from(svg)).png().toBuffer();
+    }
     return new NextResponse(new Uint8Array(png), {
       headers: {
         "Content-Type": "image/png",

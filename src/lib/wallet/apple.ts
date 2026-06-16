@@ -62,6 +62,11 @@ interface PassData {
   stampColor?: string;
   stampCheckColor?: string;
   stampEmptyColor?: string;
+  stampIcon?: string;
+  stampBgType?: "none" | "color" | "image";
+  stampBgColor?: string;
+  stampBgColor2?: string;
+  stampBgImage?: string | null;
   labelColor?: string;
   description: string;
   lastMessage?: string | null;
@@ -129,6 +134,11 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     stampColor: (design.stampColor as string) || undefined,
     stampCheckColor: (design.stampCheckColor as string) || undefined,
     stampEmptyColor: (design.stampEmptyColor as string) || undefined,
+    stampIcon: (design.stampIcon as string) || undefined,
+    stampBgType: (design.stampBgType as "none" | "color" | "image") || undefined,
+    stampBgColor: (design.stampBgColor as string) || undefined,
+    stampBgColor2: (design.stampBgColor2 as string) || undefined,
+    stampBgImage: (design.stampBgImage as string) || null,
     labelColor: (design.labelColor as string) || undefined,
     description: (design.description as string) || card.program.name,
     lastMessage: card.lastMessage,
@@ -416,6 +426,11 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         stampColor: passData.stampColor,
         stampCheckColor: passData.stampCheckColor,
         stampEmptyColor: passData.stampEmptyColor,
+        stampIcon: passData.stampIcon,
+        stampBgType: passData.stampBgType,
+        stampBgColor: passData.stampBgColor,
+        stampBgColor2: passData.stampBgColor2,
+        stampBgImage: passData.stampBgImage,
       });
       pass.addBuffer("strip.png", stripBuf);
       pass.addBuffer("strip@2x.png", stripBuf);
