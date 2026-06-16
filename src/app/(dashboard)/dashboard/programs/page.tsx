@@ -10,6 +10,29 @@ import { Plus, Stamp, Award, Percent, Trash2, ExternalLink, Lock, Palette, X, Ey
 import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
 import { getStampIcon, STAMP_ICON_LIST, STAMP_SPACING_LIST, getStampSpacingMult } from "@/lib/wallet/stamp-icons";
 
+type WalletPreviewProps = {
+  bgColor: string;
+  textColor: string;
+  stampColor?: string;
+  stampCheckColor?: string;
+  stampEmptyColor?: string;
+  labelColor?: string;
+  programName: string;
+  maxStamps: number;
+  logoData?: string;
+  merchantName?: string;
+  programType?: string;
+  heroImage?: string;
+  samplePoints?: number;
+  unlimited?: boolean;
+  stampIcon?: string;
+  stampSpacing?: string;
+  stampBgType?: "none" | "color" | "image";
+  stampBgColor?: string;
+  stampBgColor2?: string;
+  stampBgImage?: string;
+};
+
 interface Program {
   id: string;
   name: string;
@@ -21,6 +44,7 @@ interface Program {
   googleReviewBonus?: number;
   googleReviewMinVisits?: number;
   establishmentId?: string | null;
+  establishment?: { id: string; name: string } | null;
   rewards: { id: string; name: string; threshold: number; rewardType: string }[];
   _count: { cards: number };
 }
@@ -36,7 +60,7 @@ function ProgramCardPreview({ program }: { program: Program }) {
 
   return (
     <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
-      <WalletCardPreview
+      <WalletPreviewPair
         bgColor={(design.bgColor as string) || "#1a1a2e"}
         textColor={(design.textColor as string) || "#ffffff"}
         stampColor={design.stampColor as string | undefined}
@@ -44,6 +68,7 @@ function ProgramCardPreview({ program }: { program: Program }) {
         stampEmptyColor={design.stampEmptyColor as string | undefined}
         labelColor={design.labelColor as string | undefined}
         logoData={(design.logoData as string) || undefined}
+        merchantName={program.establishment?.name}
         heroImage={(design.heroImage as string) || undefined}
         stampIcon={(design.stampIcon as string) || undefined}
         stampSpacing={(design.stampSpacing as string) || undefined}
@@ -58,7 +83,6 @@ function ProgramCardPreview({ program }: { program: Program }) {
           program.type === "POINTS" && config.unlimited === true
         }
       />
-      <span className="wcp-tag">APERÇU</span>
     </div>
   );
 }
@@ -794,6 +818,21 @@ function StampCustomizer({
 }
 
 /* ─── Aperçu live de la carte Apple Wallet (utilisé dans le formulaire) ─ */
+function WalletPreviewPair(props: WalletPreviewProps) {
+  return (
+    <div className="wallet-preview-pair">
+      <div className="wallet-preview-item">
+        <span className="wallet-preview-label">Apple Wallet</span>
+        <WalletCardPreview {...props} />
+      </div>
+      <div className="wallet-preview-item">
+        <span className="wallet-preview-label">Google Wallet</span>
+        <GoogleWalletPreview {...props} />
+      </div>
+    </div>
+  );
+}
+
 function WalletCardPreview({
   bgColor,
   textColor,
@@ -814,27 +853,7 @@ function WalletCardPreview({
   stampBgColor,
   stampBgColor2,
   stampBgImage,
-}: {
-  bgColor: string;
-  textColor: string;
-  stampColor?: string;
-  stampCheckColor?: string;
-  stampEmptyColor?: string;
-  labelColor?: string;
-  programName: string;
-  maxStamps: number;
-  logoData?: string;
-  programType?: string;
-  heroImage?: string;
-  samplePoints?: number;
-  unlimited?: boolean;
-  stampIcon?: string;
-  stampSpacing?: string;
-  stampBgType?: "none" | "color" | "image";
-  stampBgColor?: string;
-  stampBgColor2?: string;
-  stampBgImage?: string;
-}) {
+}: WalletPreviewProps) {
   const total = Math.max(1, Math.min(20, maxStamps || 10));
   const rows = total <= 5 ? 1 : 2;
   const perRow = Math.ceil(total / rows);
@@ -1022,6 +1041,77 @@ function WalletCardPreview({
       {/* Mock QR */}
       <div className="wcp-qr-wrap">
         <span className="wcp-qr" />
+      </div>
+    </div>
+  );
+}
+
+function GoogleWalletPreview({
+  bgColor,
+  textColor,
+  labelColor,
+  programName,
+  merchantName,
+  programType = "STAMPS",
+  logoData,
+  heroImage,
+  samplePoints,
+  stampBgType = "none",
+  stampBgImage,
+}: WalletPreviewProps) {
+  const isDarkBg = isDark(bgColor);
+  const lblColor = labelColor || (isDarkBg ? "rgba(255,255,255,0.82)" : "rgba(0,0,0,0.68)");
+  const mediaImage = stampBgType === "image" && stampBgImage ? stampBgImage : heroImage;
+  const metricLabel =
+    programType === "POINTS" ? "Points" : programType === "CASHBACK" ? "Cashback" : "Tampons";
+  const metricValue =
+    programType === "POINTS"
+      ? String(samplePoints ?? 0)
+      : programType === "CASHBACK"
+        ? "CHF 0"
+        : "0";
+
+  return (
+    <div className="gwp" style={{ background: bgColor, color: textColor }}>
+      <div className="gwp-head">
+        <span className="gwp-logo-badge">
+          {logoData ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoData} alt="" className="gwp-logo" />
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={isDarkBg ? "/powered_by_fidlify_white.png" : "/powered_by_fidlify_black.svg"}
+              alt=""
+              className="gwp-logo gwp-logo-powered"
+            />
+          )}
+        </span>
+        <span className="gwp-merchant">{merchantName || "Votre commerce"}</span>
+      </div>
+
+      <div className="gwp-main">
+        <h3 className="gwp-title">{programName || "Mon programme"}</h3>
+        <div className="gwp-metric">
+          <span style={{ color: lblColor }}>{metricLabel}</span>
+          <strong>{metricValue}</strong>
+        </div>
+      </div>
+
+      <div className="gwp-qr-zone">
+        <div className="gwp-qr-card">
+          <span className="gwp-qr" />
+        </div>
+        <span className="gwp-code">IIHL-KHOC-SC2F</span>
+      </div>
+
+      <div className="gwp-strip">
+        {mediaImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={mediaImage} alt="" className="gwp-strip-img" />
+        ) : (
+          <div className="gwp-strip-empty" />
+        )}
       </div>
     </div>
   );
@@ -1557,7 +1647,7 @@ function CreateProgramForm({
               </div>
 
               <div className="flex justify-center">
-                <WalletCardPreview
+                <WalletPreviewPair
                   bgColor={bgColor}
                   textColor={textColor}
                   stampColor={stampColor}
@@ -1750,6 +1840,9 @@ function EditProgramDesignModal({
     { id: string; name: string; googlePlaceId: string }[]
   >([]);
   const isPointsType = program.type === "POINTS" || program.type === "CASHBACK";
+  const selectedEstablishmentName =
+    establishments.find((est) => est.id === establishmentId)?.name ||
+    program.establishment?.name;
 
   // Charge les établissements du merchant pour le sélecteur
   useEffect(() => {
@@ -2296,7 +2389,7 @@ function EditProgramDesignModal({
               <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider text-center">
                 Aperçu live
               </p>
-              <WalletCardPreview
+              <WalletPreviewPair
                 bgColor={bgColor}
                 textColor={textColor}
                 stampColor={stampColor}
@@ -2304,6 +2397,7 @@ function EditProgramDesignModal({
                 stampEmptyColor={stampEmptyColor}
                 labelColor={labelColor}
                 programName={name}
+                merchantName={selectedEstablishmentName}
                 maxStamps={maxStamps}
                 logoData={logoData || undefined}
                 programType={program.type}

@@ -2371,6 +2371,29 @@ html, body { overflow-x: clip; }
 }
 
 /* ─── Live wallet card preview (form) ────────────────────── */
+.dashboard .wallet-preview-pair {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 18px;
+}
+.dashboard .wallet-preview-item {
+  min-width: min(100%, 300px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.dashboard .wallet-preview-label {
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
 .dashboard .wcp {
   width: 100%;
   max-width: 368px;
@@ -2458,6 +2481,140 @@ html, body { overflow-x: clip; }
 /* ═══════════════════════════════════════════════════════════════════════
    JOIN PAGE — fond blanc + identité Fidlify (lime + JetBrains Mono)
    ═══════════════════════════════════════════════════════════════════════ */
+
+.dashboard .gwp {
+  width: 100%;
+  max-width: 320px;
+  min-height: 384px;
+  border-radius: 30px;
+  box-shadow: 0 20px 50px -14px rgba(0,0,0,0.42),
+              0 0 0 1px rgba(255,255,255,0.06) inset;
+  font-family: "Google Sans", Roboto, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.dashboard .gwp-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 0;
+}
+.dashboard .gwp-logo-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.dashboard .gwp-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dashboard .gwp-logo-powered {
+  width: 25px;
+  height: auto;
+  object-fit: contain;
+}
+.dashboard .gwp-merchant {
+  font-size: 14px;
+  line-height: 1.1;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dashboard .gwp-main {
+  padding: 28px 18px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.dashboard .gwp-title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dashboard .gwp-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  line-height: 1.05;
+}
+.dashboard .gwp-metric strong {
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 700;
+}
+.dashboard .gwp-qr-zone {
+  padding: 26px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+}
+.dashboard .gwp-qr-card {
+  width: 116px;
+  height: 116px;
+  border-radius: 12px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08);
+}
+.dashboard .gwp-qr {
+  display: block;
+  width: 94px;
+  height: 94px;
+  background: #fff;
+  background-image:
+    linear-gradient(45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(-45deg, #0a0d04 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #0a0d04 75%),
+    linear-gradient(-45deg, transparent 75%, #0a0d04 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+}
+.dashboard .gwp-code {
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.dashboard .gwp-strip {
+  margin-top: auto;
+  height: 88px;
+  background: rgba(0,0,0,0.15);
+  overflow: hidden;
+}
+.dashboard .gwp-strip-img,
+.dashboard .gwp-strip-empty {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.dashboard .gwp-strip-img {
+  object-fit: cover;
+  object-position: center;
+}
+.dashboard .gwp-strip-empty {
+  background:
+    radial-gradient(circle at 24% 36%, rgba(255,255,255,0.18), transparent 24%),
+    radial-gradient(circle at 60% 58%, rgba(255,255,255,0.12), transparent 28%),
+    rgba(0,0,0,0.12);
+}
 
 .join-shell {
   --jl: #d4ff4e;     /* lime accent */
