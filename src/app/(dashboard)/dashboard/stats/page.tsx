@@ -38,8 +38,8 @@ import {
 import type { FullStatsResponse } from "@/app/api/merchants/stats/full/route";
 import { StatsInsights } from "@/components/dashboard/StatsInsights";
 
-const ACCENT      = "var(--graph)";
-const ACCENT_FILL = "rgb(var(--graph-rgb) / 0.15)";
+const ACCENT      = "#d4ff4e";
+const ACCENT_FILL = "rgba(212,255,78,0.15)";
 const MUTED       = "rgb(var(--ovr) / 0.38)";
 const BORDER      = "rgb(var(--ovr) / 0.08)";
 const CARD_BG     = "rgb(var(--ovr) / 0.04)";
@@ -104,8 +104,8 @@ function KpiCard({
               width: 34,
               height: 34,
               borderRadius: 8,
-              background: "rgb(var(--graph-rgb) / 0.1)",
-              border: "1px solid rgb(var(--graph-rgb) / 0.14)",
+              background: "rgba(212,255,78,0.1)",
+              border: "1px solid rgba(212,255,78,0.14)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -139,8 +139,8 @@ function KpiCard({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 3,
-                background: "rgb(var(--graph-rgb) / 0.12)",
-                border: "1px solid rgb(var(--graph-rgb) / 0.18)",
+                background: "rgba(212,255,78,0.12)",
+                border: "1px solid rgba(212,255,78,0.18)",
                 borderRadius: 20,
                 padding: "3px 8px 3px 6px",
                 fontSize: 11,
@@ -341,8 +341,8 @@ function UpgradeBanner({ currentPlan }: { currentPlan: string }) {
   return (
     <div
       style={{
-        background: "rgb(var(--graph-rgb) / 0.05)",
-        border: "1px solid rgb(var(--graph-rgb) / 0.18)",
+        background: "rgba(212,255,78,0.05)",
+        border: "1px solid rgba(212,255,78,0.18)",
         borderRadius: 14,
         padding: "18px 22px",
         marginTop: 4,
@@ -536,7 +536,7 @@ function EssentialSection({ stats }: { stats: FullStatsResponse }) {
               <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
               <XAxis dataKey="date" tickFormatter={fmtShortDate} {...axisProps} interval="preserveStartEnd" minTickGap={40} />
               <YAxis {...axisProps} width={28} />
-              <Tooltip content={<DarkTooltip suffix="récompense(s)" />} cursor={{ fill: "rgb(var(--graph-rgb) / 0.07)" }} />
+              <Tooltip content={<DarkTooltip suffix="récompense(s)" />} cursor={{ fill: "rgba(212,255,78,0.07)" }} />
               <Bar dataKey="count" fill={ACCENT} radius={[4, 4, 0, 0]} maxBarSize={16} />
             </BarChart>
           </ResponsiveContainer>
@@ -547,7 +547,7 @@ function EssentialSection({ stats }: { stats: FullStatsResponse }) {
 }
 
 function GrowthSection({ stats }: { stats: FullStatsResponse }) {
-  const PIE_COLORS = [ACCENT, "rgb(var(--graph-rgb) / 0.25)"];
+  const PIE_COLORS = [ACCENT, "rgba(212,255,78,0.25)"];
   return (
     <>
       <SectionLabel>Engagement & Campagnes</SectionLabel>
@@ -624,7 +624,7 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
               <XAxis type="number" {...axisProps} />
               <YAxis dataKey="name" type="category" {...axisProps} width={80}
                 tick={{ fill: "rgb(var(--ovr) / 0.55)", fontSize: 10, fontFamily: MONO }} />
-              <Tooltip cursor={{ fill: "rgb(var(--graph-rgb) / 0.07)" }}
+              <Tooltip cursor={{ fill: "rgba(212,255,78,0.07)" }}
                 contentStyle={{ background: "rgba(16,18,12,0.97)", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="sentCount" name="Envoyés" fill={ACCENT_FILL} radius={[0, 4, 4, 0]} maxBarSize={14} />
               <Bar dataKey="deliveredCount" name="Livrés" fill={ACCENT} radius={[0, 4, 4, 0]} maxBarSize={14} />
@@ -643,7 +643,7 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
               <XAxis type="number" {...axisProps} />
               <YAxis dataKey="range" type="category" {...axisProps} width={68}
                 tick={{ fill: "rgb(var(--ovr) / 0.55)", fontSize: 11, fontFamily: MONO }} />
-              <Tooltip content={<DarkTooltip suffix="carte(s)" />} cursor={{ fill: "rgb(var(--graph-rgb) / 0.07)" }} />
+              <Tooltip content={<DarkTooltip suffix="carte(s)" />} cursor={{ fill: "rgba(212,255,78,0.07)" }} />
               <Bar dataKey="count" fill={ACCENT} radius={[0, 6, 6, 0]} maxBarSize={20} />
             </BarChart>
           </ResponsiveContainer>

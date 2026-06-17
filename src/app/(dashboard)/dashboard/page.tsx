@@ -118,7 +118,7 @@ export default function DashboardPage() {
     {
       name: "Engagement",
       value: stats?.returnRate || 0,
-      fill: "var(--graph)",
+      fill: "#d4ff4e",
     },
   ];
 
@@ -185,8 +185,8 @@ export default function DashboardPage() {
               >
                 <defs>
                   <linearGradient id="visitsFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--graph)" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="var(--graph)" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#d4ff4e" stopOpacity={0.45} />
+                    <stop offset="100%" stopColor="#d4ff4e" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
@@ -221,13 +221,13 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="count"
-                  stroke="var(--graph)"
+                  stroke="#d4ff4e"
                   strokeWidth={2}
                   fill="url(#visitsFill)"
                   dot={false}
                   activeDot={{
                     r: 5,
-                    fill: "var(--graph)",
+                    fill: "#d4ff4e",
                     stroke: "#0a0d04",
                     strokeWidth: 2,
                   }}
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                   background={{ fill: "rgb(var(--ovr) / 0.05)" }}
                   dataKey="value"
                   cornerRadius={10}
-                  fill="var(--graph)"
+                  fill="#d4ff4e"
                 />
               </RadialBarChart>
             </ResponsiveContainer>
@@ -335,11 +335,11 @@ export default function DashboardPage() {
                       locale={locale}
                     />
                   }
-                  cursor={{ fill: "rgb(var(--graph-rgb) / 0.08)" }}
+                  cursor={{ fill: "rgba(212,255,78,0.08)" }}
                 />
                 <Bar
                   dataKey="count"
-                  fill="var(--graph)"
+                  fill="#d4ff4e"
                   radius={[4, 4, 0, 0]}
                   maxBarSize={14}
                 />
@@ -392,15 +392,13 @@ export default function DashboardPage() {
                   content={
                     <DarkTooltip suffix={t("tooltip.cards")} locale={locale} />
                   }
-                  cursor={{ fill: "rgb(var(--graph-rgb) / 0.08)" }}
+                  cursor={{ fill: "rgba(212,255,78,0.08)" }}
                 />
                 <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={20}>
                   {(stats?.stampDistribution || []).map((entry, i) => {
                     const pct = (entry.count / Math.max(1, totalRetention)) * 100;
                     const color =
-                      i === 4
-                        ? "var(--graph)"
-                        : `rgb(var(--graph-rgb) / ${0.25 + pct / 200})`;
+                      i === 4 ? "#d4ff4e" : `rgba(212,255,78,${0.25 + pct / 200})`;
                     return <Cell key={i} fill={color} />;
                   })}
                 </Bar>
