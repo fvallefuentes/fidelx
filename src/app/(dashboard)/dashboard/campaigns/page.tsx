@@ -15,10 +15,11 @@ import {
   UserMinus,
   Target,
   Milestone,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { CAMPAIGN_TEMPLATES, type CampaignTemplate } from "@/lib/campaign-templates";
-import { Sparkles } from "lucide-react";
 
 interface Campaign {
   id: string;
@@ -45,6 +46,22 @@ interface Program {
   };
 }
 
+interface CampaignRecommendation {
+  id: string;
+  title: string;
+  reason: string;
+  impactLabel: string;
+  potentialCount: number;
+  programId: string;
+  programName: string;
+  name: string;
+  notifTitle: string;
+  message: string;
+  triggerType: string;
+  targetSegment: string;
+  triggerConfig?: { daysInactive?: number };
+}
+
 const triggerIcons: Record<string, typeof Send> = {
   IMMEDIATE: Send,
   SCHEDULED: Clock,
@@ -52,6 +69,7 @@ const triggerIcons: Record<string, typeof Send> = {
   INACTIVITY: UserMinus,
   POST_STAMP: Target,
   MILESTONE: Milestone,
+  BIRTHDAY: Bell,
 };
 
 const triggerLabels: Record<string, string> = {
@@ -61,6 +79,7 @@ const triggerLabels: Record<string, string> = {
   INACTIVITY: "Win-back",
   POST_STAMP: "Après tampon",
   MILESTONE: "Palier atteint",
+  BIRTHDAY: "Anniversaire",
 };
 
 const segmentLabels: Record<string, string> = {
@@ -84,16 +103,21 @@ export default function CampaignsPage() {
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [recommendations, setRecommendations] = useState<CampaignRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] =
+    useState<CampaignRecommendation | null>(null);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/campaigns").then((r) => r.json()),
       fetch("/api/programs").then((r) => r.json()),
-    ]).then(([c, p]) => {
+      fetch("/api/campaigns/recommendations").then((r) => r.json()),
+    ]).then(([c, p, recs]) => {
       setCampaigns(c);
       setPrograms(p);
+      setRecommendations(Array.isArray(recs) ? recs : []);
       setLoading(false);
     });
   }, []);
@@ -101,6 +125,18 @@ export default function CampaignsPage() {
   async function fetchCampaigns() {
     const res = await fetch("/api/campaigns");
     setCampaigns(await res.json());
+    const recs = await fetch("/api/campaigns/recommendations").then((r) => r.json());
+    setRecommendations(Array.isArray(recs) ? recs : []);
+  }
+
+  function startRecommendedCampaign(rec: CampaignRecommendation) {
+    setSelectedRecommendation(rec);
+    setShowForm(true);
+  }
+
+  function startBlankCampaign() {
+    setSelectedRecommendation(null);
+    setShowForm(true);
   }
 
   // Période basée sur la date d'inscription (ancre mensuelle)
@@ -137,7 +173,7 @@ export default function CampaignsPage() {
             filename="fidlify-campagnes.csv"
             label="Exporter CSV"
           />
-          <Button onClick={() => setShowForm(true)} disabled={freeLimitReached}>
+          <Button onClick={startBlankCampaign} disabled={freeLimitReached}>
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle campagne
           </Button>
@@ -153,15 +189,27 @@ export default function CampaignsPage() {
         </div>
       )}
 
+      <RecommendedActions
+        recommendations={recommendations}
+        isFree={isFree}
+        onUse={startRecommendedCampaign}
+      />
+
       {showForm && (
         <CreateCampaignForm
+          key={selectedRecommendation?.id || "blank"}
           programs={programs}
           isFree={isFree}
+          initialRecommendation={selectedRecommendation}
           onSuccess={() => {
             setShowForm(false);
+            setSelectedRecommendation(null);
             fetchCampaigns();
           }}
-          onCancel={() => setShowForm(false)}
+          onCancel={() => {
+            setShowForm(false);
+            setSelectedRecommendation(null);
+          }}
         />
       )}
 
@@ -173,7 +221,7 @@ export default function CampaignsPage() {
             <p className="text-gray-500 mt-1 mb-4">
               Envoyez votre première notification wallet
             </p>
-            <Button onClick={() => setShowForm(true)}>
+            <Button onClick={startBlankCampaign}>
               <Plus className="mr-2 h-4 w-4" />
               Créer une campagne
             </Button>
@@ -232,6 +280,101 @@ export default function CampaignsPage() {
 }
 
 /* ─── Live iPhone notification preview ──────────────────────────────── */
+function RecommendedActions({
+  recommendations,
+  isFree,
+  onUse,
+}: {
+  recommendations: CampaignRecommendation[];
+  isFree: boolean;
+  onUse: (rec: CampaignRecommendation) => void;
+}) {
+  if (recommendations.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-lime-50">
+              <Sparkles className="h-5 w-5 text-lime-600" />
+            </div>
+            <div>
+              <p className="font-medium">Actions recommandées</p>
+              <p className="text-sm text-gray-500">
+                Aucune opportunité urgente détectée pour l&apos;instant. Fidlify surveille
+                les clients dormants, les anniversaires et les cartes proches d&apos;une récompense.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-lime-500" />
+              Actions recommandées
+            </CardTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              Fidlify détecte les opportunités et prépare le message à envoyer.
+            </p>
+          </div>
+          <Badge variant="secondary">{recommendations.length} suggestion(s)</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="campaign-recommendations-grid">
+          {recommendations.map((rec) => {
+            const TriggerIcon = triggerIcons[rec.triggerType] || Wand2;
+            const lockedByFreePlan = isFree && rec.triggerType !== "IMMEDIATE";
+            return (
+              <div key={rec.id} className="campaign-recommendation-card">
+                <div className="campaign-recommendation-top">
+                  <div className="campaign-recommendation-icon">
+                    <TriggerIcon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="campaign-recommendation-title">{rec.title}</p>
+                    <p className="campaign-recommendation-program">{rec.programName}</p>
+                  </div>
+                </div>
+
+                <p className="campaign-recommendation-reason">{rec.reason}</p>
+
+                <div className="campaign-recommendation-meta">
+                  <span>
+                    <strong>{rec.potentialCount}</strong> {rec.impactLabel}
+                  </span>
+                  <span>{segmentLabels[rec.targetSegment] || rec.targetSegment}</span>
+                </div>
+
+                <div className="campaign-recommendation-message">
+                  <span>{rec.notifTitle}</span>
+                  <p>{rec.message}</p>
+                </div>
+
+                <Button
+                  type="button"
+                  className="w-full"
+                  variant={lockedByFreePlan ? "outline" : "default"}
+                  disabled={lockedByFreePlan}
+                  onClick={() => onUse(rec)}
+                >
+                  {lockedByFreePlan ? "Plan payant requis" : "Créer cette campagne"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function NotificationPreview({
   program,
   message,
@@ -322,20 +465,26 @@ function NotificationPreview({
 function CreateCampaignForm({
   programs,
   isFree,
+  initialRecommendation,
   onSuccess,
   onCancel,
 }: {
   programs: Program[];
   isFree: boolean;
+  initialRecommendation?: CampaignRecommendation | null;
   onSuccess: () => void;
   onCancel: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [message, setMessage] = useState("");
-  const [programId, setProgramId] = useState(programs[0]?.id || "");
-  const [triggerType, setTriggerType] = useState("IMMEDIATE");
-  const [targetSegment, setTargetSegment] = useState("ALL");
-  const [showTemplates, setShowTemplates] = useState(true);
+  const [name, setName] = useState(initialRecommendation?.name || "");
+  const [message, setMessage] = useState(initialRecommendation?.message || "");
+  const [programId, setProgramId] = useState(initialRecommendation?.programId || programs[0]?.id || "");
+  const [triggerType, setTriggerType] = useState(
+    isFree && initialRecommendation?.triggerType !== "IMMEDIATE"
+      ? "IMMEDIATE"
+      : initialRecommendation?.triggerType || "IMMEDIATE"
+  );
+  const [targetSegment, setTargetSegment] = useState(initialRecommendation?.targetSegment || "ALL");
+  const [showTemplates, setShowTemplates] = useState(!initialRecommendation);
 
   function applyTemplate(tpl: CampaignTemplate) {
     setName(tpl.name);
@@ -349,12 +498,14 @@ function CreateCampaignForm({
     setTargetSegment(tpl.targetSegment);
     setShowTemplates(false);
   }
-  const [notifTitle, setNotifTitle] = useState(""); // optionnel, override du titre
+  const [notifTitle, setNotifTitle] = useState(initialRecommendation?.notifTitle || ""); // optionnel, override du titre
   const [notifLogo, setNotifLogo] = useState<string>(""); // optionnel, base64 data URL
   const [logoError, setLogoError] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
-  const [inactivityDays, setInactivityDays] = useState(30);
+  const [inactivityDays, setInactivityDays] = useState(
+    initialRecommendation?.triggerConfig?.daysInactive || 30
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -592,6 +743,7 @@ function CreateCampaignForm({
                 {!isFree && <option value="INACTIVITY">Client inactif (win-back)</option>}
                 {!isFree && <option value="POST_STAMP">Après tamponnage</option>}
                 {!isFree && <option value="MILESTONE">Palier de tampons atteint</option>}
+                {!isFree && <option value="BIRTHDAY">Anniversaire client</option>}
               </select>
               {isFree && (
                 <p className="text-xs text-gray-400">Passez au plan Pro pour accéder aux autres déclencheurs.</p>

@@ -4621,6 +4621,94 @@ html, body { overflow-x: clip; }
 /* ═══════════════════════════════════════════════════════════
    EXPORT CSV BUTTON
    ═══════════════════════════════════════════════════════════ */
+.campaign-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+.campaign-recommendation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgb(var(--ovr) / 0.08);
+  border-radius: 14px;
+  background:
+    radial-gradient(180px 120px at 100% 0%, rgba(212,255,78,0.08), transparent 62%),
+    rgb(var(--ovr) / 0.03);
+}
+.campaign-recommendation-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.campaign-recommendation-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #d4ff4e;
+  background: rgba(212,255,78,0.1);
+  border: 1px solid rgba(212,255,78,0.18);
+}
+.campaign-recommendation-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: rgb(var(--ovr) / 0.92);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.campaign-recommendation-program {
+  margin-top: 2px;
+  font-size: 11px;
+  color: rgb(var(--ovr) / 0.42);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.campaign-recommendation-reason {
+  min-height: 38px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgb(var(--ovr) / 0.58);
+}
+.campaign-recommendation-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  color: rgb(var(--ovr) / 0.42);
+}
+.campaign-recommendation-meta strong {
+  color: #d4ff4e;
+  font-size: 16px;
+}
+.campaign-recommendation-message {
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: rgb(var(--ovr) / 0.04);
+  border: 1px solid rgb(var(--ovr) / 0.06);
+}
+.campaign-recommendation-message span {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgb(var(--ovr) / 0.78);
+}
+.campaign-recommendation-message p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgb(var(--ovr) / 0.5);
+}
+
 .export-btn {
   font-family: inherit;
   font-weight: 500;
