@@ -15,10 +15,10 @@ import type { InsightsResponse } from "@/app/api/merchants/stats/insights/route"
 
 const ACCENT = "#d4ff4e";
 const RED = "#ff7a6b";
-const MUTED = "rgb(var(--ovr) / 0.38)";
-const BORDER = "rgb(var(--ovr) / 0.08)";
-const CARD_BG = "rgb(var(--ovr) / 0.04)";
-const VAL_COLOR = "rgb(var(--ovr) / 0.92)";
+const MUTED = "rgba(255,255,255,0.38)";
+const BORDER = "rgba(255,255,255,0.08)";
+const CARD_BG = "rgba(255,255,255,0.04)";
+const VAL_COLOR = "rgba(255,255,255,0.92)";
 
 export function StatsInsights({ isFree }: { isFree: boolean }) {
   const t = useTranslations("Dashboard.statsInsights");
@@ -276,7 +276,7 @@ function HeatmapPanel({ cells }: { cells: InsightsResponse["heatmap"] }) {
                           borderRadius: 3,
                           background:
                             count === 0
-                              ? "rgb(var(--ovr) / 0.03)"
+                              ? "rgba(255,255,255,0.03)"
                               : `rgba(212,255,78,${0.15 + intensity * 0.75})`,
                           cursor: "default",
                         }}
@@ -476,7 +476,7 @@ function LockedFeaturePanel({
         }}
       >
         <Lock size={20} style={{ color: MUTED, marginBottom: 8 }} />
-        <p style={{ margin: 0, fontSize: 13, color: "rgb(var(--ovr) / 0.6)" }}>
+        <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.6)" }}>
           {description}
         </p>
       </div>

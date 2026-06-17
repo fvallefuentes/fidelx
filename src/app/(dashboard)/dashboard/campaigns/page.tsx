@@ -439,8 +439,8 @@ function CreateCampaignForm({
           style={{
             borderColor: showTemplates
               ? "rgba(212,255,78,0.5)"
-              : "rgb(var(--ovr) / 0.15)",
-            color: showTemplates ? "#d4ff4e" : "rgb(var(--ovr) / 0.6)",
+              : "rgba(255,255,255,0.15)",
+            color: showTemplates ? "#d4ff4e" : "rgba(255,255,255,0.6)",
             background: showTemplates ? "rgba(212,255,78,0.08)" : "transparent",
           }}
         >

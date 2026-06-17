@@ -644,7 +644,7 @@ function StampCustomizer({
     ? { background: "#d4ff4e", color: "#0a0d04", borderColor: "#d4ff4e" }
     : { background: "#111", color: "#fff", borderColor: "#111" };
   const segIdle = dark
-    ? { background: "transparent", color: "#8a8e84", borderColor: "rgb(var(--ovr) / 0.15)" }
+    ? { background: "transparent", color: "#8a8e84", borderColor: "rgba(255,255,255,0.15)" }
     : { background: "#fff", color: "#555", borderColor: "#d1d5db" };
 
   return (
@@ -665,7 +665,7 @@ function StampCustomizer({
                 style={
                   active
                     ? { borderColor: "#d4ff4e", borderWidth: 2, background: dark ? "rgba(212,255,78,0.12)" : "#f3ffd6" }
-                    : { borderColor: dark ? "rgb(var(--ovr) / 0.15)" : "#e5e7eb" }
+                    : { borderColor: dark ? "rgba(255,255,255,0.15)" : "#e5e7eb" }
                 }
               >
                 <svg
@@ -758,8 +758,8 @@ function StampCustomizer({
               <div
                 className="flex items-center gap-3 rounded-lg p-2.5"
                 style={{
-                  background: dark ? "rgb(var(--ovr) / 0.04)" : "#f9fafb",
-                  border: dark ? "1px solid rgb(var(--ovr) / 0.12)" : "1px solid #e5e7eb",
+                  background: dark ? "rgba(255,255,255,0.04)" : "#f9fafb",
+                  border: dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #e5e7eb",
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -879,7 +879,7 @@ function WalletCardPreview({
   const sFill = stampColor || (isDarkBg ? "#ffffff" : "#0a0a0a");
   const sCheck = stampCheckColor || bgColor;
   const sEmpty = stampEmptyColor || sFill;
-  const lblColor = labelColor || (isDarkBg ? "rgb(var(--ovr) / 0.65)" : "rgba(0,0,0,0.6)");
+  const lblColor = labelColor || (isDarkBg ? "rgba(255,255,255,0.65)" : "rgba(0,0,0,0.6)");
 
   // Aperçu proche d'Apple Wallet : un tampon rempli, le reste en anneaux.
   const sampleFilled = Math.min(1, total);
@@ -1076,7 +1076,7 @@ function GoogleWalletPreview({
   stampBgImage,
 }: WalletPreviewProps) {
   const isDarkBg = isDark(bgColor);
-  const lblColor = labelColor || (isDarkBg ? "rgb(var(--ovr) / 0.82)" : "rgba(0,0,0,0.68)");
+  const lblColor = labelColor || (isDarkBg ? "rgba(255,255,255,0.82)" : "rgba(0,0,0,0.68)");
   const mediaImage = stampBgType === "image" && stampBgImage ? stampBgImage : heroImage;
   const metricLabel =
     programType === "POINTS" ? "Points" : programType === "CASHBACK" ? "Cashback" : "Tampons";
@@ -2074,8 +2074,8 @@ function EditProgramDesignModal({
                   <div
                     className="rounded-lg px-3 py-2 text-xs"
                     style={{
-                      background: "rgb(var(--ovr) / 0.04)",
-                      border: "1px dashed rgb(var(--ovr) / 0.12)",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px dashed rgba(255,255,255,0.12)",
                       color: "#8a8e84",
                     }}
                   >
@@ -2086,8 +2086,8 @@ function EditProgramDesignModal({
                   <div
                     className="flex items-center gap-3 rounded-lg p-3"
                     style={{
-                      background: "rgb(var(--ovr) / 0.04)",
-                      border: "1px solid rgb(var(--ovr) / 0.12)",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.12)",
                     }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2098,8 +2098,8 @@ function EditProgramDesignModal({
                         height: 44,
                         width: 44,
                         objectFit: "contain",
-                        background: "rgb(var(--ovr) / 0.06)",
-                        border: "1px solid rgb(var(--ovr) / 0.1)",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.1)",
                         borderRadius: 8,
                         padding: 4,
                       }}
@@ -2179,8 +2179,8 @@ function EditProgramDesignModal({
                     <div
                       className="flex items-center gap-3 rounded-lg p-3"
                       style={{
-                        background: "rgb(var(--ovr) / 0.04)",
-                        border: "1px solid rgb(var(--ovr) / 0.12)",
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.12)",
                       }}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -2191,8 +2191,8 @@ function EditProgramDesignModal({
                           height: 44,
                           width: 66,
                           objectFit: "cover",
-                          background: "rgb(var(--ovr) / 0.06)",
-                          border: "1px solid rgb(var(--ovr) / 0.1)",
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.1)",
                           borderRadius: 6,
                         }}
                       />
@@ -2277,7 +2277,7 @@ function EditProgramDesignModal({
                         border:
                           bgColor === p.bgColor
                             ? "2px solid #d4ff4e"
-                            : "1px solid rgb(var(--ovr) / 0.12)",
+                            : "1px solid rgba(255,255,255,0.12)",
                         cursor: "pointer",
                       }}
                       aria-label={p.name}
@@ -2301,8 +2301,8 @@ function EditProgramDesignModal({
                 <div
                   className="space-y-2 rounded-lg p-3"
                   style={{
-                    background: "rgb(var(--ovr) / 0.03)",
-                    border: "1px solid rgb(var(--ovr) / 0.08)",
+                    background: "rgba(255,255,255,0.03)",
+                    border: "1px solid rgba(255,255,255,0.08)",
                   }}
                 >
                   <label className="text-xs font-medium" style={{ color: "#c4c8be" }}>
@@ -2331,7 +2331,7 @@ function EditProgramDesignModal({
               {/* Avis Google */}
               <div
                 className="space-y-3 rounded-lg p-3"
-                style={{ background: "rgb(var(--ovr) / 0.03)", border: "1px solid rgb(var(--ovr) / 0.08)" }}
+                style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)" }}
               >
                 <label className="flex items-center gap-2">
                   <input

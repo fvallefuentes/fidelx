@@ -7,7 +7,6 @@ import { Menu, Sparkles, Search } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 import { NotificationsBell } from "./NotificationsBell";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
-import { ThemeToggle } from "./theme";
 
 export function Header({
   onOpenMobileNav,
@@ -49,7 +48,6 @@ export function Header({
       </div>
       <div className="dx-header-right">
         <LanguageSwitcher compact />
-        <ThemeToggle className="dx-theme-toggle" />
         <button
           type="button"
           onClick={openSearch}

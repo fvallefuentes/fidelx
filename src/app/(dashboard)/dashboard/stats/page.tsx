@@ -40,12 +40,12 @@ import { StatsInsights } from "@/components/dashboard/StatsInsights";
 
 const ACCENT      = "#d4ff4e";
 const ACCENT_FILL = "rgba(212,255,78,0.15)";
-const MUTED       = "rgb(var(--ovr) / 0.38)";
-const BORDER      = "rgb(var(--ovr) / 0.08)";
-const CARD_BG     = "rgb(var(--ovr) / 0.04)";
+const MUTED       = "rgba(255,255,255,0.38)";
+const BORDER      = "rgba(255,255,255,0.08)";
+const CARD_BG     = "rgba(255,255,255,0.04)";
 const TICK_COLOR  = "#8a8e84";
 const MONO        = "var(--font-geist-mono, monospace)";
-const VAL_COLOR   = "rgb(var(--ovr) / 0.92)";
+const VAL_COLOR   = "rgba(255,255,255,0.92)";
 
 const PLAN_ORDER: Record<string, number> = {
   FREE: 0, ESSENTIAL: 1, GROWTH: 2, MULTI_SITE: 3,
@@ -155,7 +155,7 @@ function KpiCard({
             </span>
           )}
           {(deltaLabel ?? sub) && (
-            <span style={{ color: "rgb(var(--ovr) / 0.3)", fontSize: 12, lineHeight: 1.3 }}>
+            <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 12, lineHeight: 1.3 }}>
               {deltaLabel ?? sub}
             </span>
           )}
@@ -353,7 +353,7 @@ function UpgradeBanner({ currentPlan }: { currentPlan: string }) {
       </p>
       <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: 5 }}>
         {info.features.map((f) => (
-          <li key={f} style={{ color: "rgb(var(--ovr) / 0.55)", fontSize: 13 }}>
+          <li key={f} style={{ color: "rgba(255,255,255,0.55)", fontSize: 13 }}>
             {f}
           </li>
         ))}
@@ -415,7 +415,7 @@ function FreeSection({ stats }: { stats: FullStatsResponse }) {
                 <stop offset="100%" stopColor={ACCENT} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
+            <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
             <XAxis dataKey="date" tickFormatter={fmtShortDate} {...axisProps} />
             <YAxis {...axisProps} width={28} />
             <Tooltip content={<DarkTooltip suffix="scan(s)" />} />
@@ -501,7 +501,7 @@ function EssentialSection({ stats }: { stats: FullStatsResponse }) {
                   <stop offset="100%" stopColor={ACCENT} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="date" tickFormatter={fmtShortDate} {...axisProps} interval="preserveStartEnd" minTickGap={40} />
               <YAxis {...axisProps} width={28} />
               <Tooltip content={<DarkTooltip suffix="inscription(s)" />} />
@@ -520,7 +520,7 @@ function EssentialSection({ stats }: { stats: FullStatsResponse }) {
                   <stop offset="100%" stopColor={ACCENT} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="date" tickFormatter={fmtShortDate} {...axisProps} interval="preserveStartEnd" minTickGap={40} />
               <YAxis {...axisProps} width={28} />
               <Tooltip content={<DarkTooltip suffix="scan(s)" />} />
@@ -533,7 +533,7 @@ function EssentialSection({ stats }: { stats: FullStatsResponse }) {
         <ChartCard title="Récompenses débloquées — 30 jours" style={{ gridColumn: "1 / -1" }}>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={stats.rewardsLast30 ?? []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="date" tickFormatter={fmtShortDate} {...axisProps} interval="preserveStartEnd" minTickGap={40} />
               <YAxis {...axisProps} width={28} />
               <Tooltip content={<DarkTooltip suffix="récompense(s)" />} cursor={{ fill: "rgba(212,255,78,0.07)" }} />
@@ -608,7 +608,7 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
                 ))}
               </Pie>
               <Tooltip contentStyle={{ background: "rgba(16,18,12,0.97)", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12 }} />
-              <Legend wrapperStyle={{ fontSize: 12, color: "rgb(var(--ovr) / 0.55)" }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }} />
             </PieChart>
           </ResponsiveContainer>
         </ChartCard>
@@ -620,10 +620,10 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
               layout="vertical"
               margin={{ top: 6, right: 30, left: 8, bottom: 0 }}
             >
-              <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" horizontal={false} />
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
               <XAxis type="number" {...axisProps} />
               <YAxis dataKey="name" type="category" {...axisProps} width={80}
-                tick={{ fill: "rgb(var(--ovr) / 0.55)", fontSize: 10, fontFamily: MONO }} />
+                tick={{ fill: "rgba(255,255,255,0.55)", fontSize: 10, fontFamily: MONO }} />
               <Tooltip cursor={{ fill: "rgba(212,255,78,0.07)" }}
                 contentStyle={{ background: "rgba(16,18,12,0.97)", border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="sentCount" name="Envoyés" fill={ACCENT_FILL} radius={[0, 4, 4, 0]} maxBarSize={14} />
@@ -639,10 +639,10 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
               layout="vertical"
               margin={{ top: 6, right: 30, left: 16, bottom: 0 }}
             >
-              <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" horizontal={false} />
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
               <XAxis type="number" {...axisProps} />
               <YAxis dataKey="range" type="category" {...axisProps} width={68}
-                tick={{ fill: "rgb(var(--ovr) / 0.55)", fontSize: 11, fontFamily: MONO }} />
+                tick={{ fill: "rgba(255,255,255,0.55)", fontSize: 11, fontFamily: MONO }} />
               <Tooltip content={<DarkTooltip suffix="carte(s)" />} cursor={{ fill: "rgba(212,255,78,0.07)" }} />
               <Bar dataKey="count" fill={ACCENT} radius={[0, 6, 6, 0]} maxBarSize={20} />
             </BarChart>
@@ -658,7 +658,7 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
                   <stop offset="100%" stopColor={ACCENT} stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
+              <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="month" tickFormatter={fmtMonth} {...axisProps} />
               <YAxis {...axisProps} width={28} />
               <Tooltip content={<DarkTooltip suffix="client(s)" />} />
@@ -710,7 +710,7 @@ function MultiSiteSection({ stats }: { stats: FullStatsResponse }) {
           <tbody>
             {ests.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ padding: "24px 16px", textAlign: "center", color: "rgb(var(--ovr) / 0.25)", fontSize: 13 }}>
+                <td colSpan={4} style={{ padding: "24px 16px", textAlign: "center", color: "rgba(255,255,255,0.25)", fontSize: 13 }}>
                   Aucun établissement configuré
                 </td>
               </tr>
