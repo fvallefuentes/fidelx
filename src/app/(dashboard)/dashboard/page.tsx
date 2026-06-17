@@ -189,7 +189,7 @@ export default function DashboardPage() {
                     <stop offset="100%" stopColor="#d4ff4e" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(value) => fmtShortDate(value, locale)}
@@ -272,7 +272,7 @@ export default function DashboardPage() {
                   tick={false}
                 />
                 <RadialBar
-                  background={{ fill: "rgba(255,255,255,0.05)" }}
+                  background={{ fill: "rgb(var(--ovr) / 0.05)" }}
                   dataKey="value"
                   cornerRadius={10}
                   fill="#d4ff4e"
@@ -304,7 +304,7 @@ export default function DashboardPage() {
                 data={stats?.newClientsByDay || []}
                 margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
               >
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
                 <XAxis
                   dataKey="date"
                   tickFormatter={(value) => fmtShortDate(value, locale)}
@@ -365,7 +365,7 @@ export default function DashboardPage() {
                 layout="vertical"
                 margin={{ top: 6, right: 30, left: 16, bottom: 0 }}
               >
-                <CartesianGrid stroke="rgba(255,255,255,0.05)" horizontal={false} />
+                <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" horizontal={false} />
                 <XAxis
                   type="number"
                   axisLine={false}

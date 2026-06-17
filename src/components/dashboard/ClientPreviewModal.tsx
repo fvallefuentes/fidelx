@@ -58,7 +58,7 @@ export default function ClientPreviewModal({
       >
         <header
           className="recovery-modal-head"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+          style={{ borderBottom: "1px solid rgb(var(--ovr) / 0.08)" }}
         >
           <h2 id="preview-modal-title" style={{ fontSize: 16 }}>
             <Smartphone

@@ -199,7 +199,7 @@ export default function ClientsPage() {
               className="text-xs px-2.5 py-1 rounded-full border transition-colors"
               style={walletFilter === val
                 ? { background: "#d4ff4e", color: "#0a0d04", borderColor: "#d4ff4e", fontWeight: 600 }
-                : { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)" }
+                : { borderColor: "rgb(var(--ovr) / 0.15)", color: "rgb(var(--ovr) / 0.5)" }
               }
             >
               {label}
@@ -225,7 +225,7 @@ export default function ClientsPage() {
               className="text-xs px-2.5 py-1 rounded-full border transition-colors"
               style={statusFilter === val
                 ? { background: "#d4ff4e", color: "#0a0d04", borderColor: "#d4ff4e", fontWeight: 600 }
-                : { borderColor: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.5)" }
+                : { borderColor: "rgb(var(--ovr) / 0.15)", color: "rgb(var(--ovr) / 0.5)" }
               }
             >
               {label}
@@ -462,7 +462,7 @@ function CreateManualCardModal({
         onClick={(e) => e.stopPropagation()}
         style={{
           background: "#0c0d0c",
-          border: "1px solid rgba(255,255,255,0.12)",
+          border: "1px solid rgb(var(--ovr) / 0.12)",
           borderRadius: 14,
           padding: 24,
           maxWidth: 480,
@@ -532,8 +532,8 @@ function CreateManualCardModal({
                 width: "100%",
                 height: 38,
                 padding: "0 10px",
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgb(var(--ovr) / 0.04)",
+                border: "1px solid rgb(var(--ovr) / 0.12)",
                 color: "#f4f5f1",
                 borderRadius: 8,
                 fontFamily: "inherit",
@@ -677,8 +677,8 @@ function WalletStatusCell({
               style={{
                 width: 18,
                 height: 18,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgb(var(--ovr) / 0.06)",
+                border: "1px solid rgb(var(--ovr) / 0.12)",
                 color: "#c9ccc3",
               }}
               title={`Apple Wallet (${devices.apple})`}
@@ -694,8 +694,8 @@ function WalletStatusCell({
               style={{
                 width: 18,
                 height: 18,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgb(var(--ovr) / 0.06)",
+                border: "1px solid rgb(var(--ovr) / 0.12)",
                 fontSize: 9,
                 color: "#c9ccc3",
               }}
