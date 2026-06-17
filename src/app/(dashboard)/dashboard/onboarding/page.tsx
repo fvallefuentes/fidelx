@@ -632,7 +632,7 @@ function CardPreview({ draft }: { draft: ProgramDraft }) {
               className="onb-preview-stamp"
               style={{
                 borderColor: isDark(draft.bgColor)
-                  ? "rgba(255,255,255,0.3)"
+                  ? "rgb(var(--ovr) / 0.3)"
                   : "rgba(0,0,0,0.2)",
               }}
             />

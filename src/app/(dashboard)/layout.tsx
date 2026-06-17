@@ -7,12 +7,24 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
 import { CommandPalette } from "@/components/dashboard/CommandPalette";
 import { PWARegister } from "@/components/dashboard/PWARegister";
+import { ThemeProvider, useTheme } from "@/components/dashboard/theme";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  return (
+    <ThemeProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </ThemeProvider>
+  );
+}
+
+function DashboardShell({ children }: { children: React.ReactNode }) {
+  const { theme } = useTheme();
+  // Le thème clair est le défaut ; on ne pose data-theme que pour le sombre.
+  const themeAttr = theme === "dark" ? "dark" : undefined;
   const { data: session, status } = useSession();
   const router = useRouter();
   const [mobileNavPathname, setMobileNavPathname] = useState<string | null>(null);
@@ -77,11 +89,11 @@ export default function DashboardLayout({
 
   // L'onboarding utilise sa propre mise en page (plein écran, sans sidebar).
   if (isOnboardingRoute) {
-    return <div className="dashboard">{children}</div>;
+    return <div className="dashboard" data-theme={themeAttr}>{children}</div>;
   }
 
   return (
-    <div className="dashboard">
+    <div className="dashboard" data-theme={themeAttr}>
       <PWARegister />
       <CommandPalette />
       <div className="dx-shell">

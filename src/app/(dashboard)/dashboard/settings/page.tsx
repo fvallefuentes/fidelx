@@ -385,13 +385,13 @@ export default function SettingsPage() {
             {settings?.plan !== "FREE" && settings?.stripeCurrentPeriodStart && (
               <div className="grid grid-cols-2 gap-3 rounded-lg p-3 text-sm" style={{ background: "rgba(212,255,78,0.06)", border: "1px solid rgba(212,255,78,0.15)" }}>
                 <div>
-                  <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Début de période</p>
+                  <p className="text-xs mb-0.5" style={{ color: "rgb(var(--ovr) / 0.4)" }}>Début de période</p>
                   <p className="font-medium" style={{ color: "var(--accent)" }}>
                     {new Date(settings.stripeCurrentPeriodStart).toLocaleDateString("fr-CH")}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Prochain renouvellement</p>
+                  <p className="text-xs mb-0.5" style={{ color: "rgb(var(--ovr) / 0.4)" }}>Prochain renouvellement</p>
                   <p className="font-medium" style={{ color: "var(--accent)" }}>
                     {settings.stripeCurrentPeriodEnd
                       ? new Date(settings.stripeCurrentPeriodEnd).toLocaleDateString("fr-CH")
@@ -403,7 +403,7 @@ export default function SettingsPage() {
 
             {settings?.plan === "FREE" && settings?.usage && (
               <div className="rounded-lg p-3 text-sm" style={{ background: "rgba(212,255,78,0.06)", border: "1px solid rgba(212,255,78,0.15)" }}>
-                <p className="text-xs mb-0.5" style={{ color: "rgba(255,255,255,0.4)" }}>Période depuis</p>
+                <p className="text-xs mb-0.5" style={{ color: "rgb(var(--ovr) / 0.4)" }}>Période depuis</p>
                 <p className="font-medium" style={{ color: "var(--accent)" }}>
                   {new Date(settings.usage.periodStart).toLocaleDateString("fr-CH")}
                 </p>
@@ -428,14 +428,14 @@ export default function SettingsPage() {
                   const barColor = danger ? "#ff4e4e" : warn ? "#f59e0b" : "#d4ff4e";
                   return (
                     <div key={label}>
-                      <div className="flex justify-between text-xs mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+                      <div className="flex justify-between text-xs mb-1" style={{ color: "rgb(var(--ovr) / 0.5)" }}>
                         <span>{label}</span>
-                        <span style={{ color: danger ? "#ff4e4e" : warn ? "#f59e0b" : "rgba(255,255,255,0.7)", fontWeight: danger ? 600 : 400 }}>
+                        <span style={{ color: danger ? "#ff4e4e" : warn ? "#f59e0b" : "rgb(var(--ovr) / 0.7)", fontWeight: danger ? 600 : 400 }}>
                           {current}{max !== null ? ` / ${max}` : " / illimité"}
                         </span>
                       </div>
                       {max !== null && (
-                        <div className="h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.1)" }}>
+                        <div className="h-1.5 rounded-full" style={{ background: "rgb(var(--ovr) / 0.1)" }}>
                           <div
                             className="h-1.5 rounded-full transition-all"
                             style={{ width: `${pct}%`, background: barColor, boxShadow: `0 0 6px ${barColor}60` }}

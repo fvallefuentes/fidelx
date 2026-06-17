@@ -388,7 +388,7 @@ export default function ClientProfilePage() {
             placeholder="Ex: Préfère le café noir, vient le mercredi midi…"
             rows={4}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            style={{ background: "rgba(255,255,255,0.04)", borderColor: "rgba(255,255,255,0.12)", color: "#f4f5f1" }}
+            style={{ background: "rgb(var(--ovr) / 0.04)", borderColor: "rgb(var(--ovr) / 0.12)", color: "#f4f5f1" }}
           />
           <div className="flex justify-end mt-2 items-center gap-2">
             {notesSaved && (
@@ -429,7 +429,7 @@ export default function ClientProfilePage() {
                   <li
                     key={t.id}
                     className="flex items-center gap-3 text-sm py-2 border-b last:border-0"
-                    style={{ borderColor: "rgba(255,255,255,0.06)" }}
+                    style={{ borderColor: "rgb(var(--ovr) / 0.06)" }}
                   >
                     <div className="flex-1">
                       <div className="font-medium">
@@ -589,8 +589,8 @@ function KpiCard({
     <div
       className="rounded-lg p-3 border"
       style={{
-        background: "rgba(255,255,255,0.02)",
-        borderColor: "rgba(255,255,255,0.08)",
+        background: "rgb(var(--ovr) / 0.02)",
+        borderColor: "rgb(var(--ovr) / 0.08)",
       }}
     >
       <div className="flex items-center justify-between mb-1">
@@ -693,8 +693,8 @@ function SendPushModal({
             autoFocus
             className="w-full rounded-lg px-3 py-2 text-sm"
             style={{
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgb(var(--ovr) / 0.04)",
+              border: "1px solid rgb(var(--ovr) / 0.12)",
               color: "#f4f5f1",
             }}
           />
