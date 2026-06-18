@@ -34,6 +34,14 @@ interface Campaign {
   createdAt: string;
   program?: { name: string } | null;
   _count: { logs: number };
+  impact?: {
+    returnedClients: number;
+    generatedVisits: number;
+    generatedValue: number;
+    rewardsUnlocked: number;
+    conversionRate: number;
+    windowDays: number;
+  };
 }
 
 interface Program {
@@ -248,10 +256,16 @@ export default function CampaignsPage() {
         <div className="space-y-3">
           {campaigns.map((campaign) => {
             const Icon = triggerIcons[campaign.triggerType] || Bell;
+            const impact = campaign.impact;
+            const hasImpact =
+              impact &&
+              (impact.returnedClients > 0 ||
+                impact.generatedVisits > 0 ||
+                impact.rewardsUnlocked > 0);
             return (
               <Card key={campaign.id}>
                 <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
                         <Icon className="h-5 w-5 text-blue-600" />
@@ -263,7 +277,7 @@ export default function CampaignsPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap justify-end">
                       <div className="text-right text-sm">
                         <p className="text-gray-500">
                           {triggerLabels[campaign.triggerType]}
@@ -286,6 +300,35 @@ export default function CampaignsPage() {
                       </Badge>
                     </div>
                   </div>
+                  {impact && campaign.sentCount > 0 && (
+                    <div className="campaign-impact-row">
+                      <span>
+                        <strong>{impact.returnedClients}</strong> client
+                        {impact.returnedClients > 1 ? "s" : ""} revenu
+                        {impact.returnedClients > 1 ? "s" : ""}
+                      </span>
+                      <span>
+                        <strong>{impact.generatedVisits}</strong> visite
+                        {impact.generatedVisits > 1 ? "s" : ""} attribuée
+                        {impact.generatedVisits > 1 ? "s" : ""}
+                      </span>
+                      <span>
+                        <strong>{impact.conversionRate}%</strong> retour J+{impact.windowDays}
+                      </span>
+                      {impact.rewardsUnlocked > 0 && (
+                        <span>
+                          <strong>{impact.rewardsUnlocked}</strong> récompense
+                          {impact.rewardsUnlocked > 1 ? "s" : ""} débloquée
+                          {impact.rewardsUnlocked > 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {!hasImpact && (
+                        <span className="campaign-impact-muted">
+                          En attente de retours clients
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

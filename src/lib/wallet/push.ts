@@ -138,7 +138,8 @@ export async function notifyAllCardsInProgram(
   programId: string,
   message: string,
   segment?: string,
-  title?: string
+  title?: string,
+  campaignId?: string
 ) {
   const where: Record<string, unknown> = { programId, status: "ACTIVE" };
 
@@ -165,11 +166,13 @@ export async function notifyAllCardsInProgram(
 
   // Mettre à jour le champ message sur chaque carte pour déclencher la notif
   // (le logo de la carte vient toujours du programme, pas de la campagne)
+  const deliveredAt = new Date();
+
   await Promise.allSettled(
     cards.map((card) =>
       prisma.loyaltyCard.update({
         where: { id: card.id },
-        data: { lastMessage: message },
+        data: { lastMessage: message, lastMessageAt: deliveredAt },
       }).then(() =>
         notifyPassUpdate(card.id, {
           header: title || card.program.name,
@@ -179,6 +182,17 @@ export async function notifyAllCardsInProgram(
     )
   );
 
+  if (campaignId && cards.length > 0) {
+    await prisma.notificationLog.createMany({
+      data: cards.map((card) => ({
+        campaignId,
+        cardId: card.id,
+        delivered: true,
+        deliveredAt,
+      })),
+    });
+  }
+
   return { total: cards.length, sent: cards.length };
 }
 
@@ -187,7 +201,8 @@ export async function notifyCardsInProgram(
   cardIds: string[],
   message: string,
   title?: string,
-  cooldownDays = 0
+  cooldownDays = 0,
+  campaignId?: string
 ) {
   const uniqueCardIds = [...new Set(cardIds)].filter(Boolean);
   if (uniqueCardIds.length === 0) {
@@ -214,11 +229,13 @@ export async function notifyCardsInProgram(
     },
   });
 
+  const deliveredAt = new Date();
+
   await Promise.allSettled(
     cards.map((card) =>
       prisma.loyaltyCard.update({
         where: { id: card.id },
-        data: { lastMessage: message, lastMessageAt: new Date() },
+        data: { lastMessage: message, lastMessageAt: deliveredAt },
       }).then(() =>
         notifyPassUpdate(card.id, {
           header: title || card.program.name,
@@ -227,6 +244,17 @@ export async function notifyCardsInProgram(
       )
     )
   );
+
+  if (campaignId && cards.length > 0) {
+    await prisma.notificationLog.createMany({
+      data: cards.map((card) => ({
+        campaignId,
+        cardId: card.id,
+        delivered: true,
+        deliveredAt,
+      })),
+    });
+  }
 
   return { total: uniqueCardIds.length, sent: cards.length };
 }

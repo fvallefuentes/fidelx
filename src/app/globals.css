@@ -4708,6 +4708,30 @@ html, body { overflow-x: clip; }
   line-height: 1.45;
   color: rgb(var(--ovr) / 0.5);
 }
+.campaign-impact-row {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-left: 52px;
+  color: rgb(var(--ovr) / 0.62);
+  font-size: 12px;
+}
+.campaign-impact-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgb(var(--ovr) / 0.09);
+  border-radius: 999px;
+  background: rgb(var(--ovr) / 0.035);
+  padding: 5px 9px;
+}
+.campaign-impact-row strong {
+  color: rgb(var(--ovr) / 0.9);
+}
+.campaign-impact-row .campaign-impact-muted {
+  color: rgb(var(--ovr) / 0.46);
+}
 .campaign-recommendation-cooldown {
   padding: 8px 10px;
   border-radius: 9px;
