@@ -5336,6 +5336,9 @@ html, body { overflow-x: clip; }
   color: rgb(var(--ovr) / 0.48);
   font-size: 11px;
 }
+.assistant-best-variant-button {
+  justify-self: start;
+}
 .assistant-actions {
   display: flex;
   flex-wrap: wrap;

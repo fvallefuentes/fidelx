@@ -33,7 +33,12 @@ const createAutomationSchema = z.object({
 
 const updateAutomationSchema = z.object({
   id: z.string().trim().min(1),
-  active: z.boolean(),
+  active: z.boolean().optional(),
+  messageVariantId: z.string().trim().min(1).max(80).optional(),
+  messageVariantLabel: z.string().trim().min(1).max(80).optional(),
+  messageVariantTone: z.string().trim().max(80).optional(),
+  notifTitle: z.string().trim().min(1).max(80).optional(),
+  message: z.string().trim().min(1).max(350).optional(),
 });
 
 type AutomationConfig = {
@@ -263,6 +268,42 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Regle introuvable" }, { status: 404 });
   }
 
+  const config = rule.triggerConfig as AutomationConfig;
+  if (parsed.data.messageVariantId) {
+    if (!parsed.data.message || !parsed.data.notifTitle || !parsed.data.messageVariantLabel) {
+      return NextResponse.json(
+        { error: "Variante incomplete" },
+        { status: 400 }
+      );
+    }
+
+    const updated = await prisma.notificationCampaign.update({
+      where: { id: rule.id },
+      data: {
+        message: parsed.data.message,
+        triggerConfig: {
+          ...config,
+          messageVariantId: parsed.data.messageVariantId,
+          messageVariantLabel: parsed.data.messageVariantLabel,
+          messageVariantTone: parsed.data.messageVariantTone || "",
+          notifTitle: parsed.data.notifTitle,
+          lastSkipReason: null,
+          lastSkippedAt: null,
+        } satisfies Prisma.InputJsonObject,
+      },
+    });
+
+    return NextResponse.json({
+      id: updated.id,
+      messageVariantId: parsed.data.messageVariantId,
+      messageVariantLabel: parsed.data.messageVariantLabel,
+    });
+  }
+
+  if (typeof parsed.data.active !== "boolean") {
+    return NextResponse.json({ error: "Action invalide" }, { status: 400 });
+  }
+
   const updated = await prisma.notificationCampaign.update({
     where: { id: rule.id },
     data: {
@@ -287,6 +328,9 @@ async function buildMessageVariantPerformance(
     {
       id: string;
       label: string;
+      tone: string;
+      notifTitle: string;
+      message: string;
       runCount: number;
       sentCount: number;
       impact: CampaignImpact;
@@ -301,12 +345,17 @@ async function buildMessageVariantPerformance(
       runConfig?.messageVariantLabel ||
       ruleConfig.messageVariantLabel ||
       formatVariantLabel(variantId);
+    const tone = runConfig?.messageVariantTone || ruleConfig.messageVariantTone || "";
+    const notifTitle = runConfig?.notifTitle || ruleConfig.notifTitle || run.name;
     const impact = await calculateCampaignImpact(run.logs);
     const current =
       groups.get(variantId) ||
       {
         id: variantId,
         label,
+        tone,
+        notifTitle,
+        message: run.message,
         runCount: 0,
         sentCount: 0,
         impact: emptyCampaignImpact(),
@@ -327,6 +376,9 @@ async function buildMessageVariantPerformance(
     .map((variant) => ({
       id: variant.id,
       label: variant.label,
+      tone: variant.tone,
+      notifTitle: variant.notifTitle,
+      message: variant.message,
       runCount: variant.runCount,
       sentCount: variant.sentCount,
       returnedClients: variant.impact.returnedClients,

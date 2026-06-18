@@ -107,6 +107,9 @@ interface CampaignAutomation {
     variants: Array<{
       id: string;
       label: string;
+      tone: string;
+      notifTitle: string;
+      message: string;
       runCount: number;
       sentCount: number;
       returnedClients: number;
@@ -229,6 +232,41 @@ export default function AssistantPage() {
       return;
     }
     await loadData();
+  }
+
+  async function applyBestVariant(automation: CampaignAutomation) {
+    const bestVariant = getBestVariant(automation);
+    if (!bestVariant) return;
+
+    setWorkingId(automation.id);
+    const res = await fetch("/api/campaigns/automations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: automation.id,
+        messageVariantId: bestVariant.id,
+        messageVariantLabel: bestVariant.label,
+        messageVariantTone: bestVariant.tone,
+        notifTitle: bestVariant.notifTitle,
+        message: bestVariant.message,
+      }),
+    });
+    setWorkingId(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Impossible d'utiliser ce message");
+      return;
+    }
+    await loadData();
+  }
+
+  function getBestVariant(automation: CampaignAutomation) {
+    const bestVariant = automation.performance?.variants.find(
+      (variant) => variant.id === automation.performance?.bestVariantId
+    );
+    if (!bestVariant || bestVariant.id === automation.selectedVariant?.id) return null;
+    if (bestVariant.sentCount < 5) return null;
+    return bestVariant;
   }
 
   if (loading) {
@@ -481,6 +519,18 @@ export default function AssistantPage() {
                             </div>
                           ))}
                         </div>
+                        {getBestVariant(automation) && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="assistant-best-variant-button"
+                            onClick={() => applyBestVariant(automation)}
+                            disabled={workingId === automation.id}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Utiliser {getBestVariant(automation)?.label}
+                          </Button>
+                        )}
                       </div>
                     )}
                     {automation.lastSkipReason && (
