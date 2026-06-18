@@ -144,7 +144,7 @@ export async function POST(req: Request) {
       : [];
     const result =
       targetCardIds.length > 0
-        ? await notifyCardsInProgram(programId, targetCardIds, message, name)
+        ? await notifyCardsInProgram(programId, targetCardIds, message, name, 7)
         : await notifyAllCardsInProgram(
             programId,
             message,

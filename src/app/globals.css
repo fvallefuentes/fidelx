@@ -4708,6 +4708,94 @@ html, body { overflow-x: clip; }
   line-height: 1.45;
   color: rgb(var(--ovr) / 0.5);
 }
+.campaign-recommendation-cooldown {
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid rgba(245,158,11,0.2);
+  background: rgba(245,158,11,0.08);
+  color: rgb(var(--ovr) / 0.58);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+.campaign-audience {
+  border: 1px solid rgb(var(--ovr) / 0.07);
+  border-radius: 11px;
+  overflow: hidden;
+  background: rgb(var(--ovr) / 0.025);
+}
+.campaign-audience-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 11px;
+  border-bottom: 1px solid rgb(var(--ovr) / 0.06);
+  color: rgb(var(--ovr) / 0.62);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.campaign-audience-list {
+  display: flex;
+  flex-direction: column;
+}
+.campaign-audience-row {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgb(var(--ovr) / 0.045);
+  cursor: pointer;
+}
+.campaign-audience-row:last-child {
+  border-bottom: 0;
+}
+.campaign-audience-row input {
+  width: 14px;
+  height: 14px;
+  accent-color: #d4ff4e;
+}
+.campaign-audience-row.is-excluded {
+  opacity: 0.5;
+}
+.campaign-audience-person {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.campaign-audience-person strong {
+  color: rgb(var(--ovr) / 0.82);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.campaign-audience-person small {
+  color: rgb(var(--ovr) / 0.4);
+  font-size: 10.5px;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.campaign-audience-stats {
+  color: rgb(var(--ovr) / 0.42);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.campaign-audience-more {
+  margin: 0;
+  padding: 8px 11px 10px;
+  color: rgb(var(--ovr) / 0.42);
+  font-size: 11px;
+  line-height: 1.35;
+  border-top: 1px solid rgb(var(--ovr) / 0.045);
+}
 
 .export-btn {
   font-family: inherit;

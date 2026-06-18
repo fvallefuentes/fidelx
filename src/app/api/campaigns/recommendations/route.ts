@@ -20,7 +20,23 @@ type Recommendation = {
   targetSegment: "ALL" | "ACTIVE" | "DORMANT" | "NEW" | "VIP";
   triggerConfig?: Record<string, unknown>;
   targetCardIds: string[];
+  audience: RecommendationAudience[];
+  audiencePreviewLimit: number;
+  suppressedByCooldown: number;
   priority: number;
+};
+
+type RecommendationAudience = {
+  cardId: string;
+  clientName: string;
+  email: string | null;
+  phone: string | null;
+  reason: string;
+  lastVisitAt: string | null;
+  totalVisits: number;
+  currentStamps: number;
+  currentPoints: number;
+  lastMessageAt: string | null;
 };
 
 export async function GET() {
@@ -34,6 +50,7 @@ export async function GET() {
   const dormantCutoff = addDays(now, -30);
   const newCutoff = addDays(now, -14);
   const recentCutoff = addDays(now, -30);
+  const notificationCooldownCutoff = addDays(now, -7);
 
   const programs = await prisma.loyaltyProgram.findMany({
     where: { merchantId, isActive: true },
@@ -51,8 +68,17 @@ export async function GET() {
           currentPoints: true,
           totalVisits: true,
           lastVisitAt: true,
+          lastMessageAt: true,
           createdAt: true,
-          client: { select: { birthDate: true } },
+          client: {
+            select: {
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              birthDate: true,
+            },
+          },
         },
       },
     },
@@ -66,9 +92,11 @@ export async function GET() {
     const activeCards = cards.length;
     if (activeCards === 0) continue;
 
-    const dormantCards = cards.filter(
+    const dormantCandidates = cards.filter(
       (card) => !card.lastVisitAt || card.lastVisitAt < dormantCutoff
     );
+    const { eligible: dormantCards, suppressed: dormantSuppressed } =
+      applyNotificationCooldown(dormantCandidates, notificationCooldownCutoff);
     const dormantCount = dormantCards.length;
     if (dormantCount >= 3 || dormantCount >= Math.ceil(activeCards * 0.35)) {
       recommendations.push({
@@ -87,13 +115,18 @@ export async function GET() {
         targetSegment: "DORMANT",
         triggerConfig: { daysInactive: 30, targetCardIds: dormantCards.map((card) => card.id) },
         targetCardIds: dormantCards.map((card) => card.id),
+        audience: buildAudience(dormantCards, "Sans visite depuis 30 jours"),
+        audiencePreviewLimit: 8,
+        suppressedByCooldown: dormantSuppressed,
         priority: 95 + dormantCount,
       });
     }
 
-    const newWithoutSecondVisitCards = cards.filter(
+    const newWithoutSecondVisitCandidates = cards.filter(
       (card) => card.createdAt >= newCutoff && card.totalVisits < 2
     );
+    const { eligible: newWithoutSecondVisitCards, suppressed: newSuppressed } =
+      applyNotificationCooldown(newWithoutSecondVisitCandidates, notificationCooldownCutoff);
     const newWithoutSecondVisit = newWithoutSecondVisitCards.length;
     if (newWithoutSecondVisit >= 2) {
       recommendations.push({
@@ -112,13 +145,18 @@ export async function GET() {
         targetSegment: "NEW",
         triggerConfig: { targetCardIds: newWithoutSecondVisitCards.map((card) => card.id) },
         targetCardIds: newWithoutSecondVisitCards.map((card) => card.id),
+        audience: buildAudience(newWithoutSecondVisitCards, "Nouveau client sans deuxieme visite"),
+        audiencePreviewLimit: 8,
+        suppressedByCooldown: newSuppressed,
         priority: 82 + newWithoutSecondVisit,
       });
     }
 
-    const birthdaySoonCards = cards.filter((card) =>
+    const birthdaySoonCandidates = cards.filter((card) =>
       isBirthdayWithinDays(card.client.birthDate, now, 14)
     );
+    const { eligible: birthdaySoonCards, suppressed: birthdaySuppressed } =
+      applyNotificationCooldown(birthdaySoonCandidates, notificationCooldownCutoff);
     const birthdaySoonCount = birthdaySoonCards.length;
     if (birthdaySoonCount > 0) {
       recommendations.push({
@@ -137,17 +175,22 @@ export async function GET() {
         targetSegment: "ALL",
         triggerConfig: { targetCardIds: birthdaySoonCards.map((card) => card.id) },
         targetCardIds: birthdaySoonCards.map((card) => card.id),
+        audience: buildAudience(birthdaySoonCards, "Anniversaire dans les 14 jours"),
+        audiencePreviewLimit: 8,
+        suppressedByCooldown: birthdaySuppressed,
         priority: 78 + birthdaySoonCount,
       });
     }
 
     if (program.type === "STAMPS") {
       const maxStamps = getMaxStamps(program.config);
-      const closeToRewardCards = cards.filter(
+      const closeToRewardCandidates = cards.filter(
         (card) =>
           card.currentStamps >= Math.max(1, maxStamps - 2) &&
           card.currentStamps < maxStamps
       );
+      const { eligible: closeToRewardCards, suppressed: rewardSuppressed } =
+        applyNotificationCooldown(closeToRewardCandidates, notificationCooldownCutoff);
       const closeToRewardCount = closeToRewardCards.length;
       if (closeToRewardCount > 0) {
         recommendations.push({
@@ -166,6 +209,12 @@ export async function GET() {
           targetSegment: "ACTIVE",
           triggerConfig: { targetCardIds: closeToRewardCards.map((card) => card.id) },
           targetCardIds: closeToRewardCards.map((card) => card.id),
+          audience: buildAudience(
+            closeToRewardCards,
+            (card) => `${maxStamps - card.currentStamps} tampon${maxStamps - card.currentStamps > 1 ? "s" : ""} restant${maxStamps - card.currentStamps > 1 ? "s" : ""}`
+          ),
+          audiencePreviewLimit: 8,
+          suppressedByCooldown: rewardSuppressed,
           priority: 88 + closeToRewardCount,
         });
       }
@@ -174,13 +223,15 @@ export async function GET() {
     const visitsLast30 = cards.filter(
       (card) => card.lastVisitAt && card.lastVisitAt >= recentCutoff
     ).length;
-    if (activeCards >= 3 && visitsLast30 === 0) {
+    const { eligible: lowActivityCards, suppressed: lowActivitySuppressed } =
+      applyNotificationCooldown(cards, notificationCooldownCutoff);
+    if (activeCards >= 3 && visitsLast30 === 0 && lowActivityCards.length > 0) {
       recommendations.push({
         id: `low-activity-${program.id}`,
         title: "Reveiller un programme peu utilise",
         reason: `${program.name} a ${activeCards} carte${activeCards > 1 ? "s" : ""}, mais aucune visite recente.`,
         impactLabel: "clients a reactiver",
-        potentialCount: activeCards,
+        potentialCount: lowActivityCards.length,
         programId: program.id,
         programName: program.name,
         name: "Reactivation programme",
@@ -189,9 +240,12 @@ export async function GET() {
           "Votre carte fidelite vous attend toujours. Revenez cette semaine et profitez d'un avantage reserve aux membres.",
         triggerType: "IMMEDIATE",
         targetSegment: "ALL",
-        triggerConfig: { targetCardIds: cards.map((card) => card.id) },
-        targetCardIds: cards.map((card) => card.id),
-        priority: 70 + activeCards,
+        triggerConfig: { targetCardIds: lowActivityCards.map((card) => card.id) },
+        targetCardIds: lowActivityCards.map((card) => card.id),
+        audience: buildAudience(lowActivityCards, "Programme sans visite recente"),
+        audiencePreviewLimit: 8,
+        suppressedByCooldown: lowActivitySuppressed,
+        priority: 70 + lowActivityCards.length,
       });
     }
   }
@@ -199,6 +253,49 @@ export async function GET() {
   return NextResponse.json(
     recommendations.sort((a, b) => b.priority - a.priority).slice(0, 5)
   );
+}
+
+type AudienceCard = {
+  id: string;
+  currentStamps: number;
+  currentPoints: number;
+  totalVisits: number;
+  lastVisitAt: Date | null;
+  lastMessageAt: Date | null;
+  client: {
+    firstName: string;
+    lastName: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+};
+
+function applyNotificationCooldown<T extends { lastMessageAt: Date | null }>(
+  cards: T[],
+  cooldownCutoff: Date
+) {
+  const eligible = cards.filter(
+    (card) => !card.lastMessageAt || card.lastMessageAt < cooldownCutoff
+  );
+  return { eligible, suppressed: cards.length - eligible.length };
+}
+
+function buildAudience(
+  cards: AudienceCard[],
+  reason: string | ((card: AudienceCard) => string)
+): RecommendationAudience[] {
+  return cards.slice(0, 30).map((card) => ({
+    cardId: card.id,
+    clientName: [card.client.firstName, card.client.lastName].filter(Boolean).join(" "),
+    email: card.client.email,
+    phone: card.client.phone,
+    reason: typeof reason === "function" ? reason(card) : reason,
+    lastVisitAt: card.lastVisitAt?.toISOString() || null,
+    totalVisits: card.totalVisits,
+    currentStamps: card.currentStamps,
+    currentPoints: card.currentPoints,
+    lastMessageAt: card.lastMessageAt?.toISOString() || null,
+  }));
 }
 
 function addDays(date: Date, days: number) {

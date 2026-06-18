@@ -186,7 +186,8 @@ export async function notifyCardsInProgram(
   programId: string,
   cardIds: string[],
   message: string,
-  title?: string
+  title?: string,
+  cooldownDays = 0
 ) {
   const uniqueCardIds = [...new Set(cardIds)].filter(Boolean);
   if (uniqueCardIds.length === 0) {
@@ -198,6 +199,14 @@ export async function notifyCardsInProgram(
       id: { in: uniqueCardIds },
       programId,
       status: "ACTIVE",
+      ...(cooldownDays > 0
+        ? {
+            OR: [
+              { lastMessageAt: null },
+              { lastMessageAt: { lt: new Date(Date.now() - cooldownDays * 24 * 60 * 60 * 1000) } },
+            ],
+          }
+        : {}),
     },
     select: {
       id: true,
@@ -209,7 +218,7 @@ export async function notifyCardsInProgram(
     cards.map((card) =>
       prisma.loyaltyCard.update({
         where: { id: card.id },
-        data: { lastMessage: message },
+        data: { lastMessage: message, lastMessageAt: new Date() },
       }).then(() =>
         notifyPassUpdate(card.id, {
           header: title || card.program.name,
