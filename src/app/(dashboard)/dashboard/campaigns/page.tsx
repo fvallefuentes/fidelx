@@ -562,11 +562,11 @@ function RecommendedActions({
                     disabled={lockedByFreePlan || adjusted.potentialCount === 0}
                     onClick={() => onUse(adjusted)}
                   >
-                    {lockedByFreePlan
-                      ? "Plan payant requis"
-                      : adjusted.potentialCount === 0
-                        ? "Aucun client ciblé"
-                        : "Créer cette campagne"}
+                  {lockedByFreePlan
+                    ? "Plan payant requis"
+                    : adjusted.potentialCount === 0
+                      ? "Aucun client ciblé"
+                      : "Préparer l'envoi ciblé"}
                   </Button>
                   <Button
                     type="button"
@@ -815,6 +815,11 @@ function CreateCampaignForm({
   const [error, setError] = useState("");
 
   const selectedProgram = programs.find((p) => p.id === programId);
+  const isRecommendedMode = Boolean(initialRecommendation);
+  const exactAudienceCount =
+    initialRecommendation?.targetCardIds?.length || initialRecommendation?.potentialCount || 0;
+  const exactAudience = initialRecommendation?.audience || [];
+  const hiddenAudienceCount = Math.max(0, exactAudienceCount - exactAudience.length);
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLogoError("");
@@ -889,22 +894,24 @@ function CreateCampaignForm({
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle>Nouvelle campagne</CardTitle>
-        <button
-          type="button"
-          onClick={() => setShowTemplates((v) => !v)}
-          className="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors"
-          style={{
-            borderColor: showTemplates
-              ? "rgba(212,255,78,0.5)"
-              : "rgb(var(--ovr) / 0.15)",
-            color: showTemplates ? "#d4ff4e" : "rgb(var(--ovr) / 0.6)",
-            background: showTemplates ? "rgba(212,255,78,0.08)" : "transparent",
-          }}
-        >
-          <Sparkles className="h-3 w-3" />
-          {showTemplates ? "Masquer les modÃ¨les" : "Choisir un modÃ¨le"}
-        </button>
+        <CardTitle>{isRecommendedMode ? "Envoi recommandé" : "Nouvelle campagne"}</CardTitle>
+        {!isRecommendedMode && (
+          <button
+            type="button"
+            onClick={() => setShowTemplates((v) => !v)}
+            className="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors"
+            style={{
+              borderColor: showTemplates
+                ? "rgba(212,255,78,0.5)"
+                : "rgb(var(--ovr) / 0.15)",
+              color: showTemplates ? "#d4ff4e" : "rgb(var(--ovr) / 0.6)",
+              background: showTemplates ? "rgba(212,255,78,0.08)" : "transparent",
+            }}
+          >
+            <Sparkles className="h-3 w-3" />
+            {showTemplates ? "Masquer les modÃ¨les" : "Choisir un modÃ¨le"}
+          </button>
+        )}
       </CardHeader>
       <CardContent>
         {showTemplates && (
@@ -935,6 +942,39 @@ function CreateCampaignForm({
             </div>
           )}
 
+          {isRecommendedMode && initialRecommendation && (
+            <div className="campaign-exact-target">
+              <div className="campaign-exact-target-head">
+                <div>
+                  <p>Audience exacte</p>
+                  <span>
+                    {exactAudienceCount} client{exactAudienceCount > 1 ? "s" : ""} sélectionné{exactAudienceCount > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <Badge variant="secondary">Ciblage verrouillé</Badge>
+              </div>
+              <div className="campaign-exact-target-reason">
+                {initialRecommendation.reason}
+              </div>
+              {exactAudience.length > 0 && (
+                <div className="campaign-exact-target-list">
+                  {exactAudience.slice(0, 8).map((person) => (
+                    <span key={person.cardId}>
+                      <strong>{person.clientName || "Client"}</strong>
+                      <small>{person.reason}</small>
+                    </span>
+                  ))}
+                  {hiddenAudienceCount > 0 && (
+                    <span>
+                      <strong>+{hiddenAudienceCount}</strong>
+                      <small>autre{hiddenAudienceCount > 1 ? "s" : ""} client{hiddenAudienceCount > 1 ? "s" : ""}</small>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Nom de la campagne</label>
@@ -955,6 +995,7 @@ function CreateCampaignForm({
                 className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                 value={programId}
                 onChange={(e) => setProgramId(e.target.value)}
+                disabled={isRecommendedMode}
               >
                 {programs.map((p) => (
                   <option key={p.id} value={p.id}>
@@ -963,7 +1004,9 @@ function CreateCampaignForm({
                 ))}
               </select>
               <p className="text-xs text-gray-400">
-                Logo et couleur de la notif viennent de ce programme
+                {isRecommendedMode
+                  ? "Verrouillé pour conserver l'audience exacte."
+                  : "Logo et couleur de la notif viennent de ce programme"}
               </p>
             </div>
           </div>
@@ -1036,6 +1079,12 @@ function CreateCampaignForm({
             </div>
           </div>
 
+          {isRecommendedMode ? (
+            <div className="campaign-delivery-locked">
+              <span>Mode d&apos;envoi</span>
+              <strong>Envoi immédiat aux {exactAudienceCount} clients sélectionnés, sans élargir au segment.</strong>
+            </div>
+          ) : (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">DÃ©clencheur</label>
@@ -1072,6 +1121,7 @@ function CreateCampaignForm({
               </select>
             </div>
           </div>
+          )}
 
           {/* Conditional fields */}
           {triggerType === "SCHEDULED" && (
@@ -1119,9 +1169,11 @@ function CreateCampaignForm({
             <Button type="submit" disabled={saving}>
               {saving
                 ? "Envoi..."
-                : triggerType === "IMMEDIATE"
-                  ? "Envoyer maintenant"
-                  : "Programmer"}
+                : isRecommendedMode
+                  ? `Envoyer aux ${exactAudienceCount} clients ciblés`
+                  : triggerType === "IMMEDIATE"
+                    ? "Envoyer maintenant"
+                    : "Programmer"}
             </Button>
           </div>
         </form>
