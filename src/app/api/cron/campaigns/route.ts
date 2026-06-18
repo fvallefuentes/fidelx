@@ -16,6 +16,8 @@ type AutomationConfig = {
   sourceReason?: string;
   programName?: string;
   messageVariantId?: string;
+  messageVariantLabel?: string;
+  messageVariantTone?: string;
   notifTitle?: string;
   frequencyDays?: number;
   cooldownDays?: number;
@@ -196,6 +198,8 @@ async function runAutomationRule(campaign: {
           automationRuleId: campaign.id,
           recommendationId: recommendation.id,
           messageVariantId: config.messageVariantId,
+          messageVariantLabel: config.messageVariantLabel,
+          messageVariantTone: config.messageVariantTone,
           notifTitle: runTitle,
           targetCardIds: recommendation.targetCardIds,
         } satisfies Prisma.InputJsonObject,

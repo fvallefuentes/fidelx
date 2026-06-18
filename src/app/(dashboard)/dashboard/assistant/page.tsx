@@ -90,12 +90,34 @@ interface CampaignAutomation {
   frequencyDays: number;
   cooldownDays: number;
   minAudience: number;
+  selectedVariant?: {
+    id: string;
+    label: string;
+    tone: string;
+  };
+  performance?: {
+    bestVariantId: string | null;
+    recommendation: string;
+    variants: Array<{
+      id: string;
+      label: string;
+      runCount: number;
+      sentCount: number;
+      returnedClients: number;
+      generatedVisits: number;
+      rewardsUnlocked: number;
+      conversionRate: number;
+      lastSentAt: string | null;
+    }>;
+  };
   history: Array<{
     id: string;
     name: string;
     sentAt: string;
     sentCount: number;
     status: string;
+    messageVariantId?: string;
+    messageVariantLabel?: string;
   }>;
 }
 
@@ -171,6 +193,8 @@ export default function AssistantPage() {
         programName: rec.programName,
         name: rec.name,
         messageVariantId: variant.id,
+        messageVariantLabel: variant.label,
+        messageVariantTone: variant.tone,
         notifTitle: variant.notifTitle,
         message: variant.message,
         targetSegment: rec.targetSegment,
@@ -406,6 +430,40 @@ export default function AssistantPage() {
                         Min. {automation.minAudience} clients
                       </span>
                     </div>
+                    {automation.selectedVariant && (
+                      <div className="assistant-active-message">
+                        <span>Message actif</span>
+                        <strong>{automation.selectedVariant.label}</strong>
+                        {automation.selectedVariant.tone ? <em>{automation.selectedVariant.tone}</em> : null}
+                      </div>
+                    )}
+                    {automation.performance && automation.performance.variants.length > 0 && (
+                      <div className="assistant-performance">
+                        <div className="assistant-performance-head">
+                          <span>Performance messages</span>
+                          <strong>{automation.performance.recommendation}</strong>
+                        </div>
+                        <div className="assistant-performance-list">
+                          {automation.performance.variants.slice(0, 3).map((variant) => (
+                            <div
+                              key={variant.id}
+                              className={
+                                variant.id === automation.performance?.bestVariantId
+                                  ? "is-best"
+                                  : ""
+                              }
+                            >
+                              <span>{variant.label}</span>
+                              <strong>{variant.conversionRate}%</strong>
+                              <small>
+                                {variant.returnedClients}/{variant.sentCount} revenus · {variant.runCount} envoi
+                                {variant.runCount > 1 ? "s" : ""}
+                              </small>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     {automation.lastSkipReason && (
                       <p className="assistant-warning">{automation.lastSkipReason}</p>
                     )}
@@ -413,7 +471,10 @@ export default function AssistantPage() {
                       <div className="assistant-history">
                         {automation.history.slice(0, 3).map((run) => (
                           <div key={run.id}>
-                            <span>{formatDateTime(run.sentAt)}</span>
+                            <span>
+                              {formatDateTime(run.sentAt)}
+                              {run.messageVariantLabel ? ` · ${run.messageVariantLabel}` : ""}
+                            </span>
                             <strong>{run.sentCount} envoyé(s)</strong>
                           </div>
                         ))}

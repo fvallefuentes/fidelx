@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseJsonBody } from "@/lib/api/validation";
+import { calculateCampaignImpact, emptyCampaignImpact, type CampaignImpact } from "@/lib/campaign-impact";
 import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,8 @@ const createAutomationSchema = z.object({
   programName: z.string().trim().min(1).max(120),
   name: z.string().trim().min(1).max(120),
   messageVariantId: z.string().trim().min(1).max(80).optional(),
+  messageVariantLabel: z.string().trim().min(1).max(80).optional(),
+  messageVariantTone: z.string().trim().min(1).max(80).optional(),
   notifTitle: z.string().trim().min(1).max(80),
   message: z.string().trim().min(1).max(350),
   targetSegment: z.enum(["ALL", "ACTIVE", "DORMANT", "NEW", "VIP"]).default("ALL"),
@@ -41,6 +44,8 @@ type AutomationConfig = {
   sourceReason?: string;
   programName?: string;
   messageVariantId?: string;
+  messageVariantLabel?: string;
+  messageVariantTone?: string;
   notifTitle?: string;
   frequencyDays?: number;
   cooldownDays?: number;
@@ -53,23 +58,20 @@ type AutomationConfig = {
   lastSkippedAt?: string | null;
 };
 
+type CampaignRun = Awaited<ReturnType<typeof getAutomationCampaigns>>[number];
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non autorise" }, { status: 401 });
   }
 
-  const campaigns = await prisma.notificationCampaign.findMany({
-    where: { merchantId: session.user.id },
-    include: { program: { select: { name: true } } },
-    orderBy: { createdAt: "desc" },
-    take: 250,
-  });
+  const campaigns = await getAutomationCampaigns(session.user.id);
 
   const rules = campaigns.filter((campaign) =>
     isAutomationRule(campaign.triggerConfig)
   );
-  const runsByRuleId = new Map<string, typeof campaigns>();
+  const runsByRuleId = new Map<string, CampaignRun[]>();
   for (const campaign of campaigns) {
     const config = campaign.triggerConfig as AutomationConfig | null;
     if (!config?.automationRuleId) continue;
@@ -78,13 +80,15 @@ export async function GET() {
     runsByRuleId.set(config.automationRuleId, current);
   }
 
-  return NextResponse.json(
-    rules.map((rule) => {
+  const response = await Promise.all(
+    rules.map(async (rule) => {
       const config = rule.triggerConfig as AutomationConfig;
-      const runs = (runsByRuleId.get(rule.id) || [])
-        .sort((a, b) => (b.sentAt || b.createdAt).getTime() - (a.sentAt || a.createdAt).getTime())
-        .slice(0, 5);
+      const allRuns = (runsByRuleId.get(rule.id) || []).sort(
+        (a, b) => (b.sentAt || b.createdAt).getTime() - (a.sentAt || a.createdAt).getTime()
+      );
+      const runs = allRuns.slice(0, 5);
       const lastRun = runs[0] || null;
+      const performance = await buildMessageVariantPerformance(allRuns, config);
 
       return {
         id: rule.id,
@@ -97,7 +101,7 @@ export async function GET() {
         active: rule.status === "SCHEDULED",
         nextRunAt: rule.scheduledAt?.toISOString() || null,
         lastRunAt: config.lastRunAt || lastRun?.sentAt?.toISOString() || null,
-        runCount: config.runCount || runs.length,
+        runCount: config.runCount || allRuns.length,
         lastSentCount: config.lastSentCount || lastRun?.sentCount || 0,
         lastAudienceCount: config.lastAudienceCount || 0,
         lastSkipReason: config.lastSkipReason || null,
@@ -105,16 +109,47 @@ export async function GET() {
         frequencyDays: config.frequencyDays || DEFAULT_FREQUENCY_DAYS,
         cooldownDays: config.cooldownDays || DEFAULT_COOLDOWN_DAYS,
         minAudience: config.minAudience || DEFAULT_MIN_AUDIENCE,
-        history: runs.map((run) => ({
-          id: run.id,
-          name: run.name,
-          sentAt: run.sentAt?.toISOString() || run.createdAt.toISOString(),
-          sentCount: run.sentCount,
-          status: run.status,
-        })),
+        selectedVariant: {
+          id: config.messageVariantId || "standard",
+          label: config.messageVariantLabel || formatVariantLabel(config.messageVariantId),
+          tone: config.messageVariantTone || "",
+        },
+        performance,
+        history: runs.map((run) => {
+          const runConfig = run.triggerConfig as AutomationConfig | null;
+          return {
+            id: run.id,
+            name: run.name,
+            sentAt: run.sentAt?.toISOString() || run.createdAt.toISOString(),
+            sentCount: run.sentCount,
+            status: run.status,
+            messageVariantId: runConfig?.messageVariantId || config.messageVariantId || "standard",
+            messageVariantLabel:
+              runConfig?.messageVariantLabel ||
+              config.messageVariantLabel ||
+              formatVariantLabel(runConfig?.messageVariantId || config.messageVariantId),
+          };
+        }),
       };
     })
   );
+
+  return NextResponse.json(response);
+}
+
+function getAutomationCampaigns(merchantId: string) {
+  return prisma.notificationCampaign.findMany({
+    where: { merchantId },
+    include: {
+      program: { select: { name: true } },
+      logs: {
+        where: { delivered: true, deliveredAt: { not: null } },
+        select: { cardId: true, deliveredAt: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 250,
+  });
 }
 
 export async function POST(req: Request) {
@@ -180,6 +215,8 @@ export async function POST(req: Request) {
         sourceReason: data.reason,
         programName: program.name || data.programName,
         messageVariantId: data.messageVariantId,
+        messageVariantLabel: data.messageVariantLabel,
+        messageVariantTone: data.messageVariantTone,
         notifTitle: data.notifTitle,
         frequencyDays: data.frequencyDays,
         cooldownDays: data.cooldownDays,
@@ -227,6 +264,102 @@ export async function PATCH(req: Request) {
 
 function isAutomationRule(config: unknown) {
   return Boolean((config as AutomationConfig | null)?.automationRule);
+}
+
+async function buildMessageVariantPerformance(
+  runs: CampaignRun[],
+  ruleConfig: AutomationConfig
+) {
+  const groups = new Map<
+    string,
+    {
+      id: string;
+      label: string;
+      runCount: number;
+      sentCount: number;
+      impact: CampaignImpact;
+      lastSentAt: string | null;
+    }
+  >();
+
+  for (const run of runs) {
+    const runConfig = run.triggerConfig as AutomationConfig | null;
+    const variantId = runConfig?.messageVariantId || ruleConfig.messageVariantId || "standard";
+    const label =
+      runConfig?.messageVariantLabel ||
+      ruleConfig.messageVariantLabel ||
+      formatVariantLabel(variantId);
+    const impact = await calculateCampaignImpact(run.logs);
+    const current =
+      groups.get(variantId) ||
+      {
+        id: variantId,
+        label,
+        runCount: 0,
+        sentCount: 0,
+        impact: emptyCampaignImpact(),
+        lastSentAt: null,
+      };
+
+    current.runCount += 1;
+    current.sentCount += run.sentCount || 0;
+    current.impact.returnedClients += impact.returnedClients;
+    current.impact.generatedVisits += impact.generatedVisits;
+    current.impact.generatedValue += impact.generatedValue;
+    current.impact.rewardsUnlocked += impact.rewardsUnlocked;
+    current.lastSentAt = newerIsoDate(current.lastSentAt, run.sentAt || run.createdAt);
+    groups.set(variantId, current);
+  }
+
+  const variants = [...groups.values()]
+    .map((variant) => ({
+      id: variant.id,
+      label: variant.label,
+      runCount: variant.runCount,
+      sentCount: variant.sentCount,
+      returnedClients: variant.impact.returnedClients,
+      generatedVisits: variant.impact.generatedVisits,
+      rewardsUnlocked: variant.impact.rewardsUnlocked,
+      conversionRate:
+        variant.sentCount > 0
+          ? Math.round((variant.impact.returnedClients / variant.sentCount) * 1000) / 10
+          : 0,
+      lastSentAt: variant.lastSentAt,
+    }))
+    .sort((a, b) => b.conversionRate - a.conversionRate || b.sentCount - a.sentCount);
+
+  const best = variants.find((variant) => variant.sentCount >= 5) || variants[0] || null;
+  return {
+    variants,
+    bestVariantId: best?.id || null,
+    recommendation: buildPerformanceRecommendation(best, variants.length),
+  };
+}
+
+function buildPerformanceRecommendation(
+  best: { label: string; conversionRate: number; sentCount: number } | null,
+  variantCount: number
+) {
+  if (!best) return "Pas encore assez d'envois pour comparer les messages.";
+  if (best.sentCount < 5) return "Premieres donnees recues. Attendez quelques envois avant de comparer.";
+  if (variantCount <= 1) {
+    return `${best.label} est le message suivi actuellement: ${best.conversionRate}% de retour.`;
+  }
+  return `${best.label} performe le mieux pour l'instant: ${best.conversionRate}% de retour.`;
+}
+
+function newerIsoDate(current: string | null, next: Date | null) {
+  if (!next) return current;
+  if (!current || next > new Date(current)) return next.toISOString();
+  return current;
+}
+
+function formatVariantLabel(id?: string) {
+  if (!id || id === "standard") return "Equilibre";
+  return id
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function addDays(date: Date, days: number) {
