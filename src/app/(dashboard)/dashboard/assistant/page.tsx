@@ -103,7 +103,19 @@ interface CampaignAutomation {
   };
   performance?: {
     bestVariantId: string | null;
+    trustedWinnerId?: string | null;
     recommendation: string;
+    confidence?: {
+      isTrusted: boolean;
+      trustedWinnerId: string | null;
+      reason: string;
+      sentNeeded: number;
+      returnedNeeded: number;
+      pointGapNeeded: number;
+      relativeLiftNeeded: number;
+      pointGap: number;
+      relativeLift: number;
+    };
     variants: Array<{
       id: string;
       label: string;
@@ -261,11 +273,12 @@ export default function AssistantPage() {
   }
 
   function getBestVariant(automation: CampaignAutomation) {
+    const trustedWinnerId = automation.performance?.trustedWinnerId;
+    if (!trustedWinnerId || !automation.performance?.confidence?.isTrusted) return null;
     const bestVariant = automation.performance?.variants.find(
-      (variant) => variant.id === automation.performance?.bestVariantId
+      (variant) => variant.id === trustedWinnerId
     );
     if (!bestVariant || bestVariant.id === automation.selectedVariant?.id) return null;
-    if (bestVariant.sentCount < 5) return null;
     return bestVariant;
   }
 
@@ -500,6 +513,20 @@ export default function AssistantPage() {
                           <span>Performance messages</span>
                           <strong>{automation.performance.recommendation}</strong>
                         </div>
+                        {automation.performance.confidence && (
+                          <div
+                            className={`assistant-confidence ${
+                              automation.performance.confidence.isTrusted ? "is-trusted" : ""
+                            }`}
+                          >
+                            <span>
+                              {automation.performance.confidence.isTrusted
+                                ? "Gagnant fiable"
+                                : "Confiance insuffisante"}
+                            </span>
+                            <small>{automation.performance.confidence.reason}</small>
+                          </div>
+                        )}
                         <div className="assistant-performance-list">
                           {automation.performance.variants.slice(0, 3).map((variant) => (
                             <div

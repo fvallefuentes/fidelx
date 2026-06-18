@@ -12,6 +12,10 @@ export const dynamic = "force-dynamic";
 const DEFAULT_FREQUENCY_DAYS = 7;
 const DEFAULT_COOLDOWN_DAYS = 7;
 const DEFAULT_MIN_AUDIENCE = 2;
+const WINNER_MIN_SENT = 20;
+const WINNER_MIN_RETURNED = 2;
+const WINNER_MIN_POINT_GAP = 3;
+const WINNER_MIN_RELATIVE_LIFT = 20;
 
 const createAutomationSchema = z.object({
   recommendationId: z.string().trim().min(1),
@@ -392,24 +396,124 @@ async function buildMessageVariantPerformance(
     }))
     .sort((a, b) => b.conversionRate - a.conversionRate || b.sentCount - a.sentCount);
 
-  const best = variants.find((variant) => variant.sentCount >= 5) || variants[0] || null;
+  const best = variants[0] || null;
+  const currentVariant =
+    variants.find((variant) => variant.id === (ruleConfig.messageVariantId || "standard")) ||
+    null;
+  const confidence = buildWinnerConfidence(best, currentVariant, variants.length);
+
   return {
     variants,
     bestVariantId: best?.id || null,
-    recommendation: buildPerformanceRecommendation(best, variants.length),
+    trustedWinnerId: confidence.trustedWinnerId,
+    confidence,
+    recommendation: buildPerformanceRecommendation(best, confidence, variants.length),
   };
 }
 
 function buildPerformanceRecommendation(
   best: { label: string; conversionRate: number; sentCount: number } | null,
+  confidence: WinnerConfidence,
   variantCount: number
 ) {
   if (!best) return "Pas encore assez d'envois pour comparer les messages.";
-  if (best.sentCount < 5) return "Premieres donnees recues. Attendez quelques envois avant de comparer.";
+  if (!confidence.isTrusted) return confidence.reason;
   if (variantCount <= 1) {
     return `${best.label} est le message suivi actuellement: ${best.conversionRate}% de retour.`;
   }
-  return `${best.label} performe le mieux pour l'instant: ${best.conversionRate}% de retour.`;
+  return `${best.label} est un gagnant fiable: ${best.conversionRate}% de retour.`;
+}
+
+type PerformanceVariant = {
+  id: string;
+  label: string;
+  sentCount: number;
+  returnedClients: number;
+  conversionRate: number;
+};
+
+type WinnerConfidence = {
+  isTrusted: boolean;
+  trustedWinnerId: string | null;
+  reason: string;
+  sentNeeded: number;
+  returnedNeeded: number;
+  pointGapNeeded: number;
+  relativeLiftNeeded: number;
+  pointGap: number;
+  relativeLift: number;
+};
+
+function buildWinnerConfidence(
+  best: PerformanceVariant | null,
+  current: PerformanceVariant | null,
+  variantCount: number
+): WinnerConfidence {
+  const base = {
+    sentNeeded: WINNER_MIN_SENT,
+    returnedNeeded: WINNER_MIN_RETURNED,
+    pointGapNeeded: WINNER_MIN_POINT_GAP,
+    relativeLiftNeeded: WINNER_MIN_RELATIVE_LIFT,
+    pointGap: 0,
+    relativeLift: 0,
+  };
+
+  if (!best) {
+    return {
+      ...base,
+      isTrusted: false,
+      trustedWinnerId: null,
+      reason: "Pas encore assez d'envois pour comparer les messages.",
+    };
+  }
+
+  if (best.sentCount < WINNER_MIN_SENT || best.returnedClients < WINNER_MIN_RETURNED) {
+    return {
+      ...base,
+      isTrusted: false,
+      trustedWinnerId: null,
+      reason: `Donnees encore insuffisantes: ${best.sentCount}/${WINNER_MIN_SENT} envois et ${best.returnedClients}/${WINNER_MIN_RETURNED} retours.`,
+    };
+  }
+
+  if (variantCount <= 1 || !current || best.id === current.id) {
+    return {
+      ...base,
+      isTrusted: true,
+      trustedWinnerId: best.id,
+      reason: `${best.label} est le message suivi actuellement avec ${best.conversionRate}% de retour.`,
+    };
+  }
+
+  const pointGap = Math.round((best.conversionRate - current.conversionRate) * 10) / 10;
+  const relativeLift =
+    current.conversionRate > 0
+      ? Math.round(((best.conversionRate - current.conversionRate) / current.conversionRate) * 100)
+      : best.conversionRate > 0
+        ? 100
+        : 0;
+  const hasClearGap =
+    pointGap >= WINNER_MIN_POINT_GAP || relativeLift >= WINNER_MIN_RELATIVE_LIFT;
+
+  if (!hasClearGap) {
+    return {
+      ...base,
+      pointGap,
+      relativeLift,
+      isTrusted: false,
+      trustedWinnerId: null,
+      reason: `Tendance positive, mais ecart encore faible: +${pointGap} pts / +${relativeLift}%. Continuez le test.`,
+    };
+  }
+
+  return {
+    ...base,
+    pointGap,
+    relativeLift,
+    isTrusted: true,
+    trustedWinnerId: best.id,
+    reason: `${best.label} depasse le message actif de +${pointGap} pts / +${relativeLift}%.`,
+  };
 }
 
 function newerIsoDate(current: string | null, next: Date | null) {
