@@ -16,6 +16,7 @@ import {
   ScanLine,
   QrCode,
   Bell,
+  Bot,
 } from "lucide-react";
 
 /**
@@ -44,7 +45,7 @@ type SearchResult = {
 };
 
 type NavItem = {
-  key: "dashboard" | "clients" | "programs" | "campaigns" | "scan" | "qrcode" | "stats" | "settings";
+  key: "dashboard" | "clients" | "programs" | "campaigns" | "assistant" | "scan" | "qrcode" | "stats" | "settings";
   href: string;
   icon: typeof LayoutDashboard;
   keywords: string[];
@@ -52,6 +53,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { key: "dashboard", href: "/dashboard", icon: LayoutDashboard, keywords: ["dashboard", "accueil", "home"] },
+  { key: "assistant", href: "/dashboard/assistant", icon: Bot, keywords: ["assistant", "automatisation", "marketing", "recommandations"] },
   { key: "clients", href: "/dashboard/clients", icon: UsersIcon, keywords: ["clients", "customers", "kunden", "cartes"] },
   { key: "programs", href: "/dashboard/programs", icon: Stamp, keywords: ["programmes", "programs", "programme", "fidélité"] },
   { key: "campaigns", href: "/dashboard/campaigns", icon: Megaphone, keywords: ["campagnes", "campaigns", "kampagnen", "notifications"] },
