@@ -19,6 +19,7 @@ const createAutomationSchema = z.object({
   programId: z.string().trim().min(1),
   programName: z.string().trim().min(1).max(120),
   name: z.string().trim().min(1).max(120),
+  messageVariantId: z.string().trim().min(1).max(80).optional(),
   notifTitle: z.string().trim().min(1).max(80),
   message: z.string().trim().min(1).max(350),
   targetSegment: z.enum(["ALL", "ACTIVE", "DORMANT", "NEW", "VIP"]).default("ALL"),
@@ -39,6 +40,7 @@ type AutomationConfig = {
   sourceTitle?: string;
   sourceReason?: string;
   programName?: string;
+  messageVariantId?: string;
   notifTitle?: string;
   frequencyDays?: number;
   cooldownDays?: number;
@@ -177,6 +179,7 @@ export async function POST(req: Request) {
         sourceTitle: data.title,
         sourceReason: data.reason,
         programName: program.name || data.programName,
+        messageVariantId: data.messageVariantId,
         notifTitle: data.notifTitle,
         frequencyDays: data.frequencyDays,
         cooldownDays: data.cooldownDays,

@@ -47,6 +47,7 @@ interface CampaignRecommendation {
   name: string;
   notifTitle: string;
   message: string;
+  messageVariants?: CampaignMessageVariant[];
   targetSegment: string;
   priorityScore?: number;
   priorityLabel?: string;
@@ -62,6 +63,15 @@ interface CampaignRecommendation {
     scoreReasons?: string[];
   }>;
   suppressedByCooldown?: number;
+}
+
+interface CampaignMessageVariant {
+  id: string;
+  label: string;
+  tone: string;
+  notifTitle: string;
+  message: string;
+  rationale: string;
 }
 
 interface CampaignAutomation {
@@ -95,6 +105,7 @@ export default function AssistantPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<string | null>(null);
+  const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, string>>({});
 
   async function loadData() {
     const [recs, autos, sentCampaigns] = await Promise.all([
@@ -131,7 +142,23 @@ export default function AssistantPage() {
     );
   }, [campaigns]);
 
+  function getSelectedVariant(rec: CampaignRecommendation): CampaignMessageVariant {
+    const selectedId = selectedVariantIds[rec.id];
+    return (
+      rec.messageVariants?.find((variant) => variant.id === selectedId) ||
+      rec.messageVariants?.[0] || {
+        id: "standard",
+        label: "Equilibre",
+        tone: "Clair",
+        notifTitle: rec.notifTitle,
+        message: rec.message,
+        rationale: "Message recommande par defaut.",
+      }
+    );
+  }
+
   async function automateRecommendation(rec: CampaignRecommendation) {
+    const variant = getSelectedVariant(rec);
     setWorkingId(rec.id);
     const res = await fetch("/api/campaigns/automations", {
       method: "POST",
@@ -143,8 +170,9 @@ export default function AssistantPage() {
         programId: rec.programId,
         programName: rec.programName,
         name: rec.name,
-        notifTitle: rec.notifTitle,
-        message: rec.message,
+        messageVariantId: variant.id,
+        notifTitle: variant.notifTitle,
+        message: variant.message,
         targetSegment: rec.targetSegment,
       }),
     });
@@ -223,6 +251,7 @@ export default function AssistantPage() {
               <div className="assistant-reco-list">
                 {recommendations.map((rec) => {
                   const audienceCount = rec.targetCardIds?.length || rec.potentialCount;
+                  const selectedVariant = getSelectedVariant(rec);
                   return (
                     <article key={rec.id} className="assistant-reco-card">
                       <div className="assistant-reco-top">
@@ -242,9 +271,37 @@ export default function AssistantPage() {
                           <p>{rec.priorityReason}</p>
                         </div>
                       )}
+                      {rec.messageVariants && rec.messageVariants.length > 1 && (
+                        <div className="assistant-variant-panel">
+                          <div className="assistant-variant-head">
+                            <span>Message conseille</span>
+                            <strong>{selectedVariant.tone}</strong>
+                          </div>
+                          <div className="assistant-variant-list">
+                            {rec.messageVariants.map((variant) => (
+                              <button
+                                key={variant.id}
+                                type="button"
+                                className={`assistant-variant-button ${
+                                  selectedVariant.id === variant.id ? "is-active" : ""
+                                }`}
+                                onClick={() =>
+                                  setSelectedVariantIds((current) => ({
+                                    ...current,
+                                    [rec.id]: variant.id,
+                                  }))
+                                }
+                              >
+                                {variant.label}
+                              </button>
+                            ))}
+                          </div>
+                          <p>{selectedVariant.rationale}</p>
+                        </div>
+                      )}
                       <div className="assistant-message-preview">
-                        <strong>{rec.notifTitle}</strong>
-                        <span>{rec.message}</span>
+                        <strong>{selectedVariant.notifTitle}</strong>
+                        <span>{selectedVariant.message}</span>
                       </div>
                       {rec.audience && rec.audience.length > 0 && (
                         <div className="assistant-mini-audience">

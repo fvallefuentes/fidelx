@@ -22,6 +22,16 @@ export type CampaignRecommendation = {
   priorityScore: number;
   priorityLabel: string;
   priorityReason: string;
+  messageVariants?: CampaignMessageVariant[];
+};
+
+export type CampaignMessageVariant = {
+  id: string;
+  label: string;
+  tone: string;
+  notifTitle: string;
+  message: string;
+  rationale: string;
 };
 
 export type RecommendationAudience = {
@@ -335,8 +345,159 @@ function enrichRecommendationPriority(rec: CampaignRecommendation): CampaignReco
     priorityScore: averageScore,
     priorityLabel: priorityLabel(averageScore),
     priorityReason: topReason,
+    messageVariants: buildMessageVariants(rec, averageScore, topReason),
     priority: rec.priority + Math.round(averageScore / 2),
   };
+}
+
+function buildMessageVariants(
+  rec: CampaignRecommendation,
+  averageScore: number,
+  topReason: string
+): CampaignMessageVariant[] {
+  const base = {
+    id: "standard",
+    label: "Equilibre",
+    tone: "Clair et prudent",
+    notifTitle: rec.notifTitle,
+    message: rec.message,
+    rationale: "Bon choix par defaut pour envoyer sans paraitre trop commercial.",
+  };
+
+  if (rec.id.startsWith("dormant-")) {
+    return [
+      base,
+      {
+        id: "soft-return",
+        label: "Retour doux",
+        tone: "Relationnel",
+        notifTitle: "On pense a vous",
+        message:
+          "Cela fait un moment qu'on ne vous a pas vu. Passez quand vous voulez, une attention vous attend.",
+        rationale: "Mieux pour les clients dormants a relancer sans pression.",
+      },
+      {
+        id: "offer-return",
+        label: "Offre retour",
+        tone: "Incitatif",
+        notifTitle: "Votre offre retour est prete",
+        message:
+          "Revenez cette semaine et profitez d'un avantage reserve aux membres fideles.",
+        rationale: "A utiliser quand l'objectif est de generer une visite rapidement.",
+      },
+      ...(averageScore >= 65
+        ? [
+            {
+              id: "vip-risk",
+              label: "Ancien bon client",
+              tone: "Reconnaissance",
+              notifTitle: "Votre avantage fidelite vous attend",
+              message:
+                "Merci pour votre fidelite. Revenez cette semaine: nous vous avons reserve un avantage.",
+              rationale: `Adapte car l'audience contient surtout: ${topReason}.`,
+            },
+          ]
+        : []),
+    ];
+  }
+
+  if (rec.id.startsWith("new-second-visit-")) {
+    return [
+      base,
+      {
+        id: "welcome",
+        label: "Bienvenue",
+        tone: "Chaleureux",
+        notifTitle: "Merci pour votre premiere visite",
+        message:
+          "Merci pour votre premiere visite. Repassez cette semaine, votre carte fidelite avance deja.",
+        rationale: "Rassure les nouveaux clients et explique la valeur de la carte.",
+      },
+      {
+        id: "second-visit",
+        label: "2e visite",
+        tone: "Direct",
+        notifTitle: "Votre prochain passage compte",
+        message:
+          "Votre prochain passage vous rapproche de votre avantage fidelite. A tres vite en boutique.",
+        rationale: "Bon choix pour transformer une inscription en habitude.",
+      },
+    ];
+  }
+
+  if (rec.id.startsWith("birthday-")) {
+    return [
+      base,
+      {
+        id: "gift",
+        label: "Cadeau",
+        tone: "Attention speciale",
+        notifTitle: "Votre cadeau d'anniversaire vous attend",
+        message:
+          "Votre anniversaire approche. Passez en boutique cette semaine: un cadeau vous attend.",
+        rationale: "Plus fort quand le commercant assume une vraie attention anniversaire.",
+      },
+      {
+        id: "warm",
+        label: "Chaleureux",
+        tone: "Personnel",
+        notifTitle: "Une attention pour votre anniversaire",
+        message:
+          "Votre anniversaire approche. Nous serions ravis de vous offrir une attention en boutique.",
+        rationale: "Moins promotionnel, plus relationnel.",
+      },
+    ];
+  }
+
+  if (rec.id.startsWith("close-reward-")) {
+    return [
+      base,
+      {
+        id: "one-step",
+        label: "Dernier pas",
+        tone: "Motivant",
+        notifTitle: "Plus qu'un passage",
+        message:
+          "Vous etes tout proche de votre recompense. Passez cette semaine pour completer votre carte.",
+        rationale: "Met l'accent sur l'effort minimal restant.",
+      },
+      {
+        id: "reward-focus",
+        label: "Recompense",
+        tone: "Benefice clair",
+        notifTitle: "Votre recompense approche",
+        message:
+          "Votre recompense fidelite est presque debloquee. Un prochain passage peut tout changer.",
+        rationale: "Utile si l'audience est deja motivee par le programme.",
+      },
+    ];
+  }
+
+  if (rec.id.startsWith("low-activity-")) {
+    return [
+      base,
+      {
+        id: "member-benefit",
+        label: "Membres",
+        tone: "Valeur membre",
+        notifTitle: "Votre avantage membre vous attend",
+        message:
+          "Votre carte fidelite est toujours active. Revenez cette semaine profiter d'un avantage membre.",
+        rationale: "Repositionne le programme comme un benefice reserve.",
+      },
+      {
+        id: "wake-up",
+        label: "Reveil",
+        tone: "Simple",
+        notifTitle: "Une offre fidelite vous attend",
+        message:
+          "Nous avons une offre fidelite pour vous cette semaine. Passez nous voir quand vous voulez.",
+        rationale: "Message court pour relancer un programme peu utilise.",
+      },
+    ];
+  }
+
+  return [base];
 }
 
 function scoreAudienceCard(

@@ -15,6 +15,7 @@ type AutomationConfig = {
   sourceTitle?: string;
   sourceReason?: string;
   programName?: string;
+  messageVariantId?: string;
   notifTitle?: string;
   frequencyDays?: number;
   cooldownDays?: number;
@@ -180,18 +181,22 @@ async function runAutomationRule(campaign: {
       };
     }
 
+    const runTitle = config.notifTitle || recommendation.notifTitle;
+    const runMessage = campaign.message || recommendation.message;
+
     const run = await prisma.notificationCampaign.create({
       data: {
         merchantId: campaign.merchantId,
         programId: recommendation.programId,
         name: recommendation.name,
-        message: recommendation.message,
+        message: runMessage,
         triggerType: "IMMEDIATE",
         triggerConfig: {
           ...(recommendation.triggerConfig || {}),
           automationRuleId: campaign.id,
           recommendationId: recommendation.id,
-          notifTitle: recommendation.notifTitle,
+          messageVariantId: config.messageVariantId,
+          notifTitle: runTitle,
           targetCardIds: recommendation.targetCardIds,
         } satisfies Prisma.InputJsonObject,
         targetSegment: recommendation.targetSegment,
@@ -202,8 +207,8 @@ async function runAutomationRule(campaign: {
     const sendResult = await notifyCardsInProgram(
       recommendation.programId,
       recommendation.targetCardIds,
-      recommendation.message,
-      recommendation.notifTitle,
+      runMessage,
+      runTitle,
       cooldownDays,
       run.id
     );

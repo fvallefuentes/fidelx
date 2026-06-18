@@ -5145,6 +5145,60 @@ html, body { overflow-x: clip; }
 .assistant-warning {
   color: #f59e0b;
 }
+.assistant-variant-panel {
+  display: grid;
+  gap: 9px;
+  border: 1px solid rgb(var(--ovr) / 0.08);
+  border-radius: 10px;
+  background: rgb(var(--ovr) / 0.03);
+  padding: 10px;
+}
+.assistant-variant-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: rgb(var(--ovr) / 0.5);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.assistant-variant-head strong {
+  color: rgb(var(--ovr) / 0.76);
+  font-size: 11.5px;
+  text-transform: none;
+}
+.assistant-variant-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.assistant-variant-button {
+  border: 1px solid rgb(var(--ovr) / 0.1);
+  border-radius: 999px;
+  background: rgb(var(--ovr) / 0.035);
+  color: rgb(var(--ovr) / 0.66);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  padding: 6px 10px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.assistant-variant-button:hover {
+  border-color: rgb(var(--ovr) / 0.2);
+  color: rgb(var(--ovr) / 0.88);
+}
+.assistant-variant-button.is-active {
+  border-color: #a3e635;
+  background: rgba(163, 230, 53, 0.16);
+  color: rgb(var(--ovr) / 0.92);
+}
+.assistant-variant-panel p {
+  margin: 0;
+  color: rgb(var(--ovr) / 0.52);
+  font-size: 12px;
+  line-height: 1.45;
+}
 .assistant-message-preview {
   display: grid;
   gap: 4px;
