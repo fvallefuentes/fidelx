@@ -46,6 +46,9 @@ type AutomationConfig = {
   messageVariantId?: string;
   messageVariantLabel?: string;
   messageVariantTone?: string;
+  abTestEnabled?: boolean;
+  lastAbTestAt?: string | null;
+  lastAbTestVariantIds?: string[];
   notifTitle?: string;
   frequencyDays?: number;
   cooldownDays?: number;
@@ -113,6 +116,12 @@ export async function GET() {
           id: config.messageVariantId || "standard",
           label: config.messageVariantLabel || formatVariantLabel(config.messageVariantId),
           tone: config.messageVariantTone || "",
+        },
+        abTest: {
+          enabled: config.abTestEnabled !== false,
+          minAudience: 20,
+          lastRunAt: config.lastAbTestAt || null,
+          lastVariantIds: config.lastAbTestVariantIds || [],
         },
         performance,
         history: runs.map((run) => {
@@ -217,6 +226,9 @@ export async function POST(req: Request) {
         messageVariantId: data.messageVariantId,
         messageVariantLabel: data.messageVariantLabel,
         messageVariantTone: data.messageVariantTone,
+        abTestEnabled: true,
+        lastAbTestAt: null,
+        lastAbTestVariantIds: [],
         notifTitle: data.notifTitle,
         frequencyDays: data.frequencyDays,
         cooldownDays: data.cooldownDays,

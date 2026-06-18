@@ -95,6 +95,12 @@ interface CampaignAutomation {
     label: string;
     tone: string;
   };
+  abTest?: {
+    enabled: boolean;
+    minAudience: number;
+    lastRunAt: string | null;
+    lastVariantIds: string[];
+  };
   performance?: {
     bestVariantId: string | null;
     recommendation: string;
@@ -435,6 +441,19 @@ export default function AssistantPage() {
                         <span>Message actif</span>
                         <strong>{automation.selectedVariant.label}</strong>
                         {automation.selectedVariant.tone ? <em>{automation.selectedVariant.tone}</em> : null}
+                      </div>
+                    )}
+                    {automation.abTest?.enabled && (
+                      <div className="assistant-abtest">
+                        <span>Test A/B prudent</span>
+                        <strong>
+                          {automation.abTest.lastRunAt
+                            ? `Dernier test: ${formatDateTime(automation.abTest.lastRunAt)}`
+                            : `Auto si ${automation.abTest.minAudience}+ clients`}
+                        </strong>
+                        <small>
+                          Compare le message actif avec une variante, puis laisse le commerçant choisir.
+                        </small>
                       </div>
                     )}
                     {automation.performance && automation.performance.variants.length > 0 && (
