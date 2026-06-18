@@ -4708,6 +4708,36 @@ html, body { overflow-x: clip; }
   line-height: 1.45;
   color: rgb(var(--ovr) / 0.5);
 }
+.campaign-priority-panel,
+.assistant-priority-panel {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(132, 204, 22, 0.18);
+  border-radius: 10px;
+  background: rgba(132, 204, 22, 0.055);
+  padding: 9px 10px;
+}
+.campaign-priority-panel span,
+.assistant-priority-panel span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgb(var(--ovr) / 0.62);
+  font-size: 12px;
+  font-weight: 700;
+}
+.campaign-priority-panel strong,
+.assistant-priority-panel strong {
+  color: #84cc16;
+  font-size: 14px;
+}
+.campaign-priority-panel p,
+.assistant-priority-panel p {
+  margin: 0;
+  color: rgb(var(--ovr) / 0.54);
+  font-size: 12px;
+  line-height: 1.4;
+}
 .campaign-recommendation-actions {
   display: grid;
   gap: 8px;

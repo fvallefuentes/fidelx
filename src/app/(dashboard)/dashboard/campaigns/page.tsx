@@ -69,6 +69,9 @@ interface CampaignRecommendation {
   targetSegment: string;
   triggerConfig?: { daysInactive?: number; targetCardIds?: string[] };
   targetCardIds?: string[];
+  priorityScore?: number;
+  priorityLabel?: string;
+  priorityReason?: string;
   audience?: CampaignRecommendationAudience[];
   audiencePreviewLimit?: number;
   suppressedByCooldown?: number;
@@ -85,6 +88,9 @@ interface CampaignRecommendationAudience {
   currentStamps: number;
   currentPoints: number;
   lastMessageAt: string | null;
+  score?: number;
+  scoreLabel?: string;
+  scoreReasons?: string[];
 }
 
 interface CampaignAutomation {
@@ -505,6 +511,16 @@ function RecommendedActions({
                   <span>{segmentLabels[rec.targetSegment] || rec.targetSegment}</span>
                 </div>
 
+                {rec.priorityScore !== undefined && (
+                  <div className="campaign-priority-panel">
+                    <span>
+                      <strong>{rec.priorityScore}/100</strong>
+                      {rec.priorityLabel || "Priorite"}
+                    </span>
+                    <p>{rec.priorityReason}</p>
+                  </div>
+                )}
+
                 {rec.suppressedByCooldown ? (
                   <div className="campaign-recommendation-cooldown">
                     {rec.suppressedByCooldown} client{rec.suppressedByCooldown > 1 ? "s" : ""} exclu{rec.suppressedByCooldown > 1 ? "s" : ""} automatiquement: notification récente.
@@ -540,7 +556,7 @@ function RecommendedActions({
                               <small>{person.reason}</small>
                             </span>
                             <span className="campaign-audience-stats">
-                              {person.totalVisits} visite{person.totalVisits > 1 ? "s" : ""}
+                              {person.score || 0}/100
                             </span>
                           </label>
                         );

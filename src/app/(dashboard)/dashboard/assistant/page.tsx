@@ -48,12 +48,18 @@ interface CampaignRecommendation {
   notifTitle: string;
   message: string;
   targetSegment: string;
+  priorityScore?: number;
+  priorityLabel?: string;
+  priorityReason?: string;
   targetCardIds?: string[];
   audience?: Array<{
     cardId: string;
     clientName: string;
     reason: string;
     totalVisits: number;
+    score?: number;
+    scoreLabel?: string;
+    scoreReasons?: string[];
   }>;
   suppressedByCooldown?: number;
 }
@@ -227,6 +233,15 @@ export default function AssistantPage() {
                         <Badge variant="default">{audienceCount} ciblé(s)</Badge>
                       </div>
                       <p className="assistant-reco-reason">{rec.reason}</p>
+                      {rec.priorityScore !== undefined && (
+                        <div className="assistant-priority-panel">
+                          <span>
+                            <strong>{rec.priorityScore}/100</strong>
+                            {rec.priorityLabel || "Priorité"}
+                          </span>
+                          <p>{rec.priorityReason}</p>
+                        </div>
+                      )}
                       <div className="assistant-message-preview">
                         <strong>{rec.notifTitle}</strong>
                         <span>{rec.message}</span>
@@ -235,7 +250,7 @@ export default function AssistantPage() {
                         <div className="assistant-mini-audience">
                           {rec.audience.slice(0, 4).map((person) => (
                             <span key={person.cardId}>
-                              {person.clientName || "Client"} · {person.reason}
+                              {person.clientName || "Client"} · {person.score || 0}/100 · {person.reason}
                             </span>
                           ))}
                         </div>

@@ -19,6 +19,9 @@ export type CampaignRecommendation = {
   audiencePreviewLimit: number;
   suppressedByCooldown: number;
   priority: number;
+  priorityScore: number;
+  priorityLabel: string;
+  priorityReason: string;
 };
 
 export type RecommendationAudience = {
@@ -32,6 +35,9 @@ export type RecommendationAudience = {
   currentStamps: number;
   currentPoints: number;
   lastMessageAt: string | null;
+  score: number;
+  scoreLabel: string;
+  scoreReasons: string[];
 };
 
 type AudienceCard = {
@@ -121,10 +127,13 @@ export async function buildCampaignRecommendations(merchantId: string) {
         targetSegment: "DORMANT",
         triggerConfig: { daysInactive: 30, targetCardIds: dormantCards.map((card) => card.id) },
         targetCardIds: dormantCards.map((card) => card.id),
-        audience: buildAudience(dormantCards, "Sans visite depuis 30 jours"),
+        audience: buildAudience(dormantCards, "Sans visite depuis 30 jours", { now }),
         audiencePreviewLimit: 8,
         suppressedByCooldown: dormantSuppressed,
         priority: 95 + dormantCount,
+        priorityScore: 0,
+        priorityLabel: "",
+        priorityReason: "",
       });
     }
 
@@ -151,10 +160,13 @@ export async function buildCampaignRecommendations(merchantId: string) {
         targetSegment: "NEW",
         triggerConfig: { targetCardIds: newWithoutSecondVisitCards.map((card) => card.id) },
         targetCardIds: newWithoutSecondVisitCards.map((card) => card.id),
-        audience: buildAudience(newWithoutSecondVisitCards, "Nouveau client sans deuxieme visite"),
+        audience: buildAudience(newWithoutSecondVisitCards, "Nouveau client sans deuxieme visite", { now }),
         audiencePreviewLimit: 8,
         suppressedByCooldown: newSuppressed,
         priority: 82 + newWithoutSecondVisit,
+        priorityScore: 0,
+        priorityLabel: "",
+        priorityReason: "",
       });
     }
 
@@ -181,10 +193,13 @@ export async function buildCampaignRecommendations(merchantId: string) {
         targetSegment: "ALL",
         triggerConfig: { targetCardIds: birthdaySoonCards.map((card) => card.id) },
         targetCardIds: birthdaySoonCards.map((card) => card.id),
-        audience: buildAudience(birthdaySoonCards, "Anniversaire dans les 14 jours"),
+        audience: buildAudience(birthdaySoonCards, "Anniversaire dans les 14 jours", { now, birthdaySoon: true }),
         audiencePreviewLimit: 8,
         suppressedByCooldown: birthdaySuppressed,
         priority: 78 + birthdaySoonCount,
+        priorityScore: 0,
+        priorityLabel: "",
+        priorityReason: "",
       });
     }
 
@@ -217,11 +232,15 @@ export async function buildCampaignRecommendations(merchantId: string) {
           targetCardIds: closeToRewardCards.map((card) => card.id),
           audience: buildAudience(
             closeToRewardCards,
-            (card) => `${maxStamps - card.currentStamps} tampon${maxStamps - card.currentStamps > 1 ? "s" : ""} restant${maxStamps - card.currentStamps > 1 ? "s" : ""}`
+            (card) => `${maxStamps - card.currentStamps} tampon${maxStamps - card.currentStamps > 1 ? "s" : ""} restant${maxStamps - card.currentStamps > 1 ? "s" : ""}`,
+            { now, maxStamps }
           ),
           audiencePreviewLimit: 8,
           suppressedByCooldown: rewardSuppressed,
           priority: 88 + closeToRewardCount,
+          priorityScore: 0,
+          priorityLabel: "",
+          priorityReason: "",
         });
       }
     }
@@ -248,15 +267,21 @@ export async function buildCampaignRecommendations(merchantId: string) {
         targetSegment: "ALL",
         triggerConfig: { targetCardIds: lowActivityCards.map((card) => card.id) },
         targetCardIds: lowActivityCards.map((card) => card.id),
-        audience: buildAudience(lowActivityCards, "Programme sans visite recente"),
+        audience: buildAudience(lowActivityCards, "Programme sans visite recente", { now }),
         audiencePreviewLimit: 8,
         suppressedByCooldown: lowActivitySuppressed,
         priority: 70 + lowActivityCards.length,
+        priorityScore: 0,
+        priorityLabel: "",
+        priorityReason: "",
       });
     }
   }
 
-  return recommendations.sort((a, b) => b.priority - a.priority).slice(0, 5);
+  return recommendations
+    .map(enrichRecommendationPriority)
+    .sort((a, b) => b.priority - a.priority)
+    .slice(0, 5);
 }
 
 function applyNotificationCooldown<T extends { lastMessageAt: Date | null }>(
@@ -271,20 +296,120 @@ function applyNotificationCooldown<T extends { lastMessageAt: Date | null }>(
 
 function buildAudience(
   cards: AudienceCard[],
-  reason: string | ((card: AudienceCard) => string)
+  reason: string | ((card: AudienceCard) => string),
+  context: { now: Date; maxStamps?: number; birthdaySoon?: boolean }
 ): RecommendationAudience[] {
-  return cards.slice(0, 30).map((card) => ({
-    cardId: card.id,
-    clientName: [card.client.firstName, card.client.lastName].filter(Boolean).join(" "),
-    email: card.client.email,
-    phone: card.client.phone,
-    reason: typeof reason === "function" ? reason(card) : reason,
-    lastVisitAt: card.lastVisitAt?.toISOString() || null,
-    totalVisits: card.totalVisits,
-    currentStamps: card.currentStamps,
-    currentPoints: card.currentPoints,
-    lastMessageAt: card.lastMessageAt?.toISOString() || null,
-  }));
+  return cards
+    .map((card) => ({ card, score: scoreAudienceCard(card, context) }))
+    .sort((a, b) => b.score.score - a.score.score)
+    .slice(0, 30)
+    .map(({ card, score }) => ({
+      cardId: card.id,
+      clientName: [card.client.firstName, card.client.lastName].filter(Boolean).join(" "),
+      email: card.client.email,
+      phone: card.client.phone,
+      reason: typeof reason === "function" ? reason(card) : reason,
+      lastVisitAt: card.lastVisitAt?.toISOString() || null,
+      totalVisits: card.totalVisits,
+      currentStamps: card.currentStamps,
+      currentPoints: card.currentPoints,
+      lastMessageAt: card.lastMessageAt?.toISOString() || null,
+      score: score.score,
+      scoreLabel: score.label,
+      scoreReasons: score.reasons,
+    }));
+}
+
+function enrichRecommendationPriority(rec: CampaignRecommendation): CampaignRecommendation {
+  const averageScore =
+    rec.audience.length > 0
+      ? Math.round(rec.audience.reduce((sum, person) => sum + person.score, 0) / rec.audience.length)
+      : 0;
+  const topReason =
+    rec.audience
+      .flatMap((person) => person.scoreReasons)
+      .find(Boolean) || "Audience qualifiee par les signaux de fidelite.";
+
+  return {
+    ...rec,
+    priorityScore: averageScore,
+    priorityLabel: priorityLabel(averageScore),
+    priorityReason: topReason,
+    priority: rec.priority + Math.round(averageScore / 2),
+  };
+}
+
+function scoreAudienceCard(
+  card: AudienceCard,
+  context: { now: Date; maxStamps?: number; birthdaySoon?: boolean }
+) {
+  let score = 20;
+  const reasons: string[] = [];
+  const daysSinceVisit =
+    card.lastVisitAt !== null
+      ? Math.floor((context.now.getTime() - card.lastVisitAt.getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
+  if (daysSinceVisit === null) {
+    score += 12;
+    reasons.push("jamais revenu depuis l'inscription");
+  } else if (daysSinceVisit >= 60) {
+    score += 30;
+    reasons.push("inactif depuis 60+ jours");
+  } else if (daysSinceVisit >= 30) {
+    score += 22;
+    reasons.push("inactif depuis 30+ jours");
+  } else if (daysSinceVisit <= 14 && card.totalVisits >= 3) {
+    score += 10;
+    reasons.push("client encore actif");
+  }
+
+  if (card.totalVisits >= 10 && (daysSinceVisit === null || daysSinceVisit >= 30)) {
+    score += 18;
+    reasons.push("ancien bon client a risque");
+  } else if (card.totalVisits >= 5) {
+    score += 10;
+    reasons.push("historique de visites solide");
+  }
+
+  if (card.totalVisits < 2) {
+    score += 16;
+    reasons.push("nouveau client a convertir");
+  }
+
+  if (context.maxStamps) {
+    const remaining = context.maxStamps - card.currentStamps;
+    if (remaining === 1) {
+      score += 34;
+      reasons.push("a 1 tampon de la recompense");
+    } else if (remaining === 2) {
+      score += 26;
+      reasons.push("a 2 tampons de la recompense");
+    }
+  }
+
+  if (context.birthdaySoon) {
+    score += 14;
+    reasons.push("moment personnel a forte attention");
+  }
+
+  if (card.client.email || card.client.phone) {
+    score += 4;
+  }
+
+  const cappedScore = Math.max(0, Math.min(100, score));
+  return {
+    score: cappedScore,
+    label: priorityLabel(cappedScore),
+    reasons: reasons.slice(0, 3),
+  };
+}
+
+function priorityLabel(score: number) {
+  if (score >= 75) return "Priorite haute";
+  if (score >= 55) return "Bon potentiel";
+  if (score >= 35) return "A surveiller";
+  return "Faible urgence";
 }
 
 function addDays(date: Date, days: number) {
