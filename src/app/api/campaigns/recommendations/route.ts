@@ -19,6 +19,7 @@ type Recommendation = {
   triggerType: "IMMEDIATE" | "INACTIVITY" | "MILESTONE" | "BIRTHDAY";
   targetSegment: "ALL" | "ACTIVE" | "DORMANT" | "NEW" | "VIP";
   triggerConfig?: Record<string, unknown>;
+  targetCardIds: string[];
   priority: number;
 };
 
@@ -65,9 +66,10 @@ export async function GET() {
     const activeCards = cards.length;
     if (activeCards === 0) continue;
 
-    const dormantCount = cards.filter(
+    const dormantCards = cards.filter(
       (card) => !card.lastVisitAt || card.lastVisitAt < dormantCutoff
-    ).length;
+    );
+    const dormantCount = dormantCards.length;
     if (dormantCount >= 3 || dormantCount >= Math.ceil(activeCards * 0.35)) {
       recommendations.push({
         id: `dormant-${program.id}`,
@@ -83,14 +85,16 @@ export async function GET() {
           "Cela fait un moment qu'on ne vous a pas vu. Revenez cette semaine et profitez d'une offre speciale en boutique.",
         triggerType: "IMMEDIATE",
         targetSegment: "DORMANT",
-        triggerConfig: { daysInactive: 30 },
+        triggerConfig: { daysInactive: 30, targetCardIds: dormantCards.map((card) => card.id) },
+        targetCardIds: dormantCards.map((card) => card.id),
         priority: 95 + dormantCount,
       });
     }
 
-    const newWithoutSecondVisit = cards.filter(
+    const newWithoutSecondVisitCards = cards.filter(
       (card) => card.createdAt >= newCutoff && card.totalVisits < 2
-    ).length;
+    );
+    const newWithoutSecondVisit = newWithoutSecondVisitCards.length;
     if (newWithoutSecondVisit >= 2) {
       recommendations.push({
         id: `new-second-visit-${program.id}`,
@@ -106,13 +110,16 @@ export async function GET() {
           "Merci pour votre premiere visite. Repassez cette semaine: votre prochain avantage fidelite vous attend.",
         triggerType: "IMMEDIATE",
         targetSegment: "NEW",
+        triggerConfig: { targetCardIds: newWithoutSecondVisitCards.map((card) => card.id) },
+        targetCardIds: newWithoutSecondVisitCards.map((card) => card.id),
         priority: 82 + newWithoutSecondVisit,
       });
     }
 
-    const birthdaySoonCount = cards.filter((card) =>
+    const birthdaySoonCards = cards.filter((card) =>
       isBirthdayWithinDays(card.client.birthDate, now, 14)
-    ).length;
+    );
+    const birthdaySoonCount = birthdaySoonCards.length;
     if (birthdaySoonCount > 0) {
       recommendations.push({
         id: `birthday-${program.id}`,
@@ -126,19 +133,22 @@ export async function GET() {
         notifTitle: "Un cadeau d'anniversaire vous attend",
         message:
           "Votre anniversaire approche. Passez en boutique cette semaine: une attention speciale vous attend.",
-        triggerType: "BIRTHDAY",
+        triggerType: "IMMEDIATE",
         targetSegment: "ALL",
+        triggerConfig: { targetCardIds: birthdaySoonCards.map((card) => card.id) },
+        targetCardIds: birthdaySoonCards.map((card) => card.id),
         priority: 78 + birthdaySoonCount,
       });
     }
 
     if (program.type === "STAMPS") {
       const maxStamps = getMaxStamps(program.config);
-      const closeToRewardCount = cards.filter(
+      const closeToRewardCards = cards.filter(
         (card) =>
           card.currentStamps >= Math.max(1, maxStamps - 2) &&
           card.currentStamps < maxStamps
-      ).length;
+      );
+      const closeToRewardCount = closeToRewardCards.length;
       if (closeToRewardCount > 0) {
         recommendations.push({
           id: `close-reward-${program.id}`,
@@ -154,6 +164,8 @@ export async function GET() {
             "Vous etes tout proche de votre recompense. Passez nous voir cette semaine pour completer votre carte.",
           triggerType: "IMMEDIATE",
           targetSegment: "ACTIVE",
+          triggerConfig: { targetCardIds: closeToRewardCards.map((card) => card.id) },
+          targetCardIds: closeToRewardCards.map((card) => card.id),
           priority: 88 + closeToRewardCount,
         });
       }
@@ -177,6 +189,8 @@ export async function GET() {
           "Votre carte fidelite vous attend toujours. Revenez cette semaine et profitez d'un avantage reserve aux membres.",
         triggerType: "IMMEDIATE",
         targetSegment: "ALL",
+        triggerConfig: { targetCardIds: cards.map((card) => card.id) },
+        targetCardIds: cards.map((card) => card.id),
         priority: 70 + activeCards,
       });
     }

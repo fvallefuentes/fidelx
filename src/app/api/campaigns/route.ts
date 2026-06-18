@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notifyAllCardsInProgram } from "@/lib/wallet/push";
+import { notifyAllCardsInProgram, notifyCardsInProgram } from "@/lib/wallet/push";
 import { getPlanLimits, getPeriodStart } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
 import type { Prisma } from "@/generated/prisma/client";
@@ -138,12 +138,19 @@ export async function POST(req: Request) {
 
   // Si envoi immédiat, envoyer maintenant
   if (triggerType === "IMMEDIATE" && programId) {
-    const result = await notifyAllCardsInProgram(
-      programId,
-      message,
-      targetSegment,
-      name
-    );
+    const rawTargetCardIds = (triggerConfig as { targetCardIds?: unknown }).targetCardIds;
+    const targetCardIds = Array.isArray(rawTargetCardIds)
+      ? rawTargetCardIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+      : [];
+    const result =
+      targetCardIds.length > 0
+        ? await notifyCardsInProgram(programId, targetCardIds, message, name)
+        : await notifyAllCardsInProgram(
+            programId,
+            message,
+            targetSegment,
+            name
+          );
 
     await prisma.notificationCampaign.update({
       where: { id: campaign.id },

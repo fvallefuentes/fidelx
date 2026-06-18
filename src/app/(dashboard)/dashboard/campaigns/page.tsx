@@ -59,7 +59,8 @@ interface CampaignRecommendation {
   message: string;
   triggerType: string;
   targetSegment: string;
-  triggerConfig?: { daysInactive?: number };
+  triggerConfig?: { daysInactive?: number; targetCardIds?: string[] };
+  targetCardIds?: string[];
 }
 
 const triggerIcons: Record<string, typeof Send> = {
@@ -545,11 +546,13 @@ function CreateCampaignForm({
     setSaving(true);
     setError("");
 
-    let triggerConfig: Record<string, unknown> = {};
+    let triggerConfig: Record<string, unknown> = {
+      ...(initialRecommendation?.triggerConfig || {}),
+    };
     if (triggerType === "SCHEDULED" && scheduledDate && scheduledTime) {
-      triggerConfig = { sendAt: `${scheduledDate}T${scheduledTime}:00Z` };
+      triggerConfig = { ...triggerConfig, sendAt: `${scheduledDate}T${scheduledTime}:00Z` };
     } else if (triggerType === "INACTIVITY") {
-      triggerConfig = { daysInactive: inactivityDays };
+      triggerConfig = { ...triggerConfig, daysInactive: inactivityDays };
     }
 
     const res = await fetch("/api/campaigns", {

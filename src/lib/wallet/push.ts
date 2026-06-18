@@ -181,3 +181,43 @@ export async function notifyAllCardsInProgram(
 
   return { total: cards.length, sent: cards.length };
 }
+
+export async function notifyCardsInProgram(
+  programId: string,
+  cardIds: string[],
+  message: string,
+  title?: string
+) {
+  const uniqueCardIds = [...new Set(cardIds)].filter(Boolean);
+  if (uniqueCardIds.length === 0) {
+    return { total: 0, sent: 0 };
+  }
+
+  const cards = await prisma.loyaltyCard.findMany({
+    where: {
+      id: { in: uniqueCardIds },
+      programId,
+      status: "ACTIVE",
+    },
+    select: {
+      id: true,
+      program: { select: { name: true } },
+    },
+  });
+
+  await Promise.allSettled(
+    cards.map((card) =>
+      prisma.loyaltyCard.update({
+        where: { id: card.id },
+        data: { lastMessage: message },
+      }).then(() =>
+        notifyPassUpdate(card.id, {
+          header: title || card.program.name,
+          body: message,
+        })
+      )
+    )
+  );
+
+  return { total: uniqueCardIds.length, sent: cards.length };
+}
