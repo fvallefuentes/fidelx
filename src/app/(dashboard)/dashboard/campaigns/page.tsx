@@ -87,6 +87,34 @@ interface CampaignRecommendationAudience {
   lastMessageAt: string | null;
 }
 
+interface CampaignAutomation {
+  id: string;
+  name: string;
+  title: string;
+  reason: string;
+  programName: string;
+  message: string;
+  status: string;
+  active: boolean;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  runCount: number;
+  lastSentCount: number;
+  lastAudienceCount: number;
+  lastSkipReason: string | null;
+  lastSkippedAt: string | null;
+  frequencyDays: number;
+  cooldownDays: number;
+  minAudience: number;
+  history: Array<{
+    id: string;
+    name: string;
+    sentAt: string;
+    sentCount: number;
+    status: string;
+  }>;
+}
+
 const triggerIcons: Record<string, typeof Send> = {
   IMMEDIATE: Send,
   SCHEDULED: Clock,
@@ -129,6 +157,7 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [recommendations, setRecommendations] = useState<CampaignRecommendation[]>([]);
+  const [automations, setAutomations] = useState<CampaignAutomation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] =
@@ -139,10 +168,12 @@ export default function CampaignsPage() {
       fetch("/api/campaigns").then((r) => r.json()),
       fetch("/api/programs").then((r) => r.json()),
       fetch("/api/campaigns/recommendations").then((r) => r.json()),
-    ]).then(([c, p, recs]) => {
+      fetch("/api/campaigns/automations").then((r) => r.json()),
+    ]).then(([c, p, recs, autos]) => {
       setCampaigns(c);
       setPrograms(p);
       setRecommendations(Array.isArray(recs) ? recs : []);
+      setAutomations(Array.isArray(autos) ? autos : []);
       setLoading(false);
     });
   }, []);
@@ -152,6 +183,32 @@ export default function CampaignsPage() {
     setCampaigns(await res.json());
     const recs = await fetch("/api/campaigns/recommendations").then((r) => r.json());
     setRecommendations(Array.isArray(recs) ? recs : []);
+    const autos = await fetch("/api/campaigns/automations").then((r) => r.json());
+    setAutomations(Array.isArray(autos) ? autos : []);
+  }
+
+  async function automateRecommendation(rec: CampaignRecommendation) {
+    const res = await fetch("/api/campaigns/automations", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recommendationId: rec.id,
+        title: rec.title,
+        reason: rec.reason,
+        programId: rec.programId,
+        programName: rec.programName,
+        name: rec.name,
+        notifTitle: rec.notifTitle,
+        message: rec.message,
+        targetSegment: rec.targetSegment,
+      }),
+    });
+    if (!res.ok && res.status !== 409) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error || "Impossible d'automatiser cette recommandation");
+      return;
+    }
+    await fetchCampaigns();
   }
 
   function startRecommendedCampaign(rec: CampaignRecommendation) {
@@ -218,7 +275,10 @@ export default function CampaignsPage() {
         recommendations={recommendations}
         isFree={isFree}
         onUse={startRecommendedCampaign}
+        onAutomate={automateRecommendation}
       />
+
+      <CampaignAutomations automations={automations} />
 
       {showForm && (
         <CreateCampaignForm
@@ -344,10 +404,12 @@ function RecommendedActions({
   recommendations,
   isFree,
   onUse,
+  onAutomate,
 }: {
   recommendations: CampaignRecommendation[];
   isFree: boolean;
   onUse: (rec: CampaignRecommendation) => void;
+  onAutomate: (rec: CampaignRecommendation) => void;
 }) {
   const [excludedByRecommendation, setExcludedByRecommendation] = useState<Record<string, string[]>>({});
 
@@ -492,19 +554,30 @@ function RecommendedActions({
                   </div>
                 )}
 
-                <Button
-                  type="button"
-                  className="w-full"
-                  variant={lockedByFreePlan ? "outline" : "default"}
-                  disabled={lockedByFreePlan || adjusted.potentialCount === 0}
-                  onClick={() => onUse(adjusted)}
-                >
-                  {lockedByFreePlan
-                    ? "Plan payant requis"
-                    : adjusted.potentialCount === 0
-                      ? "Aucun client ciblé"
-                      : "Créer cette campagne"}
-                </Button>
+                <div className="campaign-recommendation-actions">
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant={lockedByFreePlan ? "outline" : "default"}
+                    disabled={lockedByFreePlan || adjusted.potentialCount === 0}
+                    onClick={() => onUse(adjusted)}
+                  >
+                    {lockedByFreePlan
+                      ? "Plan payant requis"
+                      : adjusted.potentialCount === 0
+                        ? "Aucun client ciblé"
+                        : "Créer cette campagne"}
+                  </Button>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    variant="outline"
+                    disabled={isFree || lockedByFreePlan || adjusted.potentialCount === 0}
+                    onClick={() => onAutomate(adjusted)}
+                  >
+                    {isFree ? "Automatisation plan payant" : "Automatiser chaque semaine"}
+                  </Button>
+                </div>
               </div>
             );
           })}
@@ -512,6 +585,99 @@ function RecommendedActions({
       </CardContent>
     </Card>
   );
+}
+
+function CampaignAutomations({ automations }: { automations: CampaignAutomation[] }) {
+  if (automations.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Wand2 className="h-5 w-5 text-lime-500" />
+              Automatisations
+            </CardTitle>
+            <p className="text-sm text-gray-500 mt-1">
+              Règles prudentes: une vérification par semaine, anti-spam client et seuil minimum avant envoi.
+            </p>
+          </div>
+          <Badge variant="secondary">{automations.length} active(s)</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="campaign-automations-grid">
+          {automations.map((automation) => (
+            <div key={automation.id} className="campaign-automation-card">
+              <div className="campaign-automation-head">
+                <div>
+                  <p className="campaign-automation-title">{automation.title}</p>
+                  <p className="campaign-automation-program">{automation.programName}</p>
+                </div>
+                <Badge variant={automation.active ? "success" : "secondary"}>
+                  {automation.active ? "Active" : "Pause"}
+                </Badge>
+              </div>
+
+              <p className="campaign-automation-reason">{automation.reason}</p>
+
+              <div className="campaign-automation-kpis">
+                <span>
+                  <strong>{automation.lastSentCount}</strong> envoyés dernier run
+                </span>
+                <span>
+                  <strong>{automation.runCount}</strong> exécution{automation.runCount > 1 ? "s" : ""}
+                </span>
+                <span>
+                  <strong>{automation.minAudience}</strong> clients min.
+                </span>
+              </div>
+
+              <div className="campaign-automation-timeline">
+                <p>
+                  Prochain passage:{" "}
+                  <strong>{formatDateTime(automation.nextRunAt)}</strong>
+                </p>
+                <p>
+                  Dernier envoi:{" "}
+                  <strong>{formatDateTime(automation.lastRunAt)}</strong>
+                </p>
+                {automation.lastSkipReason && (
+                  <p className="campaign-automation-skip">
+                    Dernier saut: {automation.lastSkipReason}
+                  </p>
+                )}
+              </div>
+
+              {automation.history.length > 0 && (
+                <div className="campaign-automation-history">
+                  {automation.history.map((run) => (
+                    <div key={run.id}>
+                      <span>{formatDateTime(run.sentAt)}</span>
+                      <strong>{run.sentCount} envoyé{run.sentCount > 1 ? "s" : ""}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "Pas encore";
+  return new Intl.DateTimeFormat("fr-CH", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 function NotificationPreview({

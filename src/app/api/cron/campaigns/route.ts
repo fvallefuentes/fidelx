@@ -1,11 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { notifyAllCardsInProgram } from "@/lib/wallet/push";
+import { buildCampaignRecommendations } from "@/lib/campaign-recommendations";
+import { notifyAllCardsInProgram, notifyCardsInProgram } from "@/lib/wallet/push";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { requireCronSecret } from "@/lib/api/validation";
+import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+type AutomationConfig = {
+  automationRule?: boolean;
+  recommendationId?: string;
+  sourceTitle?: string;
+  sourceReason?: string;
+  programName?: string;
+  notifTitle?: string;
+  frequencyDays?: number;
+  cooldownDays?: number;
+  minAudience?: number;
+  runCount?: number;
+  lastRunAt?: string | null;
+  lastSentCount?: number;
+  lastAudienceCount?: number;
+  lastSkipReason?: string | null;
+  lastSkippedAt?: string | null;
+};
 
 /**
  * GET /api/cron/campaigns
@@ -48,6 +68,12 @@ export async function GET(req: Request) {
   }> = [];
 
   for (const c of due) {
+    if (isAutomationRule(c.triggerConfig)) {
+      const result = await runAutomationRule(c);
+      results.push(result);
+      continue;
+    }
+
     // Marquer SENDING en premier pour éviter les double-tirs
     await prisma.notificationCampaign.update({
       where: { id: c.id },
@@ -59,7 +85,8 @@ export async function GET(req: Request) {
         c.programId!,
         c.message,
         c.targetSegment,
-        c.name
+        c.name,
+        c.id
       );
       await prisma.notificationCampaign.update({
         where: { id: c.id },
@@ -97,4 +124,162 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({ ok: true, due: due.length, results });
+}
+
+async function runAutomationRule(campaign: {
+  id: string;
+  merchantId: string;
+  programId: string | null;
+  name: string;
+  message: string;
+  targetSegment: "ALL" | "ACTIVE" | "DORMANT" | "NEW" | "VIP";
+  triggerConfig: unknown;
+}) {
+  const config = campaign.triggerConfig as AutomationConfig;
+  const frequencyDays = clampNumber(config.frequencyDays, 7, 30, 7);
+  const cooldownDays = clampNumber(config.cooldownDays, 7, 30, 7);
+  const minAudience = clampNumber(config.minAudience, 1, 50, 2);
+  const nextRunAt = addDays(new Date(), frequencyDays);
+
+  await prisma.notificationCampaign.update({
+    where: { id: campaign.id },
+    data: { status: "SENDING" },
+  });
+
+  try {
+    const recommendations = await buildCampaignRecommendations(campaign.merchantId);
+    const recommendation = recommendations.find(
+      (rec) => rec.id === config.recommendationId && rec.programId === campaign.programId
+    );
+
+    if (!recommendation || recommendation.targetCardIds.length < minAudience) {
+      const audienceCount = recommendation?.targetCardIds.length || 0;
+      const skipReason =
+        audienceCount === 0
+          ? "Aucune audience eligible cette semaine."
+          : `Audience trop petite (${audienceCount}/${minAudience}).`;
+      await prisma.notificationCampaign.update({
+        where: { id: campaign.id },
+        data: {
+          status: "SCHEDULED",
+          scheduledAt: nextRunAt,
+          triggerConfig: {
+            ...config,
+            lastAudienceCount: audienceCount,
+            lastSkipReason: skipReason,
+            lastSkippedAt: new Date().toISOString(),
+          } satisfies Prisma.InputJsonObject,
+        },
+      });
+      return {
+        id: campaign.id,
+        name: campaign.name,
+        sent: 0,
+        total: audienceCount,
+        error: skipReason,
+      };
+    }
+
+    const run = await prisma.notificationCampaign.create({
+      data: {
+        merchantId: campaign.merchantId,
+        programId: recommendation.programId,
+        name: recommendation.name,
+        message: recommendation.message,
+        triggerType: "IMMEDIATE",
+        triggerConfig: {
+          ...(recommendation.triggerConfig || {}),
+          automationRuleId: campaign.id,
+          recommendationId: recommendation.id,
+          notifTitle: recommendation.notifTitle,
+          targetCardIds: recommendation.targetCardIds,
+        } satisfies Prisma.InputJsonObject,
+        targetSegment: recommendation.targetSegment,
+        status: "SENT",
+      },
+    });
+
+    const sendResult = await notifyCardsInProgram(
+      recommendation.programId,
+      recommendation.targetCardIds,
+      recommendation.message,
+      recommendation.notifTitle,
+      cooldownDays,
+      run.id
+    );
+
+    await prisma.notificationCampaign.update({
+      where: { id: run.id },
+      data: { sentCount: sendResult.sent, sentAt: new Date() },
+    });
+
+    await prisma.notificationCampaign.update({
+      where: { id: campaign.id },
+      data: {
+        status: "SCHEDULED",
+        scheduledAt: nextRunAt,
+        triggerConfig: {
+          ...config,
+          runCount: (config.runCount || 0) + 1,
+          lastRunAt: new Date().toISOString(),
+          lastSentCount: sendResult.sent,
+          lastAudienceCount: sendResult.total,
+          lastSkipReason: null,
+          lastSkippedAt: null,
+        } satisfies Prisma.InputJsonObject,
+      },
+    });
+
+    void createMerchantNotification({
+      merchantId: campaign.merchantId,
+      type: "CAMPAIGN_SENT",
+      title: `Automatisation envoyee : ${recommendation.name}`,
+      body: `${sendResult.sent}/${sendResult.total} clients touches.`,
+      link: `/dashboard/campaigns`,
+      metadata: { campaignId: run.id, automationRuleId: campaign.id },
+    });
+
+    return {
+      id: run.id,
+      name: recommendation.name,
+      sent: sendResult.sent,
+      total: sendResult.total,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[cron/campaigns] failed automation ${campaign.id}:`, msg);
+    await prisma.notificationCampaign.update({
+      where: { id: campaign.id },
+      data: {
+        status: "SCHEDULED",
+        scheduledAt: nextRunAt,
+        triggerConfig: {
+          ...config,
+          lastSkipReason: msg,
+          lastSkippedAt: new Date().toISOString(),
+        } satisfies Prisma.InputJsonObject,
+      },
+    });
+    return { id: campaign.id, name: campaign.name, sent: 0, total: 0, error: msg };
+  }
+}
+
+function isAutomationRule(config: unknown) {
+  return Boolean((config as AutomationConfig | null)?.automationRule);
+}
+
+function clampNumber(
+  value: number | undefined,
+  min: number,
+  max: number,
+  fallback: number
+) {
+  if (typeof value !== "number" || Number.isNaN(value)) return fallback;
+  return Math.min(max, Math.max(min, value));
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
 }

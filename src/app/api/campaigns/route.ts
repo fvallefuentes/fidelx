@@ -57,8 +57,12 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
+  const visibleCampaigns = campaigns.filter(
+    (campaign) => !isAutomationRule(campaign.triggerConfig)
+  );
+
   const campaignsWithImpact = await Promise.all(
-    campaigns.map(async (campaign) => {
+    visibleCampaigns.map(async (campaign) => {
       const impact = await calculateCampaignImpact(campaign.logs);
       const rest = Object.fromEntries(
         Object.entries(campaign).filter(([key]) => key !== "logs")
@@ -68,6 +72,10 @@ export async function GET() {
   );
 
   return NextResponse.json(campaignsWithImpact);
+}
+
+function isAutomationRule(config: unknown) {
+  return Boolean((config as { automationRule?: boolean } | null)?.automationRule);
 }
 
 export async function POST(req: Request) {
