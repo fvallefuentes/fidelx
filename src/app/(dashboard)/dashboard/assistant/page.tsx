@@ -142,23 +142,55 @@ interface CampaignAutomation {
   }>;
 }
 
+interface WeeklySummary {
+  periodStart: string;
+  periodEnd: string;
+  stats: {
+    messagesSent: number;
+    returnedClients: number;
+    generatedVisits: number;
+    rewardsUnlocked: number;
+    campaignsSent: number;
+    automationsActive: number;
+    abTestsRun: number;
+  };
+  bestCampaign: {
+    name: string;
+    programName: string;
+    sentCount: number;
+    returnedClients: number;
+    conversionRate: number;
+  } | null;
+  topOpportunity: {
+    title: string;
+    reason: string;
+    programName: string;
+    potentialCount: number;
+  } | null;
+  highlights: string[];
+  nextActions: string[];
+}
+
 export default function AssistantPage() {
   const [recommendations, setRecommendations] = useState<CampaignRecommendation[]>([]);
   const [automations, setAutomations] = useState<CampaignAutomation[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, string>>({});
 
   async function loadData() {
-    const [recs, autos, sentCampaigns] = await Promise.all([
+    const [recs, autos, sentCampaigns, weekly] = await Promise.all([
       fetch("/api/campaigns/recommendations").then((r) => r.json()),
       fetch("/api/campaigns/automations").then((r) => r.json()),
       fetch("/api/campaigns").then((r) => r.json()),
+      fetch("/api/campaigns/weekly-summary").then((r) => r.json()),
     ]);
     setRecommendations(Array.isArray(recs) ? recs : []);
     setAutomations(Array.isArray(autos) ? autos : []);
     setCampaigns(Array.isArray(sentCampaigns) ? sentCampaigns : []);
+    setWeeklySummary(weekly && !weekly.error ? weekly : null);
     setLoading(false);
   }
 
@@ -310,6 +342,8 @@ export default function AssistantPage() {
           <Metric icon={CheckCircle2} label="Visites attribuées" value={totals.visits} />
         </div>
       </section>
+
+      {weeklySummary && <WeeklySummaryCard summary={weeklySummary} />}
 
       <section className="assistant-grid assistant-grid-main">
         <Card>
@@ -624,6 +658,60 @@ function Metric({
       <strong>{value}</strong>
     </div>
   );
+}
+
+function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
+  return (
+    <Card>
+      <CardContent className="assistant-weekly-card">
+        <div className="assistant-weekly-main">
+          <span className="assistant-eyebrow">
+            <Sparkles size={14} />
+            Bilan de la semaine
+          </span>
+          <h2>{buildWeeklyTitle(summary)}</h2>
+          <p>{summary.highlights[0] || "L'assistant consolide les donnees de la semaine."}</p>
+          <div className="assistant-weekly-highlights">
+            {summary.highlights.slice(1, 4).map((highlight) => (
+              <span key={highlight}>{highlight}</span>
+            ))}
+          </div>
+        </div>
+        <div className="assistant-weekly-side">
+          <div className="assistant-weekly-stats">
+            <span>
+              <strong>{summary.stats.messagesSent}</strong>
+              messages
+            </span>
+            <span>
+              <strong>{summary.stats.returnedClients}</strong>
+              clients revenus
+            </span>
+            <span>
+              <strong>{summary.stats.abTestsRun}</strong>
+              tests A/B
+            </span>
+          </div>
+          <div className="assistant-weekly-actions">
+            <strong>Cette semaine</strong>
+            {summary.nextActions.map((action) => (
+              <p key={action}>{action}</p>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function buildWeeklyTitle(summary: WeeklySummary) {
+  if (summary.stats.returnedClients > 0) {
+    return `${summary.stats.returnedClients} client${summary.stats.returnedClients > 1 ? "s" : ""} revenu${summary.stats.returnedClients > 1 ? "s" : ""} cette semaine`;
+  }
+  if (summary.stats.messagesSent > 0) {
+    return `${summary.stats.messagesSent} message${summary.stats.messagesSent > 1 ? "s" : ""} envoye${summary.stats.messagesSent > 1 ? "s" : ""}`;
+  }
+  return "Aucune campagne envoyee cette semaine";
 }
 
 function MetricCard({
