@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, LocateFixed } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, LocateFixed, Mail } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 
 interface UsageStat { current: number; max: number | null; }
@@ -16,6 +16,7 @@ interface MerchantSettings {
   phone: string;
   language: string;
   currency: string;
+  weeklySummaryEmailEnabled: boolean;
   plan: string;
   createdAt: string;
   stripeCurrentPeriodStart: string | null;
@@ -92,6 +93,7 @@ export default function SettingsPage() {
         phone: settings.phone,
         language: settings.language,
         currency: settings.currency,
+        weeklySummaryEmailEnabled: settings.weeklySummaryEmailEnabled,
       }),
     });
 
@@ -349,6 +351,28 @@ export default function SettingsPage() {
                   </select>
                 </div>
               </div>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 rounded border-gray-300"
+                  checked={settings?.weeklySummaryEmailEnabled ?? true}
+                  onChange={(e) =>
+                    setSettings((s) =>
+                      s ? { ...s, weeklySummaryEmailEnabled: e.target.checked } : s
+                    )
+                  }
+                />
+                <span className="min-w-0">
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <Mail className="h-4 w-4" />
+                    Recevoir le recap hebdomadaire par email
+                  </span>
+                  <span className="mt-1 block text-xs text-gray-500">
+                    Chaque lundi matin, Fidlify peut envoyer les chiffres clefs,
+                    les opportunites et les prochaines actions de l&apos;assistant campagnes.
+                  </span>
+                </span>
+              </label>
               <Button type="submit" disabled={saving}>
                 {saved ? (
                   <>

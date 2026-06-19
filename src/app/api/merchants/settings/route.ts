@@ -18,6 +18,7 @@ export async function GET() {
       phone: true,
       language: true,
       currency: true,
+      weeklySummaryEmailEnabled: true,
       plan: true,
       createdAt: true,
       stripeCurrentPeriodStart: true,
@@ -71,7 +72,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { name, phone, language, currency } = await req.json();
+  const { name, phone, language, currency, weeklySummaryEmailEnabled } = await req.json();
 
   const user = await prisma.user.update({
     where: { id: session.user.id },
@@ -80,6 +81,8 @@ export async function PUT(req: Request) {
       phone: phone || undefined,
       language: language || undefined,
       currency: currency || undefined,
+      weeklySummaryEmailEnabled:
+        typeof weeklySummaryEmailEnabled === "boolean" ? weeklySummaryEmailEnabled : undefined,
     },
   });
 

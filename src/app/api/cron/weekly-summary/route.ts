@@ -24,6 +24,7 @@ export async function GET(req: Request) {
       role: "USER",
       suspendedAt: null,
       emailVerified: { not: null },
+      weeklySummaryEmailEnabled: true,
       programs: { some: { isActive: true } },
     },
     select: {
