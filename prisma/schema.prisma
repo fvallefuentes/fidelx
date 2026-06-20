@@ -227,6 +227,8 @@ model User {
   language      String    @default("fr") // fr, de, it, en
   currency      String    @default("CHF")
   weeklySummaryEmailEnabled Boolean @default(true)
+  notificationDefaultLogo    String? @db.Text
+  notificationDefaultBgColor String?
   plan               Plan    @default(FREE)
   role               Role    @default(USER)
   employerMerchantId String? // STAFF only: ID of employer merchant

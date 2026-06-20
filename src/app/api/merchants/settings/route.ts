@@ -19,6 +19,8 @@ export async function GET() {
       language: true,
       currency: true,
       weeklySummaryEmailEnabled: true,
+      notificationDefaultLogo: true,
+      notificationDefaultBgColor: true,
       plan: true,
       createdAt: true,
       stripeCurrentPeriodStart: true,
@@ -72,7 +74,30 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const { name, phone, language, currency, weeklySummaryEmailEnabled } = await req.json();
+  const {
+    name,
+    phone,
+    language,
+    currency,
+    weeklySummaryEmailEnabled,
+    notificationDefaultLogo,
+    notificationDefaultBgColor,
+  } = await req.json();
+
+  if (
+    typeof notificationDefaultLogo === "string" &&
+    notificationDefaultLogo.length > 750_000
+  ) {
+    return NextResponse.json({ error: "Logo de notification trop lourd" }, { status: 400 });
+  }
+
+  if (
+    notificationDefaultBgColor &&
+    (typeof notificationDefaultBgColor !== "string" ||
+      !/^#[0-9a-fA-F]{6}$/.test(notificationDefaultBgColor))
+  ) {
+    return NextResponse.json({ error: "Couleur de notification invalide" }, { status: 400 });
+  }
 
   const user = await prisma.user.update({
     where: { id: session.user.id },
@@ -83,6 +108,10 @@ export async function PUT(req: Request) {
       currency: currency || undefined,
       weeklySummaryEmailEnabled:
         typeof weeklySummaryEmailEnabled === "boolean" ? weeklySummaryEmailEnabled : undefined,
+      notificationDefaultLogo:
+        typeof notificationDefaultLogo === "string" ? notificationDefaultLogo || null : undefined,
+      notificationDefaultBgColor:
+        typeof notificationDefaultBgColor === "string" ? notificationDefaultBgColor || null : undefined,
     },
   });
 

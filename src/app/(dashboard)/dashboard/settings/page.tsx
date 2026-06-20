@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, LocateFixed, Mail } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, LocateFixed, Mail, Bell } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 
 interface UsageStat { current: number; max: number | null; }
@@ -17,6 +17,8 @@ interface MerchantSettings {
   language: string;
   currency: string;
   weeklySummaryEmailEnabled: boolean;
+  notificationDefaultLogo: string | null;
+  notificationDefaultBgColor: string | null;
   plan: string;
   createdAt: string;
   stripeCurrentPeriodStart: string | null;
@@ -45,6 +47,8 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [notificationLogoError, setNotificationLogoError] = useState("");
 
   // Establishment form
   const [estName, setEstName] = useState("");
@@ -84,8 +88,9 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!settings) return;
     setSaving(true);
+    setSaveError("");
 
-    await fetch("/api/merchants/settings", {
+    const res = await fetch("/api/merchants/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -94,10 +99,17 @@ export default function SettingsPage() {
         language: settings.language,
         currency: settings.currency,
         weeklySummaryEmailEnabled: settings.weeklySummaryEmailEnabled,
+        notificationDefaultLogo: settings.notificationDefaultLogo || "",
+        notificationDefaultBgColor: settings.notificationDefaultBgColor || "",
       }),
     });
 
     setSaving(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setSaveError(data?.error || "Erreur lors de l'enregistrement.");
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -264,6 +276,28 @@ export default function SettingsPage() {
     setSavingStaff(false);
   }
 
+  function handleNotificationLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setNotificationLogoError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setNotificationLogoError("Le fichier doit être une image");
+      return;
+    }
+    if (file.size > 500 * 1024) {
+      setNotificationLogoError("Image trop lourde (max 500 KB)");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSettings((s) =>
+        s ? { ...s, notificationDefaultLogo: reader.result as string } : s
+      );
+    };
+    reader.onerror = () => setNotificationLogoError("Erreur de lecture du fichier");
+    reader.readAsDataURL(file);
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -383,6 +417,129 @@ export default function SettingsPage() {
                   "Enregistrement..."
                 ) : (
                   "Enregistrer"
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Notification defaults */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" />
+              Notifications Wallet
+            </CardTitle>
+            <CardDescription>
+              Définissez l&apos;apparence utilisée par défaut dans vos campagnes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              {saveError && (
+                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                  {saveError}
+                </div>
+              )}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Logo par défaut</label>
+                <div className="flex flex-wrap items-center gap-3">
+                  {settings?.notificationDefaultLogo && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={settings.notificationDefaultLogo}
+                      alt="Logo notification"
+                      className="h-14 w-14 rounded-lg border object-contain p-1"
+                      style={{
+                        background:
+                          settings.notificationDefaultBgColor || "#1a1a2e",
+                      }}
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    onChange={handleNotificationLogoChange}
+                    className="text-sm"
+                  />
+                  {settings?.notificationDefaultLogo && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSettings((s) =>
+                          s ? { ...s, notificationDefaultLogo: null } : s
+                        )
+                      }
+                    >
+                      Retirer
+                    </Button>
+                  )}
+                </div>
+                {notificationLogoError && (
+                  <p className="text-xs text-red-500">{notificationLogoError}</p>
+                )}
+                <p className="text-xs text-gray-400">
+                  PNG / JPG / SVG / WebP, max 500 KB. Utilisé automatiquement par les nouvelles campagnes.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Fond par défaut</label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="color"
+                    value={settings?.notificationDefaultBgColor || "#1a1a2e"}
+                    onChange={(e) =>
+                      setSettings((s) =>
+                        s ? { ...s, notificationDefaultBgColor: e.target.value } : s
+                      )
+                    }
+                    className="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
+                    aria-label="Couleur de fond par défaut des notifications"
+                  />
+                  <Input
+                    value={settings?.notificationDefaultBgColor || ""}
+                    onChange={(e) =>
+                      setSettings((s) =>
+                        s ? { ...s, notificationDefaultBgColor: e.target.value } : s
+                      )
+                    }
+                    placeholder="#1a1a2e"
+                    maxLength={7}
+                    className="max-w-36"
+                  />
+                  {settings?.notificationDefaultBgColor && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSettings((s) =>
+                          s ? { ...s, notificationDefaultBgColor: null } : s
+                        )
+                      }
+                    >
+                      Réinitialiser
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400">
+                  Chaque campagne reprend ce fond, sauf si vous choisissez une couleur spécifique dans la campagne.
+                </p>
+              </div>
+
+              <Button type="submit" disabled={saving}>
+                {saved ? (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Enregistré
+                  </>
+                ) : saving ? (
+                  "Enregistrement..."
+                ) : (
+                  "Enregistrer l'apparence"
                 )}
               </Button>
             </form>

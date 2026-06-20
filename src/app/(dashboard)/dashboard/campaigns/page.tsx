@@ -54,6 +54,11 @@ interface Program {
   };
 }
 
+interface NotificationDefaults {
+  logo: string;
+  bgColor: string;
+}
+
 interface CampaignRecommendation {
   id: string;
   title: string;
@@ -168,6 +173,10 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [automations, setAutomations] = useState<CampaignAutomation[]>([]);
+  const [notificationDefaults, setNotificationDefaults] = useState<NotificationDefaults>({
+    logo: "",
+    bgColor: "",
+  });
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
@@ -176,10 +185,21 @@ export default function CampaignsPage() {
       fetch("/api/campaigns").then((r) => r.json()),
       fetch("/api/programs").then((r) => r.json()),
       fetch("/api/campaigns/automations").then((r) => r.json()),
-    ]).then(([c, p, autos]) => {
+      fetch("/api/merchants/settings").then((r) => r.json()),
+    ]).then(([c, p, autos, settings]) => {
       setCampaigns(c);
       setPrograms(p);
       setAutomations(Array.isArray(autos) ? autos : []);
+      setNotificationDefaults({
+        logo:
+          typeof settings?.notificationDefaultLogo === "string"
+            ? settings.notificationDefaultLogo
+            : "",
+        bgColor:
+          typeof settings?.notificationDefaultBgColor === "string"
+            ? settings.notificationDefaultBgColor
+            : "",
+      });
       setLoading(false);
     });
   }, []);
@@ -252,6 +272,7 @@ export default function CampaignsPage() {
           key="blank"
           programs={programs}
           isFree={isFree}
+          notificationDefaults={notificationDefaults}
           onSuccess={() => {
             setShowForm(false);
             fetchCampaigns();
@@ -662,6 +683,8 @@ function NotificationPreview({
   title,
   customLogo,
   customBgColor,
+  defaultLogo,
+  defaultBgColor,
   triggerType,
 }: {
   program?: Program;
@@ -669,12 +692,14 @@ function NotificationPreview({
   title?: string;
   customLogo?: string;
   customBgColor?: string;
+  defaultLogo?: string;
+  defaultBgColor?: string;
   triggerType: string;
 }) {
-  const bgColor = customBgColor || program?.cardDesign?.bgColor || "#1a1a2e";
+  const bgColor = customBgColor || defaultBgColor || program?.cardDesign?.bgColor || "#1a1a2e";
   const accent = program?.cardDesign?.stampColor || "#d4ff4e";
-  // prioritÃ© au logo de la campagne (override) sinon celui du programme
-  const logoData = customLogo || program?.cardDesign?.logoData;
+  // Priorité: campagne, réglage global, puis programme.
+  const logoData = customLogo || defaultLogo || program?.cardDesign?.logoData;
   const programName = program?.name || "Mon programme";
   const finalTitle = title || programName;
   const body = message || "Votre message apparaÃ®tra iciâ€¦";
@@ -738,7 +763,7 @@ function NotificationPreview({
         <strong>AperÃ§u lock-screen iPhone</strong>
         <span>
           Le titre, l&apos;icÃ´ne et le fond reprennent les choix de cette campagne.
-          Le message est le texte envoyÃ© aux clients Wallet.
+          Sans surcharge, les valeurs par défaut des paramètres sont utilisées.
         </span>
       </div>
     </div>
@@ -757,12 +782,14 @@ function getProgramBgColor(program?: Program) {
 function CreateCampaignForm({
   programs,
   isFree,
+  notificationDefaults,
   initialRecommendation,
   onSuccess,
   onCancel,
 }: {
   programs: Program[];
   isFree: boolean;
+  notificationDefaults: NotificationDefaults;
   initialRecommendation?: CampaignRecommendation | null;
   onSuccess: () => void;
   onCancel: () => void;
@@ -808,7 +835,12 @@ function CreateCampaignForm({
 
   const selectedProgram = programs.find((p) => p.id === programId);
   const programBgColor = getProgramBgColor(selectedProgram);
-  const previewBgColor = isHexColor(notifBgColor) ? notifBgColor : programBgColor;
+  const defaultBgColor = isHexColor(notificationDefaults.bgColor)
+    ? notificationDefaults.bgColor
+    : "";
+  const inheritedBgColor = defaultBgColor || programBgColor;
+  const previewBgColor = isHexColor(notifBgColor) ? notifBgColor : inheritedBgColor;
+  const inheritedLogo = notificationDefaults.logo || selectedProgram?.cardDesign?.logoData || "";
   const isRecommendedMode = Boolean(initialRecommendation);
   const exactAudienceCount =
     initialRecommendation?.targetCardIds?.length || initialRecommendation?.potentialCount || 0;
@@ -1005,7 +1037,7 @@ function CreateCampaignForm({
               <p className="text-xs text-gray-400">
                 {isRecommendedMode
                   ? "Verrouillé pour conserver l'audience exacte."
-                  : "Programme de rattachement. Le logo et le fond de la notification se règlent ci-dessous."}
+                  : "Programme de rattachement. Les notifications reprennent les défauts des paramètres, sauf surcharge ci-dessous."}
               </p>
             </div>
           </div>
@@ -1056,8 +1088,13 @@ function CreateCampaignForm({
             </div>
             {logoError && <p className="text-xs text-red-500">{logoError}</p>}
             <p className="text-xs text-gray-400">
-              PNG / JPG / SVG / WebP, max 500 KB. Si laissÃ© vide, c&apos;est le logo du programme qui sera utilisÃ©.
+              PNG / JPG / SVG / WebP, max 500 KB. Si laissÃ© vide, le logo par défaut des paramètres sera utilisé.
             </p>
+            {!notifLogo && inheritedLogo && (
+              <p className="text-xs text-gray-400">
+                Cette campagne utilise actuellement le logo par défaut.
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -1073,20 +1110,20 @@ function CreateCampaignForm({
                 aria-label="Couleur de fond de la notification"
               />
               <Input
-                value={notifBgColor || programBgColor}
+                value={notifBgColor || inheritedBgColor}
                 onChange={(e) => setNotifBgColor(e.target.value)}
                 maxLength={7}
-                placeholder={programBgColor}
+                placeholder={inheritedBgColor}
                 className="max-w-36"
               />
               {notifBgColor && (
                 <Button type="button" variant="outline" size="sm" onClick={() => setNotifBgColor("")}>
-                  Reprendre le fond du programme
+                  Reprendre le fond par défaut
                 </Button>
               )}
             </div>
             <p className="text-xs text-gray-400">
-              Utilisé dans l&apos;aperçu et sauvegardé avec la campagne. Sans choix, la couleur du programme est reprise.
+              Sans choix, le fond par défaut des paramètres est repris. Cette couleur ne s&apos;applique qu&apos;à cette campagne.
             </p>
           </div>
 
@@ -1214,7 +1251,9 @@ function CreateCampaignForm({
               message={message}
               title={notifTitle}
               customLogo={notifLogo}
-              customBgColor={previewBgColor}
+              customBgColor={isHexColor(notifBgColor) ? notifBgColor : undefined}
+              defaultLogo={notificationDefaults.logo}
+              defaultBgColor={defaultBgColor}
               triggerType={triggerType}
             />
           </div>
