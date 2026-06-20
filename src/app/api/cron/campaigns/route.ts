@@ -95,11 +95,13 @@ export async function GET(req: Request) {
     });
 
     try {
+      const config = c.triggerConfig as AutomationConfig | null;
+      const notifTitle = config?.notifTitle || c.name;
       const r = await notifyAllCardsInProgram(
         c.programId!,
         c.message,
         c.targetSegment,
-        c.name,
+        notifTitle,
         c.id
       );
       await prisma.notificationCampaign.update({

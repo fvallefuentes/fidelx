@@ -67,7 +67,12 @@ interface CampaignRecommendation {
   message: string;
   triggerType: string;
   targetSegment: string;
-  triggerConfig?: { daysInactive?: number; targetCardIds?: string[] };
+  triggerConfig?: {
+    daysInactive?: number;
+    targetCardIds?: string[];
+    notifLogo?: string;
+    notifBgColor?: string;
+  };
   targetCardIds?: string[];
   priorityScore?: number;
   priorityLabel?: string;
@@ -656,15 +661,17 @@ function NotificationPreview({
   message,
   title,
   customLogo,
+  customBgColor,
   triggerType,
 }: {
   program?: Program;
   message: string;
   title?: string;
   customLogo?: string;
+  customBgColor?: string;
   triggerType: string;
 }) {
-  const bgColor = program?.cardDesign?.bgColor || "#1a1a2e";
+  const bgColor = customBgColor || program?.cardDesign?.bgColor || "#1a1a2e";
   const accent = program?.cardDesign?.stampColor || "#d4ff4e";
   // prioritÃ© au logo de la campagne (override) sinon celui du programme
   const logoData = customLogo || program?.cardDesign?.logoData;
@@ -730,12 +737,21 @@ function NotificationPreview({
       <div className="dx-notif-helper">
         <strong>AperÃ§u lock-screen iPhone</strong>
         <span>
-          Le titre, l&apos;icÃ´ne et la couleur viennent du programme sÃ©lectionnÃ©.
-          Le texte du message est ce qu&apos;Apple Wallet affichera.
+          Le titre, l&apos;icÃ´ne et le fond reprennent les choix de cette campagne.
+          Le message est le texte envoyÃ© aux clients Wallet.
         </span>
       </div>
     </div>
   );
+}
+
+function isHexColor(value: string) {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+function getProgramBgColor(program?: Program) {
+  const color = program?.cardDesign?.bgColor || "";
+  return isHexColor(color) ? color : "#1a1a2e";
 }
 
 function CreateCampaignForm({
@@ -775,7 +791,12 @@ function CreateCampaignForm({
     setShowTemplates(false);
   }
   const [notifTitle, setNotifTitle] = useState(initialRecommendation?.notifTitle || ""); // optionnel, override du titre
-  const [notifLogo, setNotifLogo] = useState<string>(""); // optionnel, base64 data URL
+  const [notifLogo, setNotifLogo] = useState<string>(
+    initialRecommendation?.triggerConfig?.notifLogo || ""
+  ); // optionnel, base64 data URL
+  const [notifBgColor, setNotifBgColor] = useState<string>(
+    initialRecommendation?.triggerConfig?.notifBgColor || ""
+  );
   const [logoError, setLogoError] = useState("");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
@@ -786,6 +807,8 @@ function CreateCampaignForm({
   const [error, setError] = useState("");
 
   const selectedProgram = programs.find((p) => p.id === programId);
+  const programBgColor = getProgramBgColor(selectedProgram);
+  const previewBgColor = isHexColor(notifBgColor) ? notifBgColor : programBgColor;
   const isRecommendedMode = Boolean(initialRecommendation);
   const exactAudienceCount =
     initialRecommendation?.targetCardIds?.length || initialRecommendation?.potentialCount || 0;
@@ -822,6 +845,10 @@ function CreateCampaignForm({
       setError("Le titre de la notification est obligatoire.");
       return;
     }
+    if (notifBgColor && !isHexColor(notifBgColor)) {
+      setError("La couleur de fond doit être au format hexadécimal, par exemple #ff5638.");
+      return;
+    }
 
     setSaving(true);
     setError("");
@@ -847,6 +874,7 @@ function CreateCampaignForm({
           ...triggerConfig,
           notifTitle: trimmedTitle,
           notifLogo: notifLogo || undefined,
+          notifBgColor: notifBgColor || undefined,
         },
         targetSegment,
       }),
@@ -977,7 +1005,7 @@ function CreateCampaignForm({
               <p className="text-xs text-gray-400">
                 {isRecommendedMode
                   ? "Verrouillé pour conserver l'audience exacte."
-                  : "Logo et couleur de la notif viennent de ce programme"}
+                  : "Programme de rattachement. Le logo et le fond de la notification se règlent ci-dessous."}
               </p>
             </div>
           </div>
@@ -1011,7 +1039,7 @@ function CreateCampaignForm({
                     src={notifLogo}
                     alt="Logo"
                     className="h-14 w-14 rounded-lg object-contain border"
-                    style={{ background: selectedProgram?.cardDesign?.bgColor || "#1a1a2e" }}
+                    style={{ background: previewBgColor }}
                   />
                   <Button type="button" variant="outline" size="sm" onClick={() => setNotifLogo("")}>
                     Retirer
@@ -1029,6 +1057,36 @@ function CreateCampaignForm({
             {logoError && <p className="text-xs text-red-500">{logoError}</p>}
             <p className="text-xs text-gray-400">
               PNG / JPG / SVG / WebP, max 500 KB. Si laissÃ© vide, c&apos;est le logo du programme qui sera utilisÃ©.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Fond de la notification <span className="text-gray-400 font-normal">(optionnel)</span>
+            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                type="color"
+                value={previewBgColor}
+                onChange={(e) => setNotifBgColor(e.target.value)}
+                className="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
+                aria-label="Couleur de fond de la notification"
+              />
+              <Input
+                value={notifBgColor || programBgColor}
+                onChange={(e) => setNotifBgColor(e.target.value)}
+                maxLength={7}
+                placeholder={programBgColor}
+                className="max-w-36"
+              />
+              {notifBgColor && (
+                <Button type="button" variant="outline" size="sm" onClick={() => setNotifBgColor("")}>
+                  Reprendre le fond du programme
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-gray-400">
+              Utilisé dans l&apos;aperçu et sauvegardé avec la campagne. Sans choix, la couleur du programme est reprise.
             </p>
           </div>
 
@@ -1156,6 +1214,7 @@ function CreateCampaignForm({
               message={message}
               title={notifTitle}
               customLogo={notifLogo}
+              customBgColor={previewBgColor}
               triggerType={triggerType}
             />
           </div>

@@ -31,6 +31,11 @@ const createCampaignSchema = z.object({
         .trim()
         .min(1, "Titre de la notification requis")
         .max(80, "Titre trop long (80 caractères max)"),
+      notifLogo: z.string().max(750_000, "Logo de notification trop lourd").optional(),
+      notifBgColor: z
+        .string()
+        .regex(/^#[0-9a-fA-F]{6}$/, "Couleur de notification invalide")
+        .optional(),
     })
     .catchall(z.unknown())
     .default({ notifTitle: "" }),
@@ -161,18 +166,19 @@ export async function POST(req: Request) {
 
   // Si envoi immédiat, envoyer maintenant
   if (triggerType === "IMMEDIATE" && programId) {
+    const notifTitle = triggerConfig.notifTitle || name;
     const rawTargetCardIds = (triggerConfig as { targetCardIds?: unknown }).targetCardIds;
     const targetCardIds = Array.isArray(rawTargetCardIds)
       ? rawTargetCardIds.filter((id): id is string => typeof id === "string" && id.length > 0)
       : [];
     const result =
       targetCardIds.length > 0
-        ? await notifyCardsInProgram(programId, targetCardIds, message, name, 7, campaign.id)
+        ? await notifyCardsInProgram(programId, targetCardIds, message, notifTitle, 7, campaign.id)
         : await notifyAllCardsInProgram(
             programId,
             message,
             targetSegment,
-            name,
+            notifTitle,
             campaign.id
           );
 
