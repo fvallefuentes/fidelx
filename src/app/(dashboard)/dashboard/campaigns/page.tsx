@@ -162,23 +162,18 @@ export default function CampaignsPage() {
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
-  const [recommendations, setRecommendations] = useState<CampaignRecommendation[]>([]);
   const [automations, setAutomations] = useState<CampaignAutomation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [selectedRecommendation, setSelectedRecommendation] =
-    useState<CampaignRecommendation | null>(null);
 
   useEffect(() => {
     Promise.all([
       fetch("/api/campaigns").then((r) => r.json()),
       fetch("/api/programs").then((r) => r.json()),
-      fetch("/api/campaigns/recommendations").then((r) => r.json()),
       fetch("/api/campaigns/automations").then((r) => r.json()),
-    ]).then(([c, p, recs, autos]) => {
+    ]).then(([c, p, autos]) => {
       setCampaigns(c);
       setPrograms(p);
-      setRecommendations(Array.isArray(recs) ? recs : []);
       setAutomations(Array.isArray(autos) ? autos : []);
       setLoading(false);
     });
@@ -187,43 +182,11 @@ export default function CampaignsPage() {
   async function fetchCampaigns() {
     const res = await fetch("/api/campaigns");
     setCampaigns(await res.json());
-    const recs = await fetch("/api/campaigns/recommendations").then((r) => r.json());
-    setRecommendations(Array.isArray(recs) ? recs : []);
     const autos = await fetch("/api/campaigns/automations").then((r) => r.json());
     setAutomations(Array.isArray(autos) ? autos : []);
   }
 
-  async function automateRecommendation(rec: CampaignRecommendation) {
-    const res = await fetch("/api/campaigns/automations", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        recommendationId: rec.id,
-        title: rec.title,
-        reason: rec.reason,
-        programId: rec.programId,
-        programName: rec.programName,
-        name: rec.name,
-        notifTitle: rec.notifTitle,
-        message: rec.message,
-        targetSegment: rec.targetSegment,
-      }),
-    });
-    if (!res.ok && res.status !== 409) {
-      const data = await res.json().catch(() => ({}));
-      alert(data.error || "Impossible d'automatiser cette recommandation");
-      return;
-    }
-    await fetchCampaigns();
-  }
-
-  function startRecommendedCampaign(rec: CampaignRecommendation) {
-    setSelectedRecommendation(rec);
-    setShowForm(true);
-  }
-
   function startBlankCampaign() {
-    setSelectedRecommendation(null);
     setShowForm(true);
   }
 
@@ -277,29 +240,19 @@ export default function CampaignsPage() {
         </div>
       )}
 
-      <RecommendedActions
-        recommendations={recommendations}
-        isFree={isFree}
-        onUse={startRecommendedCampaign}
-        onAutomate={automateRecommendation}
-      />
-
       <CampaignAutomations automations={automations} />
 
       {showForm && (
         <CreateCampaignForm
-          key={selectedRecommendation?.id || "blank"}
+          key="blank"
           programs={programs}
           isFree={isFree}
-          initialRecommendation={selectedRecommendation}
           onSuccess={() => {
             setShowForm(false);
-            setSelectedRecommendation(null);
             fetchCampaigns();
           }}
           onCancel={() => {
             setShowForm(false);
-            setSelectedRecommendation(null);
           }}
         />
       )}
@@ -602,6 +555,8 @@ function RecommendedActions({
     </Card>
   );
 }
+
+void RecommendedActions;
 
 function CampaignAutomations({ automations }: { automations: CampaignAutomation[] }) {
   if (automations.length === 0) {
