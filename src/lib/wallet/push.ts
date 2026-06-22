@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendGoogleWalletMessage, updateGoogleWalletObject } from "./google";
+import { buildCampaignAudienceWhere, type CampaignSegment } from "@/lib/campaign-audience";
 import * as http2 from "http2";
 
 type GoogleVisibleMessage = {
@@ -141,23 +142,8 @@ export async function notifyAllCardsInProgram(
   title?: string,
   campaignId?: string
 ) {
-  const where: Record<string, unknown> = { programId, status: "ACTIVE" };
-
-  if (segment === "ACTIVE") {
-    where.lastVisitAt = { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
-  } else if (segment === "DORMANT") {
-    where.OR = [
-      { lastVisitAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } },
-      { lastVisitAt: null },
-    ];
-  } else if (segment === "NEW") {
-    where.createdAt = { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
-  } else if (segment === "VIP") {
-    where.totalVisits = { gte: 10 };
-  }
-
   const cards = await prisma.loyaltyCard.findMany({
-    where,
+    where: buildCampaignAudienceWhere(programId, segment as CampaignSegment),
     select: {
       id: true,
       program: { select: { name: true } },
@@ -211,9 +197,7 @@ export async function notifyCardsInProgram(
 
   const cards = await prisma.loyaltyCard.findMany({
     where: {
-      id: { in: uniqueCardIds },
-      programId,
-      status: "ACTIVE",
+      ...buildCampaignAudienceWhere(programId, "ALL", uniqueCardIds),
       ...(cooldownDays > 0
         ? {
             OR: [

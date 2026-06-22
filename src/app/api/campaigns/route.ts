@@ -4,7 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyAllCardsInProgram, notifyCardsInProgram } from "@/lib/wallet/push";
-import { getPlanLimits, getPeriodStart } from "@/lib/plan-limits";
+import { getEffectiveMaxCampaignsPerMonth, getPeriodStart } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
 import { calculateCampaignImpact } from "@/lib/campaign-impact";
 import type { Prisma } from "@/generated/prisma/client";
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
     where: { id: session.user.id },
     select: { plan: true, createdAt: true, stripeCurrentPeriodStart: true },
   });
-  const limits = getPlanLimits(user?.plan);
+  const limits: { maxCampaignsPerMonth: number | null } = { maxCampaignsPerMonth: null };
   const isFree = !user?.plan || user.plan === "FREE";
 
   if (isFree && triggerType !== "IMMEDIATE") {
@@ -118,6 +118,22 @@ export async function POST(req: Request) {
           "La proximite Wallet ne declenche pas encore d'envoi automatique. Ajoutez une position a l'etablissement pour afficher la carte Wallet a proximite.",
       },
       { status: 400 }
+    );
+  }
+
+  const globalPeriodStart = getPeriodStart(user!);
+  const globalMaxCampaignsPerMonth = getEffectiveMaxCampaignsPerMonth(user?.plan);
+  const visibleCampaignsThisPeriod = await prisma.notificationCampaign.count({
+    where: {
+      merchantId: session.user.id,
+      createdAt: { gte: globalPeriodStart },
+      NOT: { triggerConfig: { path: ["automationRule"], equals: true } },
+    },
+  });
+  if (visibleCampaignsThisPeriod >= globalMaxCampaignsPerMonth) {
+    return NextResponse.json(
+      { error: `Limite atteinte : ${globalMaxCampaignsPerMonth} campagnes par mois sur votre compte.` },
+      { status: 403 }
     );
   }
 

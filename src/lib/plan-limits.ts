@@ -14,6 +14,8 @@ export interface PlanLimits {
   canExportCsv: boolean;
 }
 
+export const GLOBAL_MAX_CAMPAIGNS_PER_MONTH = 15;
+
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
   FREE: {
     maxActiveCards: 10,
@@ -55,6 +57,12 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
 
 export function getPlanLimits(plan: string | null | undefined): PlanLimits {
   return PLAN_LIMITS[plan || "FREE"] || PLAN_LIMITS.FREE;
+}
+
+export function getEffectiveMaxCampaignsPerMonth(plan: string | null | undefined): number {
+  const planLimit = getPlanLimits(plan).maxCampaignsPerMonth;
+  if (planLimit === null) return GLOBAL_MAX_CAMPAIGNS_PER_MONTH;
+  return Math.min(planLimit, GLOBAL_MAX_CAMPAIGNS_PER_MONTH);
 }
 
 /**

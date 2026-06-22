@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPlanLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
+import {
+  countStampsThisMonth,
+  getEffectiveMaxCampaignsPerMonth,
+  getPlanLimits,
+  getPeriodStart,
+} from "@/lib/plan-limits";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -51,7 +56,11 @@ export async function GET() {
       where: { program: { merchantId: session.user.id }, status: { in: ["ACTIVE", "REWARD_PENDING"] } },
     }),
     prisma.notificationCampaign.count({
-      where: { merchantId: session.user.id, createdAt: { gte: periodStart } },
+      where: {
+        merchantId: session.user.id,
+        createdAt: { gte: periodStart },
+        NOT: { triggerConfig: { path: ["automationRule"], equals: true } },
+      },
     }),
     countStampsThisMonth(session.user.id, periodStart),
   ]);
@@ -62,7 +71,7 @@ export async function GET() {
       periodStart,
       programs:    { current: programCount,   max: limits.maxPrograms },
       activeCards: { current: activeCardCount, max: limits.maxActiveCards },
-      campaigns:   { current: campaignCount,   max: limits.maxCampaignsPerMonth },
+      campaigns:   { current: campaignCount,   max: getEffectiveMaxCampaignsPerMonth(user.plan) },
       stamps:      { current: stampsCount,     max: limits.maxStampsPerMonth },
     },
   });

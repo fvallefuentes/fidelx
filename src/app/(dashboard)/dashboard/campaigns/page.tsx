@@ -59,6 +59,18 @@ interface NotificationDefaults {
   bgColor: string;
 }
 
+interface SpamWarning {
+  totalAudience: number;
+  riskyCount: number;
+  threshold: number;
+  windowDays: number;
+  preview: Array<{
+    cardId: string;
+    name: string;
+    recentCount: number;
+  }>;
+}
+
 interface CampaignRecommendation {
   id: string;
   title: string;
@@ -223,8 +235,8 @@ export default function CampaignsPage() {
   if (periodStart > now) periodStart = new Date(now.getFullYear(), now.getMonth() - 1, anchorDay, 0, 0, 0, 0);
 
   const campaignsThisMonth = campaigns.filter((c) => new Date(c.createdAt) >= periodStart);
-  const maxCampaigns = isFree ? 2 : null;
-  const freeLimitReached = isFree && campaignsThisMonth.length >= 2;
+  const monthlyCampaignLimit = isFree ? 1 : 15;
+  const campaignLimitReached = campaignsThisMonth.length >= monthlyCampaignLimit;
 
   if (loading) {
     return (
@@ -249,19 +261,21 @@ export default function CampaignsPage() {
             filename="fidlify-campagnes.csv"
             label="Exporter CSV"
           />
-          <Button onClick={startBlankCampaign} disabled={freeLimitReached}>
+          <Button onClick={startBlankCampaign} disabled={campaignLimitReached}>
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle campagne
           </Button>
         </div>
       </div>
 
-      {isFree && (
+      {(isFree || campaignLimitReached) && (
         <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-          Plan Gratuit â€” <strong>2 campagnes / mois</strong>, envoi immÃ©diat uniquement.{" "}
-          {freeLimitReached
-            ? "Limite atteinte ce mois-ci. Passez au plan Essentiel pour envoyer plus de campagnes."
-            : `Il vous reste ${2 - campaignsThisMonth.length} campagne(s) ce mois-ci.`}
+          {isFree ? "Plan Gratuit" : "Limite mensuelle"} â€”{" "}
+          <strong>{monthlyCampaignLimit} campagne{monthlyCampaignLimit > 1 ? "s" : ""} / mois</strong>
+          {isFree ? ", envoi immÃ©diat uniquement. " : ". "}
+          {campaignLimitReached
+            ? "Limite atteinte ce mois-ci."
+            : `Il vous reste ${monthlyCampaignLimit - campaignsThisMonth.length} campagne(s) ce mois-ci.`}
         </div>
       )}
 
@@ -832,6 +846,8 @@ function CreateCampaignForm({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [spamWarning, setSpamWarning] = useState<SpamWarning | null>(null);
+  const [spamWarningLoading, setSpamWarningLoading] = useState(false);
 
   const selectedProgram = programs.find((p) => p.id === programId);
   const programBgColor = getProgramBgColor(selectedProgram);
@@ -846,6 +862,44 @@ function CreateCampaignForm({
     initialRecommendation?.targetCardIds?.length || initialRecommendation?.potentialCount || 0;
   const exactAudience = initialRecommendation?.audience || [];
   const hiddenAudienceCount = Math.max(0, exactAudienceCount - exactAudience.length);
+  const exactTargetCardIds =
+    initialRecommendation?.targetCardIds ||
+    initialRecommendation?.triggerConfig?.targetCardIds ||
+    [];
+  const exactTargetCardIdsKey = exactTargetCardIds.join("|");
+
+  useEffect(() => {
+    if (!programId) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const timeout = window.setTimeout(() => {
+      setSpamWarningLoading(true);
+      fetch("/api/campaigns/spam-check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          programId,
+          targetSegment,
+          targetCardIds: exactTargetCardIdsKey ? exactTargetCardIdsKey.split("|") : [],
+        }),
+        signal: controller.signal,
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => setSpamWarning(data))
+        .catch((err) => {
+          if (err?.name !== "AbortError") setSpamWarning(null);
+        })
+        .finally(() => setSpamWarningLoading(false));
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeout);
+    };
+  }, [programId, targetSegment, exactTargetCardIdsKey]);
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     setLogoError("");
@@ -1187,6 +1241,39 @@ function CreateCampaignForm({
               </select>
             </div>
           </div>
+          )}
+
+          {(spamWarningLoading || (spamWarning && spamWarning.riskyCount > 0)) && (
+            <div
+              className="rounded-lg border px-4 py-3 text-sm"
+              style={{
+                borderColor: spamWarning?.riskyCount ? "rgba(245,158,11,0.35)" : "rgb(var(--ovr) / 0.12)",
+                background: spamWarning?.riskyCount ? "rgba(245,158,11,0.08)" : "rgb(var(--ovr) / 0.03)",
+                color: "rgb(var(--ovr) / 0.78)",
+              }}
+            >
+              {spamWarningLoading ? (
+                "Vérification anti-spam..."
+              ) : (
+                <>
+                  <strong style={{ color: "#b45309" }}>Avertissement anti-spam</strong>
+                  <p className="mt-1">
+                    {spamWarning?.riskyCount} client{spamWarning?.riskyCount !== 1 ? "s" : ""} sur{" "}
+                    {spamWarning?.totalAudience} recevrai{spamWarning?.riskyCount !== 1 ? "ent" : "t"} une{" "}
+                    {spamWarning?.threshold}e notification en {spamWarning?.windowDays} jours.
+                    L&apos;envoi reste possible, mais il vaut mieux réduire l&apos;audience ou attendre.
+                  </p>
+                  {spamWarning?.preview?.length ? (
+                    <p className="mt-1 text-xs">
+                      Exemples :{" "}
+                      {spamWarning.preview
+                        .map((client) => `${client.name} (${client.recentCount} récentes)`)
+                        .join(", ")}
+                    </p>
+                  ) : null}
+                </>
+              )}
+            </div>
           )}
 
           {/* Conditional fields */}
