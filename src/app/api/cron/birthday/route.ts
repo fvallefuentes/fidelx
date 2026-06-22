@@ -10,35 +10,19 @@ export const runtime = "nodejs";
 /**
  * GET /api/cron/birthday
  *
- * Worker quotidien des campagnes ANNIVERSAIRE.
- * À appeler 1× par jour (recommandé : 09:00 heure locale Suisse).
+ * Daily worker for birthday campaigns.
+ * Expected schedule: once per day, around 09:00 Europe/Zurich.
  *
- *   0 9 * * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" \
- *       https://www.fidlify.com/api/cron/birthday >/dev/null
- *
- * Logique :
- * 1. Trouve tous les clients dont la date d'anniversaire (mois/jour) est
- *    dans 7 jours (J+7 par rapport à aujourd'hui).
- * 2. Pour chaque carte active de ces clients, vérifie si le commerçant
- *    a une campagne BIRTHDAY active (status SCHEDULED/SENT-loop) sur le
- *    programme concerné.
- * 3. Envoie une notification push avec le message de la campagne.
- * 4. Loggue une NotificationLog pour ne pas re-notifier la même carte
- *    plusieurs fois la même année.
+ * It sends only when the merchant has created an active BIRTHDAY campaign
+ * for the card program from the Campaigns page.
  */
-
 export async function GET(req: Request) {
   const cronAuthError = requireCronSecret(req);
   if (cronAuthError) return cronAuthError;
 
   const now = new Date();
-  const targetDate = new Date(now);
-  targetDate.setDate(targetDate.getDate() + 7);
-  const targetMonth = targetDate.getMonth() + 1; // 1..12
-  const targetDay = targetDate.getDate(); // 1..31
+  const { month: targetMonth, day: targetDay, isoDate } = getSwissDateParts(now);
 
-  // Cherche les clients dont l'anniversaire mois+jour matche J+7.
-  // (Prisma Postgres permet EXTRACT via $queryRaw)
   const matchingClients = await prisma.$queryRaw<
     { id: string; firstName: string }[]
   >`
@@ -50,13 +34,10 @@ export async function GET(req: Request) {
   `;
 
   if (matchingClients.length === 0) {
-    return NextResponse.json({ ok: true, matched: 0, sent: 0 });
+    return NextResponse.json({ ok: true, targetDate: isoDate, matched: 0, sent: 0 });
   }
 
-  const clientIds = matchingClients.map((c) => c.id);
-
-  // Récupère les cartes actives de ces clients (status ACTIVE ou REWARD_PENDING,
-  // pas PENDING — la carte doit être validée pour mériter une notif anniversaire)
+  const clientIds = matchingClients.map((client) => client.id);
   const cards = await prisma.loyaltyCard.findMany({
     where: {
       clientId: { in: clientIds },
@@ -64,7 +45,6 @@ export async function GET(req: Request) {
     },
     select: {
       id: true,
-      serialNumber: true,
       programId: true,
       clientId: true,
       program: {
@@ -76,7 +56,7 @@ export async function GET(req: Request) {
               triggerType: "BIRTHDAY",
               status: { in: ["SCHEDULED", "SENT"] },
             },
-            select: { id: true, message: true, name: true },
+            select: { id: true, message: true, name: true, triggerConfig: true },
             take: 1,
           },
         },
@@ -84,41 +64,35 @@ export async function GET(req: Request) {
     },
   });
 
-  // Anti-doublon : ne pas re-notifier une carte déjà notifiée cette année.
-  // On exclut les cartes qui ont déjà une NotificationLog d'une campagne
-  // BIRTHDAY de ce programme dans les 350 derniers jours.
   const cutoff = new Date(now);
   cutoff.setDate(cutoff.getDate() - 350);
 
   const alreadyNotified = await prisma.notificationLog.findMany({
     where: {
-      cardId: { in: cards.map((c) => c.id) },
+      cardId: { in: cards.map((card) => card.id) },
       createdAt: { gte: cutoff },
-      campaign: {
-        triggerType: "BIRTHDAY",
-      },
+      campaign: { triggerType: "BIRTHDAY" },
     },
     select: { cardId: true },
   });
-  const alreadySet = new Set(alreadyNotified.map((n) => n.cardId));
+  const alreadySet = new Set(alreadyNotified.map((log) => log.cardId));
 
   let sent = 0;
   const errors: string[] = [];
+  const sentByCampaign = new Map<string, number>();
 
   for (const card of cards) {
     if (alreadySet.has(card.id)) continue;
     const campaign = card.program.campaigns[0];
-    if (!campaign) continue; // pas de campagne BIRTHDAY active sur ce programme
+    if (!campaign) continue;
 
     try {
-      // Mettre à jour le message sur la carte (visible au dos du pass)
-      // puis déclencher la mise à jour push (Apple Wallet / Google Wallet)
       await prisma.loyaltyCard.update({
         where: { id: card.id },
         data: { lastMessage: campaign.message, lastMessageAt: now },
       });
       await notifyPassUpdate(card.id, {
-        header: campaign.name || card.program.name,
+        header: getCampaignNotificationTitle(campaign.triggerConfig) || campaign.name || card.program.name,
         body: campaign.message,
       });
 
@@ -131,38 +105,27 @@ export async function GET(req: Request) {
         },
       });
 
-      // Notif in-app commerçant : anniversaire d'un client (J-7)
-      const client = matchingClients.find((c) => c.id === card.clientId);
+      const client = matchingClients.find((item) => item.id === card.clientId);
       void createMerchantNotification({
         merchantId: card.program.merchantId,
-        type: "CLIENT_BIRTHDAY_SOON",
-        title: `🎂 Anniversaire dans 7 jours`,
-        body: `${client?.firstName ?? "Un client"} fête son anniversaire bientôt. Campagne envoyée.`,
+        type: "CLIENT_BIRTHDAY_TODAY",
+        title: "Anniversaire aujourd'hui",
+        body: `${client?.firstName ?? "Un client"} fête son anniversaire aujourd'hui. Campagne envoyée.`,
         link: `/dashboard/clients/${card.id}`,
         metadata: { cardId: card.id },
       });
 
       sent++;
+      sentByCampaign.set(campaign.id, (sentByCampaign.get(campaign.id) || 0) + 1);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[cron/birthday] card ${card.id} failed:`,
-        msg
-      );
+      console.error(`[cron/birthday] card ${card.id} failed:`, msg);
       errors.push(`${card.id}: ${msg}`);
     }
   }
 
-  // Met à jour les compteurs sentCount des campagnes ayant envoyé des messages
-  const campaignsToUpdate = new Map<string, number>();
-  for (const card of cards) {
-    if (alreadySet.has(card.id)) continue;
-    const c = card.program.campaigns[0];
-    if (!c) continue;
-    campaignsToUpdate.set(c.id, (campaignsToUpdate.get(c.id) || 0) + 1);
-  }
   await Promise.all(
-    [...campaignsToUpdate.entries()].map(([id, count]) =>
+    [...sentByCampaign.entries()].map(([id, count]) =>
       prisma.notificationCampaign.update({
         where: { id },
         data: { sentCount: { increment: count }, sentAt: new Date() },
@@ -172,10 +135,34 @@ export async function GET(req: Request) {
 
   return NextResponse.json({
     ok: true,
-    targetDate: targetDate.toISOString().split("T")[0],
+    targetDate: isoDate,
     matchedClients: matchingClients.length,
     eligibleCards: cards.length,
     sent,
     errors: errors.length ? errors : undefined,
   });
+}
+
+function getSwissDateParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Europe/Zurich",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const byType = new Map(parts.map((part) => [part.type, part.value]));
+  const year = byType.get("year") || "1970";
+  const month = Number(byType.get("month") || "1");
+  const day = Number(byType.get("day") || "1");
+
+  return {
+    month,
+    day,
+    isoDate: `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+  };
+}
+
+function getCampaignNotificationTitle(config: unknown) {
+  const title = (config as { notifTitle?: unknown } | null)?.notifTitle;
+  return typeof title === "string" && title.trim() ? title.trim() : null;
 }
