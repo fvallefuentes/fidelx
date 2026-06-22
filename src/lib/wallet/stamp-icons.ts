@@ -17,7 +17,8 @@ export type StampIconKey =
   | "heart"
   | "diamond"
   | "crown"
-  | "coffee";
+  | "coffee"
+  | "scissors";
 
 export interface StampIconDef {
   label: string;
@@ -68,6 +69,12 @@ export const STAMP_ICONS: Record<StampIconKey, StampIconDef> = {
     emoji: "☕",
     mode: "stroke",
     path: "M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4zM6 1v3M10 1v3M14 1v3",
+  },
+  scissors: {
+    label: "Ciseaux",
+    emoji: "✂",
+    mode: "stroke",
+    path: "M8.2 8.2 12 12M20 4 8.2 15.8M8.2 15.8 12 12M14.8 14.8 20 20M4 4.5a3 3 0 1 0 6 0 3 3 0 1 0-6 0M4 19.5a3 3 0 1 0 6 0 3 3 0 1 0-6 0",
   },
 };
 
