@@ -13,7 +13,8 @@ import {
 import { useTranslations } from "next-intl";
 import type { InsightsResponse } from "@/app/api/merchants/stats/insights/route";
 
-const ACCENT = "#d4ff4e";
+const ACCENT = "#b7f238";
+const ACCENT_RGB = "183,242,56";
 const RED = "#ff7a6b";
 const MUTED = "rgb(var(--ovr) / 0.38)";
 const BORDER = "rgb(var(--ovr) / 0.08)";
@@ -277,7 +278,7 @@ function HeatmapPanel({ cells }: { cells: InsightsResponse["heatmap"] }) {
                           background:
                             count === 0
                               ? "rgb(var(--ovr) / 0.03)"
-                              : `rgba(212,255,78,${0.15 + intensity * 0.75})`,
+                              : `rgba(${ACCENT_RGB},${0.15 + intensity * 0.75})`,
                           cursor: "default",
                         }}
                       />
@@ -307,7 +308,7 @@ function HeatmapPanel({ cells }: { cells: InsightsResponse["heatmap"] }) {
                 width: 14,
                 height: 14,
                 borderRadius: 3,
-                background: `rgba(212,255,78,${i})`,
+                background: `rgba(${ACCENT_RGB},${i})`,
               }}
             />
           ))}
@@ -396,7 +397,7 @@ function CohortPanel({ cohorts }: { cohorts: InsightsResponse["cohorts"] }) {
                         key={i}
                         style={{
                           ...tdStyle,
-                          background: `rgba(212,255,78,${
+                          background: `rgba(${ACCENT_RGB},${
                             0.05 + intensity * 0.55
                           })`,
                           color: intensity > 0.5 ? "#0a0d04" : VAL_COLOR,

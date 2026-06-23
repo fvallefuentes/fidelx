@@ -49,6 +49,9 @@ interface DashboardStats {
   }[];
 }
 
+const DASHBOARD_ACCENT = "#b7f238";
+const DASHBOARD_ACCENT_RGB = "183,242,56";
+
 export default function DashboardPage() {
   const t = useTranslations("Dashboard.home");
   const locale = useLocale();
@@ -118,7 +121,7 @@ export default function DashboardPage() {
     {
       name: "Engagement",
       value: stats?.returnRate || 0,
-      fill: "#d4ff4e",
+      fill: DASHBOARD_ACCENT,
     },
   ];
 
@@ -185,8 +188,8 @@ export default function DashboardPage() {
               >
                 <defs>
                   <linearGradient id="visitsFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#d4ff4e" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="#d4ff4e" stopOpacity={0} />
+                    <stop offset="0%" stopColor={DASHBOARD_ACCENT} stopOpacity={0.45} />
+                    <stop offset="100%" stopColor={DASHBOARD_ACCENT} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgb(var(--ovr) / 0.05)" vertical={false} />
@@ -221,13 +224,13 @@ export default function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="count"
-                  stroke="#d4ff4e"
+                  stroke={DASHBOARD_ACCENT}
                   strokeWidth={2}
                   fill="url(#visitsFill)"
                   dot={false}
                   activeDot={{
                     r: 5,
-                    fill: "#d4ff4e",
+                    fill: DASHBOARD_ACCENT,
                     stroke: "#0a0d04",
                     strokeWidth: 2,
                   }}
@@ -275,7 +278,7 @@ export default function DashboardPage() {
                   background={{ fill: "rgb(var(--ovr) / 0.05)" }}
                   dataKey="value"
                   cornerRadius={10}
-                  fill="#d4ff4e"
+                  fill={DASHBOARD_ACCENT}
                 />
               </RadialBarChart>
             </ResponsiveContainer>
@@ -335,11 +338,11 @@ export default function DashboardPage() {
                       locale={locale}
                     />
                   }
-                  cursor={{ fill: "rgba(212,255,78,0.08)" }}
+                  cursor={{ fill: `rgba(${DASHBOARD_ACCENT_RGB},0.08)` }}
                 />
                 <Bar
                   dataKey="count"
-                  fill="#d4ff4e"
+                  fill={DASHBOARD_ACCENT}
                   radius={[4, 4, 0, 0]}
                   maxBarSize={14}
                 />
@@ -392,13 +395,15 @@ export default function DashboardPage() {
                   content={
                     <DarkTooltip suffix={t("tooltip.cards")} locale={locale} />
                   }
-                  cursor={{ fill: "rgba(212,255,78,0.08)" }}
+                  cursor={{ fill: `rgba(${DASHBOARD_ACCENT_RGB},0.08)` }}
                 />
                 <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={20}>
                   {(stats?.stampDistribution || []).map((entry, i) => {
                     const pct = (entry.count / Math.max(1, totalRetention)) * 100;
                     const color =
-                      i === 4 ? "#d4ff4e" : `rgba(212,255,78,${0.25 + pct / 200})`;
+                      i === 4
+                        ? DASHBOARD_ACCENT
+                        : `rgba(${DASHBOARD_ACCENT_RGB},${0.25 + pct / 200})`;
                     return <Cell key={i} fill={color} />;
                   })}
                 </Bar>
