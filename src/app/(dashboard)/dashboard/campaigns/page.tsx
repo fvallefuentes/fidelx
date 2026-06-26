@@ -171,13 +171,6 @@ const segmentLabels: Record<string, string> = {
   VIP: "Clients VIP",
 };
 
-const statusVariants: Record<string, "default" | "success" | "secondary" | "warning"> = {
-  DRAFT: "secondary",
-  SCHEDULED: "warning",
-  SENT: "success",
-  CANCELLED: "destructive" as "secondary",
-};
-
 export default function CampaignsPage() {
   const { data: session } = useSession();
   const isFree = ((session?.user?.plan as string) || "FREE") === "FREE";
@@ -352,17 +345,9 @@ export default function CampaignsPage() {
                         </p>
                       </div>
                       {campaign.sentCount > 0 && (
-                        <Badge variant="default">{campaign.sentCount} envoyÃ©s</Badge>
+                        <CampaignSentCountBadge count={campaign.sentCount} />
                       )}
-                      <Badge variant={statusVariants[campaign.status] || "secondary"}>
-                        {campaign.status === "SENT"
-                          ? "EnvoyÃ©"
-                          : campaign.status === "SCHEDULED"
-                            ? "ProgrammÃ©"
-                            : campaign.status === "DRAFT"
-                              ? "Brouillon"
-                              : campaign.status}
-                      </Badge>
+                      <CampaignStatusBadge status={campaign.status} />
                     </div>
                   </div>
                   {impact && campaign.sentCount > 0 && (
@@ -405,6 +390,38 @@ export default function CampaignsPage() {
 }
 
 /* â”€â”€â”€ Live iPhone notification preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+function CampaignSentCountBadge({ count }: { count: number }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+      style={{ background: "#f2ffd0", color: "#5d7d13" }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#739c12" }} />
+      {count} envoyÃ©{count > 1 ? "s" : ""}
+    </span>
+  );
+}
+
+function CampaignStatusBadge({ status }: { status: string }) {
+  const states: Record<string, { label: string; background: string; color: string; dot: string }> = {
+    SENT: { label: "EnvoyÃ©", background: "#effbd0", color: "#5d7d13", dot: "#739c12" },
+    SCHEDULED: { label: "ProgrammÃ©", background: "#fff2d6", color: "#a16207", dot: "#d97706" },
+    DRAFT: { label: "Brouillon", background: "#efefeb", color: "#797a72", dot: "#989891" },
+    CANCELLED: { label: "AnnulÃ©", background: "#fee9eb", color: "#db3a42", dot: "#ef4444" },
+  };
+  const state = states[status] ?? { label: status, background: "#efefeb", color: "#797a72", dot: "#989891" };
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+      style={{ background: state.background, color: state.color }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: state.dot }} />
+      {state.label}
+    </span>
+  );
+}
+
 function RecommendedActions({
   recommendations,
   isFree,
