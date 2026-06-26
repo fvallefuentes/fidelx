@@ -326,8 +326,14 @@ export default function CampaignsPage() {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-                        <Icon className="h-5 w-5 text-blue-600" />
+                      <div
+                        className="flex h-10 w-10 items-center justify-center rounded-lg"
+                        style={{
+                          background: "rgb(var(--accent-rgb) / 0.82)",
+                          border: "1px solid rgb(var(--accent-rgb) / 0.95)",
+                        }}
+                      >
+                        <Icon className="h-5 w-5 text-[#141710]" />
                       </div>
                       <div>
                         <p className="font-medium">{campaign.name}</p>
