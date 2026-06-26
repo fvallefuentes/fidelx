@@ -154,11 +154,11 @@ const triggerIcons: Record<string, typeof Send> = {
 };
 
 const triggerLabels: Record<string, string> = {
-  IMMEDIATE: "ImmÃ©diat",
-  SCHEDULED: "ProgrammÃ©",
+  IMMEDIATE: "Immédiat",
+  SCHEDULED: "Programmé",
   GEOFENCE: "Position Wallet",
   INACTIVITY: "Win-back",
-  POST_STAMP: "AprÃ¨s tampon",
+  POST_STAMP: "Après tampon",
   MILESTONE: "Palier atteint",
   BIRTHDAY: "Anniversaire",
 };
@@ -220,7 +220,7 @@ export default function CampaignsPage() {
     setShowForm(true);
   }
 
-  // PÃ©riode basÃ©e sur la date d'inscription (ancre mensuelle)
+  // Période basée sur la date d'inscription (ancre mensuelle)
   const createdAt = (session?.user as { createdAt?: string })?.createdAt;
   const anchorDay = createdAt ? new Date(createdAt).getDate() : 1;
   const now = new Date();
@@ -245,7 +245,7 @@ export default function CampaignsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Campagnes</h1>
           <p className="text-gray-500">
-            Envoyez des notifications Ã  vos clients via leur wallet
+            Envoyez des notifications à vos clients via leur wallet
           </p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
@@ -263,9 +263,9 @@ export default function CampaignsPage() {
 
       {(isFree || campaignLimitReached) && (
         <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-          {isFree ? "Plan Gratuit" : "Limite mensuelle"} â€”{" "}
+          {isFree ? "Plan Gratuit" : "Limite mensuelle"} —{" "}
           <strong>{monthlyCampaignLimit} campagne{monthlyCampaignLimit > 1 ? "s" : ""} / mois</strong>
-          {isFree ? ", envoi immÃ©diat uniquement. " : ". "}
+          {isFree ? ", envoi immédiat uniquement. " : ". "}
           {campaignLimitReached
             ? "Limite atteinte ce mois-ci."
             : `Il vous reste ${monthlyCampaignLimit - campaignsThisMonth.length} campagne(s) ce mois-ci.`}
@@ -296,11 +296,11 @@ export default function CampaignsPage() {
             <Bell className="h-12 w-12 text-gray-300 mb-4" />
             <h3 className="text-lg font-semibold">Aucune campagne</h3>
             <p className="text-gray-500 mt-1 mb-4">
-              Envoyez votre premiÃ¨re notification wallet
+              Envoyez votre première notification wallet
             </p>
             <Button onClick={startBlankCampaign}>
               <Plus className="mr-2 h-4 w-4" />
-              CrÃ©er une campagne
+              Créer une campagne
             </Button>
           </CardContent>
         </Card>
@@ -389,7 +389,7 @@ export default function CampaignsPage() {
   );
 }
 
-/* â”€â”€â”€ Live iPhone notification preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Live iPhone notification preview */
 function CampaignSentCountBadge({ count }: { count: number }) {
   return (
     <span
@@ -397,17 +397,17 @@ function CampaignSentCountBadge({ count }: { count: number }) {
       style={{ background: "#f2ffd0", color: "#5d7d13" }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: "#739c12" }} />
-      {count} envoyÃ©{count > 1 ? "s" : ""}
+      {count} envoyé{count > 1 ? "s" : ""}
     </span>
   );
 }
 
 function CampaignStatusBadge({ status }: { status: string }) {
   const states: Record<string, { label: string; background: string; color: string; dot: string }> = {
-    SENT: { label: "EnvoyÃ©", background: "#effbd0", color: "#5d7d13", dot: "#739c12" },
-    SCHEDULED: { label: "ProgrammÃ©", background: "#fff2d6", color: "#a16207", dot: "#d97706" },
+    SENT: { label: "Envoyé", background: "#effbd0", color: "#5d7d13", dot: "#739c12" },
+    SCHEDULED: { label: "Programmé", background: "#fff2d6", color: "#a16207", dot: "#d97706" },
     DRAFT: { label: "Brouillon", background: "#efefeb", color: "#797a72", dot: "#989891" },
-    CANCELLED: { label: "AnnulÃ©", background: "#fee9eb", color: "#db3a42", dot: "#ef4444" },
+    CANCELLED: { label: "Annulé", background: "#fee9eb", color: "#db3a42", dot: "#ef4444" },
   };
   const state = states[status] ?? { label: status, background: "#efefeb", color: "#797a72", dot: "#989891" };
 
@@ -739,8 +739,8 @@ function NotificationPreview({
   const logoData = customLogo || defaultLogo || program?.cardDesign?.logoData;
   const programName = program?.name || "Mon programme";
   const finalTitle = title || programName;
-  const body = message || "Votre message apparaÃ®tra iciâ€¦";
-  const time = triggerType === "IMMEDIATE" ? "maintenant" : "Ã  venir";
+  const body = message || "Votre message apparaîtra ici…";
+  const time = triggerType === "IMMEDIATE" ? "maintenant" : "à venir";
 
   return (
     <div className="dx-notif-preview">
@@ -791,15 +791,15 @@ function NotificationPreview({
           </div>
 
           <div className="dx-iphone-hint">
-            Glissez pour ouvrir Wallet Â· {programName}
+            Glissez pour ouvrir Wallet · {programName}
           </div>
         </div>
       </div>
 
       <div className="dx-notif-helper">
-        <strong>AperÃ§u lock-screen iPhone</strong>
+        <strong>Aperçu lock-screen iPhone</strong>
         <span>
-          Le titre, l&apos;icÃ´ne et le fond reprennent les choix de cette campagne.
+          Le titre, l&apos;icône et le fond reprennent les choix de cette campagne.
           Sans surcharge, les valeurs par défaut des paramètres sont utilisées.
         </span>
       </div>
@@ -845,7 +845,7 @@ function CreateCampaignForm({
   function applyTemplate(tpl: CampaignTemplate) {
     setName(tpl.name);
     setMessage(tpl.message);
-    // FREE plan : seulement IMMEDIATE autorisÃ© pour le push manuel
+    // FREE plan : seulement IMMEDIATE autorisé pour le push manuel
     if (isFree && tpl.triggerType !== "IMMEDIATE") {
       setTriggerType("IMMEDIATE");
     } else {
@@ -932,7 +932,7 @@ function CreateCampaignForm({
       return;
     }
     if (!file.type.startsWith("image/")) {
-      setLogoError("Le fichier doit Ãªtre une image");
+      setLogoError("Le fichier doit être une image");
       return;
     }
     if (file.size > 500 * 1024) {
@@ -948,7 +948,7 @@ function CreateCampaignForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Le titre de la notif est obligatoire â€” refus cÃ´tÃ© UI avant l'appel API.
+    // Le titre de la notif est obligatoire — refus côté UI avant l'appel API.
     const trimmedTitle = notifTitle.trim();
     if (!trimmedTitle) {
       setError("Le titre de la notification est obligatoire.");
@@ -1017,7 +1017,7 @@ function CreateCampaignForm({
             }}
           >
             <Sparkles className="h-3 w-3" />
-            {showTemplates ? "Masquer les modÃ¨les" : "Choisir un modÃ¨le"}
+            {showTemplates ? "Masquer les modèles" : "Choisir un modèle"}
           </button>
         )}
       </CardHeader>
@@ -1093,7 +1093,7 @@ function CreateCampaignForm({
                 required
               />
               <p className="text-xs text-gray-400">
-                Pour ton suivi interne (n&apos;est pas affichÃ© au client)
+                Pour ton suivi interne (n&apos;est pas affiché au client)
               </p>
             </div>
 
@@ -1131,8 +1131,8 @@ function CreateCampaignForm({
               maxLength={80}
             />
             <p className="text-xs text-gray-400">
-              C&apos;est le texte en gras affichÃ© sur l&apos;Ã©cran de verrouillage
-              du tÃ©lÃ©phone du client.
+              C&apos;est le texte en gras affiché sur l&apos;écran de verrouillage
+              du téléphone du client.
             </p>
           </div>
 
@@ -1165,7 +1165,7 @@ function CreateCampaignForm({
             </div>
             {logoError && <p className="text-xs text-red-500">{logoError}</p>}
             <p className="text-xs text-gray-400">
-              PNG / JPG / SVG / WebP, max 500 KB. Si laissÃ© vide, le logo par défaut des paramètres sera utilisé.
+              PNG / JPG / SVG / WebP, max 500 KB. Si laissé vide, le logo par défaut des paramètres sera utilisé.
             </p>
             {!notifLogo && inheritedLogo && (
               <p className="text-xs text-gray-400">
@@ -1208,14 +1208,14 @@ function CreateCampaignForm({
             <label className="text-sm font-medium">Message</label>
             <textarea
               className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
-              placeholder="Votre message apparaÃ®tra sur l'Ã©cran de verrouillage de vos clients"
+              placeholder="Votre message apparaîtra sur l'écran de verrouillage de vos clients"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               maxLength={140}
               required
             />
             <div className="flex justify-between text-xs text-gray-400">
-              <span>ApparaÃ®t en notif push sur le wallet du client</span>
+              <span>Apparaît en notif push sur le wallet du client</span>
               <span className={message.length > 120 ? "text-orange-500" : ""}>
                 {message.length}/140
               </span>
@@ -1230,27 +1230,27 @@ function CreateCampaignForm({
           ) : (
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-sm font-medium">DÃ©clencheur</label>
+              <label className="text-sm font-medium">Déclencheur</label>
               <select
                 className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                 value={triggerType}
                 onChange={(e) => setTriggerType(e.target.value)}
                 disabled={isFree}
               >
-                <option value="IMMEDIATE">Envoi immÃ©diat</option>
-                {!isFree && <option value="SCHEDULED">Date/heure prÃ©cise</option>}
+                <option value="IMMEDIATE">Envoi immédiat</option>
+                {!isFree && <option value="SCHEDULED">Date/heure précise</option>}
                 {!isFree && <option value="INACTIVITY">Client inactif (win-back)</option>}
-                {!isFree && <option value="POST_STAMP">AprÃ¨s tamponnage</option>}
+                {!isFree && <option value="POST_STAMP">Après tamponnage</option>}
                 {!isFree && <option value="MILESTONE">Palier de tampons atteint</option>}
                 {!isFree && <option value="BIRTHDAY">Anniversaire client</option>}
               </select>
               {isFree && (
-                <p className="text-xs text-gray-400">Passez au plan Pro pour accÃ©der aux autres dÃ©clencheurs.</p>
+                <p className="text-xs text-gray-400">Passez au plan Pro pour accéder aux autres déclencheurs.</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Segment ciblÃ©</label>
+              <label className="text-sm font-medium">Segment ciblé</label>
               <select
                 className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                 value={targetSegment}
@@ -1326,7 +1326,7 @@ function CreateCampaignForm({
           {triggerType === "INACTIVITY" && (
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Jours d&apos;inactivitÃ© avant envoi
+                Jours d&apos;inactivité avant envoi
               </label>
               <Input
                 type="number"
