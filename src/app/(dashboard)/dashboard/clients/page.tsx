@@ -2,15 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
   Users,
   Search,
-  Smartphone,
-  XCircle,
-  Hourglass,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
@@ -313,9 +309,7 @@ export default function ClientsPage() {
                           />
                         </td>
                         <td className="py-3 px-2">
-                          <Badge variant={card.status === "ACTIVE" ? "success" : card.status === "COMPLETED" ? "default" : "secondary"}>
-                            {STATUS_LABELS[card.status] ?? card.status}
-                          </Badge>
+                          <CardStatusBadge status={card.status} />
                         </td>
                         <td className="py-3 px-2 text-right">
                           <button
@@ -637,15 +631,15 @@ function WalletStatusCell({
 }) {
   if (status === "removed") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-400">
-        <XCircle className="h-3.5 w-3.5" /> Supprimée
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+        <span className="h-1.5 w-1.5 rounded-full bg-red-500" /> Supprimée
       </span>
     );
   }
   if (status === "never_installed") {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-gray-400">
-        <Hourglass className="h-3.5 w-3.5" /> Pas installée
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-500">
+        <span className="h-1.5 w-1.5 rounded-full bg-stone-400" /> Pas installée
       </span>
     );
   }
@@ -663,11 +657,11 @@ function WalletStatusCell({
       title={`Carte installée sur ${breakdown}`}
     >
       <span
-        className="inline-flex items-center gap-1 text-xs font-medium"
-        style={{ color: "#d4ff4e" }}
+        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+        style={{ background: "rgb(var(--accent-rgb) / 0.20)", color: "var(--accent-ink)" }}
       >
-        <Smartphone className="h-3.5 w-3.5" />
-        {devices.total > 1 ? `Wallet · ${devices.total} appareils` : "Dans le Wallet"}
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent-ink)" }} />
+        {devices.total > 1 ? `Dans le Wallet · ${devices.total}` : "Dans le Wallet"}
       </span>
       {(devices.apple > 0 || devices.google > 0) && (
         <span className="inline-flex items-center gap-1">
@@ -707,6 +701,28 @@ function WalletStatusCell({
         </span>
       )}
     </div>
+  );
+}
+
+function CardStatusBadge({ status }: { status: string }) {
+  const styles: Record<string, { background: string; color: string; dot: string }> = {
+    ACTIVE: { background: "rgb(var(--accent-rgb) / 0.20)", color: "var(--accent-ink)", dot: "var(--accent-ink)" },
+    PENDING: { background: "#fff2d6", color: "#a16207", dot: "#d97706" },
+    COMPLETED: { background: "#dcf3e5", color: "#21844b", dot: "#289055" },
+    REWARD_PENDING: { background: "#eee6ff", color: "#7853c7", dot: "#8b5cf6" },
+    EXPIRED: { background: "#efefeb", color: "#797a72", dot: "#989891" },
+    REVOKED: { background: "#fee9eb", color: "#db3a42", dot: "#ef4444" },
+  };
+  const style = styles[status] ?? styles.PENDING;
+
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+      style={{ background: style.background, color: style.color }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: style.dot }} />
+      {STATUS_LABELS[status] ?? status}
+    </span>
   );
 }
 
