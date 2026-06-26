@@ -329,8 +329,8 @@ export default function CampaignsPage() {
                       <div
                         className="flex h-10 w-10 items-center justify-center rounded-lg"
                         style={{
-                          background: "rgb(var(--accent-rgb) / 0.82)",
-                          border: "1px solid rgb(var(--accent-rgb) / 0.95)",
+                          background: "#D9FF3C",
+                          border: "1px solid #D9FF3C",
                         }}
                       >
                         <Icon className="h-5 w-5 text-[#141710]" />
