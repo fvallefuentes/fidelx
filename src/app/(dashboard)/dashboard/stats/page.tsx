@@ -33,19 +33,15 @@ import {
   MailOpen,
   Clock,
   ArrowUpRight,
-  BarChart2,
 } from "lucide-react";
 import type { FullStatsResponse } from "@/app/api/merchants/stats/full/route";
 import { StatsInsights } from "@/components/dashboard/StatsInsights";
 
-const ACCENT      = "#d4ff4e";
-const ACCENT_FILL = "rgba(212,255,78,0.15)";
-const MUTED       = "rgb(var(--ovr) / 0.38)";
-const BORDER      = "rgb(var(--ovr) / 0.08)";
-const CARD_BG     = "rgb(var(--ovr) / 0.04)";
+const ACCENT      = "#b7f238";
+const ACCENT_FILL = "rgba(183,242,56,0.18)";
+const BORDER      = "var(--line)";
 const TICK_COLOR  = "#8a8e84";
 const MONO        = "var(--font-geist-mono, monospace)";
-const VAL_COLOR   = "rgb(var(--ovr) / 0.92)";
 
 const PLAN_ORDER: Record<string, number> = {
   FREE: 0, ESSENTIAL: 1, GROWTH: 2, MULTI_SITE: 3,
@@ -72,90 +68,28 @@ function KpiCard({
 }) {
   const footer = delta !== undefined || sub || deltaLabel;
   return (
-    <div
-      style={{
-        background: CARD_BG,
-        border: `1px solid ${BORDER}`,
-        borderRadius: 14,
-        padding: "18px 20px 16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-      }}
-    >
-      {/* Top row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
-        <p
-          style={{
-            color: MUTED,
-            fontSize: 11,
-            fontWeight: 500,
-            letterSpacing: "0.07em",
-            textTransform: "uppercase",
-            lineHeight: 1.35,
-            flex: 1,
-          }}
-        >
-          {label}
-        </p>
+    <div className="dx-stat-card">
+      <div className="dx-stat-top">
+        <span className="dx-stat-label">{label}</span>
         {Icon && (
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              background: "rgba(212,255,78,0.1)",
-              border: "1px solid rgba(212,255,78,0.14)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <Icon size={15} color={ACCENT} strokeWidth={1.9} />
+          <div className="dx-stat-icon">
+            <Icon className="h-4 w-4" strokeWidth={1.9} />
           </div>
         )}
       </div>
 
-      {/* Value */}
-      <p
-        style={{
-          color: VAL_COLOR,
-          fontSize: 36,
-          fontWeight: 700,
-          lineHeight: 1,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {value}
-      </p>
+      <div className="dx-stat-value">{value}</div>
 
-      {/* Footer */}
       {footer && (
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 2 }}>
+        <div className="dx-stat-foot">
           {delta !== undefined && (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 3,
-                background: "rgba(212,255,78,0.12)",
-                border: "1px solid rgba(212,255,78,0.18)",
-                borderRadius: 20,
-                padding: "3px 8px 3px 6px",
-                fontSize: 11,
-                fontWeight: 600,
-                color: ACCENT,
-                letterSpacing: "0.01em",
-                flexShrink: 0,
-              }}
-            >
+            <span className="dx-trend up">
               <ArrowUpRight size={11} strokeWidth={2.5} />
               +{delta}
             </span>
           )}
           {(deltaLabel ?? sub) && (
-            <span style={{ color: "rgb(var(--ovr) / 0.3)", fontSize: 12, lineHeight: 1.3 }}>
+            <span className="dx-stat-sub">
               {deltaLabel ?? sub}
             </span>
           )}
@@ -177,26 +111,14 @@ function ChartCard({
 }) {
   return (
     <div
+      className="dx-chart-card"
       style={{
-        background: CARD_BG,
-        border: `1px solid ${BORDER}`,
-        borderRadius: 14,
-        padding: "20px 24px",
         ...style,
       }}
     >
-      <p
-        style={{
-          color: MUTED,
-          fontSize: 11,
-          fontWeight: 500,
-          letterSpacing: "0.07em",
-          textTransform: "uppercase",
-          marginBottom: 18,
-        }}
-      >
-        {title}
-      </p>
+      <div className="dx-chart-head">
+        <div className="dx-chart-eyebrow">{title}</div>
+      </div>
       {children}
     </div>
   );
@@ -228,23 +150,14 @@ function DarkTooltip({
       : new Date(dateKey).toLocaleDateString("fr-CH", { day: "2-digit", month: "short", year: "numeric" })
     : "";
   return (
-    <div
-      style={{
-        background: "rgba(16,18,12,0.97)",
-        border: `1px solid ${BORDER}`,
-        borderRadius: 8,
-        padding: "8px 12px",
-        fontSize: 12,
-        color: VAL_COLOR,
-      }}
-    >
-      {displayDate && <div style={{ marginBottom: 4, color: MUTED }}>{displayDate}</div>}
+    <div className="dx-tt">
+      {displayDate && <div className="dx-tt-date">{displayDate}</div>}
       {payload.map((entry, i) => (
-        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: ACCENT }} />
-          <strong style={{ color: ACCENT }}>{entry.value}</strong>
-          {suffix && <span style={{ color: MUTED }}>{suffix}</span>}
-          {entry.name && !suffix && <span style={{ color: MUTED }}>{entry.name}</span>}
+        <div key={i} className="dx-tt-row">
+          <span className="dx-tt-dot" />
+          <strong>{entry.value}</strong>
+          {suffix && <span>{suffix}</span>}
+          {entry.name && !suffix && <span>{entry.name}</span>}
         </div>
       ))}
     </div>
@@ -268,14 +181,7 @@ function fmtMonth(s: string) {
 /* ─── KPI grid ───────────────────────────────────────────────── */
 function KpiGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: number }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        gap: 14,
-        marginBottom: 28,
-      }}
-    >
+    <div className={`dx-stats-grid stats-kpi-grid stats-kpi-grid-${cols}`}>
       {children}
     </div>
   );
@@ -284,14 +190,7 @@ function KpiGrid({ children, cols = 4 }: { children: React.ReactNode; cols?: num
 /* ─── Charts grid ────────────────────────────────────────────── */
 function ChartsGrid({ cols = 2, children }: { cols?: number; children: React.ReactNode }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: 14,
-        marginBottom: 28,
-      }}
-    >
+    <div className={`dx-charts-row stats-charts-grid stats-charts-grid-${cols}`}>
       {children}
     </div>
   );
@@ -300,16 +199,7 @@ function ChartsGrid({ cols = 2, children }: { cols?: number; children: React.Rea
 /* ─── Section label ──────────────────────────────────────────── */
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p
-      style={{
-        color: MUTED,
-        fontSize: 11,
-        fontWeight: 500,
-        letterSpacing: "0.08em",
-        textTransform: "uppercase",
-        marginBottom: 14,
-      }}
-    >
+    <p className="dx-chart-eyebrow stats-section-label">
       {children}
     </p>
   );
@@ -339,21 +229,13 @@ function UpgradeBanner({ currentPlan }: { currentPlan: string }) {
   const info = upgrades[currentPlan];
   if (!info) return null;
   return (
-    <div
-      style={{
-        background: "rgba(212,255,78,0.05)",
-        border: "1px solid rgba(212,255,78,0.18)",
-        borderRadius: 14,
-        padding: "18px 22px",
-        marginTop: 4,
-      }}
-    >
-      <p style={{ color: ACCENT, fontSize: 13, fontWeight: 600, marginBottom: 10 }}>
+    <div className="stats-upgrade-card">
+      <p className="stats-upgrade-title">
         Passez au plan {info.next} pour débloquer :
       </p>
-      <ul style={{ margin: 0, padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: 5 }}>
+      <ul className="stats-upgrade-list">
         {info.features.map((f) => (
-          <li key={f} style={{ color: "rgb(var(--ovr) / 0.55)", fontSize: 13 }}>
+          <li key={f}>
             {f}
           </li>
         ))}
@@ -365,7 +247,7 @@ function UpgradeBanner({ currentPlan }: { currentPlan: string }) {
 /* ─── Spinner ────────────────────────────────────────────────── */
 function Spinner() {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 320 }}>
+    <div className="dx-loading-inline">
       <div className="dx-spinner" />
     </div>
   );
@@ -677,50 +559,29 @@ function MultiSiteSection({ stats }: { stats: FullStatsResponse }) {
   return (
     <>
       <SectionLabel>Comparatif par établissement</SectionLabel>
-      <div
-        style={{
-          background: CARD_BG,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 14,
-          overflow: "hidden",
-          marginBottom: 28,
-        }}
-      >
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="stats-table-card">
+        <table className="stats-table">
           <thead>
-            <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
+            <tr>
               {["Établissement", "Clients", "Scans", "Récompenses"].map((h) => (
-                <th
-                  key={h}
-                  style={{
-                    padding: "12px 16px",
-                    textAlign: "left",
-                    color: MUTED,
-                    fontSize: 11,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    fontWeight: 500,
-                  }}
-                >
-                  {h}
-                </th>
+                <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {ests.length === 0 ? (
               <tr>
-                <td colSpan={4} style={{ padding: "24px 16px", textAlign: "center", color: "rgb(var(--ovr) / 0.25)", fontSize: 13 }}>
+                <td colSpan={4} className="stats-table-empty">
                   Aucun établissement configuré
                 </td>
               </tr>
             ) : (
               ests.map((e, i) => (
-                <tr key={e.id} style={{ borderBottom: i < ests.length - 1 ? `1px solid ${BORDER}` : undefined }}>
-                  <td style={{ padding: "14px 16px", color: VAL_COLOR, fontSize: 13 }}>{e.name}</td>
-                  <td style={{ padding: "14px 16px", color: ACCENT, fontSize: 14, fontWeight: 600 }}>{e.clientCount}</td>
-                  <td style={{ padding: "14px 16px", color: ACCENT, fontSize: 14, fontWeight: 600 }}>{e.scanCount}</td>
-                  <td style={{ padding: "14px 16px", color: ACCENT, fontSize: 14, fontWeight: 600 }}>{e.rewardCount}</td>
+                <tr key={e.id} className={i < ests.length - 1 ? "with-border" : undefined}>
+                  <td>{e.name}</td>
+                  <td className="stats-table-value">{e.clientCount}</td>
+                  <td className="stats-table-value">{e.scanCount}</td>
+                  <td className="stats-table-value">{e.rewardCount}</td>
                 </tr>
               ))
             )}
@@ -731,7 +592,6 @@ function MultiSiteSection({ stats }: { stats: FullStatsResponse }) {
   );
 }
 
-/* ─── Main page ─────────────────────────────────────────────── */
 export default function StatsPage() {
   const { data: session } = useSession();
   const [stats, setStats] = useState<FullStatsResponse | null>(null);
@@ -758,34 +618,22 @@ export default function StatsPage() {
         <h1 className="dx-page-title">Statistiques</h1>
         <p className="dx-page-sub">
           Analyse détaillée —{" "}
-          <span style={{ color: ACCENT }}>{PLAN_LABELS[plan] ?? plan}</span>
+          <span className="stats-plan-accent">{PLAN_LABELS[plan] ?? plan}</span>
         </p>
       </div>
 
       {loading && <Spinner />}
 
       {!loading && error && (
-        <div
-          style={{
-            background: "rgba(255,60,60,0.07)",
-            border: "1px solid rgba(255,60,60,0.18)",
-            borderRadius: 12,
-            padding: "16px 20px",
-            color: "rgba(255,120,120,0.9)",
-            fontSize: 13,
-          }}
-        >
-          {error}
-        </div>
+        <div className="stats-error">{error}</div>
       )}
 
       {!loading && !error && stats && (
         <>
           <FreeSection stats={stats} />
 
-          {/* Insights avancés : delta période + heatmap + cohorts.
-              Affichage adapté au plan (FREE voit comparaison + teasers locked). */}
-          <div style={{ marginTop: 32 }}>
+          {/* Insights avancés : delta période + heatmap + cohorts. */}
+          <div className="stats-insights-wrap">
             <StatsInsights isFree={plan === "FREE"} />
           </div>
 
