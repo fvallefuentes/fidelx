@@ -36,7 +36,6 @@ interface MerchantSettings {
     name: string;
     address: string;
     phone: string;
-    googlePlaceId: string;
     latitude: number | null;
     longitude: number | null;
   }[];
@@ -54,7 +53,6 @@ export default function SettingsPage() {
   const [estName, setEstName] = useState("");
   const [estAddress, setEstAddress] = useState("");
   const [estPhone, setEstPhone] = useState("");
-  const [estGoogleId, setEstGoogleId] = useState("");
   const [estLatitude, setEstLatitude] = useState("");
   const [estLongitude, setEstLongitude] = useState("");
   const [savingEst, setSavingEst] = useState(false);
@@ -125,7 +123,6 @@ export default function SettingsPage() {
         name: estName,
         address: estAddress,
         phone: estPhone,
-        googlePlaceId: estGoogleId,
         latitude: estLatitude ? Number(estLatitude) : null,
         longitude: estLongitude ? Number(estLongitude) : null,
       }),
@@ -139,7 +136,6 @@ export default function SettingsPage() {
       setEstName("");
       setEstAddress("");
       setEstPhone("");
-      setEstGoogleId("");
       setEstLatitude("");
       setEstLongitude("");
     }
@@ -699,9 +695,6 @@ export default function SettingsPage() {
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      {est.googlePlaceId && (
-                        <Badge variant="outline">Google connecté</Badge>
-                      )}
                       <Button
                         type="button"
                         variant="outline"
@@ -796,11 +789,6 @@ export default function SettingsPage() {
                   placeholder="Téléphone"
                   value={estPhone}
                   onChange={(e) => setEstPhone(e.target.value)}
-                />
-                <Input
-                  placeholder="Google Place ID (optionnel)"
-                  value={estGoogleId}
-                  onChange={(e) => setEstGoogleId(e.target.value)}
                 />
                 <Input
                   type="number"

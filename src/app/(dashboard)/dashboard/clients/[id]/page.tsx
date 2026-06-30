@@ -100,9 +100,7 @@ const TX_LABELS: Record<string, string> = {
   REWARD_CLAIM: "Récompense remise",
   CASHBACK_EARN: "Cashback",
   CASHBACK_SPEND: "Cashback utilisé",
-  REFERRAL_BONUS: "Parrainage",
-  GOOGLE_REVIEW_BONUS: "Avis Google",
-};
+  REFERRAL_BONUS: "Parrainage",};
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente",

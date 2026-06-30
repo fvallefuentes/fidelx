@@ -18,9 +18,6 @@ const createProgramSchema = z
     config: jsonObject,
     cardDesign: jsonObject,
     establishmentId: z.string().trim().min(1).optional().nullable(),
-    googleReviewEnabled: z.boolean().optional().default(false),
-    googleReviewBonus: z.coerce.number().int().min(0).max(100).optional().default(0),
-    googleReviewMinVisits: z.coerce.number().int().min(1).max(100).optional().default(3),
     rewards: z
       .array(
         z.object({
@@ -108,9 +105,6 @@ export async function POST(req: Request) {
     cardDesign,
     establishmentId,
     rewards,
-    googleReviewEnabled,
-    googleReviewBonus,
-    googleReviewMinVisits,
   } = parsed.data;
 
   // Vérifier les limites du plan
@@ -151,9 +145,6 @@ export async function POST(req: Request) {
       type,
       config: config as Prisma.InputJsonValue,
       cardDesign: cardDesign as Prisma.InputJsonValue,
-      googleReviewEnabled,
-      googleReviewBonus,
-      googleReviewMinVisits,
       rewards: rewards?.length
         ? {
             create: rewards.map(
@@ -175,7 +166,6 @@ export async function POST(req: Request) {
     programId: program.id,
     type,
     rewardsCount: program.rewards.length,
-    googleReviewEnabled,
     hasEstablishment: !!establishmentId,
   });
 

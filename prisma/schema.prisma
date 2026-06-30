@@ -49,13 +49,13 @@ model VerificationToken {
 // Code OTP pour la vérification email à l'inscription commerçant
 // (séparé de VerificationToken qui est réservé à NextAuth).
 model EmailVerificationCode {
-  id         String    @id @default(cuid())
-  email      String
-  codeHash   String    // hash bcrypt du code 6 chiffres
-  expiresAt  DateTime
-  usedAt     DateTime?
-  attempts   Int       @default(0)
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(cuid())
+  email     String
+  codeHash  String // hash bcrypt du code 6 chiffres
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int       @default(0)
+  createdAt DateTime  @default(now())
 
   @@index([email])
   @@index([expiresAt])
@@ -71,14 +71,14 @@ model EmailVerificationCode {
 ///  - Usage unique (usedAt)
 ///  - Max 5 tentatives par code (sinon = invalidé pour empêcher brute force)
 model EmailLoginCode {
-  id         String    @id @default(cuid())
-  userId     String
-  codeHash   String    // sha256 hex du code 6 chiffres
-  expiresAt  DateTime
-  usedAt     DateTime?
-  attempts   Int       @default(0)
-  ipPrefix   String?
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String // sha256 hex du code 6 chiffres
+  expiresAt DateTime
+  usedAt    DateTime?
+  attempts  Int       @default(0)
+  ipPrefix  String?
+  createdAt DateTime  @default(now())
 
   user User @relation("UserEmailLoginCode", fields: [userId], references: [id], onDelete: Cascade)
 
@@ -94,15 +94,15 @@ model EmailLoginCode {
 model JoinAttempt {
   id            String     @id @default(cuid())
   programId     String
-  ipPrefix      String?    // IP anonymisée (IPv4 /24, IPv6 /48)
+  ipPrefix      String? // IP anonymisée (IPv4 /24, IPv6 /48)
   userAgent     String?    @db.Text
-  deviceCookie  String?    // valeur du cookie fid_dev (UUID)
-  fingerprint   String?    // hash(UA + IP/24 + Accept-Language)
-  email         String?    // email normalisé (peut être null)
-  phone         String?    // phone normalisé E.164 (peut être null)
-  cardId        String?    // si succès, ID de la carte créée
+  deviceCookie  String? // valeur du cookie fid_dev (UUID)
+  fingerprint   String? // hash(UA + IP/24 + Accept-Language)
+  email         String? // email normalisé (peut être null)
+  phone         String? // phone normalisé E.164 (peut être null)
+  cardId        String? // si succès, ID de la carte créée
   result        JoinResult
-  blockedReason String?    // précision si rate limit / blocage
+  blockedReason String? // précision si rate limit / blocage
   createdAt     DateTime   @default(now())
 
   @@index([programId, createdAt])
@@ -117,8 +117,8 @@ model JoinAttempt {
 enum JoinResult {
   SUCCESS
   RATE_LIMITED
-  DUPLICATE_RECOVERY  // carte existante → email de récupération envoyé
-  PROGRAM_FULL        // limite plan FREE atteinte
+  DUPLICATE_RECOVERY // carte existante → email de récupération envoyé
+  PROGRAM_FULL // limite plan FREE atteinte
   PROGRAM_NOT_FOUND
   VALIDATION_ERROR
 }
@@ -126,44 +126,44 @@ enum JoinResult {
 // Notifications in-app pour le commerçant (cloche dans le header).
 // Distinctes des push wallet (qui vont aux clients finaux).
 model MerchantNotification {
-  id          String                    @id @default(cuid())
-  merchantId  String
-  type        MerchantNotificationType
-  title       String
-  body        String?
-  link        String?  // URL relative à ouvrir au clic
-  readAt      DateTime?
-  metadata    Json?    // {cardId, clientId, programId, campaignId, ...}
-  createdAt   DateTime @default(now())
+  id         String                   @id @default(cuid())
+  merchantId String
+  type       MerchantNotificationType
+  title      String
+  body       String?
+  link       String? // URL relative à ouvrir au clic
+  readAt     DateTime?
+  metadata   Json? // {cardId, clientId, programId, campaignId, ...}
+  createdAt  DateTime                 @default(now())
 
   @@index([merchantId, createdAt])
   @@index([merchantId, readAt])
 }
 
 enum MerchantNotificationType {
-  CLIENT_SIGNUP           // Nouveau client inscrit
-  CLIENT_FIRST_REWARD     // 1ère récompense réclamée par un client
-  CLIENT_BIRTHDAY_SOON    // Anniversaire d'un client J-7
-  CLIENT_BIRTHDAY_TODAY   // Anniversaire d'un client aujourd'hui
-  CAMPAIGN_SENT           // Une campagne a été envoyée
-  PLAN_LIMIT_WARNING      // Quota plan à 80%
-  PLAN_LIMIT_REACHED      // Quota plan à 95% ou 100%
-  REFERRAL_SIGNUP         // Un confrère s'est inscrit via ton lien parrainage
-  REFERRAL_CONFIRMED      // Filleul a payé sa 1ère facture → crédit appliqué
-  SYSTEM                  // Notification générique de Fidlify
+  CLIENT_SIGNUP // Nouveau client inscrit
+  CLIENT_FIRST_REWARD // 1ère récompense réclamée par un client
+  CLIENT_BIRTHDAY_SOON // Anniversaire d'un client J-7
+  CLIENT_BIRTHDAY_TODAY // Anniversaire d'un client aujourd'hui
+  CAMPAIGN_SENT // Une campagne a été envoyée
+  PLAN_LIMIT_WARNING // Quota plan à 80%
+  PLAN_LIMIT_REACHED // Quota plan à 95% ou 100%
+  REFERRAL_SIGNUP // Un confrère s'est inscrit via ton lien parrainage
+  REFERRAL_CONFIRMED // Filleul a payé sa 1ère facture → crédit appliqué
+  SYSTEM // Notification générique de Fidlify
 }
 
 /// Trace de chaque tentative de connexion (succès + échec).
 /// Permet à l'admin de voir l'activité d'un user en cas d'incident.
 model LoginLog {
-  id        String        @id @default(cuid())
-  userId    String?       // null si l'email tapé n'existe pas en DB
-  email     String        // tel que tapé par l'utilisateur (normalisé)
-  ipPrefix  String?       // IP anonymisée /24 ou /48
-  userAgent String?       @db.Text
+  id        String      @id @default(cuid())
+  userId    String? // null si l'email tapé n'existe pas en DB
+  email     String // tel que tapé par l'utilisateur (normalisé)
+  ipPrefix  String? // IP anonymisée /24 ou /48
+  userAgent String?     @db.Text
   result    LoginResult
-  reason    String?       // précision (ex: "wrong-password", "suspended", etc.)
-  createdAt DateTime      @default(now())
+  reason    String? // précision (ex: "wrong-password", "suspended", etc.)
+  createdAt DateTime    @default(now())
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
@@ -190,7 +190,7 @@ model PasswordResetToken {
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
-  createdBy String?   // ID de l'admin qui a généré le token (audit)
+  createdBy String? // ID de l'admin qui a généré le token (audit)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -204,7 +204,7 @@ model BlockedIp {
   id          String    @id @default(cuid())
   ipPrefix    String    @unique // /24 IPv4 ou /48 IPv6
   reason      String?
-  blockedById String?   // ID de l'admin qui a bloqué
+  blockedById String? // ID de l'admin qui a bloqué
   expiresAt   DateTime? // null = blocage permanent
   createdAt   DateTime  @default(now())
 
@@ -217,23 +217,23 @@ model BlockedIp {
 // =============================================
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  phone         String?
-  language      String    @default("fr") // fr, de, it, en
-  currency      String    @default("CHF")
-  weeklySummaryEmailEnabled Boolean @default(true)
-  notificationDefaultLogo    String? @db.Text
+  id                         String    @id @default(cuid())
+  name                       String?
+  email                      String    @unique
+  emailVerified              DateTime?
+  image                      String?
+  passwordHash               String?
+  phone                      String?
+  language                   String    @default("fr") // fr, de, it, en
+  currency                   String    @default("CHF")
+  weeklySummaryEmailEnabled  Boolean   @default(true)
+  notificationDefaultLogo    String?   @db.Text
   notificationDefaultBgColor String?
-  plan               Plan    @default(FREE)
-  role               Role    @default(USER)
-  employerMerchantId String? // STAFF only: ID of employer merchant
-  employerMerchant   User?   @relation("StaffOf", fields: [employerMerchantId], references: [id])
-  staff              User[]  @relation("StaffOf")
+  plan                       Plan      @default(FREE)
+  role                       Role      @default(USER)
+  employerMerchantId         String? // STAFF only: ID of employer merchant
+  employerMerchant           User?     @relation("StaffOf", fields: [employerMerchantId], references: [id])
+  staff                      User[]    @relation("StaffOf")
 
   stripeCustomerId         String?
   stripeSubscriptionId     String?
@@ -255,7 +255,7 @@ model User {
   // Différent de la suppression : ses données et programmes sont préservés.
   suspendedAt     DateTime?
   suspendedReason String?
-  suspendedById   String?    // ID de l'admin qui a suspendu
+  suspendedById   String? // ID de l'admin qui a suspendu
 
   loginLogs           LoginLog[]
   passwordResetTokens PasswordResetToken[]
@@ -264,8 +264,8 @@ model User {
   // l'email du user. Bien plus simple que TOTP (pas d'app à installer)
   // et suffisant pour des comptes ADMIN sur un SaaS lean. Les codes
   // eux-mêmes sont stockés dans EmailLoginCode (hashés + TTL court).
-  email2faEnabled  Boolean          @default(false)
-  emailLoginCodes  EmailLoginCode[] @relation("UserEmailLoginCode")
+  email2faEnabled Boolean          @default(false)
+  emailLoginCodes EmailLoginCode[] @relation("UserEmailLoginCode")
 
   accounts       Account[]
   sessions       Session[]
@@ -274,8 +274,8 @@ model User {
   campaigns      NotificationCampaign[]
 
   // Parrainage B2B (merchant → merchant)
-  merchantReferralLink        MerchantReferralLink?         @relation("MerchantReferrer")
-  merchantReferralAttribution MerchantReferralAttribution?  @relation("MerchantReferee")
+  merchantReferralLink        MerchantReferralLink?        @relation("MerchantReferrer")
+  merchantReferralAttribution MerchantReferralAttribution? @relation("MerchantReferee")
 
   // Audit log (actions effectuées par cet admin sur d'autres ressources)
   adminAuditEntries AdminAuditLog[] @relation("AdminAuditActor")
@@ -302,18 +302,17 @@ enum Plan {
 // =============================================
 
 model Establishment {
-  id            String  @id @default(cuid())
-  merchantId    String
-  name          String
-  address       String?
-  latitude      Float?
-  longitude     Float?
-  phone         String?
-  googlePlaceId String?
-  website       String?
-  openingHours  Json?   // {"mon": "08:00-18:00", ...}
+  id           String  @id @default(cuid())
+  merchantId   String
+  name         String
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  phone        String?
+  website      String?
+  openingHours Json? // {"mon": "08:00-18:00", ...}
 
-  merchant     User          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchant     User             @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   programs     LoyaltyProgram[]
   transactions Transaction[]
 
@@ -343,15 +342,9 @@ model LoyaltyProgram {
 
   // Design de la carte wallet
   // {"logoUrl": "...", "bgColor": "#1a1a2e", "textColor": "#fff", "stripUrl": "...", "description": "..."}
-  cardDesign Json
-
-  // Paramètres Google Review
-  googleReviewEnabled    Boolean @default(false)
-  googleReviewBonus      Int     @default(0) // tampons/points bonus
-  googleReviewMinVisits  Int     @default(3) // nb visites avant de proposer
-
-  merchant      User           @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  establishment Establishment? @relation(fields: [establishmentId], references: [id])
+  cardDesign    Json
+  merchant      User                   @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  establishment Establishment?         @relation(fields: [establishmentId], references: [id])
   cards         LoyaltyCard[]
   rewards       Reward[]
   campaigns     NotificationCampaign[]
@@ -378,9 +371,9 @@ model Reward {
   programId   String
   name        String
   description String?
-  threshold   Int        // nb tampons ou points requis
+  threshold   Int // nb tampons ou points requis
   rewardType  RewardType
-  rewardValue Float?     // montant ou pourcentage
+  rewardValue Float? // montant ou pourcentage
   isActive    Boolean    @default(true)
 
   program LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
@@ -411,7 +404,7 @@ model Client {
   phone         String?
   birthDate     DateTime? // Date d'anniversaire (J-M-A) pour campagne anniversaire automatique
   preferredLang String    @default("fr")
-  referredById  String?   // client qui l'a parrainé
+  referredById  String? // client qui l'a parrainé
 
   referredBy Client?  @relation("Referrals", fields: [referredById], references: [id])
   referrals  Client[] @relation("Referrals")
@@ -430,35 +423,32 @@ model Client {
 // =============================================
 
 model LoyaltyCard {
-  id             String @id @default(cuid())
-  clientId       String
-  programId      String
-  serialNumber   String @unique // identifiant unique du pass wallet
-  currentStamps  Int    @default(0)
-  currentPoints  Float  @default(0)
-  cashbackBalance Float @default(0)
+  id                 String             @id @default(cuid())
+  clientId           String
+  programId          String
+  serialNumber       String             @unique // identifiant unique du pass wallet
+  currentStamps      Int                @default(0)
+  currentPoints      Float              @default(0)
+  cashbackBalance    Float              @default(0)
   /// Tampons gagnés au-delà du seuil pendant un état REWARD_PENDING.
   /// Reportés sur le prochain cycle quand le merchant valide la récompense.
-  pendingExtraStamps Int  @default(0)
+  pendingExtraStamps Int                @default(0)
   /// Points gagnés au-delà du seuil pendant un état REWARD_PENDING (POINTS limité).
-  pendingExtraPoints Float @default(0)
-  totalVisits    Int    @default(0)
-  totalSpent     Float  @default(0)
-  status         CardStatus @default(PENDING)
-  lastVisitAt    DateTime?
-  lastMessage    String?    // dernière notification reçue (campagne) — affichée au verso du pass
-  lastMessageAt  DateTime?
-  lastCampaignLogo String?  @db.Text // data URL (base64) du logo override pour la dernière campagne
-  merchantNotes  String?    @db.Text // notes libres du commerçant sur ce client (drill-down)
-  reviewInvitedAt DateTime? // moment où on a invité ce client à laisser un avis Google (anti-spam : 1 seule invitation)
-
-  client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  program       LoyaltyProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)
-  registrations PassRegistration[]
-  transactions  Transaction[]
-  rewardClaims  RewardClaim[]
-  reviewRequests GoogleReviewRequest[]
-  notifications  NotificationLog[]
+  pendingExtraPoints Float              @default(0)
+  totalVisits        Int                @default(0)
+  totalSpent         Float              @default(0)
+  status             CardStatus         @default(PENDING)
+  lastVisitAt        DateTime?
+  lastMessage        String? // dernière notification reçue (campagne) — affichée au verso du pass
+  lastMessageAt      DateTime?
+  lastCampaignLogo   String?            @db.Text // data URL (base64) du logo override pour la dernière campagne
+  merchantNotes      String?            @db.Text // notes libres du commerçant sur ce client (drill-down)
+  client             Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  program            LoyaltyProgram     @relation(fields: [programId], references: [id], onDelete: Cascade)
+  registrations      PassRegistration[]
+  transactions       Transaction[]
+  rewardClaims       RewardClaim[]
+  notifications      NotificationLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -469,7 +459,7 @@ model LoyaltyCard {
 }
 
 enum CardStatus {
-  PENDING        // Carte créée, mais pas encore validée par un 1er scan en boutique
+  PENDING // Carte créée, mais pas encore validée par un 1er scan en boutique
   ACTIVE
   COMPLETED
   EXPIRED
@@ -510,8 +500,8 @@ model Transaction {
   cardId          String
   establishmentId String?
   type            TransactionType
-  value           Float           // nb de tampons/points ajoutés ou retirés
-  amountSpent     Float?          // montant de l'achat (optionnel)
+  value           Float // nb de tampons/points ajoutés ou retirés
+  amountSpent     Float? // montant de l'achat (optionnel)
   notes           String?
 
   card          LoyaltyCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
@@ -532,7 +522,6 @@ enum TransactionType {
   CASHBACK_EARN
   CASHBACK_SPEND
   REFERRAL_BONUS
-  GOOGLE_REVIEW_BONUS
 }
 
 // =============================================
@@ -567,56 +556,30 @@ enum ClaimStatus {
 }
 
 // =============================================
-// AVIS GOOGLE
-// =============================================
-
-model GoogleReviewRequest {
-  id          String       @id @default(cuid())
-  cardId      String
-  bonusStamps Int          @default(0)
-  bonusPoints Float        @default(0)
-  status      ReviewStatus @default(SENT)
-  confirmedAt DateTime?
-
-  card LoyaltyCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
-
-  sentAt DateTime @default(now())
-
-  @@index([cardId])
-}
-
-enum ReviewStatus {
-  SENT       // Le client a cliqué "J'ai laissé un avis" → en attente de validation merchant
-  CONFIRMED  // Merchant a vérifié l'avis sur Google + bonus crédité
-  REJECTED   // Merchant n'a pas trouvé l'avis → bonus refusé
-  EXPIRED    // Demande trop ancienne, jamais traitée
-}
-
-// =============================================
 // NOTIFICATIONS & CAMPAGNES
 // =============================================
 
 model NotificationCampaign {
-  id         String      @id @default(cuid())
-  merchantId String
-  programId  String?
-  name       String
-  message    String
-  triggerType TriggerType
+  id            String         @id @default(cuid())
+  merchantId    String
+  programId     String?
+  name          String
+  message       String
+  triggerType   TriggerType
   // scheduled:   {"sendAt": "2026-04-20T17:00:00Z"}
   // geofence:    {"radiusM": 500, "message": "À 2 pas..."}
   // inactivity:  {"daysInactive": 30}
   // postStamp:   {"delayHours": 48}
   // milestone:   {"stampsReached": 5}
-  triggerConfig  Json
-  targetSegment  Segment @default(ALL)
-  status         CampaignStatus @default(DRAFT)
-  sentCount      Int     @default(0)
-  scheduledAt    DateTime?
-  sentAt         DateTime?
+  triggerConfig Json
+  targetSegment Segment        @default(ALL)
+  status        CampaignStatus @default(DRAFT)
+  sentCount     Int            @default(0)
+  scheduledAt   DateTime?
+  sentAt        DateTime?
 
-  merchant User            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  program  LoyaltyProgram? @relation(fields: [programId], references: [id])
+  merchant User              @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  program  LoyaltyProgram?   @relation(fields: [programId], references: [id])
   logs     NotificationLog[]
 
   createdAt DateTime @default(now())
@@ -632,7 +595,7 @@ enum TriggerType {
   INACTIVITY
   POST_STAMP
   MILESTONE
-  BIRTHDAY    // Auto-déclenché J-7 avant l'anniversaire d'un client
+  BIRTHDAY // Auto-déclenché J-7 avant l'anniversaire d'un client
 }
 
 enum Segment {
@@ -653,10 +616,10 @@ enum CampaignStatus {
 }
 
 model NotificationLog {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   campaignId  String?
   cardId      String
-  delivered   Boolean  @default(false)
+  delivered   Boolean   @default(false)
   deliveredAt DateTime?
 
   campaign NotificationCampaign? @relation(fields: [campaignId], references: [id])
@@ -683,15 +646,15 @@ model StripeEvent {
 // =============================================
 
 model ReferralLink {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   cardId        String?
   clientId      String
   programId     String
-  code          String @unique
-  uses          Int    @default(0)
-  maxUses       Int    @default(10)
-  bonusReferrer Int    @default(1)
-  bonusReferee  Int    @default(1)
+  code          String  @unique
+  uses          Int     @default(0)
+  maxUses       Int     @default(10)
+  bonusReferrer Int     @default(1)
+  bonusReferee  Int     @default(1)
 
   client  Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
   program LoyaltyProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
@@ -709,20 +672,20 @@ model ReferralLink {
 // 1 mois gratuit du plan du filleul, cumulable jusqu'à 12 mois pour le parrain.
 
 model MerchantReferralLink {
-  id          String  @id @default(cuid())
-  merchantId  String  @unique // 1 lien par merchant (auto-créé lazy)
-  code        String  @unique // slug ex: "cafe-bellini-r2x9"
+  id         String @id @default(cuid())
+  merchantId String @unique // 1 lien par merchant (auto-créé lazy)
+  code       String @unique // slug ex: "cafe-bellini-r2x9"
 
   // Tracking funnel
-  clicks      Int     @default(0)
-  signups     Int     @default(0) // clic → register
-  conversions Int     @default(0) // filleul a payé 1ère facture + safety
+  clicks      Int @default(0)
+  signups     Int @default(0) // clic → register
+  conversions Int @default(0) // filleul a payé 1ère facture + safety
 
   // Cap parrain : max 12 mois cumulés offerts
   monthsEarnedTotal Int @default(0)
 
-  merchant      User                          @relation("MerchantReferrer", fields: [merchantId], references: [id], onDelete: Cascade)
-  attributions  MerchantReferralAttribution[]
+  merchant     User                          @relation("MerchantReferrer", fields: [merchantId], references: [id], onDelete: Cascade)
+  attributions MerchantReferralAttribution[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -731,25 +694,25 @@ model MerchantReferralLink {
 }
 
 model MerchantReferralAttribution {
-  id          String  @id @default(cuid())
-  linkId      String
-  refereeId   String  @unique // un filleul ne peut être parrainé qu'1 fois
+  id        String @id @default(cuid())
+  linkId    String
+  refereeId String @unique // un filleul ne peut être parrainé qu'1 fois
 
-  status      String  @default("PENDING") // PENDING | CONFIRMED | REVOKED
+  status String @default("PENDING") // PENDING | CONFIRMED | REVOKED
 
   // Empreintes anti-fraude posées au moment du register (pas de PII brute)
-  refereeIpHash       String?
-  refereeFingerprint  String?
+  refereeIpHash      String?
+  refereeFingerprint String?
 
-  attributedAt DateTime  @default(now()) // moment du register avec le code
-  confirmedAt  DateTime?                 // 1ère facture payée + 14j
-  revokedAt    DateTime?
+  attributedAt  DateTime  @default(now()) // moment du register avec le code
+  confirmedAt   DateTime? // 1ère facture payée + 14j
+  revokedAt     DateTime?
   revokedReason String?
 
   // Plan acheté par le filleul au moment de la confirmation (ESSENTIAL | GROWTH | MULTI_SITE)
-  refereePlan            String?
-  referrerCreditApplied  Boolean @default(false)
-  refereeCreditApplied   Boolean @default(false)
+  refereePlan           String?
+  referrerCreditApplied Boolean @default(false)
+  refereeCreditApplied  Boolean @default(false)
 
   link    MerchantReferralLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
   referee User                 @relation("MerchantReferee", fields: [refereeId], references: [id], onDelete: Cascade)
@@ -771,30 +734,30 @@ model MerchantReferralAttribution {
 // quel email (pas besoin d'être connecté).
 
 model NewsletterSubscriber {
-  id                String    @id @default(cuid())
-  email             String    @unique // normalisé (lowercase + trim)
-  locale            String    @default("fr") // fr | de | it | en
+  id     String @id @default(cuid())
+  email  String @unique // normalisé (lowercase + trim)
+  locale String @default("fr") // fr | de | it | en
 
   // Source de l'inscription (utile pour les stats)
-  source            String?   // "footer" | "blog" | "register" | "manual"
+  source  String? // "footer" | "blog" | "register" | "manual"
   // Référent HTTP au moment de l'inscription (ex: /blog/carte-fidelite-...)
-  referer           String?
+  referer String?
 
   // Tokens hashés (sha256 hex)
-  confirmTokenHash      String?   // expire après 7 jours si pas confirmé
+  confirmTokenHash      String? // expire après 7 jours si pas confirmé
   confirmTokenExpiresAt DateTime?
-  unsubscribeTokenHash  String    // permanent — utilisé pour 1-click unsub
+  unsubscribeTokenHash  String // permanent — utilisé pour 1-click unsub
 
   // Lifecycle
-  confirmedAt       DateTime? // null = en attente de double opt-in
-  unsubscribedAt    DateTime? // null = encore abonné
+  confirmedAt    DateTime? // null = en attente de double opt-in
+  unsubscribedAt DateTime? // null = encore abonné
 
   // Anti-abuse
-  ipPrefix          String?
-  userAgent         String?   @db.Text
+  ipPrefix  String?
+  userAgent String? @db.Text
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([confirmedAt])
   @@index([unsubscribedAt])
@@ -812,23 +775,23 @@ model NewsletterSubscriber {
 // supprimée plus tard, le log reste pour traçabilité.
 
 model AdminAuditLog {
-  id         String  @id @default(cuid())
-  adminId    String  // ID de l'admin qui a fait l'action
-  action     String  // Voir AdminActionType côté code (SUSPEND_USER, BLOCK_IP, ...)
+  id      String @id @default(cuid())
+  adminId String // ID de l'admin qui a fait l'action
+  action  String // Voir AdminActionType côté code (SUSPEND_USER, BLOCK_IP, ...)
 
   // Cible de l'action
-  targetType String  // "USER" | "IP" | "PROGRAM" | "OTHER"
-  targetId   String? // ID Prisma ou IP/prefix selon targetType
+  targetType  String // "USER" | "IP" | "PROGRAM" | "OTHER"
+  targetId    String? // ID Prisma ou IP/prefix selon targetType
   targetLabel String? // Label lisible (email du user, IP, etc.) — utile si la cible est supprimée plus tard
 
   // Détails libres (oldValue/newValue, reason, etc.)
-  metadata   Json?
+  metadata Json?
 
   // Contexte de la requête admin
-  ipPrefix   String?
-  userAgent  String? @db.Text
+  ipPrefix  String?
+  userAgent String? @db.Text
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
   admin User @relation("AdminAuditActor", fields: [adminId], references: [id], onDelete: NoAction)
 

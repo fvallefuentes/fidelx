@@ -54,7 +54,6 @@
 |---|---|---|
 | `/api/dashboard/referral` | ✅ 401 | Bien protégé |
 | `/api/merchants/me` | ✅ 401 | Bien protégé |
-| `/api/merchants/reviews` | ✅ 401 | Bien protégé |
 | `/api/auth/email-2fa/status` | ✅ 401 | Bien protégé |
 | `/api/admin/audit` | ✅ 403 | Bien protégé (admin only) |
 | `/api/health` | ✅ 200 | `database: CONNECTED`, `nextauth: LOADED` |
@@ -81,7 +80,6 @@
 | Service account JWT sign | ✅ | Signature RS256 fonctionne (testé via OAuth) |
 | Issuer approuvé en publication | ✅ | (Confirmé par Google en mai 2026) |
 | Class auto-promoted vers APPROVED | ✅ | (Confirmé via API) |
-| Save to Google Wallet sur Android | 👤 | Test réel : ouvrir un lien `/avis/...` ou `/carte/...` sur Android |
 | heroImage pastilles dynamiques | 👤 | Visuel à vérifier sur Android |
 | `addMessage` push notification | 👤 | Tester avec une vraie carte installée |
 | Cert/clé : pas d'expiration auto | ✅ | Pas de rappel calendrier nécessaire |
@@ -109,8 +107,6 @@
 | Normalisation email Gmail | ✅ | Testé via tests unit (normalize.test.ts) |
 | Normalisation phone E.164 | ✅ | Testé via tests unit |
 | Inscription multi-programmes `/join-all/[merchantId]` | 👤 | Tester l'inscription à 2-3 programmes en un coup |
-| Page `/avis/[serial]` éligible | 👤 | Carte avec ≥ minVisits → encart bonus visible |
-| Page `/avis/[serial]` après clic | 👤 | Demande créée + redirect Google |
 | Page `/carte/[serial]` (récupération) | 👤 | Réinstaller un pass perdu |
 | Anti-spam 5 inscriptions rapides | 👤 | Tester avec 5 POST rapides → 429 attendu |
 
@@ -122,7 +118,6 @@
 | Créer programme POINTS | 👤 | |
 | Créer programme HYBRID | 👤 | |
 | Éditer design programme (couleurs, logo) | 👤 | |
-| Activer/désactiver avis Google via toggle | 👤 | Sur la liste des programmes |
 | Configurer bonus + min visits + établissement | 👤 | Dans la modal d'édition |
 | Scanner QR client `/dashboard/scan` | 👤 | Avec un vrai téléphone (caméra requise) |
 | Ajouter 1 tampon | 👤 | currentStamps +1 |
@@ -132,7 +127,6 @@
 | Notification "1ère récompense" | 👤 | Cloche merchant |
 | Export CSV clients (paid plan) | 👤 | Plan ESSENTIAL+ requis |
 | Export CSV transactions | 👤 | |
-| Page `/dashboard/avis` valider/rejeter | 👤 | Avec une demande en attente |
 
 ## 10. 🤝 Parrainage B2B
 

@@ -9,7 +9,6 @@ const establishmentSchema = z.object({
   name: z.string().trim().min(1, "Le nom est requis").max(120, "Nom trop long"),
   address: z.string().trim().max(240, "Adresse trop longue").optional().or(z.literal("")),
   phone: z.string().trim().max(40, "Téléphone trop long").optional().or(z.literal("")),
-  googlePlaceId: z.string().trim().max(200, "Google Place ID trop long").optional().or(z.literal("")),
   latitude: z.coerce.number().min(-90).max(90).optional().nullable(),
   longitude: z.coerce.number().min(-180).max(180).optional().nullable(),
 }).refine(
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
 
   const parsed = await parseJsonBody(req, establishmentSchema);
   if (!parsed.ok) return parsed.response;
-  const { name, address, phone, googlePlaceId, latitude, longitude } = parsed.data;
+  const { name, address, phone, latitude, longitude } = parsed.data;
 
   const establishment = await prisma.establishment.create({
     data: {
@@ -37,7 +36,6 @@ export async function POST(req: Request) {
       name,
       address: address || null,
       phone: phone || null,
-      googlePlaceId: googlePlaceId || null,
       latitude: latitude ?? null,
       longitude: longitude ?? null,
     },

@@ -301,13 +301,6 @@ export async function POST(req: Request) {
     await notifyPassUpdate(card.id);
   } catch { /* non bloquant */ }
 
-  // Invitation auto à laisser un avis Google si le client vient d'atteindre
-  // le seuil de visites configuré (1 seule fois via flag reviewInvitedAt).
-  try {
-    const { maybeInviteToReview } = await import("@/lib/google-review");
-    await maybeInviteToReview(card.id);
-  } catch { /* non bloquant */ }
-
   const updatedCard = await prisma.loyaltyCard.findUnique({
     where: { id: card.id },
     select: { currentStamps: true, currentPoints: true, cashbackBalance: true, totalVisits: true, status: true },

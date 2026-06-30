@@ -79,11 +79,6 @@ interface PassData {
   /** Marque le pass comme expiré → iOS le déplace dans la section "Expirés"
    *  du Wallet et le grise. Branché sur card.status (EXPIRED ou REVOKED). */
   voided?: boolean;
-  /** Lien direct vers la page d'écriture d'avis Google — si non null,
-   *  un champ "Laisser un avis" tappable est ajouté sur la face avant
-   *  du pass (auxiliaryField avec attributedValue). Visible tant que la
-   *  GoogleReviewRequest est en statut SENT. */
-  reviewUrl?: string | null;
   locations?: { latitude: number; longitude: number; relevantText?: string }[];
 }
 
@@ -105,22 +100,6 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
 
   const config = card.program.config as Record<string, unknown>;
   const design = card.program.cardDesign as Record<string, unknown>;
-
-  // CTA "Laisser un avis Google" sur la face du pass : on l'affiche tant
-  // qu'une GoogleReviewRequest est en attente (status SENT) et qu'on a un
-  // Place ID. Disparaît dès que le merchant valide ou rejette.
-  let reviewUrl: string | null = null;
-  const placeId = card.program.establishment?.googlePlaceId ?? null;
-  if (placeId) {
-    const pendingReview = await prisma.googleReviewRequest.findFirst({
-      where: { cardId: card.id, status: "SENT" },
-      select: { id: true },
-    });
-    if (pendingReview) {
-      const { buildGoogleReviewUrl } = await import("@/lib/google-review");
-      reviewUrl = buildGoogleReviewUrl(placeId);
-    }
-  }
 
   const passData: PassData = {
     serialNumber: card.serialNumber,
@@ -157,7 +136,6 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     voided:
       (card.status as string) === "EXPIRED" ||
       (card.status as string) === "REVOKED",
-    reviewUrl,
     locations: hasValidLocation(card.program.establishment)
       ? [
           {
@@ -278,40 +256,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     });
   }
 
-  // CTA "Avis Google" :
-  // - Sur la face (auxiliaryField) : on affiche une étiquette visible mais
-  //   PAS tappable. Apple Wallet n'interprète <a href> dans attributedValue
-  //   que sur backFields ; mettre un lien en auxiliaryField provoque juste
-  //   une désélection du pass au tap. On indique donc "Détails au verso ↻".
-  // - Sur le verso (backField) : un attributedValue avec <a href> qui marche
-  //   à 100% sur iOS. 2 taps au total (flip puis tap) mais fiable.
-  // Le CTA disparaît automatiquement quand la GoogleReviewRequest passe en
-  // CONFIRMED ou REJECTED côté merchant.
-  if (passData.reviewUrl) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (pass as any).auxiliaryFields.push({
-      key: "review_cta",
-      label: "⭐ AVIS GOOGLE",
-      // Pas de flèche qui suggère un tap direct (ne marche pas sur le
-      // front d'un storeCard). On indique clairement comment accéder au
-      // lien : taper le bouton ⋯ en haut à droite du pass.
-      value: "Touchez ⋯ en haut",
-    });
-  }
-
   // Champs verso
-  // CTA Avis Google : on met l'URL brute dans `value` plutôt qu'un
-  // attributedValue HTML. iOS détecte automatiquement les URLs en texte
-  // brut dans les backFields et les rend cliquables (data detector).
-  // attributedValue avec <a href> a un parsing inconsistant selon les
-  // versions iOS — on évite.
-  if (passData.reviewUrl) {
-    pass.backFields.push({
-      key: "review_link",
-      label: "⭐ Laisser un avis Google",
-      value: passData.reviewUrl,
-    });
-  }
 
   pass.backFields.push({
     key: "merchant",

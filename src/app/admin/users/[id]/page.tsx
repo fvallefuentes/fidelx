@@ -118,7 +118,6 @@ const TX_LABELS: Record<string, string> = {
   CASHBACK_EARN: "Cashback gagné",
   CASHBACK_SPEND: "Cashback dépensé",
   REFERRAL_BONUS: "Bonus parrainage",
-  GOOGLE_REVIEW_BONUS: "Bonus avis Google",
 };
 
 /* ─── Mini KPI card (same pattern) ───────────────────────────── */

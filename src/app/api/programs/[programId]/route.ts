@@ -60,11 +60,6 @@ export async function PATCH(
       stampBgImage?: string | null;
       description?: string;
     };
-    // Avis Google — modifiables sur un programme existant (ne casse aucune
-    // progression de carte, contrairement au type/maxStamps).
-    googleReviewEnabled?: boolean;
-    googleReviewBonus?: number;
-    googleReviewMinVisits?: number;
     establishmentId?: string | null;
   };
 
@@ -161,17 +156,7 @@ export async function PATCH(
       name: typeof body.name === "string" && body.name.trim()
         ? body.name.trim()
         : program.name,
-      cardDesign: nextDesign as Prisma.InputJsonValue,
-      ...(typeof body.googleReviewEnabled === "boolean"
-        ? { googleReviewEnabled: body.googleReviewEnabled }
-        : {}),
-      ...(typeof body.googleReviewBonus === "number"
-        ? { googleReviewBonus: Math.max(0, Math.min(100, Math.round(body.googleReviewBonus))) }
-        : {}),
-      ...(typeof body.googleReviewMinVisits === "number"
-        ? { googleReviewMinVisits: Math.max(1, Math.min(100, Math.round(body.googleReviewMinVisits))) }
-        : {}),
-      ...(establishmentUpdate !== undefined
+      cardDesign: nextDesign as Prisma.InputJsonValue,      ...(establishmentUpdate !== undefined
         ? { establishmentId: establishmentUpdate }
         : {}),
     },

@@ -61,9 +61,6 @@ async function main() {
         textColor: "#ffffff",
         description: "Collectez 10 tampons, recevez un croissant offert !",
       },
-      googleReviewEnabled: true,
-      googleReviewBonus: 2,
-      googleReviewMinVisits: 3,
     },
   });
 

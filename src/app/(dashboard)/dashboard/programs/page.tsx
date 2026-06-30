@@ -40,9 +40,6 @@ interface Program {
   isActive: boolean;
   config: Record<string, unknown>;
   cardDesign: Record<string, unknown>;
-  googleReviewEnabled: boolean;
-  googleReviewBonus?: number;
-  googleReviewMinVisits?: number;
   establishmentId?: string | null;
   establishment?: { id: string; name: string } | null;
   rewards: { id: string; name: string; threshold: number; rewardType: string }[];
@@ -197,7 +194,6 @@ export default function ProgramsPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [previewingProgram, setPreviewingProgram] = useState<Program | null>(null);
-  const [togglingReviewId, setTogglingReviewId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
 
   async function fetchPrograms() {
@@ -205,38 +201,6 @@ export default function ProgramsPage() {
     const data = await res.json();
     setPrograms(data);
     setLoading(false);
-  }
-
-  /**
-   * Toggle rapide de l'avis Google directement depuis la liste (sans ouvrir
-   * la modal). Update optimiste de l'état local + PATCH.
-   */
-  async function toggleReview(program: Program) {
-    const next = !program.googleReviewEnabled;
-    setTogglingReviewId(program.id);
-    // Optimiste
-    setPrograms((prev) =>
-      prev.map((p) =>
-        p.id === program.id ? { ...p, googleReviewEnabled: next } : p
-      )
-    );
-    try {
-      const res = await fetch(`/api/programs/${program.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ googleReviewEnabled: next }),
-      });
-      if (!res.ok) throw new Error();
-    } catch {
-      // Rollback si échec
-      setPrograms((prev) =>
-        prev.map((p) =>
-          p.id === program.id ? { ...p, googleReviewEnabled: !next } : p
-        )
-      );
-    } finally {
-      setTogglingReviewId(null);
-    }
   }
 
   useEffect(() => {
@@ -422,57 +386,6 @@ export default function ProgramsPage() {
                         </div>
                       ))}
                     </div>
-                  )}
-                  {/* Toggle rapide Avis Google */}
-                  <div className="mt-3 flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <Award className="h-3.5 w-3.5 text-amber-500" />
-                      <span>
-                        Bonus avis Google
-                        <span className={`ml-1.5 font-medium ${program.googleReviewEnabled ? "text-green-600" : "text-gray-400"}`}>
-                          {program.googleReviewEnabled ? "Activé" : "Désactivé"}
-                        </span>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={program.googleReviewEnabled}
-                      disabled={togglingReviewId === program.id}
-                      onClick={() => toggleReview(program)}
-                      title={program.googleReviewEnabled ? "Désactiver" : "Activer"}
-                      style={{
-                        position: "relative",
-                        width: 38,
-                        height: 22,
-                        borderRadius: 999,
-                        border: "none",
-                        cursor: togglingReviewId === program.id ? "wait" : "pointer",
-                        background: program.googleReviewEnabled ? "#22c55e" : "#d1d5db",
-                        transition: "background 0.2s",
-                        opacity: togglingReviewId === program.id ? 0.6 : 1,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <span
-                        style={{
-                          position: "absolute",
-                          top: 2,
-                          left: program.googleReviewEnabled ? 18 : 2,
-                          width: 18,
-                          height: 18,
-                          borderRadius: "50%",
-                          background: "#fff",
-                          transition: "left 0.2s",
-                          boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
-                        }}
-                      />
-                    </button>
-                  </div>
-                  {program.googleReviewEnabled && !program.establishmentId && (
-                    <p className="mt-1.5 text-xs text-amber-600">
-                      ⚠️ Liez un établissement avec un Google Place ID (Modifier le design) pour que les avis fonctionnent.
-                    </p>
                   )}
                   <div className="mt-4 flex gap-2 flex-wrap items-center">
                     <button
@@ -1166,9 +1079,6 @@ function CreateProgramForm({
   const [stampBgColor2, setStampBgColor2] = useState("");
   const [stampBgImage, setStampBgImage] = useState<string>("");
   const [stampBgError, setStampBgError] = useState<string>("");
-  const [googleReviewEnabled, setGoogleReviewEnabled] = useState(false);
-  const [googleReviewBonus, setGoogleReviewBonus] = useState(1);
-  const [googleReviewMinVisits, setGoogleReviewMinVisits] = useState(3);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -1305,9 +1215,6 @@ function CreateProgramForm({
                 },
               ]
             : [],
-        googleReviewEnabled,
-        googleReviewBonus: googleReviewEnabled ? googleReviewBonus : 0,
-        googleReviewMinVisits: googleReviewEnabled ? googleReviewMinVisits : 3,
       }),
     });
 
@@ -1694,63 +1601,6 @@ function CreateProgramForm({
             </div>
           </div>
 
-          {/* Google Review Bonus */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={googleReviewEnabled}
-                onChange={(e) => setGoogleReviewEnabled(e.target.checked)}
-                className="rounded"
-              />
-              <span className="text-sm font-medium">
-                Récompenser un avis Google
-              </span>
-            </label>
-            {googleReviewEnabled && (
-              <div className="ml-6 space-y-4">
-                <div className="space-y-1">
-                  <label className="text-sm text-gray-500">
-                    Bonus par avis ({type === "POINTS" || type === "CASHBACK" ? "points" : "tampons"})
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={googleReviewBonus}
-                    onChange={(e) => setGoogleReviewBonus(parseInt(e.target.value) || 1)}
-                    className="w-24"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Type déterminé automatiquement selon le programme :{" "}
-                    {type === "POINTS" || type === "CASHBACK" ? "points" : "tampons"}.
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm text-gray-500">
-                    Proposer l&apos;avis après combien de visites ?
-                  </label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={googleReviewMinVisits}
-                    onChange={(e) => setGoogleReviewMinVisits(parseInt(e.target.value) || 1)}
-                    className="w-24"
-                  />
-                  <p className="text-xs text-gray-400">
-                    Le client ne verra la proposition qu&apos;après ce nombre de visites.
-                  </p>
-                </div>
-                <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2.5">
-                  ⚠️ Nécessite un <strong>Google Place ID</strong> configuré sur votre
-                  établissement (Paramètres). La validation se fait manuellement
-                  depuis l&apos;onglet « Avis Google ».
-                </div>
-              </div>
-            )}
-          </div>
-
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="outline" onClick={onCancel}>
               Annuler
@@ -1846,19 +1696,10 @@ function EditProgramDesignModal({
     reader.onerror = () => setStampBgError("Erreur de lecture du fichier");
     reader.readAsDataURL(file);
   }
-
-  // Avis Google
-  const [reviewEnabled, setReviewEnabled] = useState(program.googleReviewEnabled);
-  const [reviewBonus, setReviewBonus] = useState(program.googleReviewBonus ?? 2);
-  const [reviewMinVisits, setReviewMinVisits] = useState(program.googleReviewMinVisits ?? 3);
   const [establishmentId, setEstablishmentId] = useState(program.establishmentId ?? "");
   const [establishments, setEstablishments] = useState<
-    { id: string; name: string; googlePlaceId: string }[]
+    { id: string; name: string }[]
   >([]);
-  const isPointsType = program.type === "POINTS" || program.type === "CASHBACK";
-  const selectedEstablishmentName =
-    establishments.find((est) => est.id === establishmentId)?.name ||
-    program.establishment?.name;
 
   // Charge les établissements du merchant pour le sélecteur
   useEffect(() => {
@@ -1966,9 +1807,6 @@ function EditProgramDesignModal({
                   stampBgType === "image" && stampBgImage ? stampBgImage : null,
               }),
         },
-        googleReviewEnabled: reviewEnabled,
-        googleReviewBonus: reviewBonus,
-        googleReviewMinVisits: reviewMinVisits,
         establishmentId: establishmentId || null,
       }),
     });
@@ -2047,6 +1885,27 @@ function EditProgramDesignModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Ex: Le 10ᵉ café offert"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500">
+                  ?tablissement associ?
+                </label>
+                <select
+                  value={establishmentId}
+                  onChange={(e) => setEstablishmentId(e.target.value)}
+                  className="w-full rounded border border-gray-300 bg-white px-2 py-2 text-sm"
+                >
+                  <option value="">Aucun ?tablissement</option>
+                  {establishments.map((est) => (
+                    <option key={est.id} value={est.id}>
+                      {est.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400">
+                  Utilis? pour le nom du point de vente et la position Wallet.
+                </p>
               </div>
 
               {/* Lock notice for stamps count */}
@@ -2327,80 +2186,9 @@ function EditProgramDesignModal({
                   />
                 </div>
               )}
-
-              {/* Avis Google */}
-              <div
-                className="space-y-3 rounded-lg p-3"
-                style={{ background: "rgb(var(--ovr) / 0.03)", border: "1px solid rgb(var(--ovr) / 0.08)" }}
-              >
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={reviewEnabled}
-                    onChange={(e) => setReviewEnabled(e.target.checked)}
-                    className="rounded"
-                  />
-                  <span className="text-sm font-medium">⭐ Récompenser un avis Google</span>
-                </label>
-
-                {reviewEnabled && (
-                  <div className="space-y-3 pl-6">
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500">
-                        Bonus par avis ({isPointsType ? "points" : "tampons"})
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={20}
-                        value={reviewBonus}
-                        onChange={(e) => setReviewBonus(parseInt(e.target.value) || 1)}
-                        className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500">
-                        Proposer après combien de visites ?
-                      </label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={50}
-                        value={reviewMinVisits}
-                        onChange={(e) => setReviewMinVisits(parseInt(e.target.value) || 1)}
-                        className="w-20 rounded border border-gray-300 px-2 py-1 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500">
-                        Établissement (pour le lien d&apos;avis Google)
-                      </label>
-                      <select
-                        value={establishmentId}
-                        onChange={(e) => setEstablishmentId(e.target.value)}
-                        className="w-full rounded border border-gray-300 px-2 py-1 text-sm bg-white"
-                      >
-                        <option value="">— Aucun —</option>
-                        {establishments.map((est) => (
-                          <option key={est.id} value={est.id}>
-                            {est.name} {est.googlePlaceId ? "✓ Place ID" : "⚠️ sans Place ID"}
-                          </option>
-                        ))}
-                      </select>
-                      {establishmentId &&
-                        !establishments.find((e) => e.id === establishmentId)?.googlePlaceId && (
-                          <p className="text-xs text-amber-600">
-                            ⚠️ Cet établissement n&apos;a pas de Google Place ID. Ajoutez-le dans
-                            Paramètres → établissement, sinon les avis ne fonctionneront pas.
-                          </p>
-                        )}
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
-            {/* Right : live preview */}
+              {/* Right : live preview */}
             <div style={{ position: "sticky", top: 0 }}>
               <p className="text-xs text-gray-500 mb-2 uppercase tracking-wider text-center">
                 Aperçu live
@@ -2413,7 +2201,7 @@ function EditProgramDesignModal({
                 stampEmptyColor={stampEmptyColor}
                 labelColor={labelColor}
                 programName={name}
-                merchantName={selectedEstablishmentName}
+                merchantName={establishments.find((est) => est.id === establishmentId)?.name || program.establishment?.name}
                 maxStamps={maxStamps}
                 logoData={logoData || undefined}
                 programType={program.type}

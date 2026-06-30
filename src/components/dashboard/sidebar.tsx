@@ -16,7 +16,6 @@ import {
   LogOut,
   X,
   BarChart2,
-  Star,
 } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
 
@@ -28,7 +27,6 @@ const navigation = [
   { key: "stats", href: "/dashboard/stats", icon: BarChart2 },
   { key: "assistant", href: "/dashboard/assistant", icon: Bot },
   { key: "campaigns", href: "/dashboard/campaigns", icon: Bell },
-  { key: "reviews", href: "/dashboard/avis", icon: Star },
   { key: "qrcode", href: "/dashboard/qrcode", icon: QrCode },
   { key: "settings", href: "/dashboard/settings", icon: Settings },
 ];

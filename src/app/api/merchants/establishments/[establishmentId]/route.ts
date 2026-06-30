@@ -11,7 +11,6 @@ const updateEstablishmentSchema = z
     name: z.string().trim().min(1, "Le nom est requis").max(120, "Nom trop long").optional(),
     address: z.string().trim().max(240, "Adresse trop longue").optional().or(z.literal("")),
     phone: z.string().trim().max(40, "Telephone trop long").optional().or(z.literal("")),
-    googlePlaceId: z.string().trim().max(200, "Google Place ID trop long").optional().or(z.literal("")),
     latitude: z.coerce.number().min(-90).max(90).optional().nullable(),
     longitude: z.coerce.number().min(-180).max(180).optional().nullable(),
   })
@@ -78,7 +77,6 @@ export async function PATCH(
       ...(data.name !== undefined ? { name: data.name } : {}),
       ...(data.address !== undefined ? { address: data.address || null } : {}),
       ...(data.phone !== undefined ? { phone: data.phone || null } : {}),
-      ...(data.googlePlaceId !== undefined ? { googlePlaceId: data.googlePlaceId || null } : {}),
       ...(data.latitude !== undefined ? { latitude: data.latitude ?? null } : {}),
       ...(data.longitude !== undefined ? { longitude: data.longitude ?? null } : {}),
     },
@@ -133,7 +131,6 @@ export async function DELETE(
       },
       data: {
         establishmentId: null,
-        googleReviewEnabled: false,
       },
     }),
     prisma.transaction.updateMany({

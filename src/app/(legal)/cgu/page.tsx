@@ -347,26 +347,7 @@ export default function CguPage() {
           <li>utiliser le Service pour envoyer du spam.</li>
         </ul>
 
-        <h3>8.4 Avis Google et avis en ligne</h3>
-        <p>
-          Si l&apos;Utilisateur active la fonctionnalité de récompense liée aux
-          avis Google, il s&apos;engage à&nbsp;:
-        </p>
-        <ul>
-          <li>
-            <strong>ne jamais conditionner</strong> l&apos;attribution de la
-            récompense au caractère <strong>positif</strong> de l&apos;avis
-            (cette pratique, dite «&nbsp;<em>review gating</em>&nbsp;», est
-            illégale dans l&apos;Union européenne)&nbsp;;
-          </li>
-          <li>
-            attribuer la récompense <strong>dès lors que l&apos;avis est posté</strong>,
-            indépendamment de la note ou du contenu&nbsp;;
-          </li>
-          <li>afficher cette mention de manière claire et visible auprès de ses Clients finaux.</li>
-        </ul>
-
-        <h3>8.5 Mineurs</h3>
+        <h3>8.4 Mineurs</h3>
         <p>
           L&apos;Utilisateur ne doit pas inscrire à ses Programmes des Clients
           finaux <strong>âgés de moins de 16 ans</strong> sans avoir obtenu le

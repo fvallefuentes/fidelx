@@ -44,9 +44,6 @@ interface LoyaltyObjectData {
   /** État Google Wallet : "ACTIVE", "EXPIRED", ou "INACTIVE".
    *  EXPIRED = carte caduque (programme archivé), INACTIVE = revoquée par admin. */
   cardState?: "ACTIVE" | "EXPIRED" | "INACTIVE";
-  /** Lien Google Reviews à afficher comme bouton sur la face du LoyaltyObject
-   *  (linksModuleData). Visible tant que la GoogleReviewRequest est SENT. */
-  reviewUrl?: string | null;
   merchantLocations?: { latitude: number; longitude: number }[];
 }
 
@@ -169,20 +166,6 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
     }));
   }
 
-  // Bouton "Avis Google" sur la face du LoyaltyObject (linksModuleData).
-  // Visible tant que la GoogleReviewRequest est en attente côté merchant.
-  if (data.reviewUrl) {
-    object.linksModuleData = {
-      uris: [
-        {
-          uri: data.reviewUrl,
-          description: "Laisser un avis Google",
-          id: "review-cta",
-        },
-      ],
-    };
-  }
-
   return object;
 }
 
@@ -237,20 +220,6 @@ export async function generateGoogleWalletLink(
     logoUrl,
   });
 
-  // Lien Avis Google si une demande est en attente côté merchant.
-  const _placeIdA = card.program.establishment?.googlePlaceId ?? null;
-  let _reviewUrlA: string | null = null;
-  if (_placeIdA) {
-    const _pendingA = await prisma.googleReviewRequest.findFirst({
-      where: { cardId: card.id, status: "SENT" },
-      select: { id: true },
-    });
-    if (_pendingA) {
-      const { buildGoogleReviewUrl } = await import("@/lib/google-review");
-      _reviewUrlA = buildGoogleReviewUrl(_placeIdA);
-    }
-  }
-
   const loyaltyObject = buildLoyaltyObject({
     serialNumber: card.serialNumber,
     classId,
@@ -268,7 +237,6 @@ export async function generateGoogleWalletLink(
         : (card.status as string) === "REVOKED"
           ? "INACTIVE"
           : "ACTIVE",
-    reviewUrl: _reviewUrlA,
     merchantLocations: hasValidLocation(card.program.establishment)
       ? [
           {
@@ -479,20 +447,6 @@ export async function updateGoogleWalletObject(
   const design = card.program.cardDesign as Record<string, unknown>;
   const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${serialNumber}`;
 
-  // Lien Avis Google si une demande est en attente côté merchant.
-  const _placeIdU = card.program.establishment?.googlePlaceId ?? null;
-  let _reviewUrlU: string | null = null;
-  if (_placeIdU) {
-    const _pendingU = await prisma.googleReviewRequest.findFirst({
-      where: { cardId: card.id, status: "SENT" },
-      select: { id: true },
-    });
-    if (_pendingU) {
-      const { buildGoogleReviewUrl } = await import("@/lib/google-review");
-      _reviewUrlU = buildGoogleReviewUrl(_placeIdU);
-    }
-  }
-
   const updatedObject = buildLoyaltyObject({
     serialNumber,
     classId: `${GOOGLE_WALLET_ISSUER_ID}.${card.program.id}`,
@@ -510,7 +464,6 @@ export async function updateGoogleWalletObject(
         : (card.status as string) === "REVOKED"
           ? "INACTIVE"
           : "ACTIVE",
-    reviewUrl: _reviewUrlU,
     merchantLocations: hasValidLocation(card.program.establishment)
       ? [
           {

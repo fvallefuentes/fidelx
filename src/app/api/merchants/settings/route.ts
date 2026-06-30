@@ -37,7 +37,6 @@ export async function GET() {
           name: true,
           address: true,
           phone: true,
-          googlePlaceId: true,
           latitude: true,
           longitude: true,
         },
