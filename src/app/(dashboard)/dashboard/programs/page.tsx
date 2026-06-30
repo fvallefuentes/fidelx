@@ -1079,8 +1079,19 @@ function CreateProgramForm({
   const [stampBgColor2, setStampBgColor2] = useState("");
   const [stampBgImage, setStampBgImage] = useState<string>("");
   const [stampBgError, setStampBgError] = useState<string>("");
+  const [establishmentId, setEstablishmentId] = useState("");
+  const [establishments, setEstablishments] = useState<
+    { id: string; name: string; latitude: number | null; longitude: number | null }[]
+  >([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/merchants/settings")
+      .then((r) => r.json())
+      .then((d) => setEstablishments(d.establishments ?? []))
+      .catch(() => {});
+  }, []);
 
   function handleStampBgImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     setStampBgError("");
@@ -1175,6 +1186,7 @@ function CreateProgramForm({
       body: JSON.stringify({
         name,
         type,
+        establishmentId: establishmentId || null,
         config,
         cardDesign: {
           bgColor,
@@ -1349,6 +1361,31 @@ function CreateProgramForm({
                 />
               </div>
             )}
+            <div className="space-y-2 md:col-span-2">
+              <label className="text-sm font-medium">
+                Établissement associé
+              </label>
+              <select
+                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={establishmentId}
+                onChange={(e) => setEstablishmentId(e.target.value)}
+              >
+                <option value="">Aucun établissement pour le moment</option>
+                {establishments.map((est) => (
+                  <option key={est.id} value={est.id}>
+                    {est.name}
+                    {est.latitude !== null && est.longitude !== null
+                      ? " · position Wallet active"
+                      : " · position à définir"}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400">
+                Version initiale : un programme utilise un seul établissement.
+                Si sa position Wallet est renseignée, Apple et Google peuvent
+                afficher la carte quand le client est proche.
+              </p>
+            </div>
           </div>
 
           {/* Card Design */}

@@ -107,6 +107,21 @@ export async function POST(req: Request) {
     rewards,
   } = parsed.data;
 
+  let linkedEstablishmentId: string | undefined = undefined;
+  if (establishmentId) {
+    const establishment = await prisma.establishment.findFirst({
+      where: { id: establishmentId, merchantId: session.user.id },
+      select: { id: true },
+    });
+    if (!establishment) {
+      return NextResponse.json(
+        { error: "Établissement introuvable pour ce compte." },
+        { status: 400 }
+      );
+    }
+    linkedEstablishmentId = establishment.id;
+  }
+
   // Vérifier les limites du plan
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -140,7 +155,7 @@ export async function POST(req: Request) {
   const program = await prisma.loyaltyProgram.create({
     data: {
       merchantId: session.user.id,
-      establishmentId: establishmentId || undefined,
+      establishmentId: linkedEstablishmentId,
       name,
       type,
       config: config as Prisma.InputJsonValue,
@@ -166,7 +181,7 @@ export async function POST(req: Request) {
     programId: program.id,
     type,
     rewardsCount: program.rewards.length,
-    hasEstablishment: !!establishmentId,
+    hasEstablishment: !!linkedEstablishmentId,
   });
 
   return NextResponse.json(program, { status: 201 });
