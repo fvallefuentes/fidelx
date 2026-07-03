@@ -138,6 +138,9 @@ export default function SettingsPage() {
       setEstPhone("");
       setEstLatitude("");
       setEstLongitude("");
+    } else {
+      const data = await res.json().catch(() => null);
+      alert(data?.error ?? "Impossible d'ajouter un autre établissement.");
     }
 
     setSavingEst(false);
@@ -308,6 +311,7 @@ export default function SettingsPage() {
     GROWTH:     "bg-purple-100 text-purple-800",
     MULTI_SITE: "bg-orange-100 text-orange-800",
   };
+  const hasEstablishment = (settings?.establishments?.length ?? 0) > 0;
 
   return (
     <div className="space-y-6">
@@ -771,6 +775,7 @@ export default function SettingsPage() {
               </div>
             )}
 
+            {!hasEstablishment ? (
             <form onSubmit={handleAddEstablishment} className="space-y-3 border-t pt-4">
               <p className="text-sm font-medium">Ajouter un établissement</p>
               <div className="grid gap-3 md:grid-cols-2">
@@ -828,6 +833,12 @@ export default function SettingsPage() {
                 d&apos;apparaître près de votre commerce quand le téléphone le juge pertinent.
               </p>
             </form>
+            ) : (
+              <div className="rounded-lg border border-lime-200 bg-lime-50 px-4 py-3 text-sm text-lime-900">
+                Un établissement est déjà configuré. Pour cette version, Fidlify utilise un seul
+                établissement par compte. Vous pouvez modifier sa position ou le supprimer pour en créer un autre.
+              </div>
+            )}
           </CardContent>
         </Card>
 

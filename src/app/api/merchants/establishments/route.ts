@@ -26,6 +26,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  const existingEstablishment = await prisma.establishment.findFirst({
+    where: { merchantId: session.user.id },
+    select: { id: true },
+  });
+  if (existingEstablishment) {
+    return NextResponse.json(
+      { error: "Un seul établissement peut être configuré pour le moment." },
+      { status: 409 }
+    );
+  }
+
   const parsed = await parseJsonBody(req, establishmentSchema);
   if (!parsed.ok) return parsed.response;
   const { name, address, phone, latitude, longitude } = parsed.data;
