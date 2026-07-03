@@ -312,6 +312,8 @@ export default function SettingsPage() {
     MULTI_SITE: "bg-orange-100 text-orange-800",
   };
   const hasEstablishment = (settings?.establishments?.length ?? 0) > 0;
+  const addPreviewLocation = getValidMapLocation(estLatitude, estLongitude);
+  const editPreviewLocation = getValidMapLocation(editLatitude, editLongitude);
 
   return (
     <div className="space-y-6">
@@ -722,7 +724,7 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                     </div>
-                    {est.latitude !== null && est.longitude !== null && (
+                    {est.latitude !== null && est.longitude !== null && editingEstId !== est.id && (
                       <EstablishmentMap
                         latitude={est.latitude}
                         longitude={est.longitude}
@@ -749,6 +751,15 @@ export default function SettingsPage() {
                           value={editLongitude}
                           onChange={(e) => setEditLongitude(e.target.value)}
                         />
+                        {editPreviewLocation && (
+                          <div className="md:col-span-3">
+                            <EstablishmentMap
+                              latitude={editPreviewLocation.latitude}
+                              longitude={editPreviewLocation.longitude}
+                              name={`${est.name} - aperçu avant enregistrement`}
+                            />
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-2 md:flex-nowrap">
                           <Button
                             type="button"
@@ -821,6 +832,13 @@ export default function SettingsPage() {
                   onChange={(e) => setEstLongitude(e.target.value)}
                 />
               </div>
+              {addPreviewLocation && (
+                <EstablishmentMap
+                  latitude={addPreviewLocation.latitude}
+                  longitude={addPreviewLocation.longitude}
+                  name={estName || "Nouvel établissement - aperçu avant ajout"}
+                />
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -909,6 +927,22 @@ export default function SettingsPage() {
       </div>
     </div>
   );
+}
+
+function getValidMapLocation(latitudeValue: string, longitudeValue: string) {
+  const latitude = parseCoordinate(latitudeValue);
+  const longitude = parseCoordinate(longitudeValue);
+  if (latitude === null || longitude === null) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    return null;
+  }
+  return { latitude, longitude };
+}
+
+function parseCoordinate(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number(value.replace(",", "."));
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function EstablishmentMap({
