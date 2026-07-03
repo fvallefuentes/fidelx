@@ -17,6 +17,7 @@ import {
   Milestone,
   Sparkles,
   Wand2,
+  Trash2,
 } from "lucide-react";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { CAMPAIGN_TEMPLATES, type CampaignTemplate } from "@/lib/campaign-templates";
@@ -53,6 +54,7 @@ interface Program {
     bgColor?: string;
     stampColor?: string;
     logoData?: string;
+    proximityMessage?: string | null;
   };
 }
 
@@ -803,6 +805,10 @@ function WalletProximityPanel({
   const [linkingProgram, setLinkingProgram] = useState(false);
   const [linkError, setLinkError] = useState("");
   const [linkSuccess, setLinkSuccess] = useState("");
+  const [messageDrafts, setMessageDrafts] = useState<Record<string, string>>({});
+  const [savingMessageId, setSavingMessageId] = useState("");
+  const [unlinkingProgramId, setUnlinkingProgramId] = useState("");
+  const [programActionError, setProgramActionError] = useState("");
   const positionedEstablishments = establishments.filter(hasWalletPosition);
   const establishmentToAssign = positionedEstablishments[0] || null;
   const programsWithPosition = programs.filter(
@@ -854,6 +860,64 @@ function WalletProximityPanel({
     setSelectedProgramId("");
     setLinkSuccess(`${linkedProgram?.name || "Programme"} assigné à ${establishmentToAssign.name}.`);
     setLinkingProgram(false);
+  }
+
+  async function saveProximityMessage(program: Program) {
+    const message = (messageDrafts[program.id] ?? getProgramProximityMessage(program)).trim();
+
+    setSavingMessageId(program.id);
+    setProgramActionError("");
+    setLinkSuccess("");
+
+    const res = await fetch(`/api/programs/${program.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        cardDesign: {
+          proximityMessage: message || null,
+        },
+      }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setProgramActionError(data?.error || "Impossible d'enregistrer le message.");
+      setSavingMessageId("");
+      return;
+    }
+
+    await onProgramLinked();
+    setMessageDrafts((current) => ({ ...current, [program.id]: message }));
+    setLinkSuccess(`Message de proximité enregistré pour ${program.name}.`);
+    setSavingMessageId("");
+  }
+
+  async function unlinkProgramFromProximity(program: Program) {
+    setUnlinkingProgramId(program.id);
+    setProgramActionError("");
+    setLinkSuccess("");
+
+    const res = await fetch(`/api/programs/${program.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ establishmentId: null }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setProgramActionError(data?.error || "Impossible de retirer cette assignation.");
+      setUnlinkingProgramId("");
+      return;
+    }
+
+    await onProgramLinked();
+    setMessageDrafts((current) => {
+      const next = { ...current };
+      delete next[program.id];
+      return next;
+    });
+    setLinkSuccess(`${program.name} n'utilise plus la proximité Wallet.`);
+    setUnlinkingProgramId("");
   }
 
   return (
@@ -912,17 +976,63 @@ function WalletProximityPanel({
             </p>
             {programsWithPosition.length > 0 ? (
               <div className="mt-2 space-y-2">
-                {programsWithPosition.slice(0, 3).map((program) => (
-                  <div key={program.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span className="font-medium text-gray-900">{program.name}</span>
-                    <span className="text-gray-500">{program.establishment?.name}</span>
+                {programsWithPosition.map((program) => (
+                  <div key={program.id} className="rounded-lg border border-gray-200 bg-white p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-gray-900">{program.name}</p>
+                        <p className="mt-0.5 text-xs text-gray-500">
+                          {program.establishment?.name || "Établissement assigné"}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => unlinkProgramFromProximity(program)}
+                        disabled={unlinkingProgramId === program.id}
+                        className="shrink-0 gap-1.5 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {unlinkingProgramId === program.id ? "Retrait..." : "Retirer"}
+                      </Button>
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        Message affichable à proximité
+                      </label>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Input
+                          value={messageDrafts[program.id] ?? getProgramProximityMessage(program)}
+                          onChange={(event) => {
+                            setMessageDrafts((current) => ({
+                              ...current,
+                              [program.id]: event.target.value.slice(0, 90),
+                            }));
+                            setProgramActionError("");
+                            setLinkSuccess("");
+                          }}
+                          maxLength={90}
+                          placeholder={`Vous êtes près de ${program.establishment?.name || "votre commerce"} !`}
+                          className="h-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => saveProximityMessage(program)}
+                          disabled={savingMessageId === program.id}
+                          className="shrink-0"
+                        >
+                          {savingMessageId === program.id ? "Enregistrement..." : "Enregistrer"}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Utilisé par Apple Wallet quand la carte devient pertinente. Google Wallet peut adapter l&apos;affichage.
+                      </p>
+                    </div>
                   </div>
                 ))}
-                {programsWithPosition.length > 3 && (
-                  <p className="text-xs text-gray-400">
-                    +{programsWithPosition.length - 3} autre{programsWithPosition.length > 4 ? "s" : ""} programme{programsWithPosition.length > 4 ? "s" : ""}
-                  </p>
-                )}
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">
@@ -983,6 +1093,7 @@ function WalletProximityPanel({
               </p>
             )}
             {linkError && <p className="mt-2 text-sm text-red-600">{linkError}</p>}
+            {programActionError && <p className="mt-2 text-sm text-red-600">{programActionError}</p>}
             {linkSuccess && <p className="mt-2 text-sm text-lime-700">{linkSuccess}</p>}
           </div>
         )}
@@ -1041,6 +1152,12 @@ function hasWalletPosition(establishment: Establishment | null | undefined) {
     establishment.longitude >= -180 &&
     establishment.longitude <= 180
   );
+}
+
+function getProgramProximityMessage(program: Program) {
+  const savedMessage = program.cardDesign?.proximityMessage?.trim();
+  if (savedMessage) return savedMessage;
+  return `Vous êtes près de ${program.establishment?.name || "votre commerce"} !`;
 }
 
 function CampaignAutomations({ automations }: { automations: CampaignAutomation[] }) {

@@ -101,6 +101,13 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
   const config = card.program.config as Record<string, unknown>;
   const design = card.program.cardDesign as Record<string, unknown>;
 
+  const proximityMessage =
+    typeof design.proximityMessage === "string" && design.proximityMessage.trim()
+      ? design.proximityMessage.trim()
+      : hasValidLocation(card.program.establishment)
+        ? `Vous êtes près de ${card.program.establishment.name} !`
+        : undefined;
+
   const passData: PassData = {
     serialNumber: card.serialNumber,
     programName: card.program.name,
@@ -141,7 +148,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
           {
             latitude: card.program.establishment.latitude,
             longitude: card.program.establishment.longitude,
-            relevantText: `Vous êtes près de ${card.program.establishment.name} !`,
+            relevantText: proximityMessage,
           },
         ]
       : undefined,

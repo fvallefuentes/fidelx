@@ -59,6 +59,7 @@ export async function PATCH(
       stampBgColor2?: string | null;
       stampBgImage?: string | null;
       description?: string;
+      proximityMessage?: string | null;
     };
     establishmentId?: string | null;
   };
@@ -99,6 +100,16 @@ export async function PATCH(
     for (const k of allowed) {
       if (body.cardDesign[k] !== undefined) {
         nextDesign[k] = body.cardDesign[k];
+      }
+    }
+    if (body.cardDesign.proximityMessage === null) {
+      delete nextDesign.proximityMessage;
+    } else if (typeof body.cardDesign.proximityMessage === "string") {
+      const proximityMessage = body.cardDesign.proximityMessage.trim().slice(0, 90);
+      if (proximityMessage) {
+        nextDesign.proximityMessage = proximityMessage;
+      } else {
+        delete nextDesign.proximityMessage;
       }
     }
     // logoData : autorisé uniquement plan payant. null explicite = suppression.
