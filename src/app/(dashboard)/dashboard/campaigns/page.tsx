@@ -181,6 +181,8 @@ const segmentLabels: Record<string, string> = {
   VIP: "Clients VIP",
 };
 
+type CampaignTab = "send" | "automations" | "history";
+
 export default function CampaignsPage() {
   const { data: session } = useSession();
   const isFree = ((session?.user?.plan as string) || "FREE") === "FREE";
@@ -195,6 +197,7 @@ export default function CampaignsPage() {
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [activeTab, setActiveTab] = useState<CampaignTab>("send");
 
   useEffect(() => {
     Promise.all([
@@ -229,6 +232,7 @@ export default function CampaignsPage() {
   }
 
   function startBlankCampaign() {
+    setActiveTab("send");
     setShowForm(true);
   }
 
@@ -284,120 +288,50 @@ export default function CampaignsPage() {
         </div>
       )}
 
-      <CampaignAutomations automations={automations} />
+      <CampaignTabs
+        activeTab={activeTab}
+        campaignsCount={campaigns.length}
+        automationsCount={automations.length}
+        onChange={(tab) => {
+          setActiveTab(tab);
+          if (tab !== "send") setShowForm(false);
+        }}
+      />
 
-      <WalletProximityPanel programs={programs} establishments={establishments} />
-
-      {showForm && (
-        <CreateCampaignForm
-          key="blank"
-          programs={programs}
-          isFree={isFree}
-          notificationDefaults={notificationDefaults}
-          onSuccess={() => {
-            setShowForm(false);
-            fetchCampaigns();
-          }}
-          onCancel={() => {
-            setShowForm(false);
-          }}
-        />
+      {activeTab === "send" && (
+        showForm ? (
+          <CreateCampaignForm
+            key="blank"
+            programs={programs}
+            isFree={isFree}
+            notificationDefaults={notificationDefaults}
+            onSuccess={() => {
+              setShowForm(false);
+              fetchCampaigns();
+              setActiveTab("history");
+            }}
+            onCancel={() => {
+              setShowForm(false);
+            }}
+          />
+        ) : (
+          <CampaignStartPanel
+            campaignLimitReached={campaignLimitReached}
+            remainingCampaigns={Math.max(0, monthlyCampaignLimit - campaignsThisMonth.length)}
+            onStart={startBlankCampaign}
+          />
+        )
       )}
 
-      {campaigns.length === 0 && !showForm ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Bell className="h-12 w-12 text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold">Aucune campagne</h3>
-            <p className="text-gray-500 mt-1 mb-4">
-              Envoyez votre première notification wallet
-            </p>
-            <Button onClick={startBlankCampaign}>
-              <Plus className="mr-2 h-4 w-4" />
-              Créer une campagne
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {campaigns.map((campaign) => {
-            const Icon = triggerIcons[campaign.triggerType] || Bell;
-            const impact = campaign.impact;
-            const hasImpact =
-              impact &&
-              (impact.returnedClients > 0 ||
-                impact.generatedVisits > 0 ||
-                impact.rewardsUnlocked > 0);
-            return (
-              <Card key={campaign.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-lg"
-                        style={{
-                          background: "#D9FF3C",
-                          border: "1px solid #D9FF3C",
-                        }}
-                      >
-                        <Icon className="h-5 w-5 text-[#141710]" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{campaign.name}</p>
-                        <p className="text-sm text-gray-500 line-clamp-1">
-                          {campaign.message}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap justify-end">
-                      <div className="text-right text-sm">
-                        <p className="text-gray-500">
-                          {triggerLabels[campaign.triggerType]}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {segmentLabels[campaign.targetSegment]}
-                        </p>
-                      </div>
-                      {campaign.sentCount > 0 && (
-                        <CampaignSentCountBadge count={campaign.sentCount} />
-                      )}
-                      <CampaignStatusBadge status={campaign.status} />
-                    </div>
-                  </div>
-                  {impact && campaign.sentCount > 0 && (
-                    <div className="campaign-impact-row">
-                      <span>
-                        <strong>{impact.returnedClients}</strong> client
-                        {impact.returnedClients > 1 ? "s" : ""} revenu
-                        {impact.returnedClients > 1 ? "s" : ""}
-                      </span>
-                      <span>
-                        <strong>{impact.generatedVisits}</strong> visite
-                        {impact.generatedVisits > 1 ? "s" : ""} attribuée
-                        {impact.generatedVisits > 1 ? "s" : ""}
-                      </span>
-                      <span>
-                        <strong>{impact.conversionRate}%</strong> retour J+{impact.windowDays}
-                      </span>
-                      {impact.rewardsUnlocked > 0 && (
-                        <span>
-                          <strong>{impact.rewardsUnlocked}</strong> récompense
-                          {impact.rewardsUnlocked > 1 ? "s" : ""} débloquée
-                          {impact.rewardsUnlocked > 1 ? "s" : ""}
-                        </span>
-                      )}
-                      {!hasImpact && (
-                        <span className="campaign-impact-muted">
-                          En attente de retours clients
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+      {activeTab === "automations" && (
+        <div className="space-y-4">
+          <WalletProximityPanel programs={programs} establishments={establishments} />
+          <CampaignAutomations automations={automations} />
         </div>
+      )}
+
+      {activeTab === "history" && (
+        <CampaignHistory campaigns={campaigns} onCreate={startBlankCampaign} />
       )}
     </div>
   );
@@ -433,6 +367,210 @@ function CampaignStatusBadge({ status }: { status: string }) {
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: state.dot }} />
       {state.label}
     </span>
+  );
+}
+
+function CampaignTabs({
+  activeTab,
+  campaignsCount,
+  automationsCount,
+  onChange,
+}: {
+  activeTab: CampaignTab;
+  campaignsCount: number;
+  automationsCount: number;
+  onChange: (tab: CampaignTab) => void;
+}) {
+  const tabs: Array<{ id: CampaignTab; label: string; description: string; count?: number }> = [
+    { id: "send", label: "Envoyer", description: "Créer une notification" },
+    { id: "automations", label: "Automatiques", description: "Règles et proximité", count: automationsCount },
+    { id: "history", label: "Historique", description: "Envois et résultats", count: campaignsCount },
+  ];
+
+  return (
+    <div className="grid gap-2 md:grid-cols-3">
+      {tabs.map((tab) => {
+        const active = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onChange(tab.id)}
+            className="rounded-lg border px-4 py-3 text-left transition-colors"
+            style={{
+              borderColor: active ? "#D9FF3C" : "rgb(var(--ovr) / 0.1)",
+              background: active ? "rgba(217,255,60,0.14)" : "rgb(var(--ovr) / 0.025)",
+              color: "rgb(var(--ovr) / 0.86)",
+            }}
+          >
+            <span className="flex items-center justify-between gap-3">
+              <strong className="text-sm">{tab.label}</strong>
+              {typeof tab.count === "number" && (
+                <span className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-500">
+                  {tab.count}
+                </span>
+              )}
+            </span>
+            <span className="mt-1 block text-xs text-gray-500">{tab.description}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function CampaignStartPanel({
+  campaignLimitReached,
+  remainingCampaigns,
+  onStart,
+}: {
+  campaignLimitReached: boolean;
+  remainingCampaigns: number;
+  onStart: () => void;
+}) {
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-center">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-lime-100 px-3 py-1 text-xs font-semibold text-lime-800">
+              <Sparkles className="h-3.5 w-3.5" />
+              Assistant guidé
+            </div>
+            <h2 className="mt-3 text-xl font-semibold text-gray-900">
+              Créer une campagne en 4 étapes
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              Choisissez un objectif, sélectionnez les clients, écrivez le message,
+              puis validez l&apos;aperçu avant l&apos;envoi.
+            </p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-4">
+              {["Objectif", "Clients", "Message", "Vérifier"].map((step, index) => (
+                <div key={step} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                  <span className="text-xs font-semibold text-lime-700">{index + 1}</span>
+                  <p className="text-sm font-medium text-gray-900">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <p className="text-sm font-medium text-gray-900">Ce mois-ci</p>
+            <p className="mt-1 text-3xl font-semibold text-gray-900">{remainingCampaigns}</p>
+            <p className="text-xs text-gray-500">campagne{remainingCampaigns > 1 ? "s" : ""} restante{remainingCampaigns > 1 ? "s" : ""}</p>
+            <Button className="mt-4 w-full" onClick={onStart} disabled={campaignLimitReached}>
+              <Plus className="mr-2 h-4 w-4" />
+              Créer une campagne
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CampaignHistory({
+  campaigns,
+  onCreate,
+}: {
+  campaigns: Campaign[];
+  onCreate: () => void;
+}) {
+  if (campaigns.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Bell className="mb-4 h-12 w-12 text-gray-300" />
+          <h3 className="text-lg font-semibold">Aucune campagne envoyée</h3>
+          <p className="mb-4 mt-1 text-gray-500">L&apos;historique apparaîtra après le premier envoi.</p>
+          <Button onClick={onCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Créer une campagne
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {campaigns.map((campaign) => {
+        const Icon = triggerIcons[campaign.triggerType] || Bell;
+        const impact = campaign.impact;
+        const hasImpact =
+          impact &&
+          (impact.returnedClients > 0 ||
+            impact.generatedVisits > 0 ||
+            impact.rewardsUnlocked > 0);
+        return (
+          <Card key={campaign.id}>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-lg"
+                    style={{
+                      background: "#D9FF3C",
+                      border: "1px solid #D9FF3C",
+                    }}
+                  >
+                    <Icon className="h-5 w-5 text-[#141710]" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{campaign.name}</p>
+                    <p className="line-clamp-1 text-sm text-gray-500">
+                      {campaign.message}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <div className="text-right text-sm">
+                    <p className="text-gray-500">
+                      {triggerLabels[campaign.triggerType]}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {segmentLabels[campaign.targetSegment]}
+                    </p>
+                  </div>
+                  {campaign.sentCount > 0 && (
+                    <CampaignSentCountBadge count={campaign.sentCount} />
+                  )}
+                  <CampaignStatusBadge status={campaign.status} />
+                </div>
+              </div>
+              {impact && campaign.sentCount > 0 && (
+                <div className="campaign-impact-row">
+                  <span>
+                    <strong>{impact.returnedClients}</strong> client
+                    {impact.returnedClients > 1 ? "s" : ""} revenu
+                    {impact.returnedClients > 1 ? "s" : ""}
+                  </span>
+                  <span>
+                    <strong>{impact.generatedVisits}</strong> visite
+                    {impact.generatedVisits > 1 ? "s" : ""} attribuée
+                    {impact.generatedVisits > 1 ? "s" : ""}
+                  </span>
+                  <span>
+                    <strong>{impact.conversionRate}%</strong> retour J+{impact.windowDays}
+                  </span>
+                  {impact.rewardsUnlocked > 0 && (
+                    <span>
+                      <strong>{impact.rewardsUnlocked}</strong> récompense
+                      {impact.rewardsUnlocked > 1 ? "s" : ""} débloquée
+                      {impact.rewardsUnlocked > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {!hasImpact && (
+                    <span className="campaign-impact-muted">
+                      En attente de retours clients
+                    </span>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
@@ -788,7 +926,23 @@ function hasWalletPosition(establishment: Establishment | null | undefined) {
 
 function CampaignAutomations({ automations }: { automations: CampaignAutomation[] }) {
   if (automations.length === 0) {
-    return null;
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-lime-50">
+              <Wand2 className="h-5 w-5 text-lime-600" />
+            </div>
+            <div>
+              <p className="font-medium">Aucune règle automatique active</p>
+              <p className="text-sm text-gray-500">
+                Les règles créées depuis l&apos;assistant apparaîtront ici avec leur historique d&apos;envoi.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -1009,6 +1163,7 @@ function CreateCampaignForm({
 
   function applyTemplate(tpl: CampaignTemplate) {
     setName(tpl.name);
+    setNotifTitle(tpl.title);
     setMessage(tpl.message);
     // FREE plan : seulement IMMEDIATE autorisé pour le push manuel
     if (isFree && tpl.triggerType !== "IMMEDIATE") {
@@ -1018,6 +1173,7 @@ function CreateCampaignForm({
     }
     setTargetSegment(tpl.targetSegment);
     setShowTemplates(false);
+    setCampaignStep(1);
   }
   const [notifTitle, setNotifTitle] = useState(initialRecommendation?.notifTitle || ""); // optionnel, override du titre
   const [notifLogo, setNotifLogo] = useState<string>(
@@ -1055,6 +1211,39 @@ function CreateCampaignForm({
     initialRecommendation?.triggerConfig?.targetCardIds ||
     [];
   const exactTargetCardIdsKey = exactTargetCardIds.join("|");
+  const [campaignStep, setCampaignStep] = useState(isRecommendedMode ? 0 : 0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const wizardSteps = isRecommendedMode
+    ? ["Audience", "Message", "Vérifier"]
+    : ["Objectif", "Clients", "Message", "Vérifier"];
+  const lastWizardStep = wizardSteps.length - 1;
+  const isObjectiveStep = !isRecommendedMode && campaignStep === 0;
+  const isAudienceStep = isRecommendedMode ? campaignStep === 0 : campaignStep === 1;
+  const isMessageStep = isRecommendedMode ? campaignStep === 1 : campaignStep === 2;
+  const isReviewStep = campaignStep === lastWizardStep;
+  const canGoNext =
+    isObjectiveStep ||
+    (isAudienceStep && Boolean(programId)) ||
+    (isMessageStep && Boolean(notifTitle.trim()) && Boolean(message.trim())) ||
+    isReviewStep;
+
+  function startFreeMessage() {
+    if (!name) setName("Message libre");
+    if (!notifTitle) setNotifTitle(selectedProgram?.name || "Nouvelle notification");
+    setTriggerType("IMMEDIATE");
+    setTargetSegment("ALL");
+    setShowTemplates(false);
+    setCampaignStep(1);
+  }
+
+  function goToNextStep() {
+    setError("");
+    if (!canGoNext) {
+      setError("Complétez les champs de cette étape avant de continuer.");
+      return;
+    }
+    setCampaignStep((step) => Math.min(lastWizardStep, step + 1));
+  }
 
   useEffect(() => {
     if (!programId) {
@@ -1166,360 +1355,423 @@ function CreateCampaignForm({
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle>{isRecommendedMode ? "Envoi recommandé" : "Nouvelle campagne"}</CardTitle>
-        {!isRecommendedMode && (
-          <button
-            type="button"
-            onClick={() => setShowTemplates((v) => !v)}
-            className="text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-colors"
-            style={{
-              borderColor: showTemplates
-                ? "rgba(212,255,78,0.5)"
-                : "rgb(var(--ovr) / 0.15)",
-              color: showTemplates ? "#d4ff4e" : "rgb(var(--ovr) / 0.6)",
-              background: showTemplates ? "rgba(212,255,78,0.08)" : "transparent",
-            }}
-          >
-            <Sparkles className="h-3 w-3" />
-            {showTemplates ? "Masquer les modèles" : "Choisir un modèle"}
-          </button>
-        )}
+      <CardHeader>
+        <CardTitle>{isRecommendedMode ? "Préparer l'envoi ciblé" : "Nouvelle campagne"}</CardTitle>
       </CardHeader>
       <CardContent>
-        {showTemplates && (
-          <div className="campaign-templates-grid">
-            {CAMPAIGN_TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.id}
-                type="button"
-                onClick={() => applyTemplate(tpl)}
-                className="campaign-template-card"
-              >
-                <span className="campaign-template-emoji">{tpl.emoji}</span>
-                <div className="campaign-template-info">
-                  <div className="campaign-template-title">{tpl.title}</div>
-                  <div className="campaign-template-desc">{tpl.description}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="campaign-wizard-steps">
+          {wizardSteps.map((step, index) => (
+            <button
+              key={step}
+              type="button"
+              className={`campaign-wizard-step ${index === campaignStep ? "is-active" : ""} ${index < campaignStep ? "is-done" : ""}`}
+              onClick={() => setCampaignStep(index)}
+            >
+              <span>{index + 1}</span>
+              {step}
+            </button>
+          ))}
+        </div>
 
         <div className="dx-campaign-grid">
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
+            {error && (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
 
-          {isRecommendedMode && initialRecommendation && (
-            <div className="campaign-exact-target">
-              <div className="campaign-exact-target-head">
+            {isObjectiveStep && (
+              <div className="space-y-4">
                 <div>
-                  <p>Audience exacte</p>
-                  <span>
-                    {exactAudienceCount} client{exactAudienceCount > 1 ? "s" : ""} sélectionné{exactAudienceCount > 1 ? "s" : ""}
-                  </span>
+                  <h3 className="text-lg font-semibold text-gray-900">Que voulez-vous faire ?</h3>
+                  <p className="text-sm text-gray-500">
+                    Choisissez un objectif. Fidlify préremplit le message et le mode d&apos;envoi.
+                  </p>
                 </div>
-                <Badge variant="secondary">Ciblage verrouillé</Badge>
+                {showTemplates && (
+                  <div className="campaign-templates-grid">
+                    {CAMPAIGN_TEMPLATES.map((tpl) => (
+                      <button
+                        key={tpl.id}
+                        type="button"
+                        onClick={() => applyTemplate(tpl)}
+                        className="campaign-template-card"
+                      >
+                        <span className="campaign-template-emoji">{tpl.emoji}</span>
+                        <div className="campaign-template-info">
+                          <div className="campaign-template-title">{tpl.title}</div>
+                          <div className="campaign-template-desc">{tpl.description}</div>
+                        </div>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={startFreeMessage}
+                      className="campaign-template-card"
+                    >
+                      <span className="campaign-template-emoji">✍</span>
+                      <div className="campaign-template-info">
+                        <div className="campaign-template-title">Message libre</div>
+                        <div className="campaign-template-desc">
+                          Partir d&apos;une notification vide.
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="campaign-exact-target-reason">
-                {initialRecommendation.reason}
-              </div>
-              {exactAudience.length > 0 && (
-                <div className="campaign-exact-target-list">
-                  {exactAudience.slice(0, 8).map((person) => (
-                    <span key={person.cardId}>
-                      <strong>{person.clientName || "Client"}</strong>
-                      <small>{person.reason}</small>
-                    </span>
-                  ))}
-                  {hiddenAudienceCount > 0 && (
-                    <span>
-                      <strong>+{hiddenAudienceCount}</strong>
-                      <small>autre{hiddenAudienceCount > 1 ? "s" : ""} client{hiddenAudienceCount > 1 ? "s" : ""}</small>
-                    </span>
+            )}
+
+            {isAudienceStep && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Qui doit recevoir cette notification ?</h3>
+                  <p className="text-sm text-gray-500">
+                    Gardez simple : choisissez le programme et le groupe de clients.
+                  </p>
+                </div>
+
+                {isRecommendedMode && initialRecommendation && (
+                  <div className="campaign-exact-target">
+                    <div className="campaign-exact-target-head">
+                      <div>
+                        <p>Audience exacte</p>
+                        <span>
+                          {exactAudienceCount} client{exactAudienceCount > 1 ? "s" : ""} sélectionné{exactAudienceCount > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <Badge variant="secondary">Ciblage verrouillé</Badge>
+                    </div>
+                    <div className="campaign-exact-target-reason">
+                      {initialRecommendation.reason}
+                    </div>
+                    {exactAudience.length > 0 && (
+                      <div className="campaign-exact-target-list">
+                        {exactAudience.slice(0, 8).map((person) => (
+                          <span key={person.cardId}>
+                            <strong>{person.clientName || "Client"}</strong>
+                            <small>{person.reason}</small>
+                          </span>
+                        ))}
+                        {hiddenAudienceCount > 0 && (
+                          <span>
+                            <strong>+{hiddenAudienceCount}</strong>
+                            <small>autre{hiddenAudienceCount > 1 ? "s" : ""} client{hiddenAudienceCount > 1 ? "s" : ""}</small>
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Programme</label>
+                    <select
+                      className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                      value={programId}
+                      onChange={(e) => setProgramId(e.target.value)}
+                      disabled={isRecommendedMode}
+                    >
+                      {programs.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {!isRecommendedMode && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Clients ciblés</label>
+                      <select
+                        className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                        value={targetSegment}
+                        onChange={(e) => setTargetSegment(e.target.value)}
+                      >
+                        <option value="ALL">Tous les clients</option>
+                        <option value="ACTIVE">Clients actifs</option>
+                        <option value="DORMANT">Clients dormants</option>
+                        <option value="NEW">Nouveaux clients</option>
+                        <option value="VIP">Clients VIP</option>
+                      </select>
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          )}
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Nom de la campagne</label>
-              <Input
-                placeholder="Happy Hour vendredi"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-              <p className="text-xs text-gray-400">
-                Pour ton suivi interne (n&apos;est pas affiché au client)
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Programme</label>
-              <select
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                value={programId}
-                onChange={(e) => setProgramId(e.target.value)}
-                disabled={isRecommendedMode}
-              >
-                {programs.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-400">
-                {isRecommendedMode
-                  ? "Verrouillé pour conserver l'audience exacte."
-                  : "Programme de rattachement. Les notifications reprennent les défauts des paramètres, sauf surcharge ci-dessous."}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Titre de la notification <span className="text-red-500">*</span>
-            </label>
-            <Input
-              placeholder={selectedProgram?.name || "Ex : Nouvelle offre disponible"}
-              value={notifTitle}
-              onChange={(e) => setNotifTitle(e.target.value)}
-              required
-              maxLength={80}
-            />
-            <p className="text-xs text-gray-400">
-              C&apos;est le texte en gras affiché sur l&apos;écran de verrouillage
-              du téléphone du client.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Logo de la notification <span className="text-gray-400 font-normal">(optionnel)</span>
-            </label>
-            <div className="flex items-center gap-3">
-              {notifLogo ? (
-                <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={notifLogo}
-                    alt="Logo"
-                    className="h-14 w-14 rounded-lg object-contain border"
-                    style={{ background: previewBgColor }}
-                  />
-                  <Button type="button" variant="outline" size="sm" onClick={() => setNotifLogo("")}>
-                    Retirer
-                  </Button>
-                </div>
-              ) : (
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                  onChange={handleLogoChange}
-                  className="text-sm"
-                />
-              )}
-            </div>
-            {logoError && <p className="text-xs text-red-500">{logoError}</p>}
-            <p className="text-xs text-gray-400">
-              PNG / JPG / SVG / WebP, max 500 KB. Si laissé vide, le logo par défaut des paramètres sera utilisé.
-            </p>
-            {!notifLogo && inheritedLogo && (
-              <p className="text-xs text-gray-400">
-                Cette campagne utilise actuellement le logo par défaut.
-              </p>
+                {(spamWarningLoading || (spamWarning && spamWarning.riskyCount > 0)) && (
+                  <div
+                    className="rounded-lg border px-4 py-3 text-sm"
+                    style={{
+                      borderColor: spamWarning?.riskyCount ? "rgba(245,158,11,0.35)" : "rgb(var(--ovr) / 0.12)",
+                      background: spamWarning?.riskyCount ? "rgba(245,158,11,0.08)" : "rgb(var(--ovr) / 0.03)",
+                      color: "rgb(var(--ovr) / 0.78)",
+                    }}
+                  >
+                    {spamWarningLoading ? (
+                      "Vérification anti-spam..."
+                    ) : (
+                      <>
+                        <strong style={{ color: "#b45309" }}>Avertissement anti-spam</strong>
+                        <p className="mt-1">
+                          {spamWarning?.riskyCount} client{spamWarning?.riskyCount !== 1 ? "s" : ""} sur{" "}
+                          {spamWarning?.totalAudience} recevrai{spamWarning?.riskyCount !== 1 ? "ent" : "t"} une{" "}
+                          {spamWarning?.threshold}e notification en {spamWarning?.windowDays} jours.
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
-          </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Fond de la notification <span className="text-gray-400 font-normal">(optionnel)</span>
-            </label>
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                type="color"
-                value={previewBgColor}
-                onChange={(e) => setNotifBgColor(e.target.value)}
-                className="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
-                aria-label="Couleur de fond de la notification"
-              />
-              <Input
-                value={notifBgColor || inheritedBgColor}
-                onChange={(e) => setNotifBgColor(e.target.value)}
-                maxLength={7}
-                placeholder={inheritedBgColor}
-                className="max-w-36"
-              />
-              {notifBgColor && (
-                <Button type="button" variant="outline" size="sm" onClick={() => setNotifBgColor("")}>
-                  Reprendre le fond par défaut
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-gray-400">
-              Sans choix, le fond par défaut des paramètres est repris. Cette couleur ne s&apos;applique qu&apos;à cette campagne.
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Message</label>
-            <textarea
-              className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
-              placeholder="Votre message apparaîtra sur l'écran de verrouillage de vos clients"
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              maxLength={140}
-              required
-            />
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Apparaît en notif push sur le wallet du client</span>
-              <span className={message.length > 120 ? "text-orange-500" : ""}>
-                {message.length}/140
-              </span>
-            </div>
-          </div>
-
-          {isRecommendedMode ? (
-            <div className="campaign-delivery-locked">
-              <span>Mode d&apos;envoi</span>
-              <strong>Envoi immédiat aux {exactAudienceCount} clients sélectionnés, sans élargir au segment.</strong>
-            </div>
-          ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Déclencheur</label>
-              <select
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                value={triggerType}
-                onChange={(e) => setTriggerType(e.target.value)}
-                disabled={isFree}
-              >
-                <option value="IMMEDIATE">Envoi immédiat</option>
-                {!isFree && <option value="SCHEDULED">Date/heure précise</option>}
-                {!isFree && <option value="INACTIVITY">Client inactif (win-back)</option>}
-                {!isFree && <option value="POST_STAMP">Après tamponnage</option>}
-                {!isFree && <option value="MILESTONE">Palier de tampons atteint</option>}
-                {!isFree && <option value="BIRTHDAY">Anniversaire client</option>}
-              </select>
-              {isFree && (
-                <p className="text-xs text-gray-400">Passez au plan Pro pour accéder aux autres déclencheurs.</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Segment ciblé</label>
-              <select
-                className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                value={targetSegment}
-                onChange={(e) => setTargetSegment(e.target.value)}
-              >
-                <option value="ALL">Tous les clients</option>
-                <option value="ACTIVE">Clients actifs (30 derniers jours)</option>
-                <option value="DORMANT">Clients dormants (30+ jours)</option>
-                <option value="NEW">Nouveaux (7 derniers jours)</option>
-                <option value="VIP">VIP (10+ visites)</option>
-              </select>
-            </div>
-          </div>
-          )}
-
-          {(spamWarningLoading || (spamWarning && spamWarning.riskyCount > 0)) && (
-            <div
-              className="rounded-lg border px-4 py-3 text-sm"
-              style={{
-                borderColor: spamWarning?.riskyCount ? "rgba(245,158,11,0.35)" : "rgb(var(--ovr) / 0.12)",
-                background: spamWarning?.riskyCount ? "rgba(245,158,11,0.08)" : "rgb(var(--ovr) / 0.03)",
-                color: "rgb(var(--ovr) / 0.78)",
-              }}
-            >
-              {spamWarningLoading ? (
-                "Vérification anti-spam..."
-              ) : (
-                <>
-                  <strong style={{ color: "#b45309" }}>Avertissement anti-spam</strong>
-                  <p className="mt-1">
-                    {spamWarning?.riskyCount} client{spamWarning?.riskyCount !== 1 ? "s" : ""} sur{" "}
-                    {spamWarning?.totalAudience} recevrai{spamWarning?.riskyCount !== 1 ? "ent" : "t"} une{" "}
-                    {spamWarning?.threshold}e notification en {spamWarning?.windowDays} jours.
-                    L&apos;envoi reste possible, mais il vaut mieux réduire l&apos;audience ou attendre.
+            {isMessageStep && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Quel message envoyer ?</h3>
+                  <p className="text-sm text-gray-500">
+                    Le titre est le texte visible en gras sur la notification Wallet.
                   </p>
-                  {spamWarning?.preview?.length ? (
-                    <p className="mt-1 text-xs">
-                      Exemples :{" "}
-                      {spamWarning.preview
-                        .map((client) => `${client.name} (${client.recentCount} récentes)`)
-                        .join(", ")}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Nom interne</label>
+                  <Input
+                    placeholder="Happy Hour vendredi"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Titre de la notification <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    placeholder={selectedProgram?.name || "Ex : Nouvelle offre disponible"}
+                    value={notifTitle}
+                    onChange={(e) => setNotifTitle(e.target.value)}
+                    required
+                    maxLength={80}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Message</label>
+                  <textarea
+                    className="flex min-h-[110px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Votre message apparaîtra sur l'écran de verrouillage de vos clients"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    maxLength={140}
+                    required
+                  />
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>Notification Wallet</span>
+                    <span className={message.length > 120 ? "text-orange-500" : ""}>
+                      {message.length}/140
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="text-sm font-medium text-gray-600 underline-offset-4 hover:underline"
+                  onClick={() => setShowAdvanced((value) => !value)}
+                >
+                  {showAdvanced ? "Masquer les options avancées" : "Options avancées"}
+                </button>
+
+                {showAdvanced && (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Logo de cette campagne</label>
+                        <div className="flex items-center gap-3">
+                          {notifLogo ? (
+                            <div className="flex items-center gap-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={notifLogo}
+                                alt="Logo"
+                                className="h-14 w-14 rounded-lg border object-contain"
+                                style={{ background: previewBgColor }}
+                              />
+                              <Button type="button" variant="outline" size="sm" onClick={() => setNotifLogo("")}>
+                                Retirer
+                              </Button>
+                            </div>
+                          ) : (
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                              onChange={handleLogoChange}
+                              className="text-sm"
+                            />
+                          )}
+                        </div>
+                        {logoError && <p className="text-xs text-red-500">{logoError}</p>}
+                        {!notifLogo && inheritedLogo && (
+                          <p className="text-xs text-gray-400">Le logo par défaut sera utilisé.</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Fond de cette campagne</label>
+                        <div className="flex flex-wrap items-center gap-3">
+                          <input
+                            type="color"
+                            value={previewBgColor}
+                            onChange={(e) => setNotifBgColor(e.target.value)}
+                            className="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
+                            aria-label="Couleur de fond de la notification"
+                          />
+                          <Input
+                            value={notifBgColor || inheritedBgColor}
+                            onChange={(e) => setNotifBgColor(e.target.value)}
+                            maxLength={7}
+                            placeholder={inheritedBgColor}
+                            className="max-w-36"
+                          />
+                          {notifBgColor && (
+                            <Button type="button" variant="outline" size="sm" onClick={() => setNotifBgColor("")}>
+                              Défaut
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {!isRecommendedMode && (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Mode d&apos;envoi</label>
+                          <select
+                            className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                            value={triggerType}
+                            onChange={(e) => setTriggerType(e.target.value)}
+                            disabled={isFree}
+                          >
+                            <option value="IMMEDIATE">Envoyer maintenant</option>
+                            {!isFree && <option value="SCHEDULED">Programmer une date</option>}
+                            {!isFree && <option value="INACTIVITY">Client inactif</option>}
+                            {!isFree && <option value="POST_STAMP">Après tamponnage</option>}
+                            {!isFree && <option value="MILESTONE">Palier atteint</option>}
+                            {!isFree && <option value="BIRTHDAY">Anniversaire</option>}
+                          </select>
+                        </div>
+
+                        {triggerType === "INACTIVITY" && (
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">Jours d&apos;inactivité</label>
+                            <Input
+                              type="number"
+                              min={7}
+                              max={365}
+                              value={inactivityDays}
+                              onChange={(e) => setInactivityDays(parseInt(e.target.value))}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {triggerType === "SCHEDULED" && (
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Date</label>
+                          <Input
+                            type="date"
+                            value={scheduledDate}
+                            onChange={(e) => setScheduledDate(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Heure</label>
+                          <Input
+                            type="time"
+                            value={scheduledTime}
+                            onChange={(e) => setScheduledTime(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isReviewStep && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Vérifier avant l&apos;envoi</h3>
+                  <p className="text-sm text-gray-500">
+                    Dernier contrôle : programme, audience et message.
+                  </p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-xs text-gray-400">Programme</p>
+                    <p className="font-medium text-gray-900">{selectedProgram?.name || "Aucun programme"}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-xs text-gray-400">Audience</p>
+                    <p className="font-medium text-gray-900">
+                      {isRecommendedMode
+                        ? `${exactAudienceCount} clients ciblés`
+                        : segmentLabels[targetSegment]}
                     </p>
-                  ) : null}
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Conditional fields */}
-          {triggerType === "SCHEDULED" && (
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Date</label>
-                <Input
-                  type="date"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                  required
-                />
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-xs text-gray-400">Envoi</p>
+                    <p className="font-medium text-gray-900">{triggerLabels[triggerType] || triggerType}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                    <p className="text-xs text-gray-400">Titre</p>
+                    <p className="font-medium text-gray-900">{notifTitle || "À compléter"}</p>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-white p-3">
+                  <p className="text-xs text-gray-400">Message</p>
+                  <p className="mt-1 text-sm text-gray-800">{message || "À compléter"}</p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Heure</label>
-                <Input
-                  type="time"
-                  value={scheduledTime}
-                  onChange={(e) => setScheduledTime(e.target.value)}
-                  required
-                />
+            )}
+
+            <div className="flex flex-wrap justify-between gap-3 border-t border-gray-100 pt-4">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Annuler
+              </Button>
+              <div className="flex gap-2">
+                {campaignStep > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCampaignStep((step) => Math.max(0, step - 1))}
+                  >
+                    Retour
+                  </Button>
+                )}
+                {isReviewStep ? (
+                  <Button type="submit" disabled={saving || !notifTitle.trim() || !message.trim()}>
+                    {saving
+                      ? "Envoi..."
+                      : isRecommendedMode
+                        ? `Envoyer aux ${exactAudienceCount} clients ciblés`
+                        : triggerType === "IMMEDIATE"
+                          ? "Envoyer maintenant"
+                          : "Programmer"}
+                  </Button>
+                ) : (
+                  <Button type="button" onClick={goToNextStep}>
+                    Continuer
+                  </Button>
+                )}
               </div>
             </div>
-          )}
+          </form>
 
-          {triggerType === "INACTIVITY" && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Jours d&apos;inactivité avant envoi
-              </label>
-              <Input
-                type="number"
-                min={7}
-                max={365}
-                value={inactivityDays}
-                onChange={(e) => setInactivityDays(parseInt(e.target.value))}
-              />
-            </div>
-          )}
-
-          <div className="flex gap-3 justify-end">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving
-                ? "Envoi..."
-                : isRecommendedMode
-                  ? `Envoyer aux ${exactAudienceCount} clients ciblés`
-                  : triggerType === "IMMEDIATE"
-                    ? "Envoyer maintenant"
-                    : "Programmer"}
-            </Button>
-          </div>
-        </form>
-
-          {/* Live preview (sticky on right) */}
           <div className="dx-campaign-preview">
             <NotificationPreview
               program={selectedProgram}

@@ -4777,6 +4777,9 @@ html, body { overflow-x: clip; }
   border-color: rgba(212,255,78,0.35);
   transform: translateY(-1px);
 }
+.dashboard .campaign-template-card {
+  color: rgb(var(--ovr) / 0.78);
+}
 .campaign-template-emoji {
   font-size: 22px;
   line-height: 1;
@@ -4791,12 +4794,57 @@ html, body { overflow-x: clip; }
   font-weight: 600;
   font-size: 13.5px;
   margin-bottom: 3px;
-  color: #f4f5f1;
+  color: rgb(var(--ovr) / 0.9);
 }
 .campaign-template-desc {
   font-size: 11.5px;
-  color: #8a8e84;
+  color: rgb(var(--ovr) / 0.52);
   line-height: 1.4;
+}
+.campaign-wizard-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.campaign-wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  border: 1px solid rgb(var(--ovr) / 0.1);
+  border-radius: 10px;
+  background: rgb(var(--ovr) / 0.025);
+  color: rgb(var(--ovr) / 0.55);
+  padding: 9px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  transition: border-color .2s, background .2s, color .2s;
+}
+.campaign-wizard-step span {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: rgb(var(--ovr) / 0.06);
+  color: rgb(var(--ovr) / 0.55);
+  font-size: 11px;
+}
+.campaign-wizard-step.is-active {
+  border-color: rgba(217,255,60,0.85);
+  background: rgba(217,255,60,0.14);
+  color: rgb(var(--ovr) / 0.9);
+}
+.campaign-wizard-step.is-active span,
+.campaign-wizard-step.is-done span {
+  background: #D9FF3C;
+  color: #141710;
+}
+.campaign-wizard-step.is-done {
+  color: rgb(var(--ovr) / 0.75);
 }
 
 /* ═══════════════════════════════════════════════════════════
