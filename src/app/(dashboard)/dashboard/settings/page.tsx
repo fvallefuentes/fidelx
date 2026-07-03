@@ -664,7 +664,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Establishments */}
-        <Card className="lg:col-span-2">
+        <Card id="establishments" className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />

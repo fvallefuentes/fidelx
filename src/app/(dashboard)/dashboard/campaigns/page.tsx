@@ -47,11 +47,21 @@ interface Campaign {
 interface Program {
   id: string;
   name: string;
+  establishmentId?: string | null;
+  establishment?: Establishment | null;
   cardDesign?: {
     bgColor?: string;
     stampColor?: string;
     logoData?: string;
   };
+}
+
+interface Establishment {
+  id: string;
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface NotificationDefaults {
@@ -182,6 +192,7 @@ export default function CampaignsPage() {
     logo: "",
     bgColor: "",
   });
+  const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
@@ -205,6 +216,7 @@ export default function CampaignsPage() {
             ? settings.notificationDefaultBgColor
             : "",
       });
+      setEstablishments(Array.isArray(settings?.establishments) ? settings.establishments : []);
       setLoading(false);
     });
   }, []);
@@ -273,6 +285,8 @@ export default function CampaignsPage() {
       )}
 
       <CampaignAutomations automations={automations} />
+
+      <WalletProximityPanel programs={programs} establishments={establishments} />
 
       {showForm && (
         <CreateCampaignForm
@@ -620,6 +634,157 @@ function RecommendedActions({
 }
 
 void RecommendedActions;
+
+function WalletProximityPanel({
+  programs,
+  establishments,
+}: {
+  programs: Program[];
+  establishments: Establishment[];
+}) {
+  const positionedEstablishments = establishments.filter(hasWalletPosition);
+  const programsWithPosition = programs.filter(
+    (program) => program.establishment && hasWalletPosition(program.establishment)
+  );
+  const programsLinkedWithoutPosition = programs.filter(
+    (program) => program.establishment && !hasWalletPosition(program.establishment)
+  );
+  const programsWithoutEstablishment = programs.filter((program) => !program.establishmentId);
+  const isReady = programsWithPosition.length > 0;
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+              style={{ background: "#D9FF3C", color: "#141710" }}
+            >
+              <MapPin className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold">Proximité Wallet</p>
+                <WalletProximityStatusBadge active={isReady} />
+              </div>
+              <p className="mt-1 text-sm text-gray-500">
+                Les coordonnées officielles restent dans Paramètres. Ici, vous voyez si vos cartes
+                peuvent être rendues pertinentes près de votre établissement par Apple Wallet ou Google Wallet.
+              </p>
+              <div className="mt-3 grid gap-2 text-sm md:grid-cols-3">
+                <WalletProximityStat
+                  label="Établissements positionnés"
+                  value={`${positionedEstablishments.length}/${establishments.length}`}
+                />
+                <WalletProximityStat
+                  label="Programmes actifs en proximité"
+                  value={String(programsWithPosition.length)}
+                />
+                <WalletProximityStat
+                  label="À relier ou compléter"
+                  value={String(programsWithoutEstablishment.length + programsLinkedWithoutPosition.length)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <a
+              href="/dashboard/settings#establishments"
+              className="inline-flex h-10 items-center rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              Régler l&apos;établissement
+            </a>
+            <a
+              href="/dashboard/programs"
+              className="inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors"
+              style={{ background: "#D9FF3C", color: "#141710" }}
+            >
+              Relier un programme
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Cartes prêtes
+            </p>
+            {programsWithPosition.length > 0 ? (
+              <div className="mt-2 space-y-2">
+                {programsWithPosition.slice(0, 3).map((program) => (
+                  <div key={program.id} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="font-medium text-gray-900">{program.name}</span>
+                    <span className="text-gray-500">{program.establishment?.name}</span>
+                  </div>
+                ))}
+                {programsWithPosition.length > 3 && (
+                  <p className="text-xs text-gray-400">
+                    +{programsWithPosition.length - 3} autre{programsWithPosition.length > 4 ? "s" : ""} programme{programsWithPosition.length > 4 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-gray-500">
+                Aucun programme n&apos;a encore un établissement avec latitude et longitude.
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+              À savoir
+            </p>
+            <p className="mt-2 text-sm text-amber-900">
+              Ce n&apos;est pas une campagne push classique : vous ne choisissez pas un rayon précis.
+              Wallet utilise la position du pass et décide quand afficher la carte selon le téléphone,
+              les permissions et le contexte.
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function WalletProximityStatusBadge({ active }: { active: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
+      style={{
+        background: active ? "#effbd0" : "#fff2d6",
+        color: active ? "#5d7d13" : "#a16207",
+      }}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ background: active ? "#739c12" : "#d97706" }}
+      />
+      {active ? "Position active" : "À configurer"}
+    </span>
+  );
+}
+
+function WalletProximityStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className="text-lg font-semibold text-gray-900">{value}</p>
+    </div>
+  );
+}
+
+function hasWalletPosition(establishment: Establishment | null | undefined) {
+  return (
+    typeof establishment?.latitude === "number" &&
+    establishment.latitude >= -90 &&
+    establishment.latitude <= 90 &&
+    typeof establishment.longitude === "number" &&
+    establishment.longitude >= -180 &&
+    establishment.longitude <= 180
+  );
+}
 
 function CampaignAutomations({ automations }: { automations: CampaignAutomation[] }) {
   if (automations.length === 0) {
