@@ -381,10 +381,18 @@ function CampaignTabs({
   automationsCount: number;
   onChange: (tab: CampaignTab) => void;
 }) {
-  const tabs: Array<{ id: CampaignTab; label: string; description: string; count?: number }> = [
+  const tabs: Array<{ id: CampaignTab; label: string; description: string; countLabel?: string }> = [
     { id: "send", label: "Envoyer", description: "Créer une notification" },
-    { id: "automations", label: "Automatiques", description: "Règles et proximité", count: automationsCount },
-    { id: "history", label: "Historique", description: "Envois et résultats", count: campaignsCount },
+    {
+      id: "automations",
+      label: "Automatisations",
+      description: automationsCount > 0 ? `${automationsCount} règle active` : "Règles et proximité Wallet",
+    },
+    {
+      id: "history",
+      label: "Historique",
+      description: campaignsCount > 0 ? `${campaignsCount} campagne${campaignsCount > 1 ? "s" : ""}` : "Envois et résultats",
+    },
   ];
 
   return (
@@ -405,9 +413,9 @@ function CampaignTabs({
           >
             <span className="flex items-center justify-between gap-3">
               <strong className="text-sm">{tab.label}</strong>
-              {typeof tab.count === "number" && (
+              {tab.countLabel && (
                 <span className="rounded-full bg-white px-2 py-0.5 text-xs text-gray-500">
-                  {tab.count}
+                  {tab.countLabel}
                 </span>
               )}
             </span>
@@ -784,11 +792,23 @@ function WalletProximityPanel({
   const programsWithPosition = programs.filter(
     (program) => program.establishment && hasWalletPosition(program.establishment)
   );
-  const programsLinkedWithoutPosition = programs.filter(
-    (program) => program.establishment && !hasWalletPosition(program.establishment)
-  );
-  const programsWithoutEstablishment = programs.filter((program) => !program.establishmentId);
   const isReady = programsWithPosition.length > 0;
+  const hasEstablishment = establishments.length > 0;
+  const hasPosition = positionedEstablishments.length > 0;
+  const statusLabel = isReady
+    ? "Actif"
+    : !hasEstablishment
+      ? "Établissement à ajouter"
+      : !hasPosition
+        ? "Position à ajouter"
+        : "Programme à relier";
+  const summary = isReady
+    ? `Vos cartes peuvent être proposées à proximité pour ${programsWithPosition.length} programme${programsWithPosition.length > 1 ? "s" : ""}.`
+    : !hasEstablishment
+      ? "Ajoutez d'abord votre établissement dans Paramètres."
+      : !hasPosition
+        ? "Votre établissement existe, mais il manque sa latitude et sa longitude."
+        : "Votre position est prête. Il reste à associer au moins un programme à cet établissement.";
 
   return (
     <Card>
@@ -804,24 +824,26 @@ function WalletProximityPanel({
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-semibold">Proximité Wallet</p>
-                <WalletProximityStatusBadge active={isReady} />
+                <WalletProximityStatusBadge active={isReady} label={statusLabel} />
               </div>
               <p className="mt-1 text-sm text-gray-500">
-                Les coordonnées officielles restent dans Paramètres. Ici, vous voyez si vos cartes
-                peuvent être rendues pertinentes près de votre établissement par Apple Wallet ou Google Wallet.
+                {summary}
               </p>
-              <div className="mt-3 grid gap-2 text-sm md:grid-cols-3">
-                <WalletProximityStat
-                  label="Établissements positionnés"
-                  value={`${positionedEstablishments.length}/${establishments.length}`}
+              <div className="mt-3 grid gap-2 md:grid-cols-3">
+                <WalletProximityStep
+                  done={hasEstablishment}
+                  title="1. Établissement"
+                  text={hasEstablishment ? establishments[0]?.name || "Ajouté" : "À créer"}
                 />
-                <WalletProximityStat
-                  label="Programmes actifs en proximité"
-                  value={String(programsWithPosition.length)}
+                <WalletProximityStep
+                  done={hasPosition}
+                  title="2. Position"
+                  text={hasPosition ? "Latitude et longitude OK" : "Coordonnées manquantes"}
                 />
-                <WalletProximityStat
-                  label="À relier ou compléter"
-                  value={String(programsWithoutEstablishment.length + programsLinkedWithoutPosition.length)}
+                <WalletProximityStep
+                  done={isReady}
+                  title="3. Programme"
+                  text={isReady ? `${programsWithPosition.length} actif${programsWithPosition.length > 1 ? "s" : ""}` : "À associer"}
                 />
               </div>
             </div>
@@ -847,7 +869,7 @@ function WalletProximityPanel({
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Cartes prêtes
+              Ce que ça fait
             </p>
             {programsWithPosition.length > 0 ? (
               <div className="mt-2 space-y-2">
@@ -865,7 +887,8 @@ function WalletProximityPanel({
               </div>
             ) : (
               <p className="mt-2 text-sm text-gray-500">
-                Aucun programme n&apos;a encore un établissement avec latitude et longitude.
+                Une fois configuré, Apple Wallet et Google Wallet peuvent rendre la carte plus visible
+                quand le client est près de votre commerce.
               </p>
             )}
           </div>
@@ -886,7 +909,7 @@ function WalletProximityPanel({
   );
 }
 
-function WalletProximityStatusBadge({ active }: { active: boolean }) {
+function WalletProximityStatusBadge({ active, label }: { active: boolean; label: string }) {
   return (
     <span
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
@@ -899,16 +922,30 @@ function WalletProximityStatusBadge({ active }: { active: boolean }) {
         className="h-1.5 w-1.5 rounded-full"
         style={{ background: active ? "#739c12" : "#d97706" }}
       />
-      {active ? "Position active" : "À configurer"}
+      {label}
     </span>
   );
 }
 
-function WalletProximityStat({ label, value }: { label: string; value: string }) {
+function WalletProximityStep({
+  done,
+  title,
+  text,
+}: {
+  done: boolean;
+  title: string;
+  text: string;
+}) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
-      <p className="text-xs text-gray-400">{label}</p>
-      <p className="text-lg font-semibold text-gray-900">{value}</p>
+      <p className="flex items-center gap-2 text-xs font-semibold text-gray-500">
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ background: done ? "#739c12" : "#d97706" }}
+        />
+        {title}
+      </p>
+      <p className="mt-1 text-sm font-medium text-gray-900">{text}</p>
     </div>
   );
 }
