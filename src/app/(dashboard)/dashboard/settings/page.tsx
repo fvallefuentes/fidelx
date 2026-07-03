@@ -722,6 +722,13 @@ export default function SettingsPage() {
                       </Button>
                     </div>
                     </div>
+                    {est.latitude !== null && est.longitude !== null && (
+                      <EstablishmentMap
+                        latitude={est.latitude}
+                        longitude={est.longitude}
+                        name={est.name}
+                      />
+                    )}
                     {editingEstId === est.id && (
                       <div className="mt-3 grid gap-2 border-t pt-3 md:grid-cols-[1fr_1fr_auto]">
                         <Input
@@ -900,6 +907,46 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+}
+
+function EstablishmentMap({
+  latitude,
+  longitude,
+  name,
+}: {
+  latitude: number;
+  longitude: number;
+  name: string;
+}) {
+  const query = `${latitude},${longitude}`;
+  const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=16&output=embed`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+      <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2">
+        <div>
+          <p className="text-sm font-medium text-gray-900">Emplacement Google Maps</p>
+          <p className="text-xs text-gray-500">{name}</p>
+        </div>
+        <a
+          href={mapsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="shrink-0 text-sm font-medium text-lime-700 hover:underline"
+        >
+          Ouvrir
+        </a>
+      </div>
+      <iframe
+        title={`Carte Google Maps - ${name}`}
+        src={embedUrl}
+        className="h-64 w-full border-0"
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+      />
     </div>
   );
 }
