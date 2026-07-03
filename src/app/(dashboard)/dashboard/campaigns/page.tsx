@@ -231,6 +231,11 @@ export default function CampaignsPage() {
     setAutomations(Array.isArray(autos) ? autos : []);
   }
 
+  async function fetchPrograms() {
+    const res = await fetch("/api/programs");
+    setPrograms(await res.json());
+  }
+
   function startBlankCampaign() {
     setActiveTab("send");
     setShowForm(true);
@@ -325,7 +330,11 @@ export default function CampaignsPage() {
 
       {activeTab === "automations" && (
         <div className="space-y-4">
-          <WalletProximityPanel programs={programs} establishments={establishments} />
+          <WalletProximityPanel
+            programs={programs}
+            establishments={establishments}
+            onProgramLinked={fetchPrograms}
+          />
           <CampaignAutomations automations={automations} />
         </div>
       )}
@@ -784,14 +793,24 @@ void RecommendedActions;
 function WalletProximityPanel({
   programs,
   establishments,
+  onProgramLinked,
 }: {
   programs: Program[];
   establishments: Establishment[];
+  onProgramLinked: () => Promise<void>;
 }) {
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [linkingProgram, setLinkingProgram] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [linkSuccess, setLinkSuccess] = useState("");
   const positionedEstablishments = establishments.filter(hasWalletPosition);
+  const establishmentToAssign = positionedEstablishments[0] || null;
   const programsWithPosition = programs.filter(
     (program) => program.establishment && hasWalletPosition(program.establishment)
   );
+  const linkablePrograms = establishmentToAssign
+    ? programs.filter((program) => program.establishmentId !== establishmentToAssign.id)
+    : [];
   const isReady = programsWithPosition.length > 0;
   const hasEstablishment = establishments.length > 0;
   const hasPosition = positionedEstablishments.length > 0;
@@ -809,6 +828,33 @@ function WalletProximityPanel({
       : !hasPosition
         ? "Votre établissement existe, mais il manque sa latitude et sa longitude."
         : "Votre position est prête. Il reste à associer au moins un programme à cet établissement.";
+
+  async function linkProgramToEstablishment() {
+    if (!selectedProgramId || !establishmentToAssign) return;
+
+    setLinkingProgram(true);
+    setLinkError("");
+    setLinkSuccess("");
+
+    const res = await fetch(`/api/programs/${selectedProgramId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ establishmentId: establishmentToAssign.id }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setLinkError(data?.error || "Impossible d'assigner ce programme.");
+      setLinkingProgram(false);
+      return;
+    }
+
+    const linkedProgram = programs.find((program) => program.id === selectedProgramId);
+    await onProgramLinked();
+    setSelectedProgramId("");
+    setLinkSuccess(`${linkedProgram?.name || "Programme"} assigné à ${establishmentToAssign.name}.`);
+    setLinkingProgram(false);
+  }
 
   return (
     <Card>
@@ -856,13 +902,6 @@ function WalletProximityPanel({
             >
               Régler l&apos;établissement
             </a>
-            <a
-              href="/dashboard/programs"
-              className="inline-flex h-10 items-center rounded-lg px-3 text-sm font-medium transition-colors"
-              style={{ background: "#D9FF3C", color: "#141710" }}
-            >
-              Relier un programme
-            </a>
           </div>
         </div>
 
@@ -904,6 +943,49 @@ function WalletProximityPanel({
             </p>
           </div>
         </div>
+
+        {hasPosition && (
+          <div className="mt-4 rounded-lg border border-gray-200 bg-white p-3">
+            <p className="text-sm font-semibold text-gray-900">Assigner la proximité à un programme</p>
+            <p className="mt-1 text-sm text-gray-500">
+              Choisissez le programme qui doit utiliser l&apos;établissement {establishmentToAssign?.name}.
+            </p>
+            {linkablePrograms.length > 0 ? (
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <select
+                  className="flex h-10 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                  value={selectedProgramId}
+                  onChange={(event) => {
+                    setSelectedProgramId(event.target.value);
+                    setLinkError("");
+                    setLinkSuccess("");
+                  }}
+                >
+                  <option value="">Choisir un programme</option>
+                  {linkablePrograms.map((program) => (
+                    <option key={program.id} value={program.id}>
+                      {program.name}
+                    </option>
+                  ))}
+                </select>
+                <Button
+                  type="button"
+                  onClick={linkProgramToEstablishment}
+                  disabled={!selectedProgramId || linkingProgram}
+                  style={{ background: "#D9FF3C", color: "#141710" }}
+                >
+                  {linkingProgram ? "Assignation..." : "Assigner"}
+                </Button>
+              </div>
+            ) : (
+              <p className="mt-3 rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
+                Tous les programmes utilisent déjà cet établissement.
+              </p>
+            )}
+            {linkError && <p className="mt-2 text-sm text-red-600">{linkError}</p>}
+            {linkSuccess && <p className="mt-2 text-sm text-lime-700">{linkSuccess}</p>}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
