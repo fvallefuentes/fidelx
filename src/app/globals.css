@@ -2226,9 +2226,7 @@ html, body { overflow-x: clip; }
 .stats-upgrade-card {
   border: 1px solid rgb(var(--accent-rgb) / 0.22);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(180deg, rgb(var(--accent-rgb) / 0.07), rgb(var(--accent-rgb) / 0.02)),
-    var(--bg-2);
+  background: var(--card-surface);
   padding: 18px 22px;
   margin-top: 4px;
 }
@@ -2252,9 +2250,7 @@ html, body { overflow-x: clip; }
 .stats-table-card {
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(180deg, rgb(var(--ovr) / 0.02), rgb(var(--ovr) / 0)),
-    var(--bg-2);
+  background: var(--card-surface);
   overflow: hidden;
   margin-bottom: 28px;
 }

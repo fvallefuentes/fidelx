@@ -18,7 +18,7 @@ const ACCENT_RGB = "183,242,56";
 const RED = "#ff7a6b";
 const MUTED = "rgb(var(--ovr) / 0.38)";
 const BORDER = "rgb(var(--ovr) / 0.08)";
-const CARD_BG = "rgb(var(--ovr) / 0.04)";
+const CARD_BG = "var(--card-surface)";
 const VAL_COLOR = "rgb(var(--ovr) / 0.92)";
 
 export function StatsInsights({ isFree }: { isFree: boolean }) {
