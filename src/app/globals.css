@@ -1668,6 +1668,7 @@ html, body { overflow-x: clip; }
   --bg: #f5f6f3;
   --bg-2: #ffffff;
   --bg-3: #eef0ea;
+  --card-surface: #fbfbfa;
   --ink: #14160f;
   --ink-2: #3d4136;
   --ink-3: #6c7163;
@@ -1697,6 +1698,7 @@ html, body { overflow-x: clip; }
   --bg: #070707;
   --bg-2: #0c0d0c;
   --bg-3: #121413;
+  --card-surface: #0c0d0c;
   --ink: #f4f5f1;
   --ink-2: #c9ccc3;
   --ink-3: #8a8e84;
@@ -2004,9 +2006,7 @@ html, body { overflow-x: clip; }
   padding: 22px 24px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
-  background:
-    linear-gradient(180deg, rgb(var(--ovr) / 0.025), rgb(var(--ovr) / 0.005)),
-    var(--bg-2);
+  background: var(--card-surface);
   display: flex; flex-direction: column; gap: 16px;
   transition: border-color .25s, transform .25s, box-shadow .25s;
 }
@@ -2066,8 +2066,7 @@ html, body { overflow-x: clip; }
   padding: 22px 22px 18px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
-  background: linear-gradient(180deg, rgb(var(--ovr) / 0.02), rgb(var(--ovr) / 0)),
-    var(--bg-2);
+  background: var(--card-surface);
   display: flex; flex-direction: column;
 }
 .dx-chart-card.span-2 { grid-column: span 2; }
