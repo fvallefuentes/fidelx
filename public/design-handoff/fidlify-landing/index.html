@@ -392,7 +392,236 @@ document.addEventListener('DOMContentLoaded', async function() {
       render();
     }
 
-    window.setTimeout(injectLostRevenueCalculator, 900);
+    function injectStatsPreview() {
+      if (document.getElementById('fidlify-stats-preview')) return;
+
+      const root = document.getElementById('fyroot') || document.body;
+      const style = document.createElement('style');
+      style.textContent = `
+        #fidlify-stats-preview{
+          background:linear-gradient(180deg,var(--bg,#f4f5ee),var(--bg2,#eef0e3));
+          color:var(--ink,#0E1116);
+          padding:104px 40px 112px;
+          border-top:1px solid var(--line,rgba(14,17,22,.09));
+          font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+        }
+        #fidlify-stats-preview *{box-sizing:border-box}
+        #fidlify-stats-preview .fsp-wrap{max-width:1240px;margin:0 auto}
+        #fidlify-stats-preview .fsp-head{
+          display:grid;grid-template-columns:minmax(0,.95fr) minmax(340px,1.05fr);
+          gap:48px;align-items:center;margin-bottom:24px;
+        }
+        #fidlify-stats-preview .fsp-kicker{
+          display:inline-flex;align-items:center;gap:9px;
+          font-family:'Space Mono',ui-monospace,monospace;
+          font-size:11.5px;font-weight:700;letter-spacing:.18em;
+          text-transform:uppercase;color:var(--accent-ink,#56750a);
+          border:1px solid var(--accent-border,rgba(120,160,20,.45));
+          border-radius:999px;padding:8px 14px;margin-bottom:22px;
+        }
+        #fidlify-stats-preview .fsp-kicker:before{
+          content:"";width:7px;height:7px;border-radius:50%;background:var(--accent-ink,#56750a);
+          box-shadow:0 0 12px var(--glow-c,rgba(190,230,70,.4));
+        }
+        #fidlify-stats-preview h2{
+          font-family:'Space Grotesk',sans-serif;font-size:clamp(40px,6vw,76px);
+          line-height:.96;letter-spacing:-.045em;margin:0;color:var(--ink,#0E1116);
+        }
+        #fidlify-stats-preview .fsp-lead{
+          margin:22px 0 0;color:var(--muted,#5d6355);font-size:18px;line-height:1.6;
+          max-width:560px;
+        }
+        #fidlify-stats-preview .fsp-bullets{display:grid;gap:12px;margin-top:28px}
+        #fidlify-stats-preview .fsp-bullet{
+          display:flex;gap:12px;align-items:flex-start;color:var(--ink,#0E1116);
+          font-size:15px;font-weight:650;line-height:1.45;
+        }
+        #fidlify-stats-preview .fsp-dot{
+          width:24px;height:24px;border-radius:50%;background:#D9FF3C;color:#0E1116;
+          display:grid;place-items:center;flex:none;font-weight:900;font-size:13px;
+        }
+        #fidlify-stats-preview .fsp-board{
+          border:1px solid var(--line,rgba(14,17,22,.09));
+          border-radius:30px;background:var(--card,#fff);
+          box-shadow:var(--cardshadow,0 14px 36px rgba(24,30,10,.07));
+          overflow:hidden;
+        }
+        #fidlify-stats-preview .fsp-topbar{
+          display:flex;justify-content:space-between;gap:16px;align-items:center;
+          padding:20px 22px;border-bottom:1px solid var(--line,rgba(14,17,22,.09));
+        }
+        #fidlify-stats-preview .fsp-title{
+          font-family:'Space Grotesk',sans-serif;font-size:21px;font-weight:700;
+          letter-spacing:-.025em;color:var(--ink,#0E1116);
+        }
+        #fidlify-stats-preview .fsp-chip{
+          border-radius:999px;background:#D9FF3C;color:#0E1116;
+          padding:8px 12px;font-size:12px;font-weight:800;white-space:nowrap;
+        }
+        #fidlify-stats-preview .fsp-kpis{
+          display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line,rgba(14,17,22,.09));
+        }
+        #fidlify-stats-preview .fsp-kpi{
+          background:var(--card,#fff);padding:20px 18px;min-height:112px;
+        }
+        #fidlify-stats-preview .fsp-kpi-label{
+          font-family:'Space Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.14em;
+          text-transform:uppercase;color:var(--faint,#7d8374);font-weight:700;
+        }
+        #fidlify-stats-preview .fsp-kpi-value{
+          margin-top:12px;font-family:'Space Grotesk',sans-serif;font-size:34px;
+          font-weight:700;letter-spacing:-.04em;color:var(--ink,#0E1116);
+        }
+        #fidlify-stats-preview .fsp-kpi-note{
+          margin-top:6px;color:var(--muted,#5d6355);font-size:12px;
+        }
+        #fidlify-stats-preview .fsp-chart{
+          padding:28px 24px 20px;display:grid;gap:18px;
+        }
+        #fidlify-stats-preview .fsp-chart-card{
+          position:relative;min-height:230px;border:1px solid var(--line,rgba(14,17,22,.09));
+          border-radius:22px;background:linear-gradient(180deg,rgba(217,255,60,.13),rgba(217,255,60,0));
+          overflow:hidden;
+        }
+        #fidlify-stats-preview .fsp-chart-grid{
+          position:absolute;inset:20px 22px 34px;display:grid;grid-template-rows:repeat(4,1fr);
+        }
+        #fidlify-stats-preview .fsp-chart-grid span{border-top:1px solid var(--line,rgba(14,17,22,.09))}
+        #fidlify-stats-preview .fsp-line{
+          position:absolute;inset:22px 24px 38px;
+          background:
+            linear-gradient(140deg,transparent 0 8%,#D9FF3C 8% 10%,transparent 10% 20%,#D9FF3C 20% 22%,transparent 22% 34%,#D9FF3C 34% 36%,transparent 36% 48%,#D9FF3C 48% 50%,transparent 50% 63%,#D9FF3C 63% 65%,transparent 65% 78%,#D9FF3C 78% 80%,transparent 80% 100%);
+          filter:drop-shadow(0 8px 18px rgba(140,185,0,.28));
+          clip-path:polygon(0 68%,9% 58%,18% 64%,28% 42%,38% 52%,48% 46%,58% 62%,68% 36%,78% 45%,88% 25%,100% 32%,100% 38%,88% 31%,78% 51%,68% 42%,58% 68%,48% 52%,38% 58%,28% 48%,18% 70%,9% 64%,0 74%);
+        }
+        #fidlify-stats-preview .fsp-bars{
+          position:absolute;left:28px;right:28px;bottom:28px;height:74px;
+          display:grid;grid-template-columns:repeat(12,1fr);gap:10px;align-items:end;
+        }
+        #fidlify-stats-preview .fsp-bars span{
+          display:block;border-radius:999px 999px 6px 6px;background:#D9FF3C;
+          box-shadow:0 8px 18px rgba(140,185,0,.2);
+        }
+        #fidlify-stats-preview .fsp-bottom{
+          display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:0 24px 24px;
+        }
+        #fidlify-stats-preview .fsp-list{
+          border:1px solid var(--line,rgba(14,17,22,.09));border-radius:20px;
+          background:var(--chip,#f7f8f0);padding:18px;
+        }
+        #fidlify-stats-preview .fsp-list h3{
+          margin:0 0 14px;font-family:'Space Grotesk',sans-serif;font-size:18px;
+          color:var(--ink,#0E1116);
+        }
+        #fidlify-stats-preview .fsp-row{
+          display:flex;align-items:center;justify-content:space-between;gap:16px;
+          padding:11px 0;border-top:1px solid var(--line,rgba(14,17,22,.09));
+          color:var(--ink,#0E1116);font-size:14px;
+        }
+        #fidlify-stats-preview .fsp-row:first-of-type{border-top:0}
+        #fidlify-stats-preview .fsp-tag{
+          border-radius:999px;background:rgba(217,255,60,.42);color:var(--accent-ink,#56750a);
+          padding:6px 9px;font-weight:800;font-size:12px;white-space:nowrap;
+        }
+        #fidlify-stats-preview .fsp-proof{
+          margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+        }
+        #fidlify-stats-preview .fsp-proof-card{
+          border:1px solid var(--line,rgba(14,17,22,.09));
+          border-radius:20px;background:var(--card,#fff);padding:18px;
+          box-shadow:var(--cardshadow,0 14px 36px rgba(24,30,10,.07));
+        }
+        #fidlify-stats-preview .fsp-proof-card strong{
+          display:block;color:var(--ink,#0E1116);font-size:15px;margin-bottom:8px;
+        }
+        #fidlify-stats-preview .fsp-proof-card span{
+          display:block;color:var(--muted,#5d6355);font-size:14px;line-height:1.45;
+        }
+        @media (max-width:1000px){
+          #fidlify-stats-preview .fsp-head,
+          #fidlify-stats-preview .fsp-bottom,
+          #fidlify-stats-preview .fsp-proof{grid-template-columns:1fr}
+          #fidlify-stats-preview .fsp-kpis{grid-template-columns:repeat(2,1fr)}
+        }
+        @media (max-width:620px){
+          #fidlify-stats-preview{padding:72px 20px 84px}
+          #fidlify-stats-preview .fsp-kpis{grid-template-columns:1fr}
+          #fidlify-stats-preview .fsp-topbar{align-items:flex-start;flex-direction:column}
+          #fidlify-stats-preview .fsp-bars{gap:5px}
+        }
+      `;
+
+      const section = document.createElement('section');
+      section.id = 'fidlify-stats-preview';
+      section.setAttribute('aria-label', 'Apercu des statistiques Fidlify');
+      section.innerHTML = `
+        <div class="fsp-wrap">
+          <div class="fsp-head">
+            <div>
+              <div class="fsp-kicker">Statistiques incluses</div>
+              <h2>Vos actions de fidelite deviennent enfin mesurables.</h2>
+              <p class="fsp-lead">Fidlify ne sert pas seulement a distribuer une carte Wallet. Le commercant voit ce qui fonctionne, quels clients reviennent, quelles campagnes generent du passage et ou il perd encore du chiffre.</p>
+              <div class="fsp-bullets">
+                <div class="fsp-bullet"><span class="fsp-dot">1</span><span>Comprendre en un coup d'oeil si les clients reviennent vraiment.</span></div>
+                <div class="fsp-bullet"><span class="fsp-dot">2</span><span>Identifier les meilleurs programmes, les clients actifs et les campagnes rentables.</span></div>
+                <div class="fsp-bullet"><span class="fsp-dot">3</span><span>Transformer la fidelite en argument concret: moins d'intuition, plus de preuves.</span></div>
+              </div>
+            </div>
+            <div class="fsp-board" aria-hidden="true">
+              <div class="fsp-topbar">
+                <div>
+                  <div class="fsp-title">Tableau de bord fidelite</div>
+                  <div style="margin-top:4px;color:var(--muted,#5d6355);font-size:13px">30 derniers jours</div>
+                </div>
+                <div class="fsp-chip">+18% clients revenus</div>
+              </div>
+              <div class="fsp-kpis">
+                <div class="fsp-kpi"><div class="fsp-kpi-label">Clients inscrits</div><div class="fsp-kpi-value">427</div><div class="fsp-kpi-note">+51 ce mois</div></div>
+                <div class="fsp-kpi"><div class="fsp-kpi-label">Cartes actives</div><div class="fsp-kpi-value">312</div><div class="fsp-kpi-note">73% installees</div></div>
+                <div class="fsp-kpi"><div class="fsp-kpi-label">Visites suivies</div><div class="fsp-kpi-value">1'284</div><div class="fsp-kpi-note">tampons distribues</div></div>
+                <div class="fsp-kpi"><div class="fsp-kpi-label">Retour client</div><div class="fsp-kpi-value">38%</div><div class="fsp-kpi-note">revenus 2 fois ou +</div></div>
+              </div>
+              <div class="fsp-chart">
+                <div class="fsp-chart-card">
+                  <div class="fsp-chart-grid"><span></span><span></span><span></span><span></span></div>
+                  <div class="fsp-line"></div>
+                  <div class="fsp-bars">
+                    <span style="height:32%"></span><span style="height:44%"></span><span style="height:38%"></span><span style="height:72%"></span><span style="height:58%"></span><span style="height:48%"></span><span style="height:36%"></span><span style="height:63%"></span><span style="height:54%"></span><span style="height:82%"></span><span style="height:70%"></span><span style="height:61%"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="fsp-bottom">
+                <div class="fsp-list">
+                  <h3>Campagnes performantes</h3>
+                  <div class="fsp-row"><span>Clients inactifs 30 jours</span><span class="fsp-tag">27 retours</span></div>
+                  <div class="fsp-row"><span>Proches recompense</span><span class="fsp-tag">41 scans</span></div>
+                  <div class="fsp-row"><span>Anniversaires</span><span class="fsp-tag">14 offres</span></div>
+                </div>
+                <div class="fsp-list">
+                  <h3>Ce que le commercant retient</h3>
+                  <div class="fsp-row"><span>Meilleur jour</span><span class="fsp-tag">Samedi</span></div>
+                  <div class="fsp-row"><span>Programme #1</span><span class="fsp-tag">Cafe</span></div>
+                  <div class="fsp-row"><span>Action suivante</span><span class="fsp-tag">Relancer 38 clients</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="fsp-proof">
+            <div class="fsp-proof-card"><strong>Un discours plus simple a vendre</strong><span>Vous ne vendez pas seulement une carte digitale, vous vendez un outil pour faire revenir les clients.</span></div>
+            <div class="fsp-proof-card"><strong>Des preuves pour convaincre</strong><span>Le commercant voit les visites, les retours et les campagnes utiles sans devoir analyser des tableaux compliques.</span></div>
+            <div class="fsp-proof-card"><strong>Une raison de rester abonne</strong><span>Chaque mois, les statistiques montrent la valeur creee et encouragent a continuer les relances.</span></div>
+          </div>
+        </div>
+      `;
+
+      document.head.appendChild(style);
+      root.appendChild(section);
+    }
+
+    window.setTimeout(function() {
+      injectLostRevenueCalculator();
+      injectStatsPreview();
+    }, 900);
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);
