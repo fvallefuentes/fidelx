@@ -718,7 +718,7 @@ function NewLandingPreview() {
           </h2>
         </div>
         <a
-          href="/design-handoff/fidlify-landing/"
+          href="/design-handoff/fidlify-landing/index.html"
           target="_blank"
           rel="noreferrer"
           style={{
@@ -750,7 +750,7 @@ function NewLandingPreview() {
         }}
       >
         <iframe
-          src="/design-handoff/fidlify-landing/"
+          src="/design-handoff/fidlify-landing/index.html"
           title="Nouvelle landing Fidlify"
           loading="lazy"
           style={{
