@@ -191,6 +191,208 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (window.Babel && typeof window.Babel.transformScriptTags === 'function') {
       window.Babel.transformScriptTags();
     }
+
+    function injectLostRevenueCalculator() {
+      if (document.getElementById('fidlify-lost-revenue-calculator')) return;
+
+      const root = document.getElementById('fyroot') || document.body;
+      const style = document.createElement('style');
+      style.textContent = `
+        #fidlify-lost-revenue-calculator{
+          background:var(--bg,#f4f5ee);
+          color:var(--ink,#0E1116);
+          padding:96px 40px 104px;
+          border-top:1px solid var(--line,rgba(14,17,22,.09));
+          font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+        }
+        #fidlify-lost-revenue-calculator *{box-sizing:border-box}
+        #fidlify-lost-revenue-calculator .flrc-wrap{max-width:1240px;margin:0 auto}
+        #fidlify-lost-revenue-calculator .flrc-kicker{
+          display:inline-flex;align-items:center;gap:9px;
+          font-family:'Space Mono',ui-monospace,monospace;
+          font-size:11.5px;font-weight:700;letter-spacing:.18em;
+          text-transform:uppercase;color:var(--accent-ink,#56750a);
+          border:1px solid var(--accent-border,rgba(120,160,20,.45));
+          border-radius:999px;padding:8px 14px;margin-bottom:22px;
+        }
+        #fidlify-lost-revenue-calculator .flrc-kicker:before{
+          content:"";width:7px;height:7px;border-radius:50%;background:var(--accent-ink,#56750a);
+          box-shadow:0 0 12px var(--glow-c,rgba(190,230,70,.4));
+        }
+        #fidlify-lost-revenue-calculator .flrc-head{
+          display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,360px);
+          gap:28px;align-items:end;margin-bottom:34px;
+        }
+        #fidlify-lost-revenue-calculator h2{
+          font-family:'Space Grotesk',sans-serif;font-size:clamp(40px,6vw,76px);
+          line-height:.96;letter-spacing:-.045em;margin:0;color:var(--ink,#0E1116);
+        }
+        #fidlify-lost-revenue-calculator .flrc-lead{
+          margin:0;color:var(--muted,#5d6355);font-size:18px;line-height:1.55;
+        }
+        #fidlify-lost-revenue-calculator .flrc-grid{
+          display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);
+          gap:18px;align-items:stretch;
+        }
+        #fidlify-lost-revenue-calculator .flrc-panel{
+          border:1px solid var(--line,rgba(14,17,22,.09));
+          border-radius:26px;background:var(--card,#fff);
+          box-shadow:var(--cardshadow,0 14px 36px rgba(24,30,10,.07));
+          padding:30px;
+        }
+        #fidlify-lost-revenue-calculator .flrc-panel h3{
+          margin:0 0 22px;font-family:'Space Grotesk',sans-serif;
+          font-size:28px;letter-spacing:-.025em;color:var(--ink,#0E1116);
+        }
+        #fidlify-lost-revenue-calculator .flrc-field{display:grid;gap:12px;margin-top:22px}
+        #fidlify-lost-revenue-calculator .flrc-field:first-of-type{margin-top:0}
+        #fidlify-lost-revenue-calculator .flrc-label{
+          display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+          color:var(--ink,#0E1116);font-size:14px;font-weight:700;
+        }
+        #fidlify-lost-revenue-calculator .flrc-value{
+          color:var(--accent-ink,#56750a);font-family:'Space Mono',ui-monospace,monospace;
+          font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;
+        }
+        #fidlify-lost-revenue-calculator input[type=range]{
+          width:100%;accent-color:#D9FF3C;cursor:pointer;
+        }
+        #fidlify-lost-revenue-calculator .flrc-result{
+          background:#0E1116;color:#FCFCFC;border-radius:26px;padding:30px;
+          min-height:100%;display:grid;align-content:space-between;gap:26px;
+          box-shadow:0 24px 70px rgba(14,17,22,.18);
+        }
+        #fidlify-lost-revenue-calculator .flrc-result-kicker{
+          font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:700;
+          letter-spacing:.16em;text-transform:uppercase;color:#D9FF3C;margin-bottom:12px;
+        }
+        #fidlify-lost-revenue-calculator .flrc-big{
+          font-family:'Space Grotesk',sans-serif;font-size:clamp(48px,7vw,88px);
+          line-height:.92;letter-spacing:-.055em;font-weight:700;font-variant-numeric:tabular-nums;
+        }
+        #fidlify-lost-revenue-calculator .flrc-copy{
+          margin:16px 0 0;color:rgba(252,252,252,.68);font-size:16px;line-height:1.58;
+        }
+        #fidlify-lost-revenue-calculator .flrc-cards{
+          display:grid;grid-template-columns:1fr 1fr;gap:12px;
+        }
+        #fidlify-lost-revenue-calculator .flrc-mini{
+          border-radius:18px;padding:17px;border:1px solid rgba(252,252,252,.13);
+          background:rgba(252,252,252,.07);
+        }
+        #fidlify-lost-revenue-calculator .flrc-mini:first-child{
+          background:rgba(217,255,60,.14);border-color:rgba(217,255,60,.28);
+        }
+        #fidlify-lost-revenue-calculator .flrc-mini-label{
+          color:rgba(252,252,252,.66);font-size:12px;font-weight:800;
+        }
+        #fidlify-lost-revenue-calculator .flrc-mini:first-child .flrc-mini-label{color:#D9FF3C}
+        #fidlify-lost-revenue-calculator .flrc-mini-value{
+          margin-top:8px;font-family:'Space Grotesk',sans-serif;font-size:28px;
+          font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+        }
+        @media (max-width:900px){
+          #fidlify-lost-revenue-calculator{padding:72px 20px 80px}
+          #fidlify-lost-revenue-calculator .flrc-head,
+          #fidlify-lost-revenue-calculator .flrc-grid{grid-template-columns:1fr}
+          #fidlify-lost-revenue-calculator .flrc-panel,
+          #fidlify-lost-revenue-calculator .flrc-result{padding:22px;border-radius:22px}
+        }
+        @media (max-width:520px){
+          #fidlify-lost-revenue-calculator .flrc-cards{grid-template-columns:1fr}
+          #fidlify-lost-revenue-calculator .flrc-label{align-items:flex-start;flex-direction:column;gap:6px}
+        }
+      `;
+
+      const section = document.createElement('section');
+      section.id = 'fidlify-lost-revenue-calculator';
+      section.setAttribute('aria-label', 'Calculateur de manque a gagner');
+      section.innerHTML = `
+        <div class="flrc-wrap">
+          <div class="flrc-kicker">Calculateur manque a gagner</div>
+          <div class="flrc-head">
+            <h2>Combien vous coute l'absence de relance client ?</h2>
+            <p class="flrc-lead">Simulez en quelques secondes le revenu qui s'evapore quand les clients ne reviennent pas, puis montrez le potentiel d'une relance Wallet ciblee.</p>
+          </div>
+          <div class="flrc-grid">
+            <div class="flrc-panel">
+              <h3>Votre commerce</h3>
+              <label class="flrc-field">
+                <span class="flrc-label">Clients par mois <span class="flrc-value" data-flrc-monthly-clients>420</span></span>
+                <input data-flrc-input="monthlyClients" type="range" min="50" max="2000" step="10" value="420">
+              </label>
+              <label class="flrc-field">
+                <span class="flrc-label">Panier moyen <span class="flrc-value"><span data-flrc-average-ticket>24</span> CHF</span></span>
+                <input data-flrc-input="averageTicket" type="range" min="5" max="150" step="1" value="24">
+              </label>
+              <label class="flrc-field">
+                <span class="flrc-label">Clients qui ne reviennent pas <span class="flrc-value"><span data-flrc-lost-rate>38</span>%</span></span>
+                <input data-flrc-input="lostRate" type="range" min="5" max="80" step="1" value="38">
+              </label>
+            </div>
+            <div class="flrc-result">
+              <div>
+                <div class="flrc-result-kicker">Manque a gagner estime</div>
+                <div class="flrc-big" data-flrc-monthly-lost>CHF 3'840</div>
+                <p class="flrc-copy" data-flrc-copy>Environ 160 clients par mois ne reviennent pas. Une relance Wallet bien ciblee peut recuperer une partie de ce revenu sans application a installer.</p>
+              </div>
+              <div class="flrc-cards">
+                <div class="flrc-mini">
+                  <div class="flrc-mini-label">Potentiel recupere / mois</div>
+                  <div class="flrc-mini-value" data-flrc-recovered-monthly>CHF 691</div>
+                </div>
+                <div class="flrc-mini">
+                  <div class="flrc-mini-label">Potentiel recupere / an</div>
+                  <div class="flrc-mini-value" data-flrc-recovered-yearly>CHF 8'292</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.head.appendChild(style);
+      root.appendChild(section);
+
+      const formatCHF = new Intl.NumberFormat('fr-CH', {
+        style: 'currency',
+        currency: 'CHF',
+        maximumFractionDigits: 0
+      });
+      const state = { monthlyClients: 420, averageTicket: 24, lostRate: 38 };
+      const nodes = {
+        monthlyClients: section.querySelector('[data-flrc-monthly-clients]'),
+        averageTicket: section.querySelector('[data-flrc-average-ticket]'),
+        lostRate: section.querySelector('[data-flrc-lost-rate]'),
+        monthlyLost: section.querySelector('[data-flrc-monthly-lost]'),
+        recoveredMonthly: section.querySelector('[data-flrc-recovered-monthly]'),
+        recoveredYearly: section.querySelector('[data-flrc-recovered-yearly]'),
+        copy: section.querySelector('[data-flrc-copy]')
+      };
+
+      function render() {
+        const lostCustomers = Math.round(state.monthlyClients * state.lostRate / 100);
+        const monthlyLost = lostCustomers * state.averageTicket;
+        const recoveredMonthly = Math.round(monthlyLost * 0.18);
+        nodes.monthlyClients.textContent = String(state.monthlyClients);
+        nodes.averageTicket.textContent = String(state.averageTicket);
+        nodes.lostRate.textContent = String(state.lostRate);
+        nodes.monthlyLost.textContent = formatCHF.format(monthlyLost);
+        nodes.recoveredMonthly.textContent = formatCHF.format(recoveredMonthly);
+        nodes.recoveredYearly.textContent = formatCHF.format(recoveredMonthly * 12);
+        nodes.copy.textContent = 'Environ ' + lostCustomers + ' clients par mois ne reviennent pas. Une relance Wallet bien ciblee peut recuperer une partie de ce revenu sans application a installer.';
+      }
+
+      section.querySelectorAll('[data-flrc-input]').forEach(function(input) {
+        input.addEventListener('input', function(event) {
+          state[event.target.dataset.flrcInput] = Number(event.target.value);
+          render();
+        });
+      });
+      render();
+    }
+
+    window.setTimeout(injectLostRevenueCalculator, 900);
   } catch (err) {
     setStatus('Error unpacking: ' + err.message);
     console.error('Bundle unpack error:', err);
