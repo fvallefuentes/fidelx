@@ -392,6 +392,119 @@ document.addEventListener('DOMContentLoaded', async function() {
       render();
     }
 
+    function injectCommerceCardLogos() {
+      if (window.__fidlifyCommerceLogosStarted) return;
+      window.__fidlifyCommerceLogosStarted = true;
+
+      const style = document.createElement('style');
+      style.textContent = `
+        .fidlify-commerce-wordmark{
+          display:inline-flex!important;align-items:center!important;gap:6px!important;
+          font-family:'Space Mono',ui-monospace,monospace!important;
+          font-size:9.5px!important;font-weight:800!important;letter-spacing:.11em!important;
+          text-transform:uppercase!important;white-space:nowrap!important;
+        }
+        .fidlify-commerce-wordmark img{
+          width:18px!important;height:18px!important;border-radius:6px!important;
+          display:block!important;object-fit:cover!important;box-shadow:0 2px 7px rgba(0,0,0,.22)!important;
+        }
+        .fidlify-commerce-tag{
+          display:inline-flex!important;align-items:center!important;gap:6px!important;
+          font-family:'Space Mono',ui-monospace,monospace!important;
+          font-size:8.5px!important;font-weight:800!important;letter-spacing:.12em!important;
+          text-transform:uppercase!important;white-space:nowrap!important;
+        }
+        .fidlify-commerce-tag img{
+          width:15px!important;height:15px!important;border-radius:5px!important;
+          display:block!important;object-fit:cover!important;box-shadow:0 2px 7px rgba(0,0,0,.2)!important;
+        }
+      `;
+      document.head.appendChild(style);
+
+      function svgLogo(bg, fg, label, icon) {
+        const paths = {
+          cup: '<path d="M19 9h1.2a2.6 2.6 0 0 1 0 5.2H19" fill="none" stroke="' + fg + '" stroke-width="2" stroke-linecap="round"/><path d="M5 8h14v6.4A5.6 5.6 0 0 1 13.4 20H10.6A5.6 5.6 0 0 1 5 14.4Z" fill="none" stroke="' + fg + '" stroke-width="2" stroke-linejoin="round"/><path d="M8 4v2M12 4v2M16 4v2" stroke="' + fg + '" stroke-width="2" stroke-linecap="round"/>',
+          bread: '<path d="M5 18v-5.2C5 8.8 8.3 6 12 6s7 2.8 7 6.8V18a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1Z" fill="none" stroke="' + fg + '" stroke-width="2" stroke-linejoin="round"/><path d="M9 9.8 8 12M12.5 9.4 11.5 12M16 10l-1 2.2" stroke="' + fg + '" stroke-width="1.8" stroke-linecap="round"/>',
+          scissors: '<circle cx="7" cy="7" r="2.2" fill="none" stroke="' + fg + '" stroke-width="1.8"/><circle cx="7" cy="17" r="2.2" fill="none" stroke="' + fg + '" stroke-width="1.8"/><path d="M9 8.5 19 17M9 15.5 19 7" stroke="' + fg + '" stroke-width="1.8" stroke-linecap="round"/>',
+          fork: '<path d="M8 4v6M11 4v6M14 4v6M8 10a3 3 0 0 0 6 0M11 13v8" fill="none" stroke="' + fg + '" stroke-width="2" stroke-linecap="round"/><path d="M18 4v17" stroke="' + fg + '" stroke-width="2" stroke-linecap="round"/>',
+          flower: '<circle cx="12" cy="12" r="2.3" fill="' + fg + '"/><circle cx="12" cy="6.5" r="2.4" fill="' + fg + '"/><circle cx="16.8" cy="9.2" r="2.4" fill="' + fg + '"/><circle cx="16.8" cy="14.8" r="2.4" fill="' + fg + '"/><circle cx="12" cy="17.5" r="2.4" fill="' + fg + '"/><circle cx="7.2" cy="14.8" r="2.4" fill="' + fg + '"/><circle cx="7.2" cy="9.2" r="2.4" fill="' + fg + '"/>',
+          star: '<path d="M12 4 14.3 8.8 19.6 9.6 15.8 13.3 16.7 18.6 12 16.1 7.3 18.6 8.2 13.3 4.4 9.6 9.7 8.8Z" fill="' + fg + '"/>'
+        };
+        const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="7" fill="' + bg + '"/>' + paths[icon] + '</svg>';
+        return { src: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg), label };
+      }
+
+      const logos = [
+        { match: /Caf[eé] Lumen/i, logo: svgLogo('#4A3526', '#FFD870', 'Lumen', 'cup') },
+        { match: /Le pain du matin/i, logo: svgLogo('#A8503A', '#FFE5B7', 'Le Pain', 'bread') },
+        { match: /Salon Atlas/i, logo: svgLogo('#111827', '#D9FF3C', 'Atlas', 'scissors') },
+        { match: /Table Douze/i, logo: svgLogo('#1F3A2E', '#FFE6A8', 'Table 12', 'fork') },
+        { match: /Maison Rose/i, logo: svgLogo('#F4C7D6', '#7A1F42', 'Rose', 'flower') },
+        { match: /Studio Nord/i, logo: svgLogo('#111827', '#E8E9EC', 'Nord', 'star') }
+      ];
+
+      function cardLogoForText(text) {
+        return (logos.find(function(item) { return item.match.test(text); }) || logos[0]).logo;
+      }
+
+      function nearestCard(el) {
+        let current = el;
+        while (current && current.id !== 'fyroot') {
+          const text = current.innerText || '';
+          const rect = current.getBoundingClientRect();
+          if ((/PROGRAMME|R[ÉE]COMPENSE|3\/10|PROPULS[ÉE]E PAR/i.test(text)) && rect.width > 120 && rect.width < 430 && rect.height > 120 && rect.height < 520) {
+            return current;
+          }
+          current = current.parentElement;
+        }
+        return null;
+      }
+
+      function apply() {
+        const root = document.getElementById('fyroot');
+        if (!root) return;
+
+        function isHeroCard(card) {
+          const rect = card.getBoundingClientRect();
+          return rect.top + window.scrollY < 900;
+        }
+
+        Array.from(root.querySelectorAll('span')).forEach(function(span) {
+          const text = (span.textContent || '').trim();
+          if (text === 'FIDLIFY') {
+            const row = span.parentElement;
+            const card = nearestCard(span);
+            if (!row || !card || !/PROGRAMME|R[ÉE]COMPENSE/i.test(card.innerText || '')) return;
+            if (!isHeroCard(card)) return;
+            const logo = cardLogoForText(card.innerText || '');
+            const img = row.querySelector('img');
+            if (img) {
+              img.src = logo.src;
+              img.alt = logo.label;
+            }
+            span.textContent = logo.label.toUpperCase();
+            row.classList.add('fidlify-commerce-wordmark');
+          }
+
+          if (/^PROPULS[ÉE]E PAR FIDLIFY$/i.test(text)) {
+            const card = nearestCard(span);
+            if (!card || !/3\/10|Le pain du matin|Salon Atlas|Table Douze|Maison Rose|Studio Nord/i.test(card.innerText || '')) return;
+            if (!isHeroCard(card)) return;
+            const logo = cardLogoForText(card.innerText || '');
+            span.innerHTML = '<span class="fidlify-commerce-tag"><img src="' + logo.src + '" alt="' + logo.label + '"><span>' + logo.label.toUpperCase() + '</span></span>';
+          }
+        });
+      }
+
+      apply();
+      window.setInterval(apply, 900);
+      new MutationObserver(apply).observe(document.getElementById('fyroot') || document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
+
     function injectStatsPreview() {
       if (document.getElementById('fidlify-stats-preview')) return;
 
@@ -620,6 +733,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     window.setTimeout(function() {
       injectLostRevenueCalculator();
+      injectCommerceCardLogos();
       injectStatsPreview();
     }, 900);
   } catch (err) {
