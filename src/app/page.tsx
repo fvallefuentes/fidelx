@@ -668,6 +668,104 @@ function SeoIntro() {
 }
 
 /* ─── Footer ──────────────────────────────────────────────── */
+function NewLandingPreview() {
+  return (
+    <section
+      id="landing-v2-preview"
+      aria-label="Aperçu nouvelle landing Fidlify"
+      style={{
+        position: "relative",
+        zIndex: 2,
+        background: "#f4f5ee",
+        borderTop: "1px solid rgba(14,17,22,0.12)",
+        padding: "28px clamp(14px, 3vw, 32px) 36px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          maxWidth: 1440,
+          margin: "0 auto 18px",
+          color: "#0E1116",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontFamily: "var(--font-geist-mono, monospace)",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.14em",
+              textTransform: "uppercase",
+              color: "#56750a",
+            }}
+          >
+            Nouvelle landing
+          </div>
+          <h2
+            style={{
+              margin: "6px 0 0",
+              fontSize: "clamp(24px, 3vw, 36px)",
+              lineHeight: 1.05,
+              fontWeight: 800,
+              letterSpacing: "-0.03em",
+            }}
+          >
+            Aperçu design handoff
+          </h2>
+        </div>
+        <a
+          href="/design-handoff/fidlify-landing/"
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 42,
+            padding: "0 16px",
+            borderRadius: 10,
+            background: "#D9FF3C",
+            color: "#0E1116",
+            fontSize: 14,
+            fontWeight: 700,
+            whiteSpace: "nowrap",
+          }}
+        >
+          Ouvrir en plein écran
+        </a>
+      </div>
+      <div
+        style={{
+          maxWidth: 1440,
+          margin: "0 auto",
+          borderRadius: 18,
+          overflow: "hidden",
+          border: "1px solid rgba(14,17,22,0.14)",
+          background: "#f4f5ee",
+          boxShadow: "0 24px 70px rgba(24,30,10,0.12)",
+        }}
+      >
+        <iframe
+          src="/design-handoff/fidlify-landing/"
+          title="Nouvelle landing Fidlify"
+          loading="lazy"
+          style={{
+            display: "block",
+            width: "100%",
+            height: "min(920px, 92vh)",
+            border: 0,
+            background: "#f4f5ee",
+          }}
+        />
+      </div>
+    </section>
+  );
+}
+
 // Le Footer est maintenant un composant partagé (avec liens légaux + cookies),
 // importé depuis "@/components/landing/Footer"
 
@@ -700,6 +798,7 @@ export default function LandingPage() {
         <FAQSection />
         <SectionFinalCTA />
         <Footer />
+        <NewLandingPreview />
       </div>
     </div>
   );
