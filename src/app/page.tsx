@@ -7,6 +7,7 @@ import SectionDemo from "@/components/landing/SectionDemo";
 import RevealInit from "@/components/landing/RevealInit";
 import Nav from "@/components/landing/Nav";
 import Footer from "@/components/landing/Footer";
+import LostRevenueCalculator from "@/components/landing/LostRevenueCalculator";
 import { FaqJsonLd } from "@/components/seo/JsonLd";
 import {
   DEFAULT_DESCRIPTION,
@@ -738,6 +739,7 @@ function NewLandingPreview() {
           Ouvrir en plein écran
         </a>
       </div>
+      <LostRevenueCalculator />
       <div
         style={{
           maxWidth: 1440,
