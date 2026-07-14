@@ -554,6 +554,188 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
     }
 
+    function enhanceAdoptionSection() {
+      if (window.__fidlifyAdoptionEnhanced) return;
+      const section = document.getElementById('adoption');
+      if (!section) return;
+      window.__fidlifyAdoptionEnhanced = true;
+
+      if (!document.getElementById('fidlify-adoption-style')) {
+        const style = document.createElement('style');
+        style.id = 'fidlify-adoption-style';
+        style.textContent = `
+          #adoption.fidlify-adoption-enhanced{
+            border-top:1px solid var(--line,rgba(14,17,22,.09));
+            background:
+              radial-gradient(circle at 20% 15%,rgba(217,255,60,.18),transparent 30%),
+              linear-gradient(180deg,var(--bg,#f4f5ee),var(--bg2,#eef0e3));
+            color:var(--ink,#0E1116);
+            font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+          }
+          #adoption.fidlify-adoption-enhanced *{box-sizing:border-box}
+          #adoption .fad-wrap{max-width:1240px;margin:0 auto;padding:104px 40px 112px}
+          #adoption .fad-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(520px,1.1fr);gap:54px;align-items:center}
+          #adoption .fad-kicker{
+            display:inline-flex;align-items:center;gap:9px;font-family:'Space Mono',ui-monospace,monospace;
+            font-size:11.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+            color:var(--accent-ink,#56750a);border:1px solid var(--accent-border,rgba(120,160,20,.45));
+            border-radius:999px;padding:8px 14px;margin-bottom:24px;
+          }
+          #adoption .fad-kicker:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent-ink,#56750a);box-shadow:0 0 12px var(--glow-c,rgba(190,230,70,.4))}
+          #adoption .fad-title{
+            font-family:'Space Grotesk',sans-serif;font-size:clamp(42px,5.4vw,72px);line-height:.96;
+            letter-spacing:-.045em;margin:0;color:var(--ink,#0E1116);
+          }
+          #adoption .fad-title span{background:var(--hl-bg);color:var(--hl-ink);padding:0 7px;margin:0 -7px}
+          #adoption .fad-lead{margin:24px 0 0;max-width:570px;color:var(--muted,#5d6355);font-size:18px;line-height:1.6}
+          #adoption .fad-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:32px;max-width:620px}
+          #adoption .fad-metric{
+            border:1px solid var(--line,rgba(14,17,22,.09));border-radius:18px;background:var(--card,#fff);
+            padding:18px;box-shadow:var(--cardshadow,0 14px 36px rgba(24,30,10,.07));
+          }
+          #adoption .fad-metric strong{display:block;font-family:'Space Grotesk',sans-serif;font-size:29px;letter-spacing:-.035em;color:var(--ink,#0E1116)}
+          #adoption .fad-metric span{display:block;margin-top:6px;color:var(--muted,#5d6355);font-size:13.5px;line-height:1.35}
+          #adoption .fad-panel{
+            position:relative;border:1px solid var(--line,rgba(14,17,22,.09));border-radius:32px;background:var(--card,#fff);
+            box-shadow:var(--cardshadow,0 14px 36px rgba(24,30,10,.07));overflow:hidden;
+          }
+          #adoption .fad-panel-head{
+            display:flex;justify-content:space-between;gap:16px;align-items:center;padding:22px 24px;
+            border-bottom:1px solid var(--line,rgba(14,17,22,.09));
+          }
+          #adoption .fad-panel-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.025em;color:var(--ink,#0E1116)}
+          #adoption .fad-pill{border-radius:999px;background:#D9FF3C;color:#0E1116;padding:8px 12px;font-size:12px;font-weight:800;white-space:nowrap}
+          #adoption .fad-journey{display:grid;grid-template-columns:1.05fr .95fr;gap:0}
+          #adoption .fad-steps{padding:24px;display:grid;gap:14px;border-right:1px solid var(--line,rgba(14,17,22,.09))}
+          #adoption .fad-step{
+            display:grid;grid-template-columns:54px 1fr;gap:16px;align-items:start;padding:18px;border-radius:20px;
+            background:var(--chip,#f7f8f0);border:1px solid var(--line,rgba(14,17,22,.09));
+          }
+          #adoption .fad-time{
+            height:54px;border-radius:16px;background:#D9FF3C;color:#0E1116;display:grid;place-items:center;
+            font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:800;letter-spacing:-.04em;
+          }
+          #adoption .fad-step h3{margin:0 0 6px;font-family:'Space Grotesk',sans-serif;font-size:19px;color:var(--ink,#0E1116)}
+          #adoption .fad-step p{margin:0;color:var(--muted,#5d6355);font-size:14.5px;line-height:1.48}
+          #adoption .fad-preview{
+            padding:24px;display:flex;align-items:center;justify-content:center;
+            background:linear-gradient(180deg,rgba(217,255,60,.16),rgba(217,255,60,0));
+          }
+          #adoption .fad-phone{
+            width:232px;border-radius:34px;background:#0E1116;padding:12px;border:1px solid rgba(255,255,255,.16);
+            box-shadow:0 28px 70px rgba(0,0,0,.28);
+          }
+          #adoption .fad-screen{height:430px;border-radius:26px;background:linear-gradient(180deg,#12151b,#050608);padding:18px;color:#fff;position:relative;overflow:hidden}
+          #adoption .fad-island{width:74px;height:21px;border-radius:999px;background:#050608;margin:0 auto 28px}
+          #adoption .fad-notif{
+            position:absolute;left:16px;right:16px;bottom:28px;border-radius:20px;background:rgba(255,255,255,.94);
+            color:#0E1116;padding:14px;box-shadow:0 16px 40px rgba(0,0,0,.36);
+          }
+          #adoption .fad-notif-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+          #adoption .fad-logo{width:28px;height:28px;border-radius:9px;background:#D9FF3C;display:grid;place-items:center;color:#0E1116;flex:none}
+          #adoption .fad-logo svg{width:17px;height:17px}
+          #adoption .fad-notif strong{display:block;font-size:13px}
+          #adoption .fad-notif span{display:block;margin-top:2px;font-size:12px;color:#5d6355}
+          #adoption .fad-pass-mini{border-radius:16px;background:#ff5b3f;color:#fff;padding:14px;margin-top:12px}
+          #adoption .fad-pass-mini b{display:block;font-family:'Space Grotesk',sans-serif;font-size:18px;margin-bottom:8px}
+          #adoption .fad-dots{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
+          #adoption .fad-dots i{height:24px;border-radius:999px;border:2px solid rgba(255,255,255,.62)}
+          #adoption .fad-dots i:first-child,#adoption .fad-dots i:nth-child(2){background:#FFE27A;border-color:#FFE27A}
+          #adoption .fad-proof{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px;padding:0 24px 24px}
+          #adoption .fad-proof div{
+            border:1px solid var(--line,rgba(14,17,22,.09));border-radius:18px;background:var(--chip,#f7f8f0);
+            padding:16px;color:var(--muted,#5d6355);font-size:14px;line-height:1.45;
+          }
+          #adoption .fad-proof strong{display:block;color:var(--ink,#0E1116);font-size:14.5px;margin-bottom:6px}
+          @media (max-width:1050px){
+            #adoption .fad-grid,#adoption .fad-journey{grid-template-columns:1fr}
+            #adoption .fad-steps{border-right:0;border-bottom:1px solid var(--line,rgba(14,17,22,.09))}
+          }
+          @media (max-width:720px){
+            #adoption .fad-wrap{padding:76px 20px 84px}
+            #adoption .fad-metrics,#adoption .fad-proof{grid-template-columns:1fr}
+            #adoption .fad-panel-head{align-items:flex-start;flex-direction:column}
+            #adoption .fad-step{grid-template-columns:1fr}
+            #adoption .fad-phone{width:100%;max-width:260px}
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      section.classList.add('fidlify-adoption-enhanced');
+      section.innerHTML = `
+        <div class="fad-wrap">
+          <div class="fad-grid">
+            <div>
+              <div class="fad-kicker">Adoption client</div>
+              <h2 class="fad-title">Une carte ajoutee pendant que le client <span>paie son cafe.</span></h2>
+              <p class="fad-lead">Le parcours doit etre si simple qu'il ne ressemble pas a une inscription. Le client scanne, confirme ses infos, et repart avec votre carte dans Apple Wallet ou Google Wallet.</p>
+              <div class="fad-metrics" aria-label="Points forts du parcours">
+                <div class="fad-metric"><strong>30 s</strong><span>pour installer la carte sans application mobile.</span></div>
+                <div class="fad-metric"><strong>0 app</strong><span>pas de compte a creer, pas de friction inutile.</span></div>
+                <div class="fad-metric"><strong>24/7</strong><span>la carte reste visible dans le wallet du client.</span></div>
+              </div>
+            </div>
+
+            <div class="fad-panel">
+              <div class="fad-panel-head">
+                <div>
+                  <div class="fad-panel-title">Le parcours vu par le client</div>
+                  <div style="margin-top:5px;color:var(--muted,#5d6355);font-size:13.5px">Un geste naturel, pas un tunnel d'inscription.</div>
+                </div>
+                <div class="fad-pill">moins de 30 secondes</div>
+              </div>
+
+              <div class="fad-journey">
+                <div class="fad-steps">
+                  <div class="fad-step">
+                    <div class="fad-time">00:00</div>
+                    <div><h3>Il voit le QR code</h3><p>Sur le comptoir, la table, l'addition ou un ticket. Pas besoin d'expliquer longtemps.</p></div>
+                  </div>
+                  <div class="fad-step">
+                    <div class="fad-time">00:12</div>
+                    <div><h3>Il confirme ses infos</h3><p>Seulement ce qui est utile pour le commerce: prenom, email, anniversaire si besoin.</p></div>
+                  </div>
+                  <div class="fad-step">
+                    <div class="fad-time">00:27</div>
+                    <div><h3>La carte est dans son Wallet</h3><p>Le client retrouve ses tampons, ses recompenses et vos relances au meme endroit.</p></div>
+                  </div>
+                </div>
+
+                <div class="fad-preview" aria-hidden="true">
+                  <div class="fad-phone">
+                    <div class="fad-screen">
+                      <div class="fad-island"></div>
+                      <div style="font-family:'Space Grotesk',sans-serif;font-size:38px;font-weight:700;letter-spacing:-.04em">10:23</div>
+                      <div style="margin-top:6px;color:rgba(255,255,255,.58);font-size:13px">Carte ajoutee</div>
+                      <div class="fad-notif">
+                        <div class="fad-notif-top">
+                          <div class="fad-logo">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="M7 10h10M7 14h5"></path></svg>
+                          </div>
+                          <div><strong>Cafe du commerce</strong><span>Votre carte fidelite est prete</span></div>
+                        </div>
+                        <div class="fad-pass-mini">
+                          <b>2 tampons valides</b>
+                          <div class="fad-dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="fad-proof">
+                <div><strong>Moins d'explications</strong>Le personnel montre le QR code, le reste se fait sur le telephone.</div>
+                <div><strong>Meilleure adoption</strong>Le client garde la carte dans un endroit qu'il utilise deja.</div>
+                <div><strong>Plus de retours</strong>Chaque carte installee devient un canal de fidelisation mesurable.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     function injectStatsPreview() {
       if (document.getElementById('fidlify-stats-preview')) return;
 
@@ -783,6 +965,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.setTimeout(function() {
       injectLostRevenueCalculator();
       injectCommerceCardLogos();
+      enhanceAdoptionSection();
       injectStatsPreview();
     }, 900);
   } catch (err) {
