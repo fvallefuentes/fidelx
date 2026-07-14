@@ -460,6 +460,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         return null;
       }
 
+      let fidlifyLogoSrc = null;
+
       function apply() {
         const root = document.getElementById('fyroot');
         if (!root) return;
@@ -469,30 +471,77 @@ document.addEventListener('DOMContentLoaded', async function() {
           return rect.top + window.scrollY < 900;
         }
 
+        function keepsFidlifySignature(card) {
+          return /Caf(?:e|é|Ã©) Lumen/i.test(card.innerText || '');
+        }
+
         Array.from(root.querySelectorAll('span')).forEach(function(span) {
           const text = (span.textContent || '').trim();
-          if (text === 'FIDLIFY') {
-            const row = span.parentElement;
+          const row = span.parentElement;
+          const isCommerceWordmark = row && row.classList && row.classList.contains('fidlify-commerce-wordmark');
+
+          if (text === 'FIDLIFY' && row) {
+            const originalImg = row.querySelector('img');
+            if (originalImg && !fidlifyLogoSrc) fidlifyLogoSrc = originalImg.src;
+          }
+
+          if (text === 'FIDLIFY' || isCommerceWordmark) {
             const card = nearestCard(span);
             if (!row || !card || !/PROGRAMME|R[ÉE]COMPENSE/i.test(card.innerText || '')) return;
             if (!isHeroCard(card)) return;
+            if (keepsFidlifySignature(card)) {
+              const img = row.querySelector('img');
+              if (img && fidlifyLogoSrc) {
+                img.src = fidlifyLogoSrc;
+                img.alt = 'Fidlify';
+              }
+              if (span.textContent !== 'FIDLIFY') span.textContent = 'FIDLIFY';
+              row.classList.remove('fidlify-commerce-wordmark');
+              return;
+            }
             const logo = cardLogoForText(card.innerText || '');
             const img = row.querySelector('img');
             if (img) {
               img.src = logo.src;
               img.alt = logo.label;
             }
-            span.textContent = logo.label.toUpperCase();
+            if (span.textContent !== logo.label.toUpperCase()) span.textContent = logo.label.toUpperCase();
             row.classList.add('fidlify-commerce-wordmark');
+          }
+
+          if (/^PROPULS/i.test(text) && /PAR$/i.test(text)) {
+            const card = nearestCard(span);
+            if (!card || !isHeroCard(card)) return;
+            const display = keepsFidlifySignature(card) ? '' : 'none';
+            if (span.style.display !== display) span.style.display = display;
           }
 
           if (/^PROPULS[ÉE]E PAR FIDLIFY$/i.test(text)) {
             const card = nearestCard(span);
             if (!card || !/3\/10|Le pain du matin|Salon Atlas|Table Douze|Maison Rose|Studio Nord/i.test(card.innerText || '')) return;
             if (!isHeroCard(card)) return;
+            if (keepsFidlifySignature(card)) return;
             const logo = cardLogoForText(card.innerText || '');
             span.innerHTML = '<span class="fidlify-commerce-tag"><img src="' + logo.src + '" alt="' + logo.label + '"><span>' + logo.label.toUpperCase() + '</span></span>';
           }
+
+          if (span.classList && span.classList.contains('fidlify-commerce-tag')) {
+            const card = nearestCard(span);
+            if (!card || !isHeroCard(card) || keepsFidlifySignature(card)) return;
+            const logo = cardLogoForText(card.innerText || '');
+            if ((span.textContent || '').trim() !== logo.label.toUpperCase()) {
+              span.innerHTML = '<img src="' + logo.src + '" alt="' + logo.label + '"><span>' + logo.label.toUpperCase() + '</span>';
+            }
+          }
+        });
+
+        Array.from(root.querySelectorAll('*')).forEach(function(el) {
+          const text = (el.textContent || '').trim();
+          if (!/^PROPULS/i.test(text) || !/PAR$/i.test(text) || el.children.length) return;
+          const card = nearestCard(el);
+          if (!card || !isHeroCard(card)) return;
+          const display = keepsFidlifySignature(card) ? '' : 'none';
+          if (el.style.display !== display) el.style.display = display;
         });
       }
 
