@@ -1,4 +1,4 @@
-// Certificats Apple Wallet — encodés en base64, bundlés avec la Lambda Netlify
+// Certificats Apple Wallet — encodés en base64, bundlés avec l'application
 // Repo privé — ne pas rendre public
 
 // Icônes par défaut (carré bleu #1a1a2e) — Apple Wallet rejette les passes sans icon.png
