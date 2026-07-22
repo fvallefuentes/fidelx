@@ -1134,8 +1134,8 @@ function CreateProgramForm({
       setLogoError("Le fichier doit être une image");
       return;
     }
-    if (file.size > 500 * 1024) {
-      setLogoError("Image trop lourde (max 500 KB)");
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError("Image trop lourde (max 5 MB)");
       return;
     }
     const reader = new FileReader();
@@ -1448,7 +1448,7 @@ function CreateProgramForm({
                         Ajouter un logo personnalisé
                       </div>
                       <div className="text-xs mt-0.5" style={{ color: "#8a8e84" }}>
-                        PNG, JPG, SVG ou WebP · max 500 KB · affiché en haut-gauche de la carte Wallet
+                        PNG, JPG, SVG ou WebP · max 5 MB · affiché en haut-gauche de la carte Wallet
                       </div>
                     </div>
                     <div
@@ -1777,8 +1777,8 @@ function EditProgramDesignModal({
       setLogoError("Le fichier doit être une image");
       return;
     }
-    if (file.size > 500 * 1024) {
-      setLogoError("Image trop lourde (max 500 KB)");
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError("Image trop lourde (max 5 MB)");
       return;
     }
     const reader = new FileReader();
@@ -2048,7 +2048,7 @@ function EditProgramDesignModal({
                           Ajouter un logo personnalisé
                         </div>
                         <div className="text-[11px] mt-0.5" style={{ color: "#8a8e84" }}>
-                          PNG, JPG, SVG ou WebP · max 500 KB · haut-gauche de la carte Wallet
+                          PNG, JPG, SVG ou WebP · max 5 MB · haut-gauche de la carte Wallet
                         </div>
                       </div>
                       <div
