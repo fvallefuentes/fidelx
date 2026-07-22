@@ -244,6 +244,20 @@ document.addEventListener('DOMContentLoaded', async function() {
           margin:0 0 22px;font-family:'Space Grotesk',sans-serif;
           font-size:28px;letter-spacing:-.025em;color:var(--ink,#0E1116);
         }
+        #fidlify-lost-revenue-calculator .flrc-scenarios{
+          display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 26px;
+        }
+        #fidlify-lost-revenue-calculator .flrc-scenario{
+          appearance:none;cursor:pointer;border-radius:14px;padding:12px 10px;
+          border:1px solid rgba(14,17,22,.14);background:#fff;color:#5d6355;
+          font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;
+          letter-spacing:-.01em;transition:all .18s ease;text-align:center;
+        }
+        #fidlify-lost-revenue-calculator .flrc-scenario:hover{border-color:rgba(14,17,22,.3)}
+        #fidlify-lost-revenue-calculator .flrc-scenario.is-active{
+          background:#0E1116;border-color:#0E1116;color:#D9FF3C;
+          box-shadow:0 10px 26px rgba(14,17,22,.18);
+        }
         #fidlify-lost-revenue-calculator .flrc-field{display:grid;gap:12px;margin-top:22px}
         #fidlify-lost-revenue-calculator .flrc-field:first-of-type{margin-top:0}
         #fidlify-lost-revenue-calculator .flrc-label{
@@ -291,62 +305,100 @@ document.addEventListener('DOMContentLoaded', async function() {
           margin-top:8px;font-family:'Space Grotesk',sans-serif;font-size:28px;
           font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;
         }
+        #fidlify-lost-revenue-calculator .flrc-bubbles{
+          margin-top:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+        }
+        #fidlify-lost-revenue-calculator .flrc-bubble{
+          display:flex;align-items:center;gap:12px;
+          border-radius:16px;padding:14px 16px;
+          border:1px solid var(--line,rgba(14,17,22,.1));
+          background:var(--card,#fff);
+          box-shadow:var(--cardshadow,0 10px 26px rgba(24,30,10,.06));
+        }
+        #fidlify-lost-revenue-calculator .flrc-bubble-badge{
+          flex:none;display:inline-grid;place-items:center;min-width:46px;height:34px;
+          padding:0 10px;border-radius:999px;background:#D9FF3C;color:#0E1116;
+          font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:800;
+          letter-spacing:-.02em;white-space:nowrap;
+          box-shadow:0 8px 20px rgba(140,185,0,.28);
+        }
+        #fidlify-lost-revenue-calculator .flrc-bubble-text{
+          font-size:14px;font-weight:700;line-height:1.2;color:var(--ink,#0E1116);
+        }
         @media (max-width:900px){
           #fidlify-lost-revenue-calculator{padding:72px 20px 80px}
           #fidlify-lost-revenue-calculator .flrc-head,
           #fidlify-lost-revenue-calculator .flrc-grid{grid-template-columns:1fr}
           #fidlify-lost-revenue-calculator .flrc-panel,
           #fidlify-lost-revenue-calculator .flrc-result{padding:22px;border-radius:22px}
+          #fidlify-lost-revenue-calculator .flrc-bubbles{grid-template-columns:1fr 1fr}
         }
         @media (max-width:520px){
           #fidlify-lost-revenue-calculator .flrc-cards{grid-template-columns:1fr}
+          #fidlify-lost-revenue-calculator .flrc-bubbles{grid-template-columns:1fr}
           #fidlify-lost-revenue-calculator .flrc-label{align-items:flex-start;flex-direction:column;gap:6px}
+          #fidlify-lost-revenue-calculator .flrc-scenarios{grid-template-columns:1fr}
         }
       `;
 
       const section = document.createElement('section');
       section.id = 'fidlify-lost-revenue-calculator';
-      section.setAttribute('aria-label', 'Calculateur de manque a gagner');
+      section.setAttribute('aria-label', 'Calculateur de potentiel de revenus');
       section.innerHTML = `
         <div class="flrc-wrap">
-          <div class="flrc-kicker">Calculateur manque a gagner</div>
+          <div class="flrc-kicker">Calculateur de potentiel</div>
           <div class="flrc-head">
-            <h2>Combien vous coute l'absence de relance client ?</h2>
-            <p class="flrc-lead">Simulez en quelques secondes le revenu qui s'evapore quand les clients ne reviennent pas, puis montrez le potentiel d'une relance Wallet ciblee.</p>
+            <h2>Combien Fidlify peut vous rapporter ?</h2>
+            <p class="flrc-lead">Renseignez votre activité et choisissez une prévision. Estimez le revenu additionnel qu'une fidélisation Wallet bien menée peut générer chaque mois.</p>
           </div>
           <div class="flrc-grid">
             <div class="flrc-panel">
               <h3>Votre commerce</h3>
+              <div class="flrc-scenarios" role="tablist" aria-label="Type de prévision">
+                <button type="button" class="flrc-scenario" data-flrc-scenario="pessimiste">Pessimiste</button>
+                <button type="button" class="flrc-scenario is-active" data-flrc-scenario="realiste">Réaliste</button>
+                <button type="button" class="flrc-scenario" data-flrc-scenario="optimiste">Optimiste</button>
+              </div>
               <label class="flrc-field">
-                <span class="flrc-label">Clients par mois <span class="flrc-value" data-flrc-monthly-clients>420</span></span>
-                <input data-flrc-input="monthlyClients" type="range" min="50" max="2000" step="10" value="420">
+                <span class="flrc-label">Clients par jour <span class="flrc-value" data-flrc-clients-per-day>40</span></span>
+                <input data-flrc-input="clientsPerDay" type="range" min="5" max="500" step="5" value="40">
+              </label>
+              <label class="flrc-field">
+                <span class="flrc-label">Jours ouverts / mois <span class="flrc-value" data-flrc-days-open>26</span></span>
+                <input data-flrc-input="daysOpen" type="range" min="8" max="31" step="1" value="26">
               </label>
               <label class="flrc-field">
                 <span class="flrc-label">Panier moyen <span class="flrc-value"><span data-flrc-average-ticket>24</span> CHF</span></span>
-                <input data-flrc-input="averageTicket" type="range" min="5" max="150" step="1" value="24">
+                <input data-flrc-input="averageTicket" type="range" min="5" max="200" step="1" value="24">
               </label>
               <label class="flrc-field">
-                <span class="flrc-label">Clients qui ne reviennent pas <span class="flrc-value"><span data-flrc-lost-rate>38</span>%</span></span>
-                <input data-flrc-input="lostRate" type="range" min="5" max="80" step="1" value="38">
+                <span class="flrc-label">Points de vente <span class="flrc-value" data-flrc-points-of-sale>1</span></span>
+                <input data-flrc-input="pointsOfSale" type="range" min="1" max="20" step="1" value="1">
               </label>
             </div>
             <div class="flrc-result">
               <div>
-                <div class="flrc-result-kicker">Manque a gagner estime</div>
-                <div class="flrc-big" data-flrc-monthly-lost>CHF 3'840</div>
-                <p class="flrc-copy" data-flrc-copy>Environ 160 clients par mois ne reviennent pas. Une relance Wallet bien ciblee peut recuperer une partie de ce revenu sans application a installer.</p>
+                <div class="flrc-result-kicker" data-flrc-scenario-label>Prévision réaliste</div>
+                <div class="flrc-big" data-flrc-gain-monthly>CHF 0</div>
+                <p class="flrc-copy" data-flrc-copy>Revenu additionnel estimé par mois grâce à la fidélisation Wallet.</p>
               </div>
               <div class="flrc-cards">
                 <div class="flrc-mini">
-                  <div class="flrc-mini-label">Potentiel recupere / mois</div>
-                  <div class="flrc-mini-value" data-flrc-recovered-monthly>CHF 691</div>
+                  <div class="flrc-mini-label">Sur 1 an</div>
+                  <div class="flrc-mini-value" data-flrc-gain-yearly>CHF 0</div>
                 </div>
                 <div class="flrc-mini">
-                  <div class="flrc-mini-label">Potentiel recupere / an</div>
-                  <div class="flrc-mini-value" data-flrc-recovered-yearly>CHF 8'292</div>
+                  <div class="flrc-mini-label">CA projeté / mois</div>
+                  <div class="flrc-mini-value" data-flrc-projected>CHF 0</div>
                 </div>
               </div>
             </div>
+          </div>
+          <div class="flrc-bubbles">
+            <div class="flrc-bubble"><span class="flrc-bubble-badge">×2</span><span class="flrc-bubble-text">rétention client</span></div>
+            <div class="flrc-bubble"><span class="flrc-bubble-badge">×2</span><span class="flrc-bubble-text">bénéfices nets</span></div>
+            <div class="flrc-bubble"><span class="flrc-bubble-badge">+30%</span><span class="flrc-bubble-text">panier moyen</span></div>
+            <div class="flrc-bubble"><span class="flrc-bubble-badge">+</span><span class="flrc-bubble-text">Avis Google auto</span></div>
           </div>
         </div>
       `;
@@ -359,33 +411,52 @@ document.addEventListener('DOMContentLoaded', async function() {
         currency: 'CHF',
         maximumFractionDigits: 0
       });
-      const state = { monthlyClients: 420, averageTicket: 24, lostRate: 38 };
+      const SCENARIOS = {
+        pessimiste: { label: 'Prévision pessimiste', uplift: 0.08 },
+        realiste:   { label: 'Prévision réaliste',   uplift: 0.18 },
+        optimiste:  { label: 'Prévision optimiste',  uplift: 0.32 }
+      };
+      const state = { clientsPerDay: 40, daysOpen: 26, averageTicket: 24, pointsOfSale: 1, scenario: 'realiste' };
       const nodes = {
-        monthlyClients: section.querySelector('[data-flrc-monthly-clients]'),
+        clientsPerDay: section.querySelector('[data-flrc-clients-per-day]'),
+        daysOpen: section.querySelector('[data-flrc-days-open]'),
         averageTicket: section.querySelector('[data-flrc-average-ticket]'),
-        lostRate: section.querySelector('[data-flrc-lost-rate]'),
-        monthlyLost: section.querySelector('[data-flrc-monthly-lost]'),
-        recoveredMonthly: section.querySelector('[data-flrc-recovered-monthly]'),
-        recoveredYearly: section.querySelector('[data-flrc-recovered-yearly]'),
+        pointsOfSale: section.querySelector('[data-flrc-points-of-sale]'),
+        scenarioLabel: section.querySelector('[data-flrc-scenario-label]'),
+        gainMonthly: section.querySelector('[data-flrc-gain-monthly]'),
+        gainYearly: section.querySelector('[data-flrc-gain-yearly]'),
+        projected: section.querySelector('[data-flrc-projected]'),
         copy: section.querySelector('[data-flrc-copy]')
       };
 
       function render() {
-        const lostCustomers = Math.round(state.monthlyClients * state.lostRate / 100);
-        const monthlyLost = lostCustomers * state.averageTicket;
-        const recoveredMonthly = Math.round(monthlyLost * 0.18);
-        nodes.monthlyClients.textContent = String(state.monthlyClients);
+        const base = state.clientsPerDay * state.daysOpen * state.averageTicket * state.pointsOfSale;
+        const scenario = SCENARIOS[state.scenario] || SCENARIOS.realiste;
+        const gainMonthly = Math.round(base * scenario.uplift);
+        const projected = base + gainMonthly;
+        nodes.clientsPerDay.textContent = String(state.clientsPerDay);
+        nodes.daysOpen.textContent = String(state.daysOpen);
         nodes.averageTicket.textContent = String(state.averageTicket);
-        nodes.lostRate.textContent = String(state.lostRate);
-        nodes.monthlyLost.textContent = formatCHF.format(monthlyLost);
-        nodes.recoveredMonthly.textContent = formatCHF.format(recoveredMonthly);
-        nodes.recoveredYearly.textContent = formatCHF.format(recoveredMonthly * 12);
-        nodes.copy.textContent = 'Environ ' + lostCustomers + ' clients par mois ne reviennent pas. Une relance Wallet bien ciblee peut recuperer une partie de ce revenu sans application a installer.';
+        nodes.pointsOfSale.textContent = String(state.pointsOfSale);
+        nodes.scenarioLabel.textContent = scenario.label;
+        nodes.gainMonthly.textContent = formatCHF.format(gainMonthly);
+        nodes.gainYearly.textContent = formatCHF.format(gainMonthly * 12);
+        nodes.projected.textContent = formatCHF.format(projected);
+        nodes.copy.textContent = 'Sur un chiffre d’affaires estimé à ' + formatCHF.format(base) + ' / mois, une relance Wallet bien ciblée peut générer ce revenu additionnel, sans application à installer.';
       }
 
       section.querySelectorAll('[data-flrc-input]').forEach(function(input) {
         input.addEventListener('input', function(event) {
           state[event.target.dataset.flrcInput] = Number(event.target.value);
+          render();
+        });
+      });
+      section.querySelectorAll('[data-flrc-scenario]').forEach(function(button) {
+        button.addEventListener('click', function(event) {
+          state.scenario = event.currentTarget.dataset.flrcScenario;
+          section.querySelectorAll('[data-flrc-scenario]').forEach(function(b) {
+            b.classList.toggle('is-active', b === event.currentTarget);
+          });
           render();
         });
       });
