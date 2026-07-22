@@ -269,8 +269,26 @@ document.addEventListener('DOMContentLoaded', async function() {
           font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;
         }
         #fidlify-lost-revenue-calculator input[type=range]{
-          width:100%;accent-color:#D9FF3C;cursor:pointer;
+          -webkit-appearance:none;appearance:none;
+          width:100%;height:18px;background:transparent;cursor:pointer;
+          border:none;outline:none;
         }
+        #fidlify-lost-revenue-calculator input[type=range]::-webkit-slider-runnable-track{
+          height:6px;border-radius:999px;background:#D9FF3C;border:none;
+        }
+        #fidlify-lost-revenue-calculator input[type=range]::-webkit-slider-thumb{
+          -webkit-appearance:none;appearance:none;margin-top:-6px;
+          width:18px;height:18px;border-radius:50%;background:#D9FF3C;
+          border:none;box-shadow:0 2px 7px rgba(24,30,10,.30);cursor:pointer;
+        }
+        #fidlify-lost-revenue-calculator input[type=range]::-moz-range-track{
+          height:6px;border-radius:999px;background:#D9FF3C;border:none;
+        }
+        #fidlify-lost-revenue-calculator input[type=range]::-moz-range-thumb{
+          width:18px;height:18px;border-radius:50%;background:#D9FF3C;
+          border:none;box-shadow:0 2px 7px rgba(24,30,10,.30);cursor:pointer;
+        }
+        #fidlify-lost-revenue-calculator input[type=range]:focus{outline:none;}
         #fidlify-lost-revenue-calculator .flrc-result{
           background:#0E1116;color:#FCFCFC;border-radius:26px;padding:30px;
           min-height:100%;display:grid;align-content:space-between;gap:26px;
