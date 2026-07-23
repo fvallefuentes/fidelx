@@ -1244,6 +1244,376 @@ document.addEventListener('DOMContentLoaded', async function() {
       setInterval(apply, 700);
     }
 
+    function injectHowItWorksSection() {
+      if (document.getElementById('fidlify-how-it-works')) return;
+
+      var style = document.createElement('style');
+      style.textContent = `
+        #fyroot{overflow-x:clip!important;overflow-y:visible!important}
+        #fidlify-how-it-works{
+          padding:118px 32px 80px;background:var(--bg,#f4f5ec);color:var(--ink,#0E1116);
+          font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+          overflow:visible;
+        }
+        #fidlify-how-it-works *{box-sizing:border-box}
+        #fidlify-how-it-works .fhiw-wrap{max-width:1240px;margin:0 auto}
+        #fidlify-how-it-works .fhiw-head{
+          display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.55fr);
+          gap:56px;align-items:end;margin-bottom:64px;
+        }
+        #fidlify-how-it-works .fhiw-kicker{
+          margin-bottom:18px;font-family:'Space Mono',ui-monospace,monospace;
+          color:var(--accent-ink,#56750a);font-size:11px;font-weight:750;
+          letter-spacing:.18em;text-transform:uppercase;
+        }
+        #fidlify-how-it-works h2{
+          margin:0;max-width:820px;font-family:'Space Grotesk',sans-serif;
+          font-size:clamp(44px,6vw,78px);line-height:.96;letter-spacing:-.055em;
+        }
+        #fidlify-how-it-works .fhiw-lead{
+          margin:0;color:var(--muted,#5d6355);font-size:17px;line-height:1.6;
+        }
+        #fidlify-how-it-works .fhiw-layout{
+          display:grid;grid-template-columns:minmax(0,1.05fr) 34px minmax(360px,.8fr);
+          gap:34px;align-items:start;
+        }
+        #fidlify-how-it-works .fhiw-visual-col{
+          position:relative;align-self:stretch;height:auto;
+        }
+        #fidlify-how-it-works .fhiw-stage{
+          position:sticky;top:110px;height:620px;overflow:hidden;border-radius:30px;
+          border:1px solid var(--line,rgba(14,17,22,.1));background:#0E1116;
+          box-shadow:0 28px 80px rgba(24,30,10,.16);isolation:isolate;
+        }
+        #fidlify-how-it-works .fhiw-stage:before{
+          content:"";position:absolute;width:380px;height:380px;border-radius:50%;
+          right:-110px;top:-130px;background:#D9FF3C;filter:blur(4px);opacity:.17;
+        }
+        #fidlify-how-it-works .fhiw-stage:after{
+          content:"";position:absolute;width:300px;height:300px;border-radius:50%;
+          left:-120px;bottom:-140px;background:#D9FF3C;filter:blur(70px);opacity:.12;
+        }
+        #fidlify-how-it-works .fhiw-stage-top{
+          position:absolute;z-index:10;left:26px;right:26px;top:24px;
+          display:flex;align-items:center;justify-content:space-between;
+          font-family:'Space Mono',ui-monospace,monospace;font-size:10px;
+          font-weight:750;letter-spacing:.14em;text-transform:uppercase;color:#D9FF3C;
+        }
+        #fidlify-how-it-works .fhiw-counter{
+          color:rgba(255,255,255,.55);font-variant-numeric:tabular-nums;
+        }
+        #fidlify-how-it-works .fhiw-visual{
+          position:absolute;z-index:3;inset:70px 28px 28px;
+          display:grid;place-items:center;opacity:0;transform:translateY(28px) scale(.97);
+          pointer-events:none;transition:opacity .45s ease,transform .55s cubic-bezier(.2,.8,.2,1);
+        }
+        #fidlify-how-it-works .fhiw-visual.is-active{opacity:1;transform:none}
+        #fidlify-how-it-works .fhiw-window{
+          width:min(100%,480px);border-radius:22px;background:#f8f9f4;color:#0E1116;
+          box-shadow:0 28px 60px rgba(0,0,0,.32);overflow:hidden;
+        }
+        #fidlify-how-it-works .fhiw-window-bar{
+          display:flex;align-items:center;gap:6px;padding:13px 16px;border-bottom:1px solid #e1e3dc;
+        }
+        #fidlify-how-it-works .fhiw-window-bar i{width:8px;height:8px;border-radius:50%;background:#d3d6cc}
+        #fidlify-how-it-works .fhiw-editor{display:grid;grid-template-columns:.8fr 1.2fr;gap:18px;padding:22px}
+        #fidlify-how-it-works .fhiw-controls{display:grid;align-content:center;gap:13px}
+        #fidlify-how-it-works .fhiw-control-line{height:10px;border-radius:99px;background:#e1e3dc}
+        #fidlify-how-it-works .fhiw-control-line.short{width:62%}
+        #fidlify-how-it-works .fhiw-swatches{display:flex;gap:8px}
+        #fidlify-how-it-works .fhiw-swatches i{width:24px;height:24px;border-radius:50%;background:#0E1116}
+        #fidlify-how-it-works .fhiw-swatches i:nth-child(2){background:#D9FF3C}
+        #fidlify-how-it-works .fhiw-swatches i:nth-child(3){background:#d6785d}
+        #fidlify-how-it-works .fhiw-pass{
+          min-height:240px;padding:20px;border-radius:20px;background:#111;color:#fff;
+          display:flex;flex-direction:column;box-shadow:0 18px 36px rgba(0,0,0,.22);
+        }
+        #fidlify-how-it-works .fhiw-pass-brand{
+          display:flex;align-items:center;justify-content:space-between;
+          font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:#D9FF3C;
+        }
+        #fidlify-how-it-works .fhiw-pass-title{
+          margin-top:18px;font-family:'Space Grotesk',sans-serif;font-size:27px;font-weight:750;
+        }
+        #fidlify-how-it-works .fhiw-stamps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:18px}
+        #fidlify-how-it-works .fhiw-stamps i{
+          aspect-ratio:1;border:2px solid rgba(255,255,255,.45);border-radius:50%;
+        }
+        #fidlify-how-it-works .fhiw-stamps i.done{background:#D9FF3C;border-color:#D9FF3C}
+        #fidlify-how-it-works .fhiw-pass-foot{
+          margin-top:auto;padding-top:18px;font-size:11px;color:rgba(255,255,255,.62);
+        }
+        #fidlify-how-it-works .fhiw-phone{
+          width:276px;height:500px;border:8px solid #292b2e;border-radius:42px;
+          padding:14px;background:#f6f7f2;color:#0E1116;box-shadow:0 28px 60px rgba(0,0,0,.4);
+          position:relative;overflow:hidden;
+        }
+        #fidlify-how-it-works .fhiw-phone:before{
+          content:"";position:absolute;z-index:5;top:7px;left:50%;transform:translateX(-50%);
+          width:82px;height:20px;border-radius:999px;background:#292b2e;
+        }
+        #fidlify-how-it-works .fhiw-phone-time{padding:5px 8px 18px;font-size:10px;font-weight:800}
+        #fidlify-how-it-works .fhiw-qr-card{
+          margin-top:28px;text-align:center;padding:22px 14px;border-radius:22px;background:#fff;
+          box-shadow:0 14px 36px rgba(24,30,10,.1);
+        }
+        #fidlify-how-it-works .fhiw-qr-card strong{display:block;font-size:20px;margin-bottom:6px}
+        #fidlify-how-it-works .fhiw-qr-card p{margin:0;color:#71766d;font-size:12px}
+        #fidlify-how-it-works .fhiw-qr{width:154px;height:154px;margin:20px auto 16px;display:block}
+        #fidlify-how-it-works .fhiw-scan-line{
+          height:3px;margin:-96px 16px 92px;background:#D9FF3C;
+          box-shadow:0 0 14px rgba(150,210,0,.8);animation:fhiw-scan 2.1s ease-in-out infinite;
+        }
+        @keyframes fhiw-scan{0%,100%{transform:translateY(-46px)}50%{transform:translateY(48px)}}
+        #fidlify-how-it-works .fhiw-wallet-title{
+          padding:8px 8px 20px;font-family:'Space Grotesk',sans-serif;font-size:25px;font-weight:750;
+        }
+        #fidlify-how-it-works .fhiw-wallet-pass{
+          min-height:315px;border-radius:23px;padding:20px;background:#111;color:#fff;
+          display:flex;flex-direction:column;box-shadow:0 18px 34px rgba(0,0,0,.24);
+        }
+        #fidlify-how-it-works .fhiw-wallet-check{
+          position:absolute;right:23px;bottom:23px;width:46px;height:46px;border-radius:50%;
+          display:grid;place-items:center;background:#D9FF3C;color:#0E1116;font-size:22px;font-weight:900;
+          box-shadow:0 10px 24px rgba(120,170,0,.32);
+        }
+        #fidlify-how-it-works .fhiw-notification{
+          margin-top:24px;padding:14px;border-radius:18px;background:rgba(255,255,255,.92);
+          box-shadow:0 14px 34px rgba(0,0,0,.18);display:grid;grid-template-columns:40px 1fr;gap:11px;
+        }
+        #fidlify-how-it-works .fhiw-app-icon{
+          width:40px;height:40px;border-radius:12px;background:#0E1116;color:#D9FF3C;
+          display:grid;place-items:center;font-weight:900;
+        }
+        #fidlify-how-it-works .fhiw-notification strong{display:block;font-size:13px}
+        #fidlify-how-it-works .fhiw-notification p{margin:4px 0 0;font-size:11px;line-height:1.35;color:#5d6355}
+        #fidlify-how-it-works .fhiw-campaign{
+          margin-top:18px;padding:18px;border-radius:20px;background:#fff;
+          box-shadow:0 14px 36px rgba(24,30,10,.1);
+        }
+        #fidlify-how-it-works .fhiw-campaign-label{
+          font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.12em;color:#6f9412;
+        }
+        #fidlify-how-it-works .fhiw-campaign strong{display:block;margin-top:8px;font-size:17px}
+        #fidlify-how-it-works .fhiw-campaign-button{
+          margin-top:14px;padding:10px;border-radius:10px;text-align:center;background:#0E1116;color:#D9FF3C;
+          font-size:11px;font-weight:800;
+        }
+        #fidlify-how-it-works .fhiw-success{
+          width:min(100%,460px);padding:30px;border-radius:28px;background:#fff;color:#0E1116;
+          box-shadow:0 28px 60px rgba(0,0,0,.34);text-align:center;
+        }
+        #fidlify-how-it-works .fhiw-success-icon{
+          width:68px;height:68px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;
+          background:#D9FF3C;font-size:31px;font-weight:900;
+        }
+        #fidlify-how-it-works .fhiw-success h3{
+          margin:0;font-family:'Space Grotesk',sans-serif;font-size:29px;letter-spacing:-.03em;
+        }
+        #fidlify-how-it-works .fhiw-success p{margin:10px auto 22px;color:#676c63;font-size:14px;line-height:1.5}
+        #fidlify-how-it-works .fhiw-reward{
+          padding:13px 16px;border-radius:14px;background:#0E1116;color:#fff;
+          display:flex;align-items:center;justify-content:space-between;text-align:left;
+        }
+        #fidlify-how-it-works .fhiw-reward span{font-size:11px;color:rgba(255,255,255,.58)}
+        #fidlify-how-it-works .fhiw-reward strong{color:#D9FF3C;font-size:15px}
+        #fidlify-how-it-works .fhiw-progress{position:relative;align-self:stretch}
+        #fidlify-how-it-works .fhiw-progress-inner{
+          position:sticky;top:150px;height:500px;display:flex;flex-direction:column;
+          align-items:center;justify-content:space-between;padding:4px 0;
+        }
+        #fidlify-how-it-works .fhiw-rail{
+          position:absolute;z-index:0;top:9px;bottom:9px;width:3px;border-radius:99px;background:#dfe1da;
+        }
+        #fidlify-how-it-works .fhiw-fill{
+          position:absolute;z-index:1;top:9px;width:3px;height:0;border-radius:99px;
+          background:#7da512;transition:height .45s cubic-bezier(.2,.8,.2,1);
+        }
+        #fidlify-how-it-works .fhiw-dot{
+          position:relative;z-index:2;width:17px;height:17px;padding:0;border:4px solid var(--bg,#f4f5ec);
+          border-radius:50%;background:#cfd2c9;box-shadow:0 0 0 1px #cfd2c9;cursor:pointer;
+          transition:background .25s,box-shadow .25s,transform .25s;
+        }
+        #fidlify-how-it-works .fhiw-dot.is-active{
+          background:#D9FF3C;box-shadow:0 0 0 2px #6f9412;transform:scale(1.12);
+        }
+        #fidlify-how-it-works .fhiw-step{
+          min-height:66vh;display:flex;flex-direction:column;justify-content:center;
+          opacity:.28;transform:translateY(18px);
+          transition:opacity .35s ease,transform .35s ease;
+        }
+        #fidlify-how-it-works .fhiw-step.is-active{opacity:1;transform:none}
+        #fidlify-how-it-works .fhiw-step-num{
+          margin-bottom:18px;font-family:'Space Mono',ui-monospace,monospace;
+          color:var(--accent-ink,#56750a);font-size:11px;font-weight:750;
+          letter-spacing:.16em;text-transform:uppercase;
+        }
+        #fidlify-how-it-works .fhiw-step h3{
+          margin:0;font-family:'Space Grotesk',sans-serif;font-size:clamp(31px,3.2vw,47px);
+          line-height:1.02;letter-spacing:-.045em;
+        }
+        #fidlify-how-it-works .fhiw-step p{
+          margin:18px 0 0;max-width:440px;color:var(--muted,#5d6355);
+          font-size:18px;line-height:1.58;
+        }
+        @media(max-width:900px){
+          #fidlify-how-it-works{padding:88px 20px 54px}
+          #fidlify-how-it-works .fhiw-head{grid-template-columns:1fr;gap:22px;margin-bottom:44px}
+          #fidlify-how-it-works .fhiw-layout{grid-template-columns:1fr;gap:0}
+          #fidlify-how-it-works .fhiw-visual-col{
+            position:sticky;z-index:6;top:64px;height:390px;margin:0 -8px;
+          }
+          #fidlify-how-it-works .fhiw-stage{position:relative;top:auto;height:100%;border-radius:24px}
+          #fidlify-how-it-works .fhiw-visual{inset:56px 18px 18px}
+          #fidlify-how-it-works .fhiw-phone{width:190px;height:310px;border-radius:30px;border-width:6px;padding:9px}
+          #fidlify-how-it-works .fhiw-phone:before{width:60px;height:14px;top:5px}
+          #fidlify-how-it-works .fhiw-phone-time{padding-bottom:6px}
+          #fidlify-how-it-works .fhiw-qr-card{margin-top:8px;padding:12px}
+          #fidlify-how-it-works .fhiw-qr{width:94px;height:94px;margin:10px auto}
+          #fidlify-how-it-works .fhiw-scan-line{margin:-60px 10px 55px}
+          #fidlify-how-it-works .fhiw-wallet-title{font-size:17px;padding-bottom:8px}
+          #fidlify-how-it-works .fhiw-wallet-pass{min-height:215px;padding:14px}
+          #fidlify-how-it-works .fhiw-pass-title{font-size:20px;margin-top:10px}
+          #fidlify-how-it-works .fhiw-notification{margin-top:6px;padding:10px}
+          #fidlify-how-it-works .fhiw-campaign{margin-top:8px;padding:12px}
+          #fidlify-how-it-works .fhiw-window{max-height:300px}
+          #fidlify-how-it-works .fhiw-pass{min-height:190px;padding:14px}
+          #fidlify-how-it-works .fhiw-success{padding:20px}
+          #fidlify-how-it-works .fhiw-success-icon{width:50px;height:50px;margin-bottom:10px}
+          #fidlify-how-it-works .fhiw-success h3{font-size:24px}
+          #fidlify-how-it-works .fhiw-success p{margin:7px auto 13px}
+          #fidlify-how-it-works .fhiw-progress{
+            position:sticky;z-index:7;top:454px;height:auto;background:var(--bg,#f4f5ec);
+          }
+          #fidlify-how-it-works .fhiw-progress-inner{
+            z-index:7;top:454px;height:auto;flex-direction:row;background:var(--bg,#f4f5ec);
+            padding:18px 12px 14px;
+          }
+          #fidlify-how-it-works .fhiw-rail{left:20px;right:20px;top:25px;bottom:auto;width:auto;height:3px}
+          #fidlify-how-it-works .fhiw-fill{left:20px;top:25px;width:0;height:3px}
+          #fidlify-how-it-works .fhiw-step{
+            min-height:82vh;justify-content:flex-end;padding:90px 6px 72px;
+          }
+        }
+      `;
+
+      var qrSvg = '<svg class="fhiw-qr" viewBox="0 0 100 100" aria-label="QR code">'
+        + '<rect width="100" height="100" rx="8" fill="#fff"/>'
+        + '<g fill="#0E1116"><path d="M8 8h28v28H8zm6 6v16h16V14zM64 8h28v28H64zm6 6v16h16V14zM8 64h28v28H8zm6 6v16h16V70z"/>'
+        + '<path d="M44 8h8v8h-8zm8 8h8v8h-8zm-8 12h12v8H44zm0 16h8v8h-8zm12 0h8v16h-8zm12-4h8v8h-8zm12 0h12v8H80zM40 60h12v8H40zm16 8h8v8h-8zm12-8h8v16h-8zm12 0h12v8H80zM40 80h8v12h-8zm12 0h12v8H52zm16 0h8v12h-8zm12-4h12v16H80z"/></g></svg>';
+
+      var section = document.createElement('section');
+      section.id = 'fidlify-how-it-works';
+      section.setAttribute('aria-labelledby', 'fhiw-title');
+      section.innerHTML = `
+        <div class="fhiw-wrap">
+          <div class="fhiw-head">
+            <div>
+              <div class="fhiw-kicker">Comment ça marche</div>
+              <h2 id="fhiw-title">De la création au prochain achat.</h2>
+            </div>
+            <p class="fhiw-lead">Un parcours fluide pour le commerçant comme pour son client. Faites défiler pour découvrir les cinq étapes.</p>
+          </div>
+          <div class="fhiw-layout">
+            <div class="fhiw-visual-col" aria-live="polite">
+              <div class="fhiw-stage">
+                <div class="fhiw-stage-top"><span>Fidlify · Parcours</span><span class="fhiw-counter" data-fhiw-counter>01 / 05</span></div>
+                <div class="fhiw-visual is-active" data-fhiw-visual="0">
+                  <div class="fhiw-window">
+                    <div class="fhiw-window-bar"><i></i><i></i><i></i></div>
+                    <div class="fhiw-editor">
+                      <div class="fhiw-controls"><div class="fhiw-control-line short"></div><div class="fhiw-control-line"></div><div class="fhiw-swatches"><i></i><i></i><i></i></div><div class="fhiw-control-line"></div><div class="fhiw-control-line short"></div></div>
+                      <div class="fhiw-pass"><div class="fhiw-pass-brand"><span>FIDLIFY</span><span>WALLET</span></div><div class="fhiw-pass-title">Café Lumen</div><div class="fhiw-stamps"><i class="done"></i><i class="done"></i><i class="done"></i><i></i><i></i></div><div class="fhiw-pass-foot">3/10 · 1 café offert</div></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="fhiw-visual" data-fhiw-visual="1">
+                  <div class="fhiw-phone"><div class="fhiw-phone-time">9:41</div><div class="fhiw-qr-card"><strong>Scannez-moi</strong><p>Ajoutez votre carte fidélité</p>${qrSvg}<div class="fhiw-scan-line"></div><p>Un scan, aucun téléchargement</p></div></div>
+                </div>
+                <div class="fhiw-visual" data-fhiw-visual="2">
+                  <div class="fhiw-phone"><div class="fhiw-phone-time">9:41</div><div class="fhiw-wallet-title">Wallet</div><div class="fhiw-wallet-pass"><div class="fhiw-pass-brand"><span>FIDLIFY</span><span>AJOUTÉE</span></div><div class="fhiw-pass-title">Café Lumen</div><div class="fhiw-stamps"><i class="done"></i><i class="done"></i><i class="done"></i><i></i><i></i></div><div class="fhiw-pass-foot">Toujours dans votre téléphone</div></div><div class="fhiw-wallet-check">✓</div></div>
+                </div>
+                <div class="fhiw-visual" data-fhiw-visual="3">
+                  <div class="fhiw-phone"><div class="fhiw-phone-time">9:41</div><div class="fhiw-notification"><div class="fhiw-app-icon">F</div><div><strong>Café Lumen · maintenant</strong><p>Plus que 2 cafés avant votre récompense ☕</p></div></div><div class="fhiw-campaign"><div class="fhiw-campaign-label">CAMPAGNE CIBLÉE</div><strong>Clients proches d’une récompense</strong><div class="fhiw-campaign-button">Notification envoyée ✓</div></div></div>
+                </div>
+                <div class="fhiw-visual" data-fhiw-visual="4">
+                  <div class="fhiw-success"><div class="fhiw-success-icon">✓</div><h3>Le client est revenu.</h3><p>Une nouvelle visite, un tampon de plus et une relation qui continue.</p><div class="fhiw-reward"><div><span>PROGRESSION</span><br><strong>9 / 10 tampons</strong></div><strong>+1</strong></div></div>
+                </div>
+              </div>
+            </div>
+            <div class="fhiw-progress" aria-label="Progression des étapes">
+              <div class="fhiw-progress-inner">
+                <div class="fhiw-rail"></div><div class="fhiw-fill" data-fhiw-fill></div>
+                <button class="fhiw-dot is-active" type="button" data-fhiw-dot="0" aria-label="Aller à l’étape 1"></button>
+                <button class="fhiw-dot" type="button" data-fhiw-dot="1" aria-label="Aller à l’étape 2"></button>
+                <button class="fhiw-dot" type="button" data-fhiw-dot="2" aria-label="Aller à l’étape 3"></button>
+                <button class="fhiw-dot" type="button" data-fhiw-dot="3" aria-label="Aller à l’étape 4"></button>
+                <button class="fhiw-dot" type="button" data-fhiw-dot="4" aria-label="Aller à l’étape 5"></button>
+              </div>
+            </div>
+            <div class="fhiw-steps">
+              <article class="fhiw-step is-active" data-fhiw-step="0"><div class="fhiw-step-num">— Étape 01</div><h3>Le commerçant configure sa carte.</h3><p>Logo, couleurs, récompenses. Sans code, sans dev.</p></article>
+              <article class="fhiw-step" data-fhiw-step="1"><div class="fhiw-step-num">— Étape 02</div><h3>Le client scanne le QR code.</h3><p>En caisse, sur la table, sur l’addition. Un tap, c’est installé.</p></article>
+              <article class="fhiw-step" data-fhiw-step="2"><div class="fhiw-step-num">— Étape 03</div><h3>La carte s’ajoute au Wallet.</h3><p>Apple Wallet ou Google Wallet. Toujours dans la poche du client.</p></article>
+              <article class="fhiw-step" data-fhiw-step="3"><div class="fhiw-step-num">— Étape 04</div><h3>Le commerçant envoie une notification.</h3><p>Une offre, un rappel, une nouveauté. Direct dans son téléphone.</p></article>
+              <article class="fhiw-step" data-fhiw-step="4"><div class="fhiw-step-num">— Étape 05</div><h3>Le client revient acheter.</h3><p>Et son tampon avance. Et il revient encore. Voilà la fidélité.</p></article>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.head.appendChild(style);
+      var root = document.getElementById('fyroot') || document.body;
+      var target = null;
+      Array.prototype.some.call(root.querySelectorAll('h2,h3'), function(heading) {
+        if ((heading.innerText || '').indexOf('Plus qu’une simple carte') !== -1 || (heading.innerText || '').indexOf("Plus qu'une simple carte") !== -1) {
+          target = heading.closest('section') || heading.parentElement;
+          return true;
+        }
+        return false;
+      });
+      if (target && target.parentNode) target.parentNode.insertBefore(section, target);
+      else root.appendChild(section);
+
+      var steps = Array.prototype.slice.call(section.querySelectorAll('[data-fhiw-step]'));
+      var visuals = Array.prototype.slice.call(section.querySelectorAll('[data-fhiw-visual]'));
+      var dots = Array.prototype.slice.call(section.querySelectorAll('[data-fhiw-dot]'));
+      var fill = section.querySelector('[data-fhiw-fill]');
+      var counter = section.querySelector('[data-fhiw-counter]');
+      var activeIndex = 0;
+
+      function activate(index) {
+        index = Math.max(0, Math.min(steps.length - 1, index));
+        activeIndex = index;
+        steps.forEach(function(el, i) { el.classList.toggle('is-active', i === index); });
+        visuals.forEach(function(el, i) { el.classList.toggle('is-active', i === index); });
+        dots.forEach(function(el, i) { el.classList.toggle('is-active', i <= index); });
+        counter.textContent = String(index + 1).padStart(2, '0') + ' / 05';
+        var progress = steps.length > 1 ? (index / (steps.length - 1)) * 100 : 0;
+        if (window.innerWidth <= 900) {
+          fill.style.width = 'calc((' + progress + '%) - ' + (progress ? 8 : 0) + 'px)';
+          fill.style.height = '3px';
+        } else {
+          fill.style.height = 'calc((' + progress + '%) - ' + (progress ? 8 : 0) + 'px)';
+          fill.style.width = '3px';
+        }
+      }
+
+      var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) activate(Number(entry.target.dataset.fhiwStep));
+        });
+      }, { rootMargin: '-44% 0px -44% 0px', threshold: 0 });
+      steps.forEach(function(step) { observer.observe(step); });
+      dots.forEach(function(dot) {
+        dot.addEventListener('click', function() {
+          steps[Number(dot.dataset.fhiwDot)].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      });
+      window.addEventListener('resize', function() { activate(activeIndex); });
+      activate(0);
+    }
+
     function injectFAQSection() {
       if (document.getElementById('fidlify-faq')) return;
 
@@ -1366,6 +1736,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       injectCommerceCardLogos();
       injectRealBurgerCard();
       enhanceAdoptionSection();
+      injectHowItWorksSection();
       injectStatsPreview();
       injectFAQSection();
     }, 900);
