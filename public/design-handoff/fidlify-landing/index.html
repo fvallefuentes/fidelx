@@ -768,6 +768,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       const section = document.getElementById('adoption');
       if (!section) return;
       window.__fidlifyAdoptionEnhanced = true;
+      section.remove();
+      return;
 
       if (!document.getElementById('fidlify-adoption-style')) {
         const style = document.createElement('style');
