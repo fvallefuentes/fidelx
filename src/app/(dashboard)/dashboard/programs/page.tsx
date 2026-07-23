@@ -716,7 +716,7 @@ function StampCustomizer({
                       Ajouter une image de fond
                     </div>
                     <div className="text-[11px] mt-0.5" style={{ color: "#8a8e84" }}>
-                      PNG, JPG ou WebP · max 1.5 MB
+                      PNG, JPG ou WebP · max 5 MB
                     </div>
                   </div>
                 </div>
@@ -1104,8 +1104,8 @@ function CreateProgramForm({
       setStampBgError("Le fichier doit être une image");
       return;
     }
-    if (file.size > 1.5 * 1024 * 1024) {
-      setStampBgError("Image trop lourde (max 1.5 MB)");
+    if (file.size > 5 * 1024 * 1024) {
+      setStampBgError("Image trop lourde (max 5 MB)");
       return;
     }
     const reader = new FileReader();
@@ -1156,8 +1156,8 @@ function CreateProgramForm({
       return;
     }
     // Hero image plus grande que le logo (affichée sur toute la largeur du strip)
-    if (file.size > 1.5 * 1024 * 1024) {
-      setHeroError("Image trop lourde (max 1.5 MB)");
+    if (file.size > 5 * 1024 * 1024) {
+      setHeroError("Image trop lourde (max 5 MB)");
       return;
     }
     const reader = new FileReader();
@@ -1517,7 +1517,7 @@ function CreateProgramForm({
                           Ajouter l&apos;image de la carte
                         </div>
                         <div className="text-xs mt-0.5" style={{ color: "#8a8e84" }}>
-                          PNG, JPG ou WebP · max 1.5 MB · ratio paysage recommandé (ex. 1125×432)
+                          PNG, JPG ou WebP · max 5 MB · ratio paysage recommandé (ex. 1125×432)
                         </div>
                       </div>
                       <div
@@ -1724,8 +1724,8 @@ function EditProgramDesignModal({
       setStampBgError("Le fichier doit être une image");
       return;
     }
-    if (file.size > 1.5 * 1024 * 1024) {
-      setStampBgError("Image trop lourde (max 1.5 MB)");
+    if (file.size > 5 * 1024 * 1024) {
+      setStampBgError("Image trop lourde (max 5 MB)");
       return;
     }
     const reader = new FileReader();
@@ -1795,8 +1795,8 @@ function EditProgramDesignModal({
       setHeroError("Le fichier doit être une image");
       return;
     }
-    if (file.size > 1.5 * 1024 * 1024) {
-      setHeroError("Image trop lourde (max 1.5 MB)");
+    if (file.size > 5 * 1024 * 1024) {
+      setHeroError("Image trop lourde (max 5 MB)");
       return;
     }
     const reader = new FileReader();
@@ -2137,7 +2137,7 @@ function EditProgramDesignModal({
                             Ajouter l&apos;image de la carte
                           </div>
                           <div className="text-[11px] mt-0.5" style={{ color: "#8a8e84" }}>
-                            PNG, JPG ou WebP · max 1.5 MB · ratio paysage recommandé
+                            PNG, JPG ou WebP · max 5 MB · ratio paysage recommandé
                           </div>
                         </div>
                         <div
