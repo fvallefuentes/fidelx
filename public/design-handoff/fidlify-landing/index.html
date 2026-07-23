@@ -1254,13 +1254,15 @@ document.addEventListener('DOMContentLoaded', async function() {
       function apply() {
         try {
           var existing = document.getElementById(OVID);
-          if (existing && existing.isConnected) {
-            var host = existing.parentElement;
-            if (host && (host.innerText || '').indexOf('Burger Offert') !== -1) return;
-            existing.remove();
-          }
+          // Masque l'overlay le temps de lire le vrai contenu de la carte en dessous,
+          // sinon on relit "Burger Offert" dans notre propre overlay (auto-référence).
+          var _pd;
+          if (existing) { _pd = existing.style.display; existing.style.display = 'none'; }
           var card = findCard();
-          if (!card) return;
+          if (existing) existing.style.display = _pd || '';
+          if (!card) { if (existing) existing.remove(); return; }
+          if (existing && existing.parentElement === card) return;
+          if (existing) existing.remove();
           var cs = getComputedStyle(card);
           if (cs.position === 'static') card.style.position = 'relative';
           var wrap = document.createElement('div');
