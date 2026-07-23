@@ -326,9 +326,23 @@ document.addEventListener('DOMContentLoaded', async function() {
           min-height:100%;display:grid;align-content:space-between;gap:26px;
           box-shadow:0 24px 70px rgba(14,17,22,.18);
         }
+        #fidlify-lost-revenue-calculator .flrc-result-meta{
+          display:flex;align-items:center;justify-content:space-between;gap:14px;
+          margin-bottom:14px;
+        }
         #fidlify-lost-revenue-calculator .flrc-result-kicker{
           font-family:'Space Mono',ui-monospace,monospace;font-size:11px;font-weight:700;
-          letter-spacing:.16em;text-transform:uppercase;color:#D9FF3C;margin-bottom:12px;
+          letter-spacing:.16em;text-transform:uppercase;color:#D9FF3C;
+        }
+        #fidlify-lost-revenue-calculator .flrc-roi{
+          flex:none;display:inline-flex;align-items:center;gap:6px;
+          padding:8px 11px;border:1px solid rgba(217,255,60,.3);border-radius:999px;
+          background:rgba(217,255,60,.12);color:#D9FF3C;
+          font-family:'Space Mono',ui-monospace,monospace;font-size:10px;font-weight:700;
+          letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
+        }
+        #fidlify-lost-revenue-calculator .flrc-roi strong{
+          color:#fff;font-size:13px;letter-spacing:0;
         }
         #fidlify-lost-revenue-calculator .flrc-big{
           font-family:'Space Grotesk',sans-serif;font-size:clamp(48px,7vw,88px);
@@ -390,6 +404,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           #fidlify-lost-revenue-calculator .flrc-number{min-height:50px;padding:0 9px;border-radius:15px}
           #fidlify-lost-revenue-calculator .flrc-number input{font-size:18px}
           #fidlify-lost-revenue-calculator .flrc-scenarios{grid-template-columns:1fr}
+          #fidlify-lost-revenue-calculator .flrc-result-meta{align-items:flex-start;flex-direction:column}
         }
       `;
 
@@ -442,7 +457,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
             <div class="flrc-result">
               <div>
-                <div class="flrc-result-kicker" data-flrc-scenario-label>Prévision réaliste</div>
+                <div class="flrc-result-meta">
+                  <div class="flrc-result-kicker" data-flrc-scenario-label>Prévision réaliste</div>
+                  <div class="flrc-roi" title="Gain mensuel estimé divisé par le prix mensuel du plan Essentiel">ROI estimé <strong data-flrc-roi>0x</strong></div>
+                </div>
                 <div class="flrc-big" data-flrc-gain-monthly>CHF 0</div>
                 <p class="flrc-copy" data-flrc-copy>Revenu additionnel estimé par mois grâce à la fidélisation Wallet.</p>
               </div>
@@ -487,6 +505,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         averageTicket: section.querySelector('[data-flrc-average-ticket]'),
         pointsOfSale: section.querySelector('[data-flrc-points-of-sale]'),
         scenarioLabel: section.querySelector('[data-flrc-scenario-label]'),
+        roi: section.querySelector('[data-flrc-roi]'),
         gainMonthly: section.querySelector('[data-flrc-gain-monthly]'),
         gainYearly: section.querySelector('[data-flrc-gain-yearly]'),
         projected: section.querySelector('[data-flrc-projected]'),
@@ -498,6 +517,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const scenario = SCENARIOS[state.scenario] || SCENARIOS.realiste;
         const gainMonthly = Math.round(base * scenario.uplift);
         const projected = base + gainMonthly;
+        const roiMultiple = Math.max(1, Math.round(gainMonthly / 39));
         nodes.clientsPerDay.value = String(state.clientsPerDay);
         nodes.daysOpen.value = String(state.daysOpen);
         nodes.averageTicket.value = String(state.averageTicket);
@@ -510,6 +530,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           range.style.setProperty('--range-progress', progress + '%');
         });
         nodes.scenarioLabel.textContent = scenario.label;
+        nodes.roi.textContent = roiMultiple + 'x';
         nodes.gainMonthly.textContent = formatCHF.format(gainMonthly);
         nodes.gainYearly.textContent = formatCHF.format(gainMonthly * 12);
         nodes.projected.textContent = formatCHF.format(projected);
