@@ -344,12 +344,34 @@ document.addEventListener('DOMContentLoaded', async function() {
         #fidlify-lost-revenue-calculator .flrc-roi strong{
           color:#fff;font-size:13px;letter-spacing:0;
         }
+        #fidlify-lost-revenue-calculator .flrc-main-label{
+          margin-bottom:10px;color:rgba(252,252,252,.58);
+          font-family:'Space Mono',ui-monospace,monospace;font-size:10px;font-weight:700;
+          letter-spacing:.12em;text-transform:uppercase;
+        }
         #fidlify-lost-revenue-calculator .flrc-big{
           font-family:'Space Grotesk',sans-serif;font-size:clamp(48px,7vw,88px);
           line-height:.92;letter-spacing:-.055em;font-weight:700;font-variant-numeric:tabular-nums;
         }
         #fidlify-lost-revenue-calculator .flrc-copy{
           margin:16px 0 0;color:rgba(252,252,252,.68);font-size:16px;line-height:1.58;
+        }
+        #fidlify-lost-revenue-calculator .flrc-growth{
+          display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;
+          margin-top:24px;padding:16px;border:1px solid rgba(252,252,252,.13);
+          border-radius:18px;background:rgba(252,252,252,.055);
+        }
+        #fidlify-lost-revenue-calculator .flrc-growth-item span{
+          display:block;color:rgba(252,252,252,.56);font-size:11px;font-weight:750;
+        }
+        #fidlify-lost-revenue-calculator .flrc-growth-item strong{
+          display:block;margin-top:6px;font-family:'Space Grotesk',sans-serif;
+          color:#fff;font-size:22px;line-height:1;font-variant-numeric:tabular-nums;
+        }
+        #fidlify-lost-revenue-calculator .flrc-growth-item:last-child strong{color:#D9FF3C}
+        #fidlify-lost-revenue-calculator .flrc-growth-arrow{
+          width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+          background:#D9FF3C;color:#0E1116;font-size:17px;font-weight:800;
         }
         #fidlify-lost-revenue-calculator .flrc-cards{
           display:grid;grid-template-columns:1fr 1fr;gap:12px;
@@ -368,6 +390,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         #fidlify-lost-revenue-calculator .flrc-mini-value{
           margin-top:8px;font-family:'Space Grotesk',sans-serif;font-size:28px;
           font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;
+        }
+        #fidlify-lost-revenue-calculator .flrc-mini-note{
+          margin-top:6px;color:rgba(252,252,252,.48);font-size:10px;line-height:1.35;
         }
         #fidlify-lost-revenue-calculator .flrc-bubbles{
           margin-top:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
@@ -405,6 +430,8 @@ document.addEventListener('DOMContentLoaded', async function() {
           #fidlify-lost-revenue-calculator .flrc-number input{font-size:18px}
           #fidlify-lost-revenue-calculator .flrc-scenarios{grid-template-columns:1fr}
           #fidlify-lost-revenue-calculator .flrc-result-meta{align-items:flex-start;flex-direction:column}
+          #fidlify-lost-revenue-calculator .flrc-growth{grid-template-columns:1fr;gap:10px}
+          #fidlify-lost-revenue-calculator .flrc-growth-arrow{transform:rotate(90deg)}
         }
       `;
 
@@ -461,17 +488,24 @@ document.addEventListener('DOMContentLoaded', async function() {
                   <div class="flrc-result-kicker" data-flrc-scenario-label>Prévision réaliste</div>
                   <div class="flrc-roi" title="Gain mensuel estimé divisé par le prix mensuel du plan Essentiel">ROI estimé <strong data-flrc-roi>0x</strong></div>
                 </div>
+                <div class="flrc-main-label">Chiffre d’affaires supplémentaire / mois</div>
                 <div class="flrc-big" data-flrc-gain-monthly>CHF 0</div>
-                <p class="flrc-copy" data-flrc-copy>Revenu additionnel estimé par mois grâce à la fidélisation Wallet.</p>
+                <div class="flrc-growth" aria-label="Comparaison du chiffre d’affaires mensuel">
+                  <div class="flrc-growth-item"><span>CA actuel estimé</span><strong data-flrc-current>CHF 0</strong></div>
+                  <div class="flrc-growth-arrow" aria-hidden="true">→</div>
+                  <div class="flrc-growth-item"><span>CA projeté avec Fidlify</span><strong data-flrc-projected>CHF 0</strong></div>
+                </div>
+                <p class="flrc-copy" data-flrc-copy>Estimation du potentiel généré par une fidélisation Wallet régulière.</p>
               </div>
               <div class="flrc-cards">
                 <div class="flrc-mini">
-                  <div class="flrc-mini-label">Sur 1 an</div>
+                  <div class="flrc-mini-label">CA supplémentaire sur 1 an</div>
                   <div class="flrc-mini-value" data-flrc-gain-yearly>CHF 0</div>
                 </div>
                 <div class="flrc-mini">
-                  <div class="flrc-mini-label">CA projeté / mois</div>
-                  <div class="flrc-mini-value" data-flrc-projected>CHF 0</div>
+                  <div class="flrc-mini-label">Clients supplémentaires / mois</div>
+                  <div class="flrc-mini-value">+<span data-flrc-extra-customers>0</span></div>
+                  <div class="flrc-mini-note">Estimation basée sur votre panier moyen</div>
                 </div>
               </div>
             </div>
@@ -508,7 +542,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         roi: section.querySelector('[data-flrc-roi]'),
         gainMonthly: section.querySelector('[data-flrc-gain-monthly]'),
         gainYearly: section.querySelector('[data-flrc-gain-yearly]'),
+        current: section.querySelector('[data-flrc-current]'),
         projected: section.querySelector('[data-flrc-projected]'),
+        extraCustomers: section.querySelector('[data-flrc-extra-customers]'),
         copy: section.querySelector('[data-flrc-copy]')
       };
 
@@ -518,6 +554,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const gainMonthly = Math.round(base * scenario.uplift);
         const projected = base + gainMonthly;
         const roiMultiple = Math.max(1, Math.round(gainMonthly / 39));
+        const extraCustomers = Math.max(1, Math.round(gainMonthly / state.averageTicket));
         nodes.clientsPerDay.value = String(state.clientsPerDay);
         nodes.daysOpen.value = String(state.daysOpen);
         nodes.averageTicket.value = String(state.averageTicket);
@@ -533,8 +570,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         nodes.roi.textContent = roiMultiple + 'x';
         nodes.gainMonthly.textContent = formatCHF.format(gainMonthly);
         nodes.gainYearly.textContent = formatCHF.format(gainMonthly * 12);
+        nodes.current.textContent = formatCHF.format(base);
         nodes.projected.textContent = formatCHF.format(projected);
-        nodes.copy.textContent = 'Sur un chiffre d’affaires estimé à ' + formatCHF.format(base) + ' / mois, une relance Wallet bien ciblée peut générer ce revenu additionnel, sans application à installer.';
+        nodes.extraCustomers.textContent = String(extraCustomers);
+        nodes.copy.textContent = 'Soit +' + Math.round(scenario.uplift * 100) + '% de chiffre d’affaires potentiel grâce aux retours clients générés par Fidlify.';
       }
 
       section.querySelectorAll('[data-flrc-input]').forEach(function(input) {
