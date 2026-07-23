@@ -258,37 +258,69 @@ document.addEventListener('DOMContentLoaded', async function() {
           background:#0E1116;border-color:#0E1116;color:#D9FF3C;
           box-shadow:0 10px 26px rgba(14,17,22,.18);
         }
-        #fidlify-lost-revenue-calculator .flrc-field{display:grid;gap:12px;margin-top:22px}
+        #fidlify-lost-revenue-calculator .flrc-field{display:grid;gap:13px;margin-top:24px}
         #fidlify-lost-revenue-calculator .flrc-field:first-of-type{margin-top:0}
         #fidlify-lost-revenue-calculator .flrc-label{
-          display:flex;align-items:baseline;justify-content:space-between;gap:14px;
-          color:var(--ink,#0E1116);font-size:14px;font-weight:700;
+          color:var(--ink,#0E1116);font-size:15px;font-weight:750;
         }
-        #fidlify-lost-revenue-calculator .flrc-value{
-          color:var(--accent-ink,#56750a);font-family:'Space Mono',ui-monospace,monospace;
-          font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;
+        #fidlify-lost-revenue-calculator .flrc-control{
+          display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:18px;align-items:center;
+        }
+        #fidlify-lost-revenue-calculator .flrc-number{
+          display:flex;align-items:center;justify-content:center;gap:5px;
+          min-height:56px;padding:0 13px;border:1.5px solid var(--line,rgba(14,17,22,.14));
+          border-radius:17px;background:var(--card,#fff);color:var(--ink,#0E1116);
+          transition:border-color .18s ease,box-shadow .18s ease;
+        }
+        #fidlify-lost-revenue-calculator .flrc-number:focus-within{
+          border-color:var(--accent-ink,#6f9412);
+          box-shadow:0 0 0 4px rgba(111,148,18,.12);
+        }
+        #fidlify-lost-revenue-calculator .flrc-number input{
+          appearance:textfield;-moz-appearance:textfield;width:100%;min-width:0;padding:0;
+          border:0;outline:0;background:transparent;color:inherit;text-align:center;
+          font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;
+          font-variant-numeric:tabular-nums;
+        }
+        #fidlify-lost-revenue-calculator .flrc-number input::-webkit-inner-spin-button,
+        #fidlify-lost-revenue-calculator .flrc-number input::-webkit-outer-spin-button{
+          -webkit-appearance:none;margin:0;
+        }
+        #fidlify-lost-revenue-calculator .flrc-unit{
+          color:var(--muted,#5d6355);font-size:12px;font-weight:750;white-space:nowrap;
         }
         #fidlify-lost-revenue-calculator input[type=range]{
           -webkit-appearance:none;appearance:none;
-          width:100%;height:18px;background:transparent;cursor:pointer;
-          border:none;outline:none;
+          --range-progress:0%;
+          width:100%;height:8px;cursor:pointer;border:none;outline:none;border-radius:999px;
+          background:linear-gradient(to right,#D9FF3C 0,#D9FF3C var(--range-progress),#E2E3DE var(--range-progress),#E2E3DE 100%);
         }
         #fidlify-lost-revenue-calculator input[type=range]::-webkit-slider-runnable-track{
-          height:6px;border-radius:999px;background:#D9FF3C;border:none;
+          height:8px;border-radius:999px;background:transparent;border:none;
         }
         #fidlify-lost-revenue-calculator input[type=range]::-webkit-slider-thumb{
-          -webkit-appearance:none;appearance:none;margin-top:-6px;
-          width:18px;height:18px;border-radius:50%;background:#D9FF3C;
-          border:none;box-shadow:0 2px 7px rgba(24,30,10,.30);cursor:pointer;
+          -webkit-appearance:none;appearance:none;margin-top:-9px;
+          width:26px;height:26px;border-radius:50%;background:#fff;
+          border:3px solid var(--accent-ink,#6f9412);
+          box-shadow:0 3px 10px rgba(24,30,10,.22);cursor:grab;
         }
         #fidlify-lost-revenue-calculator input[type=range]::-moz-range-track{
-          height:6px;border-radius:999px;background:#D9FF3C;border:none;
+          height:8px;border-radius:999px;background:#E2E3DE;border:none;
+        }
+        #fidlify-lost-revenue-calculator input[type=range]::-moz-range-progress{
+          height:8px;border-radius:999px;background:#D9FF3C;border:none;
         }
         #fidlify-lost-revenue-calculator input[type=range]::-moz-range-thumb{
-          width:18px;height:18px;border-radius:50%;background:#D9FF3C;
-          border:none;box-shadow:0 2px 7px rgba(24,30,10,.30);cursor:pointer;
+          width:20px;height:20px;border-radius:50%;background:#fff;
+          border:3px solid var(--accent-ink,#6f9412);
+          box-shadow:0 3px 10px rgba(24,30,10,.22);cursor:grab;
         }
+        #fidlify-lost-revenue-calculator input[type=range]:active::-webkit-slider-thumb{cursor:grabbing}
+        #fidlify-lost-revenue-calculator input[type=range]:active::-moz-range-thumb{cursor:grabbing}
         #fidlify-lost-revenue-calculator input[type=range]:focus{outline:none;}
+        #fidlify-lost-revenue-calculator input[type=range]:focus-visible::-webkit-slider-thumb{
+          box-shadow:0 0 0 5px rgba(111,148,18,.18),0 3px 10px rgba(24,30,10,.22);
+        }
         #fidlify-lost-revenue-calculator .flrc-result{
           background:#0E1116;color:#FCFCFC;border-radius:26px;padding:30px;
           min-height:100%;display:grid;align-content:space-between;gap:26px;
@@ -354,7 +386,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         @media (max-width:520px){
           #fidlify-lost-revenue-calculator .flrc-cards{grid-template-columns:1fr}
           #fidlify-lost-revenue-calculator .flrc-bubbles{grid-template-columns:1fr}
-          #fidlify-lost-revenue-calculator .flrc-label{align-items:flex-start;flex-direction:column;gap:6px}
+          #fidlify-lost-revenue-calculator .flrc-control{grid-template-columns:minmax(0,1fr) 92px;gap:12px}
+          #fidlify-lost-revenue-calculator .flrc-number{min-height:50px;padding:0 9px;border-radius:15px}
+          #fidlify-lost-revenue-calculator .flrc-number input{font-size:18px}
           #fidlify-lost-revenue-calculator .flrc-scenarios{grid-template-columns:1fr}
         }
       `;
@@ -378,20 +412,32 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <button type="button" class="flrc-scenario" data-flrc-scenario="optimiste">Optimiste</button>
               </div>
               <label class="flrc-field">
-                <span class="flrc-label">Clients par jour <span class="flrc-value" data-flrc-clients-per-day>40</span></span>
-                <input data-flrc-input="clientsPerDay" type="range" min="5" max="500" step="5" value="40">
+                <span class="flrc-label">Clients par jour</span>
+                <span class="flrc-control">
+                  <input data-flrc-input="clientsPerDay" type="range" min="5" max="500" step="5" value="40">
+                  <span class="flrc-number"><input data-flrc-input="clientsPerDay" data-flrc-clients-per-day type="number" min="5" max="500" step="5" value="40" aria-label="Clients par jour"></span>
+                </span>
               </label>
               <label class="flrc-field">
-                <span class="flrc-label">Jours ouverts / mois <span class="flrc-value" data-flrc-days-open>26</span></span>
-                <input data-flrc-input="daysOpen" type="range" min="8" max="31" step="1" value="26">
+                <span class="flrc-label">Jours ouverts / mois</span>
+                <span class="flrc-control">
+                  <input data-flrc-input="daysOpen" type="range" min="8" max="31" step="1" value="26">
+                  <span class="flrc-number"><input data-flrc-input="daysOpen" data-flrc-days-open type="number" min="8" max="31" step="1" value="26" aria-label="Jours ouverts par mois"></span>
+                </span>
               </label>
               <label class="flrc-field">
-                <span class="flrc-label">Panier moyen <span class="flrc-value"><span data-flrc-average-ticket>24</span> CHF</span></span>
-                <input data-flrc-input="averageTicket" type="range" min="5" max="200" step="1" value="24">
+                <span class="flrc-label">Panier moyen</span>
+                <span class="flrc-control">
+                  <input data-flrc-input="averageTicket" type="range" min="5" max="200" step="1" value="24">
+                  <span class="flrc-number"><input data-flrc-input="averageTicket" data-flrc-average-ticket type="number" min="5" max="200" step="1" value="24" aria-label="Panier moyen"><span class="flrc-unit">CHF</span></span>
+                </span>
               </label>
               <label class="flrc-field">
-                <span class="flrc-label">Points de vente <span class="flrc-value" data-flrc-points-of-sale>1</span></span>
-                <input data-flrc-input="pointsOfSale" type="range" min="1" max="20" step="1" value="1">
+                <span class="flrc-label">Points de vente</span>
+                <span class="flrc-control">
+                  <input data-flrc-input="pointsOfSale" type="range" min="1" max="20" step="1" value="1">
+                  <span class="flrc-number"><input data-flrc-input="pointsOfSale" data-flrc-points-of-sale type="number" min="1" max="20" step="1" value="1" aria-label="Points de vente"></span>
+                </span>
               </label>
             </div>
             <div class="flrc-result">
@@ -452,10 +498,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         const scenario = SCENARIOS[state.scenario] || SCENARIOS.realiste;
         const gainMonthly = Math.round(base * scenario.uplift);
         const projected = base + gainMonthly;
-        nodes.clientsPerDay.textContent = String(state.clientsPerDay);
-        nodes.daysOpen.textContent = String(state.daysOpen);
-        nodes.averageTicket.textContent = String(state.averageTicket);
-        nodes.pointsOfSale.textContent = String(state.pointsOfSale);
+        nodes.clientsPerDay.value = String(state.clientsPerDay);
+        nodes.daysOpen.value = String(state.daysOpen);
+        nodes.averageTicket.value = String(state.averageTicket);
+        nodes.pointsOfSale.value = String(state.pointsOfSale);
+        section.querySelectorAll('input[type=range][data-flrc-input]').forEach(function(range) {
+          range.value = String(state[range.dataset.flrcInput]);
+          const min = Number(range.min);
+          const max = Number(range.max);
+          const progress = ((Number(range.value) - min) / (max - min)) * 100;
+          range.style.setProperty('--range-progress', progress + '%');
+        });
         nodes.scenarioLabel.textContent = scenario.label;
         nodes.gainMonthly.textContent = formatCHF.format(gainMonthly);
         nodes.gainYearly.textContent = formatCHF.format(gainMonthly * 12);
@@ -465,8 +518,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       section.querySelectorAll('[data-flrc-input]').forEach(function(input) {
         input.addEventListener('input', function(event) {
-          state[event.target.dataset.flrcInput] = Number(event.target.value);
+          if (event.target.value === '') return;
+          const min = Number(event.target.min);
+          const max = Number(event.target.max);
+          const value = Math.min(max, Math.max(min, Number(event.target.value)));
+          state[event.target.dataset.flrcInput] = value;
           render();
+        });
+        input.addEventListener('change', function(event) {
+          if (event.target.value === '') render();
         });
       });
       section.querySelectorAll('[data-flrc-scenario]').forEach(function(button) {
