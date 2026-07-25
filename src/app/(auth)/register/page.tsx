@@ -19,8 +19,9 @@ function RegisterForm() {
   const ref = searchParams.get("ref") ?? "";
   const isPaidPlan = PAID_PLANS.has(plan);
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  // Pré-remplissage depuis la landing (capture e-mail, fin de l'éditeur de carte)
+  const [name, setName] = useState(searchParams.get("name") ?? "");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
