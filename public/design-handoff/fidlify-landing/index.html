@@ -1795,6 +1795,8 @@ document.addEventListener('DOMContentLoaded', async function() {
           text-transform:uppercase;color:#6c7163;margin-bottom:12px;
         }
         #fidlify-dashboard-stats svg{display:block;width:100%;height:auto;overflow:visible}
+        #fidlify-dashboard-stats .fds-donut{max-width:196px;margin:6px auto 2px}
+        #fidlify-dashboard-stats .fds-charts > .fds-card{display:flex;flex-direction:column;justify-content:center}
         #fidlify-dashboard-stats .fds-legend{
           display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:#6c7163;
         }
@@ -1911,7 +1913,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                   + dots + labels
                 + '</svg></div>'
               + '<div class="fds-card"><div class="fds-card-title">Clients actifs vs inactifs (30j)</div>'
-                + '<svg viewBox="0 0 120 120" role="img" aria-label="68 % de clients actifs">' + donut + '</svg>'
+                + '<svg class="fds-donut" viewBox="0 0 120 120" role="img" aria-label="68 % de clients actifs">' + donut + '</svg>'
                 + '<div class="fds-legend"><span><i style="background:#a8cf1e"></i>Actifs — 849</span>'
                 + '<span><i style="background:rgba(17,20,14,.16)"></i>Inactifs — 399</span></div></div>'
             + '</div>'
