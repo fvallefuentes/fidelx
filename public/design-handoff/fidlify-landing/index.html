@@ -2074,6 +2074,42 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
+    // Correctifs mobile : la barre de nav (flex nowrap, 481px de liens) et le
+    // titre du hero (62px) débordaient d'un écran de 375px, et le contenu était
+    // rogné par overflow:clip. On marque les éléments en JS (sélecteurs stables)
+    // puis on applique une feuille de style dédiée au mobile.
+    function injectMobileFixes() {
+      if (document.getElementById('fidlify-mobile-fixes')) return;
+
+      var probe = document.querySelector('#fyroot nav a[href="#editeur"]');
+      if (probe && probe.parentElement) probe.parentElement.classList.add('fdl-nav-links');
+
+      var style = document.createElement('style');
+      style.id = 'fidlify-mobile-fixes';
+      style.textContent = `
+        @media (max-width: 860px){
+          /* Liens de section masqués : ils ne tiennent pas et chevauchaient le
+             logo. Le logo et le bouton principal restent accessibles. */
+          #fyroot nav .fdl-nav-links{display:none !important}
+          #fyroot nav{gap:10px !important;padding-left:16px !important;padding-right:16px !important}
+
+          /* Hero : marges latérales raisonnables et titre qui tient dans l'écran */
+          #top{padding-left:20px !important;padding-right:20px !important}
+          #top h1{
+            font-size:clamp(34px, 10.5vw, 50px) !important;
+            line-height:1.02 !important;
+            overflow-wrap:break-word;word-break:normal;hyphens:auto;
+          }
+          #top p{max-width:100% !important}
+        }
+        @media (max-width: 560px){
+          #top{padding-top:64px !important}
+          #top h1{font-size:clamp(30px, 9.6vw, 42px) !important}
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
     // Bandeau de confiance sous le hero : argument suisse (LPD, hébergement, CHF).
     // Chaque mention est vérifiable — base de données et e-mails hébergés chez
     // Infomaniak (Suisse), pages légales publiées.
@@ -2511,6 +2547,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     window.setTimeout(function() {
       injectLostRevenueCalculator();
       injectCommerceCardLogos();
+      injectMobileFixes();
       injectTrustBand();
       enhanceHeroWalletBadges();
       injectRealCard({
