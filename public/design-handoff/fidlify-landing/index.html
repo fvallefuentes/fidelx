@@ -2105,15 +2105,13 @@ document.addEventListener('DOMContentLoaded', async function() {
           /* Le hero empile texte -> visuel -> puces (la pile de cartes etait en
              position absolue et recouvrait le texte). */
           #top{display:flex !important;flex-direction:column !important;align-items:stretch !important}
-          #top > div:nth-child(1){
-            position:relative !important;left:auto !important;top:auto !important;right:auto !important;
-            width:100% !important;max-width:100% !important;order:2;margin-top:26px;
-            transform:scale(.62);transform-origin:top center;height:330px;
-          }
+          /* Halo decoratif : masque sur mobile (remis dans le flux, il creait
+             un vide de 320px entre le texte et la carte). */
+          #top > div:nth-child(1){display:none !important}
           #top > div:nth-child(2){order:1;width:100% !important;max-width:100% !important}
           #top > div:nth-child(3){
             position:relative !important;left:auto !important;width:100% !important;
-            order:3;margin-top:20px;flex-wrap:wrap !important;justify-content:flex-start !important;
+            order:3;margin-top:24px;flex-wrap:wrap !important;justify-content:center !important;
           }
 
           /* Barre de nav : le bouton principal etait coupe a droite */
