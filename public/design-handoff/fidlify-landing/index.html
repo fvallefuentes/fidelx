@@ -2117,6 +2117,14 @@ document.addEventListener('DOMContentLoaded', async function() {
           /* Barre de nav : le bouton principal etait coupe a droite */
           #fyroot nav a[href="#cta"]{font-size:12.5px !important;padding:0 13px !important;white-space:nowrap}
         }
+        @media (max-width: 860px){
+          /* Rangees d'origine qui ne s'enroulaient pas (features, avis, cta...) */
+          .fdl-stack-mobile{
+            flex-wrap:wrap !important;grid-template-columns:1fr !important;
+            max-width:100% !important;
+          }
+          .fdl-stack-mobile > *{max-width:100% !important}
+        }
         @media (max-width: 430px){
           /* Lien secondaire masque pour laisser la place au bouton principal */
           #fyroot nav a[href="#"]{display:none !important}
@@ -2127,6 +2135,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
       `;
       document.head.appendChild(style);
+
+      // Repere les conteneurs dont un enfant sort de l'ecran et les marque pour
+      // que la feuille ci-dessus les fasse passer en colonne.
+      function stackOverflowingRows() {
+        if (!window.matchMedia('(max-width: 860px)').matches) return;
+        var W = document.documentElement.clientWidth;
+        Array.prototype.forEach.call(document.querySelectorAll('#fyroot > section *'), function (el) {
+          var r = el.getBoundingClientRect();
+          if (r.width <= 0 || r.right <= W + 2) return;
+          var p = el.parentElement;
+          if (p && p.id !== 'fyroot' && !p.classList.contains('fdl-stack-mobile')) {
+            p.classList.add('fdl-stack-mobile');
+          }
+        });
+      }
+      stackOverflowingRows();
+      setTimeout(stackOverflowingRows, 1400);
+      window.addEventListener('resize', stackOverflowingRows);
     }
 
     // Bandeau de confiance sous le hero : argument suisse (LPD, hébergement, CHF).
