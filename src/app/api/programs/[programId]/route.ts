@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPlanLimits } from "@/lib/plan-limits";
+import { getEffectiveLimits } from "@/lib/plan-limits";
 import { notifyPassUpdate } from "@/lib/wallet/push";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -67,9 +67,9 @@ export async function PATCH(
   // Gating : logo personnalisé réservé aux plans payants
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { plan: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true },
   });
-  const limits = getPlanLimits(user?.plan);
+  const limits = getEffectiveLimits(user);
   const wantsCustomLogo =
     body.cardDesign && typeof body.cardDesign.logoData === "string";
   if (wantsCustomLogo && limits.showFidlifyBranding) {

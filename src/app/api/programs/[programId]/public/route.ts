@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getPlanLimits } from "@/lib/plan-limits";
+import { getEffectiveLimits } from "@/lib/plan-limits";
 
 export async function GET(
   _req: Request,
@@ -16,7 +16,7 @@ export async function GET(
       type: true,
       config: true,
       cardDesign: true,
-      merchant: { select: { name: true, plan: true } },
+      merchant: { select: { name: true, plan: true, trialEndsAt: true, manualPlanUntil: true } },
       establishment: { select: { name: true, address: true } },
     },
   });
@@ -25,7 +25,7 @@ export async function GET(
     return NextResponse.json({ error: "Programme introuvable" }, { status: 404 });
   }
 
-  const limits = getPlanLimits(program.merchant.plan);
+  const limits = getEffectiveLimits(program.merchant);
 
   return NextResponse.json({
     ...program,

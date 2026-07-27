@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPlanLimits, type ProgramType } from "@/lib/plan-limits";
+import { getEffectiveLimits, type ProgramType } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
 import type { Prisma } from "@/generated/prisma/client";
@@ -126,7 +126,7 @@ export async function POST(req: Request) {
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
   });
-  const limits = getPlanLimits(user?.plan);
+  const limits = getEffectiveLimits(user);
 
   // Limite du nombre de programmes actifs
   if (limits.maxPrograms !== null) {

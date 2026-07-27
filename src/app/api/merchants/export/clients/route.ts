@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPlanLimits } from "@/lib/plan-limits";
+import { getEffectiveLimits } from "@/lib/plan-limits";
 import { csvResponseHeaders, toCsv, type CsvRow } from "@/lib/csv";
 
 /**
@@ -22,9 +22,9 @@ export async function GET() {
   // Plan gating
   const user = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true },
   });
-  const limits = getPlanLimits(user?.plan);
+  const limits = getEffectiveLimits(user);
   if (!limits.canExportCsv) {
     return NextResponse.json(
       {

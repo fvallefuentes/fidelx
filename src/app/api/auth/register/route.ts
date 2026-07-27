@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { issueVerificationCode } from "@/lib/email/verification";
 import { parseJsonBody } from "@/lib/api/validation";
 import { extractContext } from "@/lib/anti-abuse/fingerprint";
+import { TRIAL_DAYS } from "@/lib/plan-limits";
 import {
   attributeMerchantReferral,
   buildClearReferralCookieHeader,
@@ -66,6 +67,9 @@ export async function POST(req: Request) {
         email: normalizedEmail,
         passwordHash,
         language,
+        // Essai complet de 30 jours, sans carte bancaire. À son terme et sans
+        // abonnement, le compte passe en mode veille (cf. plan-limits.ts).
+        trialEndsAt: new Date(Date.now() + TRIAL_DAYS * 86_400_000),
         // Sur un flow plan payant, on marque l'email vérifié direct : le
         // user va passer par Stripe Checkout immédiatement après et le
         // paiement par CB est un signal de trust suffisant. Sans ça,

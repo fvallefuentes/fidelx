@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolvePlanState } from "@/lib/plan-limits";
 
 /**
  * GET /api/merchants/stats/insights
@@ -100,10 +101,10 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true },
   });
-  const plan = user?.plan ?? "FREE";
-  const isPaid = plan !== "FREE";
+  const planState = resolvePlanState(user);
+  const isPaid = planState !== "FREE" && planState !== "DORMANT";
 
   // Programmes du commerçant
   const programs = await prisma.loyaltyProgram.findMany({

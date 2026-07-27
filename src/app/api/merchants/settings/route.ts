@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import {
   countStampsThisMonth,
   getEffectiveMaxCampaignsPerMonth,
-  getPlanLimits,
+  getEffectiveLimits,
   getPeriodStart,
 } from "@/lib/plan-limits";
 
@@ -27,6 +27,8 @@ export async function GET() {
       notificationDefaultLogo: true,
       notificationDefaultBgColor: true,
       plan: true,
+      trialEndsAt: true,
+      manualPlanUntil: true,
       createdAt: true,
       stripeCurrentPeriodStart: true,
       stripeCurrentPeriodEnd: true,
@@ -46,7 +48,7 @@ export async function GET() {
 
   if (!user) return NextResponse.json({ error: "Utilisateur introuvable" }, { status: 404 });
 
-  const limits = getPlanLimits(user.plan);
+  const limits = getEffectiveLimits(user);
   const periodStart = getPeriodStart(user);
 
   const [programCount, activeCardCount, campaignCount, stampsCount] = await Promise.all([
@@ -70,7 +72,7 @@ export async function GET() {
       periodStart,
       programs:    { current: programCount,   max: limits.maxPrograms },
       activeCards: { current: activeCardCount, max: limits.maxActiveCards },
-      campaigns:   { current: campaignCount,   max: getEffectiveMaxCampaignsPerMonth(user.plan) },
+      campaigns:   { current: campaignCount,   max: getEffectiveMaxCampaignsPerMonth(user) },
       stamps:      { current: stampsCount,     max: limits.maxStampsPerMonth },
     },
   });

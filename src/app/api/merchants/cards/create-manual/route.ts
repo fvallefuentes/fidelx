@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generateSerialNumber } from "@/lib/utils";
 import { normalizeEmail, normalizePhone } from "@/lib/normalize";
-import { getPlanLimits, countActiveCards } from "@/lib/plan-limits";
+import { getEffectiveLimits, countActiveCards } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
 
@@ -79,9 +79,9 @@ export async function POST(req: Request) {
   // ─── Limite cartes actives du plan ───
   const merchant = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true },
   });
-  const limits = getPlanLimits(merchant?.plan);
+  const limits = getEffectiveLimits(merchant);
   if (limits.maxActiveCards !== null) {
     const activeCount = await countActiveCards(merchantId);
     if (activeCount >= limits.maxActiveCards) {

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyAllCardsInProgram, notifyCardsInProgram } from "@/lib/wallet/push";
-import { getEffectiveMaxCampaignsPerMonth, getPeriodStart } from "@/lib/plan-limits";
+import { getEffectiveMaxCampaignsPerMonth, getPeriodStart, resolvePlanState } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
 import { calculateCampaignImpact } from "@/lib/campaign-impact";
 import type { Prisma } from "@/generated/prisma/client";
@@ -102,10 +102,12 @@ export async function POST(req: Request) {
   // Vérification limites du plan
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { plan: true, createdAt: true, stripeCurrentPeriodStart: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, createdAt: true, stripeCurrentPeriodStart: true },
   });
   const limits: { maxCampaignsPerMonth: number | null } = { maxCampaignsPerMonth: null };
-  const isFree = !user?.plan || user.plan === "FREE";
+  // Un compte en essai a plan=FREE : c'est l'etat effectif qui compte.
+  const planState = resolvePlanState(user);
+  const isFree = planState === "FREE" || planState === "DORMANT";
 
   if (isFree && triggerType !== "IMMEDIATE") {
     return NextResponse.json({ error: "Le plan Gratuit ne permet que l'envoi immédiat." }, { status: 403 });
@@ -122,7 +124,7 @@ export async function POST(req: Request) {
   }
 
   const globalPeriodStart = getPeriodStart(user!);
-  const globalMaxCampaignsPerMonth = getEffectiveMaxCampaignsPerMonth(user?.plan);
+  const globalMaxCampaignsPerMonth = getEffectiveMaxCampaignsPerMonth(user);
   const visibleCampaignsThisPeriod = await prisma.notificationCampaign.count({
     where: {
       merchantId: session.user.id,

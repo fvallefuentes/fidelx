@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getPlanLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
+import { getEffectiveLimits, getPeriodStart, countStampsThisMonth } from "@/lib/plan-limits";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { parseJsonBody } from "@/lib/api/validation";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
@@ -52,9 +52,9 @@ export async function POST(req: Request) {
   // Limite du plan : nombre de tampons donnés ce mois-ci
   const merchant = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true, createdAt: true, stripeCurrentPeriodStart: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, createdAt: true, stripeCurrentPeriodStart: true },
   });
-  const limits = getPlanLimits(merchant?.plan);
+  const limits = getEffectiveLimits(merchant);
   if (limits.maxStampsPerMonth !== null) {
     const periodStart = getPeriodStart(merchant!);
     const used = await countStampsThisMonth(merchantId, periodStart);

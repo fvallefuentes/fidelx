@@ -16,7 +16,38 @@ export interface PlanLimits {
 
 export const GLOBAL_MAX_CAMPAIGNS_PER_MONTH = 15;
 
+/** Durée de l'essai gratuit, en jours. 30 et non 14 : le déclic du produit
+ *  ("j'ai relancé, des clients sont revenus") demande d'abord d'accumuler des
+ *  porteurs de carte, puis une campagne, puis d'en voir l'effet. */
+export const TRIAL_DAYS = 30;
+
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
+  /** Essai complet, 30 jours, sans carte bancaire. */
+  TRIAL: {
+    maxActiveCards: 1000,
+    maxStampsPerMonth: null,
+    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK"],
+    showFidlifyBranding: true,
+    maxPrograms: 3,
+    maxCampaignsPerMonth: null,
+    canExportCsv: true,
+  },
+  /**
+   * Mode veille : l'essai est terminé et aucun abonnement n'a été pris.
+   * Principe — on ne casse jamais l'expérience du client final : les cartes
+   * déjà dans les Wallets continuent de fonctionner et de cumuler des tampons.
+   * Ce qui s'arrête, c'est la capacité du commerçant à développer son
+   * programme : plus de nouvelle carte, plus de campagne, plus d'export.
+   */
+  DORMANT: {
+    maxActiveCards: 0,
+    maxStampsPerMonth: 300,
+    allowedProgramTypes: ["STAMPS"],
+    showFidlifyBranding: true,
+    maxPrograms: 1,
+    maxCampaignsPerMonth: 0,
+    canExportCsv: false,
+  },
   FREE: {
     maxActiveCards: 10,
     maxStampsPerMonth: 300,
@@ -59,8 +90,74 @@ export function getPlanLimits(plan: string | null | undefined): PlanLimits {
   return PLAN_LIMITS[plan || "FREE"] || PLAN_LIMITS.FREE;
 }
 
-export function getEffectiveMaxCampaignsPerMonth(plan: string | null | undefined): number {
-  const planLimit = getPlanLimits(plan).maxCampaignsPerMonth;
+/** État réellement applicable à un compte : le plan payé, ou — pour un compte
+ *  non abonné — l'essai en cours puis le mode veille. */
+export type PlanState =
+  | "TRIAL"
+  | "DORMANT"
+  | "FREE"
+  | "ESSENTIAL"
+  | "GROWTH"
+  | "MULTI_SITE";
+
+export type PlanStateUser = {
+  plan?: string | null;
+  trialEndsAt?: Date | null;
+  manualPlanUntil?: Date | null;
+};
+
+/**
+ * Résout l'état d'un compte. Les dates priment sur la colonne `plan` :
+ *  - plan payant encore valide            → ce plan
+ *  - plan offert par l'admin mais périmé  → retour au parcours essai/veille
+ *  - pas d'abonnement, essai en cours     → TRIAL
+ *  - pas d'abonnement, essai terminé      → DORMANT
+ *  - compte antérieur à l'essai (pas de date) → FREE (historique, non touché)
+ */
+export function resolvePlanState(
+  user: PlanStateUser | null | undefined,
+  now: Date = new Date()
+): PlanState {
+  const plan = (user?.plan || "FREE") as PlanState;
+
+  if (plan !== "FREE") {
+    const manualExpired = user?.manualPlanUntil ? user.manualPlanUntil < now : false;
+    if (!manualExpired) return plan;
+    // Le plan offert a expiré : on ne le prolonge pas indéfiniment.
+  }
+
+  if (!user?.trialEndsAt) return "FREE";
+  return user.trialEndsAt > now ? "TRIAL" : "DORMANT";
+}
+
+/** Limites effectives d'un compte, essai et veille compris. À préférer à
+ *  `getPlanLimits` partout où l'utilisateur est disponible. */
+export function getEffectiveLimits(
+  user: PlanStateUser | null | undefined,
+  now: Date = new Date()
+): PlanLimits {
+  return PLAN_LIMITS[resolvePlanState(user, now)] || PLAN_LIMITS.FREE;
+}
+
+/** Jours restants avant la fin de l'essai (0 si terminé ou non applicable). */
+export function trialDaysLeft(
+  user: PlanStateUser | null | undefined,
+  now: Date = new Date()
+): number {
+  if (!user?.trialEndsAt) return 0;
+  const ms = user.trialEndsAt.getTime() - now.getTime();
+  return ms <= 0 ? 0 : Math.ceil(ms / 86_400_000);
+}
+
+export function getEffectiveMaxCampaignsPerMonth(
+  user: PlanStateUser | string | null | undefined
+): number {
+  // Accepte encore un plan brut (appels historiques) en plus de l'utilisateur.
+  const limits =
+    typeof user === "string" || user == null
+      ? getPlanLimits(user as string | null | undefined)
+      : getEffectiveLimits(user);
+  const planLimit = limits.maxCampaignsPerMonth;
   if (planLimit === null) return GLOBAL_MAX_CAMPAIGNS_PER_MONTH;
   return Math.min(planLimit, GLOBAL_MAX_CAMPAIGNS_PER_MONTH);
 }

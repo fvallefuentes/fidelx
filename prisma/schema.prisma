@@ -241,6 +241,12 @@ model User {
   stripeCurrentPeriodStart DateTime?
   stripeCurrentPeriodEnd   DateTime?
 
+  // Fin de l'essai gratuit (30 jours à l'inscription). Passée cette date et
+  // sans abonnement, le compte bascule en « mode veille » : les cartes déjà
+  // distribuées continuent de fonctionner pour les clients, mais le
+  // commerçant ne peut plus en créer de nouvelles ni lancer de campagne.
+  trialEndsAt DateTime?
+
   // Plan manuel offert par l'admin (partenariat, beta, etc.)
   // Si défini, le plan revient automatiquement à FREE après cette date
   manualPlanUntil  DateTime?

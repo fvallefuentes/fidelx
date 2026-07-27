@@ -10,6 +10,7 @@ import {
   newDeviceCookieValue,
 } from "@/lib/anti-abuse/fingerprint";
 import { evaluateRateLimits } from "@/lib/anti-abuse/rate-limit";
+import { getEffectiveLimits, countActiveCards } from "@/lib/plan-limits";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
 
@@ -73,7 +74,7 @@ export async function POST(
   const program = await prisma.loyaltyProgram.findUnique({
     where: { id: programId, isActive: true },
     include: {
-      merchant: { select: { plan: true, name: true } },
+      merchant: { select: { plan: true, name: true, trialEndsAt: true, manualPlanUntil: true } },
       _count: { select: { cards: true } },
     },
   });
@@ -83,15 +84,6 @@ export async function POST(
       { error: "Programme introuvable" },
       { status: 404 },
       { result: "PROGRAM_NOT_FOUND" }
-    );
-  }
-
-  // Plan FREE : limite 50 clients
-  if (program.merchant.plan === "FREE" && program._count.cards >= 50) {
-    return respond(
-      { error: "Ce programme a atteint sa limite de clients" },
-      { status: 403 },
-      { result: "PROGRAM_FULL" }
     );
   }
 
@@ -255,6 +247,28 @@ export async function POST(
         where: { id: client.id },
         data: { referredById: referralLink.clientId },
       });
+    }
+  }
+
+  // ─── Plafond de cartes du plan ───
+  // Remplace l'ancienne limite en dur (plan FREE, 50 cartes par programme).
+  // Deux corrections au passage : on applique les limites effectives du
+  // compte (essai et mode veille compris), et le contrôle intervient APRÈS
+  // la branche `existingCard` — auparavant un client possédant déjà sa carte
+  // était refusé lui aussi dès que le programme était plein.
+  const planLimits = getEffectiveLimits(program.merchant);
+  if (planLimits.maxActiveCards !== null) {
+    const activeCount = await countActiveCards(program.merchantId);
+    if (activeCount >= planLimits.maxActiveCards) {
+      return respond(
+        {
+          error:
+            "Le programme de fidélité de ce commerce est momentanément en pause. " +
+            "Renseignez-vous auprès de l'équipe sur place.",
+        },
+        { status: 403 },
+        { result: "PROGRAM_FULL" }
+      );
     }
   }
 
