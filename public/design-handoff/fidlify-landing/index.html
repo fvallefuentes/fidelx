@@ -545,7 +545,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             <div class="flrc-bubble"><span class="flrc-bubble-badge">×2</span><span class="flrc-bubble-text">rétention client</span></div>
             <div class="flrc-bubble"><span class="flrc-bubble-badge">×2</span><span class="flrc-bubble-text">bénéfices nets</span></div>
             <div class="flrc-bubble"><span class="flrc-bubble-badge">+30%</span><span class="flrc-bubble-text">panier moyen</span></div>
-            <div class="flrc-bubble"><span class="flrc-bubble-badge">+</span><span class="flrc-bubble-text">Avis Google auto</span></div>
+            <div class="flrc-bubble"><span class="flrc-bubble-badge">+</span><span class="flrc-bubble-text">Relances automatiques</span></div>
           </div>
         </div>
       `;
@@ -2514,23 +2514,23 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       var plans = [
         {
-          name: 'Gratuit', featured: false,
-          desc: 'Pour découvrir Fidlify sans engagement.',
-          price: '0 CHF', per: '/ mois · gratuit pour toujours',
-          cta: 'Commencer gratuitement', href: '/register', ctaClass: 'is-ghost',
-          features: ['10 clients actifs', 'Mode tampons', '1 campagne manuelle / mois', 'Statistiques (7 derniers jours)']
+          name: 'Essai', featured: false,
+          desc: 'Tout le produit pendant 30 jours, sans carte bancaire.',
+          price: '0 CHF', per: '/ 30 jours · sans carte bancaire',
+          cta: 'Démarrer mon essai', href: '/register', ctaClass: 'is-ghost',
+          features: ['Toutes les fonctionnalités', 'Jusqu\'à 1 000 clients', 'Tampons, points ou cashback', 'Campagnes de notifications', 'À la fin de l\'essai, les cartes déjà installées continuent de fonctionner chez vos clients']
         },
         {
           name: 'Essentiel', featured: false,
           desc: 'Récompenser vos clients fidèles et les tenir informés.',
-          price: '39 CHF', per: '/ mois · facturé annuellement',
+          price: '39 CHF', per: '/ mois · sans engagement',
           cta: 'Commencer', href: '/register?plan=essential', ctaClass: 'is-ghost',
-          features: ['Programme de fidélité (tampons ou points)', 'Personnalisation avancée de la carte', 'Lien Google Review', 'Notification automatique', 'Segmentation d\'envoi simple', 'Statistiques de base', 'Support inclus']
+          features: ['Programme de fidélité (tampons ou points)', 'Personnalisation avancée de la carte', 'Notification automatique', 'Segmentation d\'envoi simple', 'Statistiques de base', 'Support inclus']
         },
         {
           name: 'Croissance', featured: true,
           desc: 'Cibler vos messages et piloter votre fidélisation avec des chiffres.',
-          price: '59 CHF', per: '/ mois · facturé annuellement',
+          price: '59 CHF', per: '/ mois · sans engagement',
           cta: 'Choisir Croissance', href: '/register?plan=growth', ctaClass: 'is-solid',
           features: ['Tout le plan Essentiel', 'Récompenses intermédiaires (multi-paliers)', 'Segmentation client avancée', 'Statistiques avancées & efficacité des campagnes', 'Dashboard client complet', 'Prévention spam (fatigue client)', 'Support prioritaire']
         }
@@ -2558,7 +2558,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       section.innerHTML = '<div class="fpr-wrap">'
           + '<div class="fpr-kicker">Tarifs</div>'
           + '<h2 id="fidlify-pricing-title">Une formule pour chaque commerce.</h2>'
-          + '<p class="fpr-intro">Lancez-vous gratuitement, puis passez à la vitesse supérieure quand vos clients reviennent. Sans engagement, sans carte bancaire.</p>'
+          + '<p class="fpr-intro">Essayez tout pendant 30 jours, sans carte bancaire. Vous choisissez ensuite la formule adaptée à votre commerce.</p>'
           + '<div class="fpr-grid">' + cards + '</div>'
           + '<p class="fpr-note">Prix en CHF · TVA non incluse · Résiliable à tout moment</p>'
         + '</div>';
