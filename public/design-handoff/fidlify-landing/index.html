@@ -2160,13 +2160,18 @@ document.addEventListener('DOMContentLoaded', async function() {
       function stackOverflowingRows() {
         if (!window.matchMedia('(max-width: 860px)').matches) return;
         var W = document.documentElement.clientWidth;
-        Array.prototype.forEach.call(document.querySelectorAll('#fyroot > section *'), function (el) {
-          var r = el.getBoundingClientRect();
-          if (r.width <= 0 || r.right <= W + 2) return;
-          var p = el.parentElement;
-          if (p && p.id !== 'fyroot' && !p.classList.contains('fdl-stack-mobile')) {
-            p.classList.add('fdl-stack-mobile');
-          }
+        // On saute le hero (#top) et nos propres sections : elles ont deja leurs
+        // regles responsives, et les marquer cassait la mise en page du hero.
+        Array.prototype.forEach.call(document.querySelectorAll('#fyroot > section, #fyroot > footer'), function (sec) {
+          if (sec.id === 'top' || sec.id.indexOf('fidlify-') === 0) return;
+          Array.prototype.forEach.call(sec.querySelectorAll('*'), function (el) {
+            var r = el.getBoundingClientRect();
+            if (r.width <= 0 || r.right <= W + 2) return;
+            var p = el.parentElement;
+            if (p && p.id !== 'fyroot' && !p.classList.contains('fdl-stack-mobile')) {
+              p.classList.add('fdl-stack-mobile');
+            }
+          });
         });
       }
       stackOverflowingRows();
