@@ -530,7 +530,6 @@ const tiers = [
     features: [
       "Programme de fidélité (tampons ou points)",
       "Personnalisation avancée de la carte",
-      "Lien Google Review",
       "Notification automatique",
       "Segmentation d'envoi simple (tous les clients / clients réguliers)",
       "Statistiques de base (clients inscrits, cartes actives, scans, récompenses débloquées)",
