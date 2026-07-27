@@ -195,6 +195,8 @@ export default function ProgramsPage() {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [previewingProgram, setPreviewingProgram] = useState<Program | null>(null);
   const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
+  // Mode veille : on grise l'action plutot que de la laisser echouer.
+  const [isDormant, setIsDormant] = useState(false);
 
   async function fetchPrograms() {
     const res = await fetch("/api/programs");
@@ -202,6 +204,13 @@ export default function ProgramsPage() {
     setPrograms(data);
     setLoading(false);
   }
+
+  useEffect(() => {
+    fetch("/api/merchants/plan-state")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setIsDormant(d?.state === "DORMANT"))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -260,7 +269,15 @@ export default function ProgramsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Programmes de fidélité</h1>
           <p className="text-gray-500">Gérez vos programmes et récompenses</p>
         </div>
-        <Button onClick={() => setShowForm(true)}>
+        <Button
+          onClick={() => setShowForm(true)}
+          disabled={isDormant}
+          title={
+            isDormant
+              ? "Votre essai est terminé — réactivez votre programme pour en créer un nouveau"
+              : undefined
+          }
+        >
           <Plus className="mr-2 h-4 w-4" />
           Nouveau programme
         </Button>

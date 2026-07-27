@@ -187,7 +187,12 @@ type CampaignTab = "send" | "automations" | "history";
 
 export default function CampaignsPage() {
   const { data: session } = useSession();
-  const isFree = ((session?.user?.plan as string) || "FREE") === "FREE";
+  // L'etat vient du serveur : un compte en essai a plan = FREE en session,
+  // le brider ici reviendrait a lui retirer ce qu'on vient de lui promettre.
+  const [planState, setPlanState] = useState<string>("");
+  const [campaignMax, setCampaignMax] = useState<number | null>(null);
+  const isDormant = planState === "DORMANT";
+  const isFree = planState === "FREE" || isDormant;
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -211,6 +216,10 @@ export default function CampaignsPage() {
       setCampaigns(c);
       setPrograms(p);
       setAutomations(Array.isArray(autos) ? autos : []);
+      setPlanState((settings?.planState as string) || "");
+      setCampaignMax(
+        typeof settings?.usage?.campaigns?.max === "number" ? settings.usage.campaigns.max : null
+      );
       setNotificationDefaults({
         logo:
           typeof settings?.notificationDefaultLogo === "string"
@@ -251,7 +260,9 @@ export default function CampaignsPage() {
   if (periodStart > now) periodStart = new Date(now.getFullYear(), now.getMonth() - 1, anchorDay, 0, 0, 0, 0);
 
   const campaignsThisMonth = campaigns.filter((c) => new Date(c.createdAt) >= periodStart);
-  const monthlyCampaignLimit = isFree ? 1 : 15;
+  // Limite renvoyee par le serveur (essai = illimite plafonne a 15,
+  // veille = 0). En attendant le chargement, on ne bloque pas.
+  const monthlyCampaignLimit = campaignMax ?? 15;
   const campaignLimitReached = campaignsThisMonth.length >= monthlyCampaignLimit;
 
   if (loading) {
@@ -286,9 +297,11 @@ export default function CampaignsPage() {
 
       {(isFree || campaignLimitReached) && (
         <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
-          {isFree ? "Plan Gratuit" : "Limite mensuelle"} —{" "}
+          {isDormant ? "Essai terminé" : isFree ? "Plan Gratuit" : "Limite mensuelle"} —{" "}
           <strong>{monthlyCampaignLimit} campagne{monthlyCampaignLimit > 1 ? "s" : ""} / mois</strong>
-          {isFree ? ", envoi immédiat uniquement. " : ". "}
+          {isDormant
+            ? ". Vos cartes restent actives chez vos clients, mais l'envoi de campagnes est suspendu. "
+            : isFree ? ", envoi immédiat uniquement. " : ". "}
           {campaignLimitReached
             ? "Limite atteinte ce mois-ci."
             : `Il vous reste ${monthlyCampaignLimit - campaignsThisMonth.length} campagne(s) ce mois-ci.`}

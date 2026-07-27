@@ -6,6 +6,8 @@ import {
   countStampsThisMonth,
   getEffectiveMaxCampaignsPerMonth,
   getEffectiveLimits,
+  resolvePlanState,
+  trialDaysLeft,
   getPeriodStart,
 } from "@/lib/plan-limits";
 
@@ -68,6 +70,10 @@ export async function GET() {
 
   return NextResponse.json({
     ...user,
+    // État effectif (essai / veille / plan payé) : l'interface doit s'y fier
+    // plutôt qu'à la colonne `plan`, car un compte en essai a plan = FREE.
+    planState: resolvePlanState(user),
+    trialDaysLeft: trialDaysLeft(user),
     usage: {
       periodStart,
       programs:    { current: programCount,   max: limits.maxPrograms },
