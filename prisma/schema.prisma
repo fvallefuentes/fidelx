@@ -765,6 +765,49 @@ model NewsletterSubscriber {
 }
 
 // =============================================
+// DEMANDES DE CRÉATION DE COMPTE (landing)
+// =============================================
+// Prospect qui a personnalisé une carte sur la landing puis demandé à créer
+// son espace. On conserve sa configuration de carte pour la lui réappliquer
+// à l'inscription — sinon il doit tout refaire, juste après avoir fourni
+// l'effort de la composer.
+//
+// Base légale LPD/RGPD : mesures précontractuelles prises à la demande de la
+// personne concernée. Pas de prospection sans consentement séparé (pour ça,
+// voir NewsletterSubscriber et son double opt-in).
+model Signup {
+  id String @id @default(cuid())
+
+  email        String // normalisé (lowercase + trim)
+  businessName String?
+  contactName  String?
+  phone        String?
+
+  // Configuration issue de l'éditeur (thème, forme de tampon, titre, couleurs).
+  // Jamais l'image uploadée : trop lourde, et non nécessaire ici.
+  cardConfig Json?
+
+  source  String? @default("landing")
+  referer String?
+
+  // Lifecycle commercial
+  status      String    @default("NEW") // NEW | CONTACTED | CONVERTED | SPAM
+  convertedAt DateTime?
+
+  // Anti-abuse
+  ipPrefix  String?
+  userAgent String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@index([ipPrefix, createdAt])
+}
+
+// =============================================
 // AUDIT LOG (actions admin)
 // =============================================
 // Trace immuable de toute action admin sensible : suspend/unsuspend user,
