@@ -3,44 +3,39 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+type PlanState =
+  | "TRIAL"
+  | "DORMANT"
+  | "FREE"
+  | "ESSENTIAL"
+  | "GROWTH"
+  | "MULTI_SITE";
+
 type PlanStateResponse = {
-  state: "TRIAL" | "DORMANT" | "FREE" | "ESSENTIAL" | "GROWTH" | "MULTI_SITE";
+  state: PlanState;
   daysLeft: number;
   trialEndsAt: string | null;
 };
 
 /**
- * Bandeau d'essai / mode veille.
- *
- * Volontairement discret pendant l'essai (on ne harcèle pas quelqu'un qui
- * découvre le produit), puis explicite à l'approche de l'échéance, et enfin
- * rassurant en mode veille : le commerçant doit comprendre immédiatement que
- * les cartes de ses clients continuent de fonctionner.
+ * Partie purement visuelle, séparée de la récupération des données pour
+ * pouvoir être rendue seule (page d'aperçu, capture, futurs tests) sans
+ * dépendre d'une session authentifiée.
  */
-export default function TrialBanner() {
-  const [info, setInfo] = useState<PlanStateResponse | null>(null);
+export function TrialBannerView({
+  state,
+  daysLeft,
+}: {
+  state: PlanState;
+  daysLeft: number;
+}) {
+  if (state !== "TRIAL" && state !== "DORMANT") return null;
 
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/merchants/plan-state")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!cancelled && d) setInfo(d);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  if (!info) return null;
-  if (info.state !== "TRIAL" && info.state !== "DORMANT") return null;
-
-  const dormant = info.state === "DORMANT";
-  const urgent = !dormant && info.daysLeft <= 3;
+  const dormant = state === "DORMANT";
+  const urgent = !dormant && daysLeft <= 3;
 
   const accent = dormant ? "var(--danger)" : urgent ? "var(--warn)" : "var(--accent)";
-  const jours = info.daysLeft === 1 ? "1 jour" : `${info.daysLeft} jours`;
+  const jours = daysLeft === 1 ? "1 jour" : `${daysLeft} jours`;
 
   return (
     <div
@@ -101,4 +96,32 @@ export default function TrialBanner() {
       </Link>
     </div>
   );
+}
+
+/**
+ * Bandeau d'essai / mode veille monté dans le tableau de bord.
+ *
+ * Volontairement discret pendant l'essai (on ne harcèle pas quelqu'un qui
+ * découvre le produit), puis explicite à l'approche de l'échéance, et enfin
+ * rassurant en mode veille : le commerçant doit comprendre immédiatement que
+ * les cartes de ses clients continuent de fonctionner.
+ */
+export default function TrialBanner() {
+  const [info, setInfo] = useState<PlanStateResponse | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/merchants/plan-state")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!cancelled && d) setInfo(d);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!info) return null;
+  return <TrialBannerView state={info.state} daysLeft={info.daysLeft} />;
 }
