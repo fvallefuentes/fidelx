@@ -508,17 +508,18 @@ function SectionCompare() {
 /* ─── Pricing ─────────────────────────────────────────────── */
 const tiers = [
   {
-    name: "Gratuit",
-    desc: "Pour découvrir Fidlify sans engagement.",
+    name: "Essai",
+    desc: "Tout le produit pendant 30 jours, sans carte bancaire.",
     price: "0 CHF",
-    sub: "/ mois · gratuit pour toujours",
+    sub: "/ 30 jours · sans carte bancaire",
     features: [
-      "10 clients actifs",
-      "Mode tampons",
-      "1 campagne manuelle / mois",
-      "Statistiques (7 derniers jours)",
+      "Toutes les fonctionnalités",
+      "Jusqu'à 1 000 clients",
+      "Tampons, points ou cashback",
+      "Campagnes de notifications",
+      "À la fin de l'essai, les cartes déjà installées continuent de fonctionner chez vos clients",
     ],
-    cta: "Commencer gratuitement",
+    cta: "Démarrer mon essai",
     href: "/register",
     featured: false,
   },
@@ -566,7 +567,7 @@ function SectionPricing() {
         <div className="section-head center reveal">
           <div className="eyebrow"><span className="dot" /><span>TARIFS</span></div>
           <h2 className="h-section">Une formule pour <em>chaque commerce.</em></h2>
-          <p className="lede">Lancez-vous gratuitement. Sans engagement. Sans carte bancaire.</p>
+          <p className="lede">Essayez tout pendant 30 jours, sans carte bancaire. Vous choisissez ensuite la formule adaptée à votre commerce.</p>
         </div>
 
         <div className="pricing-grid">
@@ -623,7 +624,7 @@ function SectionFinalCTA() {
               </Link>
             </div>
             <div style={{ marginTop: 28, fontSize: 12, color: "var(--ink-3)", fontFamily: "var(--font-geist-mono, monospace)", letterSpacing: "0.05em", textAlign: "center" }}>
-              LANCEZ-VOUS GRATUITEMENT · SANS ENGAGEMENT · SANS CARTE BANCAIRE
+              ESSAI DE 30 JOURS · SANS CARTE BANCAIRE
             </div>
           </div>
         </div>
