@@ -527,7 +527,7 @@ const tiers = [
     name: "Essentiel",
     desc: "Le juste besoin : récompenser vos clients fidèles et les tenir informés.",
     price: "39 CHF",
-    sub: "/ mois — facturé annuellement",
+    sub: "/ mois — sans engagement",
     features: [
       "Programme de fidélité (tampons ou points)",
       "Personnalisation avancée de la carte",
@@ -544,7 +544,7 @@ const tiers = [
     name: "Croissance",
     desc: "Pour le commerçant qui veut cibler ses messages et piloter sa fidélisation avec des chiffres.",
     price: "59 CHF",
-    sub: "/ mois — facturé annuellement",
+    sub: "/ mois — sans engagement",
     features: [
       "Tout le plan Essentiel",
       "Récompenses intermédiaires (multi-paliers)",
