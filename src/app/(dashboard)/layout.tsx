@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { redirect, usePathname, useRouter } from "next/navigation";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { Header } from "@/components/dashboard/header";
+import TrialBanner from "@/components/dashboard/TrialBanner";
 import { CommandPalette } from "@/components/dashboard/CommandPalette";
 import { PWARegister } from "@/components/dashboard/PWARegister";
 import { ThemeProvider, useTheme } from "@/components/dashboard/theme";
@@ -111,7 +112,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
 
         <div className="dx-main">
           <Header onOpenMobileNav={() => setMobileNavPathname(pathname)} />
-          <main className="dx-content">{children}</main>
+          <main className="dx-content">
+            <TrialBanner />
+            {children}
+          </main>
         </div>
       </div>
     </div>

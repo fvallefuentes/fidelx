@@ -247,6 +247,10 @@ model User {
   // commerçant ne peut plus en créer de nouvelles ni lancer de campagne.
   trialEndsAt DateTime?
 
+  // Relances d'essai déjà envoyées : "J7", "J2", "END". Évite de renvoyer la
+  // même relance si le cron repasse (redémarrage, rattrapage, double appel).
+  trialRemindersSent String[] @default([])
+
   // Plan manuel offert par l'admin (partenariat, beta, etc.)
   // Si défini, le plan revient automatiquement à FREE après cette date
   manualPlanUntil  DateTime?
