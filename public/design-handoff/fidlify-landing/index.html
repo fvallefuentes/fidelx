@@ -2145,8 +2145,9 @@ document.addEventListener('DOMContentLoaded', async function() {
           .fdl-stack-mobile > *{max-width:100% !important}
         }
         @media (max-width: 430px){
-          /* Lien secondaire masque pour laisser la place au bouton principal */
-          #fyroot nav a[href="#"]{display:none !important}
+          /* Lien Connexion masque pour laisser la place au bouton principal
+             (il reste accessible dans le pied de page). */
+          #fyroot nav a[href="/login"]{display:none !important}
         }
         @media (max-width: 560px){
           #top{padding-top:64px !important}
