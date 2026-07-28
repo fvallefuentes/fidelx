@@ -594,19 +594,17 @@ export default function ScanPage() {
                 <video ref={videoRef} className="w-full block" playsInline muted autoPlay style={{ maxHeight: "70vh", objectFit: "cover" }} />
                 <canvas ref={canvasRef} className="hidden" />
                 {cameraReady && cameras.length > 1 && (
-                  <Button
+                  <button
                     type="button"
-                    variant="secondary"
-                    size="sm"
                     onClick={switchCamera}
                     disabled={cameraStarting}
-                    className="absolute right-3 top-3 z-30 gap-2 border border-white/60 bg-white/95 shadow-lg hover:bg-white"
+                    className="absolute right-3 top-3 z-30 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/60 bg-black/70 p-0 text-white shadow-lg backdrop-blur-sm transition hover:bg-black/85 disabled:opacity-50"
                     title="Basculer entre les caméras avant et arrière"
                     aria-label="Changer de caméra"
                   >
-                    <SwitchCamera className="h-4 w-4" />
-                    <span className="hidden sm:inline">Changer de caméra</span>
-                  </Button>
+                    <SwitchCamera className="h-5 w-5" strokeWidth={2.5} />
+                    <span className="sr-only">Changer de caméra</span>
+                  </button>
                 )}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="absolute inset-0 bg-black/30" />
