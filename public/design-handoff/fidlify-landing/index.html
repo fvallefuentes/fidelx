@@ -2135,12 +2135,14 @@ document.addEventListener('DOMContentLoaded', async function() {
 
           /* Editeur : apercu epingle en haut, reglages empiles dessous */
           #editeur .fdl-ed-row{display:flex !important;flex-direction:column !important;gap:0 !important}
+          /* Les marges d'origine (104/40px + 32px) mangeaient 120px de large :
+             il ne restait que 229px utiles sur un ecran de 375. */
+          #editeur .fdl-ed-row{padding:16px !important}
+          #editeur .fdl-ed-row > *{min-width:0}
           #editeur .fdl-ed-preview{
             order:-1;width:100% !important;max-width:100% !important;
-            position:sticky;top:58px;z-index:30;
             background:var(--bg,#f4f5ee);
-            padding:12px 0 14px;margin:0 0 20px;
-            box-shadow:0 18px 26px -20px rgba(24,30,10,.55);
+            padding:4px 0 10px;margin:0 0 18px;
           }
           #editeur .fdl-ed-preview > *{margin-left:auto;margin-right:auto}
           #editeur .fdl-ed-controls{width:100% !important;max-width:100% !important}
