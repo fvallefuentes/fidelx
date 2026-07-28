@@ -2146,8 +2146,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         @media (max-width: 430px){
           /* Lien Connexion masque pour laisser la place au bouton principal
-             (il reste accessible dans le pied de page). */
+             (il reste accessible dans le menu et le pied de page). */
           #fyroot nav a[href="/login"]{display:none !important}
+          /* Resserrage : logo + bouton + burger depassaient de 16px. */
+          #fyroot nav{padding-left:10px !important;padding-right:10px !important;gap:6px !important}
+          #fyroot nav a[href="#cta"]{font-size:12px !important;padding:0 10px !important}
+          #fdl-burger{width:38px;height:38px;flex-basis:38px;margin-left:2px}
         }
         @media (max-width: 560px){
           #top{padding-top:64px !important}
