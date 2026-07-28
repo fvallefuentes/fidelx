@@ -1293,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           wrap.id = OVID;
           wrap.style.cssText = 'position:absolute;inset:0;border-radius:' + (cs.borderRadius || '18px')
             + ';overflow:hidden;background:' + cfg.bg + ';color:' + cfg.ink + ';display:flex;flex-direction:column;'
-            + 'justify-content:center;padding:18px;box-sizing:border-box;z-index:6;'
+            + 'justify-content:flex-start;padding:18px;box-sizing:border-box;z-index:6;'
             + "font-family:-apple-system,BlinkMacSystemFont,'SF Pro','Helvetica Neue',sans-serif";
           wrap.innerHTML = innerHTML();
           card.appendChild(wrap);
