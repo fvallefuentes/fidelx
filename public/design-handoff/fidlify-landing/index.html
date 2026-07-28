@@ -2260,6 +2260,13 @@ document.addEventListener('DOMContentLoaded', async function() {
       link.setAttribute('data-fidlify-nav-pricing', '1');
       link.textContent = 'Tarifs';
       ref.parentNode.insertBefore(link, ref.nextSibling);
+
+      // "Comment ca marche" pointait vers #adoption, section renommee depuis
+      // en #fidlify-how-it-works : le lien ne faisait plus rien du tout.
+      var ancien = document.querySelector('#fyroot nav a[href="#adoption"]');
+      if (ancien && document.getElementById('fidlify-how-it-works')) {
+        ancien.setAttribute('href', '#fidlify-how-it-works');
+      }
     }
 
     // Pied de page legal : la maquette n'en avait pas, or la page devient la
