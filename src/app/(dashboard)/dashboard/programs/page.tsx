@@ -1259,6 +1259,23 @@ function CreateProgramForm({
       .catch(() => {});
   }, []);
 
+  // `.dx-content` utilise overflow-y:auto sans être le conteneur qui défile :
+  // cela empêche position:sticky de suivre le viewport. Pendant l'édition
+  // seulement, on laisse le document gérer le scroll. Le sticky reste alors
+  // naturellement borné par la grille de la carte "Nouveau programme".
+  useEffect(() => {
+    const dashboardContent =
+      document.querySelector<HTMLElement>(".dx-content");
+    if (!dashboardContent) return;
+
+    const previousOverflowY = dashboardContent.style.overflowY;
+    dashboardContent.style.overflowY = "visible";
+
+    return () => {
+      dashboardContent.style.overflowY = previousOverflowY;
+    };
+  }, []);
+
   function handleStampBgImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     setStampBgError("");
     const file = e.target.files?.[0];
@@ -1813,8 +1830,11 @@ function CreateProgramForm({
             </div>
             </div>
 
-            <aside className="hidden xl:block" aria-label="Aperçu de la carte">
-              <div className="fixed right-10 top-24 z-20 max-h-[calc(100vh-7rem)] w-[390px] overflow-y-auto rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-xl">
+            <aside
+              className="sticky top-24 hidden max-h-[calc(100vh-7rem)] self-start overflow-y-auto xl:block"
+              aria-label="Aperçu de la carte"
+            >
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-xl">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-gray-900">
