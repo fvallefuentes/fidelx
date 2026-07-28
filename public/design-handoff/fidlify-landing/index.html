@@ -2247,6 +2247,102 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Ajoute "Tarifs" dans la navigation : les tarifs arrivent tres bas dans la
     // page, ce lien les met a un clic depuis le haut.
+    // Menu mobile. Sous 860px, les liens de section sont masques (ils
+    // debordaient et chevauchaient le logo) : sans ce menu, aucun moyen
+    // d'atteindre les tarifs ou "comment ca marche" depuis un telephone.
+    function injectMobileMenu() {
+      if (document.getElementById('fdl-burger')) return;
+      var nav = document.querySelector('#fyroot nav');
+      var liens = document.querySelector('.fdl-nav-links');
+      if (!nav || !liens) return;
+
+      var style = document.createElement('style');
+      style.textContent = `
+        #fdl-burger{
+          display:none;align-items:center;justify-content:center;
+          width:42px;height:42px;flex:0 0 42px;margin-left:4px;
+          border-radius:12px;border:1px solid var(--line2,rgba(14,17,22,.14));
+          background:transparent;color:var(--ink,#0E1116);cursor:pointer;padding:0;
+        }
+        #fdl-burger:focus-visible{outline:3px solid #D9FF3C;outline-offset:2px}
+        #fdl-menu{
+          position:fixed;left:0;right:0;z-index:9998;display:none;
+          flex-direction:column;padding:6px 18px 18px;
+          background:var(--card,#fff);
+          border-bottom:1px solid var(--line,rgba(14,17,22,.12));
+          box-shadow:0 22px 44px rgba(24,30,10,.16);
+          font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+        }
+        #fdl-menu.is-open{display:flex}
+        #fdl-menu a{
+          display:block;padding:15px 2px;font-size:16.5px;font-weight:600;
+          color:var(--ink,#0E1116);text-decoration:none;
+          border-bottom:1px solid var(--line,rgba(14,17,22,.09));
+        }
+        #fdl-menu a:last-child{border-bottom:0}
+        #fdl-voile{
+          position:fixed;inset:0;z-index:9997;display:none;
+          background:rgba(14,17,22,.34);
+        }
+        #fdl-voile.is-open{display:block}
+        @media (max-width: 860px){ #fdl-burger{display:inline-flex} }
+        @media (min-width: 861px){ #fdl-menu,#fdl-voile{display:none !important} }
+      `;
+      document.head.appendChild(style);
+
+      var btn = document.createElement('button');
+      btn.id = 'fdl-burger';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Ouvrir le menu');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.setAttribute('aria-controls', 'fdl-menu');
+      btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' stroke-width="2" stroke-linecap="round" aria-hidden="true">'
+        + '<path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg>';
+
+      var voile = document.createElement('div');
+      voile.id = 'fdl-voile';
+
+      var menu = document.createElement('div');
+      menu.id = 'fdl-menu';
+      Array.prototype.forEach.call(liens.querySelectorAll('a'), function (a) {
+        var c = a.cloneNode(true);
+        c.removeAttribute('style');
+        c.className = '';
+        menu.appendChild(c);
+      });
+      var login = document.querySelector('#fyroot nav a[href="/login"]');
+      if (login) {
+        var cl = login.cloneNode(true);
+        cl.removeAttribute('style');
+        cl.className = '';
+        menu.appendChild(cl);
+      }
+
+      function ouvrir(oui) {
+        menu.classList.toggle('is-open', oui);
+        voile.classList.toggle('is-open', oui);
+        btn.setAttribute('aria-expanded', oui ? 'true' : 'false');
+        btn.setAttribute('aria-label', oui ? 'Fermer le menu' : 'Ouvrir le menu');
+        if (oui) menu.style.top = Math.round(nav.getBoundingClientRect().bottom) + 'px';
+      }
+
+      btn.addEventListener('click', function () {
+        ouvrir(!menu.classList.contains('is-open'));
+      });
+      voile.addEventListener('click', function () { ouvrir(false); });
+      menu.addEventListener('click', function (e) {
+        if (e.target.tagName === 'A') ouvrir(false);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') ouvrir(false);
+      });
+
+      nav.appendChild(btn);
+      document.body.appendChild(voile);
+      document.body.appendChild(menu);
+    }
+
     function injectPricingNavLink() {
       if (document.querySelector('[data-fidlify-nav-pricing]')) return;
       // On clone un lien de section existant pour heriter de son style.
@@ -2795,6 +2891,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       injectEmailCapture();
       injectLegalFooter();
       injectPricingNavLink();
+      injectMobileMenu();
       reorderLandingSections();
     }, 900);
   } catch (err) {
