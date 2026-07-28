@@ -2321,9 +2321,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       // Calcul direct au defilement : plus fiable qu'un IntersectionObserver,
       // qui ne se declenche pas dans tous les contextes (defilement pilote,
       // navigateurs embarques).
-      var enAttente = false;
       var maj = function () {
-        enAttente = false;
         var vp = window.innerHeight;
         var a = apercu.getBoundingClientRect();
         var e = ed.getBoundingClientRect();
@@ -2331,13 +2329,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         var editeurVisible = e.bottom > 120 && e.top < vp - 120;
         bouton.classList.toggle('is-on', editeurVisible && !carteVisible);
       };
-      var planifier = function () {
-        if (enAttente) return;
-        enAttente = true;
-        window.requestAnimationFrame(maj);
-      };
-      window.addEventListener('scroll', planifier, { passive: true });
-      window.addEventListener('resize', planifier);
+      // Appel direct : deux getBoundingClientRect, c'est negligeable, et ca
+      // evite de dependre de requestAnimationFrame (non garanti selon le
+      // contexte de rendu).
+      window.addEventListener('scroll', maj, { passive: true });
+      window.addEventListener('resize', maj);
       maj();
     }
 
