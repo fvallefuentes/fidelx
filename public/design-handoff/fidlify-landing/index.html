@@ -2263,6 +2263,16 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       // "Comment ca marche" pointait vers #adoption, section renommee depuis
       // en #fidlify-how-it-works : le lien ne faisait plus rien du tout.
+      // Le bouton "Demander une demo" vit dans le template du bundle : on ne
+      // peut pas l'editer dans le HTML, on le repointe donc ici.
+      Array.prototype.forEach.call(document.querySelectorAll('#fyroot a[href^="mailto:contact@fidlify.com"]'), function (a) {
+        if (/d[ée]mo/i.test(a.textContent || '')) {
+          a.setAttribute('href', 'https://calendly.com/fabianvallef/30min');
+          a.setAttribute('target', '_blank');
+          a.setAttribute('rel', 'noopener');
+        }
+      });
+
       var ancien = document.querySelector('#fyroot nav a[href="#adoption"]');
       if (ancien && document.getElementById('fidlify-how-it-works')) {
         ancien.setAttribute('href', '#fidlify-how-it-works');
@@ -2290,6 +2300,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         #fidlify-footer .ffo-tag{
           margin:8px 0 0;max-width:330px;color:rgba(252,252,252,.6);font-size:14px;line-height:1.6;
         }
+        #fidlify-footer .ffo-contact{
+          margin-top:16px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;
+        }
+        #fidlify-footer .ffo-contact a{
+          color:#D9FF3C;text-decoration:none;font-size:14.5px;font-weight:700;
+        }
+        #fidlify-footer .ffo-contact a:hover{text-decoration:underline}
         #fidlify-footer nav{display:flex;flex-wrap:wrap;gap:12px 26px;justify-content:flex-end}
         #fidlify-footer nav a{
           color:rgba(252,252,252,.82);text-decoration:none;font-size:14px;
@@ -2314,7 +2331,12 @@ document.addEventListener('DOMContentLoaded', async function() {
       section.id = 'fidlify-footer';
       section.innerHTML = '<div class="ffo-wrap">'
         + '<div><div class="ffo-brand">Fidlify</div>'
-          + '<p class="ffo-tag">La carte de fidélité digitale des commerces suisses. Apple Wallet et Google Wallet, sans application à télécharger.</p></div>'
+          + '<p class="ffo-tag">La carte de fidélité digitale des commerces suisses. Apple Wallet et Google Wallet, sans application à télécharger.</p>'
+          + '<div class="ffo-contact">'
+            + '<a href="tel:+41789494302">+41 78 949 43 02</a>'
+            + '<a href="https://wa.me/41789494302" target="_blank" rel="noopener">WhatsApp</a>'
+            + '<a href="https://calendly.com/fabianvallef/30min" target="_blank" rel="noopener">Réserver 30 min</a>'
+          + '</div></div>'
         + '<nav aria-label="Liens légaux">'
           + '<a href="/mentions-legales">Mentions légales</a>'
           + '<a href="/cgu">Conditions générales</a>'
@@ -2372,6 +2394,10 @@ document.addEventListener('DOMContentLoaded', async function() {
           font-family:inherit;transition:transform .18s ease;
         }
         #fidlify-email-capture button:hover{transform:translateY(-2px)}
+        #fidlify-email-capture .fec-tel{
+          margin:10px 0 0;font-size:13.5px;color:var(--muted,#5d6355);
+        }
+        #fidlify-email-capture .fec-tel a{color:var(--ink,#0E1116);font-weight:700}
         #fidlify-email-capture .fec-note{
           margin:12px 0 0;font-family:'Space Mono',monospace;font-size:10px;
           letter-spacing:.1em;text-transform:uppercase;color:var(--muted,#5d6355);opacity:.8;
@@ -2397,6 +2423,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             + '<button type="submit">Créer mon espace</button>'
           + '</form>'
           + '<p class="fec-note">Sans engagement · Sans carte bancaire</p>'
+          + '<p class="fec-tel">Vous préférez en parler ? <a href="tel:+41789494302">+41 78 949 43 02</a>'
+            + ' · <a href="https://wa.me/41789494302" target="_blank" rel="noopener">WhatsApp</a>'
+            + ' · <a href="https://calendly.com/fabianvallef/30min" target="_blank" rel="noopener">réserver 30 min</a></p>'
         + '</div>'
       + '</div>';
 
