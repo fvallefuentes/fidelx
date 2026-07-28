@@ -2193,12 +2193,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         // On saute le hero (#top) et nos propres sections : elles ont deja leurs
         // regles responsives, et les marquer cassait la mise en page du hero.
         Array.prototype.forEach.call(document.querySelectorAll('#fyroot > section, #fyroot > footer'), function (sec) {
-          if (sec.id === 'top' || sec.id.indexOf('fidlify-') === 0) return;
+          // #editeur a son propre traitement mobile (enhanceEditorMobile) et
+          // contient l'apercu de carte : forcer une colonne unique y transforme
+          // la grille de tampons en pile verticale de gros ronds.
+          if (sec.id === 'top' || sec.id === 'editeur' || sec.id.indexOf('fidlify-') === 0) return;
           Array.prototype.forEach.call(sec.querySelectorAll('*'), function (el) {
             var r = el.getBoundingClientRect();
             if (r.width <= 0 || r.right <= W + 2) return;
             var p = el.parentElement;
-            if (p && p.id !== 'fyroot' && !p.classList.contains('fdl-stack-mobile')) {
+            if (!p || p.id === 'fyroot') return;
+            // Jamais a l'interieur d'une carte reelle : meme raison.
+            if (p.closest && p.closest('[id^="fidlify-real-"]')) return;
+            if (!p.classList.contains('fdl-stack-mobile')) {
               p.classList.add('fdl-stack-mobile');
             }
           });
