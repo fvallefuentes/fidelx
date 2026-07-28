@@ -1250,6 +1250,7 @@ function CreateProgramForm({
   >([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   useEffect(() => {
     fetch("/api/merchants/settings")
@@ -1407,6 +1408,38 @@ function CreateProgramForm({
     onSuccess();
   }
 
+  const livePreview = (
+    <WalletPreviewPair
+      bgColor={bgColor}
+      textColor={textColor}
+      stampColor={stampColor}
+      stampCheckColor={stampCheckColor}
+      stampEmptyColor={stampEmptyColor}
+      labelColor={labelColor}
+      programName={name || "Mon programme"}
+      maxStamps={maxStamps}
+      logoData={logoData}
+      programType={type}
+      heroImage={heroImage}
+      stampIcon={stampIcon}
+      stampSpacing={stampSpacing}
+      stampAreaInset={stampAreaInset}
+      stampAreaRadius={stampAreaRadius}
+      stampBgType={type === "STAMPS" && !isFree ? stampBgType : "none"}
+      stampBgColor={stampBgColor}
+      stampBgColor2={stampBgColor2 || undefined}
+      stampBgImage={stampBgImage || undefined}
+      unlimited={type === "POINTS" && pointsUnlimited}
+      samplePoints={
+        type === "POINTS"
+          ? pointsUnlimited
+            ? 123
+            : Math.floor(maxStamps * 0.3)
+          : undefined
+      }
+    />
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -1420,7 +1453,9 @@ function CreateProgramForm({
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="min-w-0 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Nom du programme</label>
               <Input
@@ -1553,10 +1588,10 @@ function CreateProgramForm({
                 afficher la carte quand le client est proche.
               </p>
             </div>
-          </div>
+              </div>
 
-          {/* Card Design */}
-          <div className="space-y-4">
+              {/* Card Design */}
+              <div className="space-y-4">
             <label className="text-sm font-medium">Design de la carte</label>
 
             {/* Logo upload */}
@@ -1766,50 +1801,76 @@ function CreateProgramForm({
               </div>
             </div>
 
-            {/* Couleurs personnalisées + preview live */}
-            <div className="grid gap-4 lg:grid-cols-[auto_1fr]">
-              <div className="grid grid-cols-2 gap-3 content-start min-w-[260px]">
-                <ColorPicker label="Fond"          value={bgColor}          onChange={setBgColor} />
-                <ColorPicker label="Texte"         value={textColor}        onChange={setTextColor} />
-                <ColorPicker label="Tampon ✓"      value={stampColor}       onChange={setStampColor} />
-                <ColorPicker label="Coche du ✓"    value={stampCheckColor}  onChange={setStampCheckColor} />
-                <ColorPicker label="Cercle vide"   value={stampEmptyColor}  onChange={setStampEmptyColor} />
-                <ColorPicker label="Labels"        value={labelColor}       onChange={setLabelColor} />
-              </div>
-
-              <div className="flex justify-center">
-                <WalletPreviewPair
-                  bgColor={bgColor}
-                  textColor={textColor}
-                  stampColor={stampColor}
-                  stampCheckColor={stampCheckColor}
-                  stampEmptyColor={stampEmptyColor}
-                  labelColor={labelColor}
-                  programName={name || "Mon programme"}
-                  maxStamps={maxStamps}
-                  logoData={logoData}
-                  programType={type}
-                  heroImage={heroImage}
-                  stampIcon={stampIcon}
-                  stampSpacing={stampSpacing}
-                  stampAreaInset={stampAreaInset}
-                  stampAreaRadius={stampAreaRadius}
-                  stampBgType={type === "STAMPS" && !isFree ? stampBgType : "none"}
-                  stampBgColor={stampBgColor}
-                  stampBgColor2={stampBgColor2 || undefined}
-                  stampBgImage={stampBgImage || undefined}
-                  unlimited={type === "POINTS" && pointsUnlimited}
-                  samplePoints={
-                    type === "POINTS"
-                      ? pointsUnlimited
-                        ? 123
-                        : Math.floor(maxStamps * 0.3)
-                      : undefined
-                  }
-                />
+            {/* Couleurs personnalisées */}
+            <div className="grid grid-cols-2 gap-3 content-start sm:grid-cols-3">
+              <ColorPicker label="Fond"          value={bgColor}          onChange={setBgColor} />
+              <ColorPicker label="Texte"         value={textColor}        onChange={setTextColor} />
+              <ColorPicker label="Tampon ✓"      value={stampColor}       onChange={setStampColor} />
+              <ColorPicker label="Coche du ✓"    value={stampCheckColor}  onChange={setStampCheckColor} />
+              <ColorPicker label="Cercle vide"   value={stampEmptyColor}  onChange={setStampEmptyColor} />
+              <ColorPicker label="Labels"        value={labelColor}       onChange={setLabelColor} />
               </div>
             </div>
+            </div>
+
+            <aside className="sticky top-6 hidden max-h-[calc(100vh-3rem)] self-start overflow-y-auto xl:block">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Aperçu en direct
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Reste visible pendant vos modifications
+                    </p>
+                  </div>
+                  <Eye className="h-4 w-4 text-gray-400" />
+                </div>
+                <div className="flex justify-center">{livePreview}</div>
+              </div>
+            </aside>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowMobilePreview(true)}
+            className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-gray-950 px-4 py-3 text-sm font-semibold text-white shadow-2xl transition hover:-translate-y-0.5 hover:bg-black xl:hidden"
+          >
+            <Eye className="h-4 w-4" />
+            Voir l&apos;aperçu
+          </button>
+
+          {showMobilePreview && (
+            <div
+              className="fixed inset-0 z-[90] flex items-start justify-center overflow-y-auto bg-black/65 p-4 backdrop-blur-sm xl:hidden"
+              onClick={() => setShowMobilePreview(false)}
+            >
+              <div
+                className="my-auto w-full max-w-[420px] rounded-2xl bg-white p-4 shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="mb-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">
+                      Aperçu en direct
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Chaque modification est appliquée instantanément
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowMobilePreview(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    aria-label="Fermer l'aperçu"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="flex justify-center">{livePreview}</div>
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="outline" onClick={onCancel}>
