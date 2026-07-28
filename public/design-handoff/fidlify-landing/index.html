@@ -2318,18 +2318,27 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
       document.body.appendChild(bouton);
 
-      if ('IntersectionObserver' in window) {
-        var carteVisible = true, editeurVisible = false;
-        var maj = function () {
-          bouton.classList.toggle('is-on', editeurVisible && !carteVisible);
-        };
-        new IntersectionObserver(function (e) {
-          carteVisible = e[0].isIntersecting; maj();
-        }, { threshold: 0.15 }).observe(apercu);
-        new IntersectionObserver(function (e) {
-          editeurVisible = e[0].isIntersecting; maj();
-        }, { threshold: 0 }).observe(ed);
-      }
+      // Calcul direct au defilement : plus fiable qu'un IntersectionObserver,
+      // qui ne se declenche pas dans tous les contextes (defilement pilote,
+      // navigateurs embarques).
+      var enAttente = false;
+      var maj = function () {
+        enAttente = false;
+        var vp = window.innerHeight;
+        var a = apercu.getBoundingClientRect();
+        var e = ed.getBoundingClientRect();
+        var carteVisible = a.bottom > 60 && a.top < vp;
+        var editeurVisible = e.bottom > 120 && e.top < vp - 120;
+        bouton.classList.toggle('is-on', editeurVisible && !carteVisible);
+      };
+      var planifier = function () {
+        if (enAttente) return;
+        enAttente = true;
+        window.requestAnimationFrame(maj);
+      };
+      window.addEventListener('scroll', planifier, { passive: true });
+      window.addEventListener('resize', planifier);
+      maj();
     }
 
     function injectMobileMenu() {
