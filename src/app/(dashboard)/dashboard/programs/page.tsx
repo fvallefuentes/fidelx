@@ -15,7 +15,7 @@ import {
   getStampSpacingMult,
   STAMP_AREA_INSET_MAX,
   STAMP_AREA_RADIUS_MAX,
-  STAMP_ICON_LIST,
+  STAMP_ICON_GROUPS,
   STAMP_SPACING_LIST,
 } from "@/lib/wallet/stamp-icons";
 
@@ -643,37 +643,75 @@ function StampCustomizer({
       {/* Icône du tampon */}
       <div className="space-y-1.5">
         <label className={`text-xs ${lbl}`}>Forme du tampon obtenu</label>
-        <div className="flex flex-wrap gap-2">
-          {STAMP_ICON_LIST.map(({ key, def }) => {
-            const active = key === stampIcon;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setStampIcon(key)}
-                title={def.label}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border transition"
-                style={
-                  active
-                    ? { borderColor: "#d4ff4e", borderWidth: 2, background: dark ? "rgba(212,255,78,0.12)" : "#f3ffd6" }
-                    : { borderColor: dark ? "rgb(var(--ovr) / 0.15)" : "#e5e7eb" }
-                }
+        <p className={`text-[11px] ${lbl}`}>
+          Choisissez un symbole qui correspond à votre activité.
+        </p>
+        <div className="space-y-3 pt-1">
+          {STAMP_ICON_GROUPS.map((group) => (
+            <div key={group.key} className="space-y-1.5">
+              <span
+                className={`text-[10px] font-semibold uppercase tracking-wider ${lbl}`}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                  fill={def.mode === "fill" ? (dark ? "#f4f5f1" : "#111") : "none"}
-                  stroke={def.mode === "stroke" ? (dark ? "#f4f5f1" : "#111") : "none"}
-                  strokeWidth={def.mode === "stroke" ? 2.5 : 0}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d={def.path} />
-                </svg>
-              </button>
-            );
-          })}
+                {group.label}
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {group.icons.map(({ key, def }) => {
+                  const active = key === stampIcon;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setStampIcon(key)}
+                      title={def.label}
+                      aria-label={def.label}
+                      aria-pressed={active}
+                      className="flex h-10 w-10 items-center justify-center rounded-lg border transition"
+                      style={
+                        active
+                          ? {
+                              borderColor: "#d4ff4e",
+                              borderWidth: 2,
+                              background: dark
+                                ? "rgba(212,255,78,0.12)"
+                                : "#f3ffd6",
+                            }
+                          : {
+                              borderColor: dark
+                                ? "rgb(var(--ovr) / 0.15)"
+                                : "#e5e7eb",
+                            }
+                      }
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                        fill={
+                          def.mode === "fill"
+                            ? dark
+                              ? "#f4f5f1"
+                              : "#111"
+                            : "none"
+                        }
+                        stroke={
+                          def.mode === "stroke"
+                            ? dark
+                              ? "#f4f5f1"
+                              : "#111"
+                            : "none"
+                        }
+                        strokeWidth={def.mode === "stroke" ? 2.5 : 0}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d={def.path} />
+                      </svg>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 

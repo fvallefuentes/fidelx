@@ -26,13 +26,28 @@ export type StampIconKey =
   | "leaf"
   | "paw"
   | "pizza"
-  | "burger";
+  | "burger"
+  | "utensils"
+  | "croissant"
+  | "bread"
+  | "cake"
+  | "iceCream"
+  | "wine"
+  | "lipstick"
+  | "nailPolish"
+  | "hairDryer"
+  | "shoppingBag"
+  | "car"
+  | "dumbbell";
+
+export type StampIconCategory = "classic" | "food" | "beauty" | "services";
 
 export interface StampIconDef {
   label: string;
   emoji: string;
   path: string; // viewBox 0 0 24 24
   mode: "fill" | "stroke";
+  category?: StampIconCategory;
 }
 
 export const STAMP_ICONS: Record<StampIconKey, StampIconDef> = {
@@ -76,12 +91,14 @@ export const STAMP_ICONS: Record<StampIconKey, StampIconDef> = {
     label: "Café",
     emoji: "☕",
     mode: "stroke",
+    category: "food",
     path: "M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4zM6 1v3M10 1v3M14 1v3",
   },
   scissors: {
     label: "Ciseaux",
     emoji: "✂",
     mode: "stroke",
+    category: "beauty",
     path: "M8.2 8.2 12 12M20 4 8.2 15.8M8.2 15.8 12 12M14.8 14.8 20 20M4 4.5a3 3 0 1 0 6 0 3 3 0 1 0-6 0M4 19.5a3 3 0 1 0 6 0 3 3 0 1 0-6 0",
   },
   gift: {
@@ -106,31 +123,120 @@ export const STAMP_ICONS: Record<StampIconKey, StampIconDef> = {
     label: "Fleur",
     emoji: "✿",
     mode: "stroke",
+    category: "beauty",
     path: "M12 9.5A2.5 2.5 0 1 0 12 14.5 2.5 2.5 0 1 0 12 9.5M12 9c-3-1.5-3.4-5.7 0-7 3.4 1.3 3 5.5 0 7M15 11c1.5-3 5.7-3.4 7 0-1.3 3.4-5.5 3-7 0M12 15c3 1.5 3.4 5.7 0 7-3.4-1.3-3-5.5 0-7M9 12c-1.5 3-5.7 3.4-7 0 1.3-3.4 5.5-3 7 0",
   },
   leaf: {
     label: "Feuille",
     emoji: "🍃",
     mode: "stroke",
+    category: "services",
     path: "M20.8 3.2C12 3 5 6 4 13c-.5 3.5 2 7 5.5 7 7 0 10-8 11.3-16.8ZM4 21c2-7 7-10 13-13",
   },
   paw: {
     label: "Patte",
     emoji: "🐾",
     mode: "fill",
+    category: "services",
     path: "M12 11c-3.2 0-6 3.1-6 6.1 0 2.1 1.7 3.4 3.5 2.6 1.6-.7 3.4-.7 5 0 1.8.8 3.5-.5 3.5-2.6 0-3-2.8-6.1-6-6.1ZM6.2 10.2C4.8 10.5 3.4 9 3.1 7.3 2.8 5.5 3.7 4 5 3.8c1.4-.2 2.7 1.2 3 3 .3 1.7-.5 3.1-1.8 3.4Zm11.6 0c-1.3-.3-2.1-1.7-1.8-3.4.3-1.8 1.6-3.2 3-3 1.3.2 2.2 1.7 1.9 3.5-.3 1.7-1.7 3.2-3.1 2.9ZM10.7 8.5C9.2 8.6 8 7 8 5.2 8 3.4 9 2 10.4 2c1.4 0 2.5 1.5 2.5 3.3 0 1.8-.9 3.2-2.2 3.2Zm3.9 0c-1.3 0-2.2-1.4-2.2-3.2 0-1.8 1.1-3.3 2.5-3.3 1.4 0 2.4 1.4 2.4 3.2 0 1.8-1.2 3.4-2.7 3.3Z",
   },
   pizza: {
     label: "Pizza",
     emoji: "🍕",
     mode: "stroke",
+    category: "food",
     path: "m12 3 9 18H3zM7.5 12.5h.01M14 15h.01M11 8h.01M5.2 17h13.6",
   },
   burger: {
     label: "Burger",
     emoji: "🍔",
     mode: "stroke",
+    category: "food",
     path: "M4 11h16M5 11a7 7 0 0 1 14 0M3 15h18M5 15v2a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-2M8 7h.01M12 5h.01M16 7h.01",
+  },
+  utensils: {
+    label: "Couverts",
+    emoji: "🍴",
+    mode: "stroke",
+    category: "food",
+    path: "M4 2v6M8 2v6M4 6h4M6 8v14M15 2v20M15 2c3 1.5 5 4.5 5 8v2h-5",
+  },
+  croissant: {
+    label: "Croissant",
+    emoji: "🥐",
+    mode: "stroke",
+    category: "food",
+    path: "M5 5c-4 2.5-4 11.5 0 14l3-3c2 2 6 2 8 0l3 3c4-2.5 4-11.5 0-14l-3 3c-2-2-6-2-8 0zM8 8c-1 2-1 6 0 8M16 8c1 2 1 6 0 8",
+  },
+  bread: {
+    label: "Pain",
+    emoji: "🍞",
+    mode: "stroke",
+    category: "food",
+    path: "M5 20h14a3 3 0 0 0 3-3v-7a6 6 0 0 0-6-6H8a6 6 0 0 0-6 6v7a3 3 0 0 0 3 3ZM8 7l2 3M13 6l2 3",
+  },
+  cake: {
+    label: "Gâteau",
+    emoji: "🍰",
+    mode: "stroke",
+    category: "food",
+    path: "M3 11h18v9H3zM3 15h18M7 11V7M12 11V5M17 11V7M7 4v3M12 2v3M17 4v3",
+  },
+  iceCream: {
+    label: "Glace",
+    emoji: "🍦",
+    mode: "stroke",
+    category: "food",
+    path: "M7 10h10l-5 12zM7 10a5 5 0 0 1 10 0M9 7a4 4 0 0 1 6 0",
+  },
+  wine: {
+    label: "Verre",
+    emoji: "🍷",
+    mode: "stroke",
+    category: "food",
+    path: "M6 2h12l-1 7a5 5 0 0 1-10 0zM12 14v7M8 22h8M7 7h10",
+  },
+  lipstick: {
+    label: "Rouge à lèvres",
+    emoji: "💄",
+    mode: "stroke",
+    category: "beauty",
+    path: "M8 10h8v12H8zM9 10V6l5-4 1 4v4M7 14h10M10 18h4",
+  },
+  nailPolish: {
+    label: "Vernis",
+    emoji: "💅",
+    mode: "stroke",
+    category: "beauty",
+    path: "M9 2h6v5H9zM7 9h10l2 3v10H5V12zM9 13h6v5H9z",
+  },
+  hairDryer: {
+    label: "Sèche-cheveux",
+    emoji: "💨",
+    mode: "stroke",
+    category: "beauty",
+    path: "M3 7h11a5 5 0 0 1 0 10H3zM3 10H1M3 14H1M12 17l-1 5H7l1-5M18 9l4-2v10l-4-2",
+  },
+  shoppingBag: {
+    label: "Sac boutique",
+    emoji: "🛍",
+    mode: "stroke",
+    category: "services",
+    path: "M4 8h16l-1 14H5zM8 9V6a4 4 0 0 1 8 0v3",
+  },
+  car: {
+    label: "Voiture",
+    emoji: "🚗",
+    mode: "stroke",
+    category: "services",
+    path: "M3 11l2-5h14l2 5v8h-3v-2H6v2H3zM5 11h14M7 14h.01M17 14h.01",
+  },
+  dumbbell: {
+    label: "Haltère",
+    emoji: "🏋",
+    mode: "stroke",
+    category: "services",
+    path: "M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12M1 11v2M23 11v2",
   },
 };
 
@@ -194,6 +300,23 @@ export const STAMP_ICON_LIST: { key: StampIconKey; def: StampIconDef }[] =
     key,
     def: STAMP_ICONS[key],
   }));
+
+const STAMP_ICON_GROUP_LABELS: {
+  key: StampIconCategory;
+  label: string;
+}[] = [
+  { key: "classic", label: "Classiques" },
+  { key: "food", label: "Restauration & boulangerie" },
+  { key: "beauty", label: "Beauté & bien-être" },
+  { key: "services", label: "Commerces & services" },
+];
+
+export const STAMP_ICON_GROUPS = STAMP_ICON_GROUP_LABELS.map((group) => ({
+  ...group,
+  icons: STAMP_ICON_LIST.filter(
+    ({ def }) => (def.category || "classic") === group.key
+  ),
+}));
 
 /**
  * Fragment SVG d'une icône de tampon centrée à (cx, cy) occupant `size` px.
