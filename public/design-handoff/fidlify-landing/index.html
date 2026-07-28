@@ -2133,6 +2133,18 @@ document.addEventListener('DOMContentLoaded', async function() {
             order:3;margin-top:24px;flex-wrap:wrap !important;justify-content:center !important;
           }
 
+          /* Editeur : apercu epingle en haut, reglages empiles dessous */
+          #editeur .fdl-ed-row{display:flex !important;flex-direction:column !important;gap:0 !important}
+          #editeur .fdl-ed-preview{
+            order:-1;width:100% !important;max-width:100% !important;
+            position:sticky;top:58px;z-index:30;
+            background:var(--bg,#f4f5ee);
+            padding:12px 0 14px;margin:0 0 20px;
+            box-shadow:0 18px 26px -20px rgba(24,30,10,.55);
+          }
+          #editeur .fdl-ed-preview > *{margin-left:auto;margin-right:auto}
+          #editeur .fdl-ed-controls{width:100% !important;max-width:100% !important}
+
           /* Barre de nav : le bouton principal etait coupe a droite */
           #fyroot nav a[href="#cta"]{font-size:12.5px !important;padding:0 13px !important;white-space:nowrap}
         }
@@ -2254,6 +2266,30 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Menu mobile. Sous 860px, les liens de section sont masques (ils
     // debordaient et chevauchaient le logo) : sans ce menu, aucun moyen
     // d'atteindre les tarifs ou "comment ca marche" depuis un telephone.
+    // Editeur de carte sur mobile.
+    // En dessous de 860px, les deux colonnes (reglages | apercu) se
+    // partageaient 295px : 93px et 108px, texte tronque et carte illisible.
+    // On empile, et surtout on epingle l'apercu en haut : le commercant voit
+    // sa carte reagir pendant qu'il fait defiler les reglages.
+    // Le rendu bureau n'est pas touche (media query uniquement).
+    function enhanceEditorMobile() {
+      var ed = document.getElementById('editeur');
+      if (!ed || ed.querySelector('.fdl-ed-row')) return;
+
+      var rangee = Array.prototype.filter.call(ed.querySelectorAll('div'), function (el) {
+        var cs = getComputedStyle(el);
+        if (cs.display !== 'flex' || el.children.length !== 2) return false;
+        var a = el.children[0].getBoundingClientRect();
+        var b = el.children[1].getBoundingClientRect();
+        return a.height > 400 && b.height > 400;
+      })[0];
+      if (!rangee) return;
+
+      rangee.classList.add('fdl-ed-row');
+      rangee.children[0].classList.add('fdl-ed-controls');
+      rangee.children[1].classList.add('fdl-ed-preview');
+    }
+
     function injectMobileMenu() {
       if (document.getElementById('fdl-burger')) return;
       var nav = document.querySelector('#fyroot nav');
@@ -2896,6 +2932,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       injectLegalFooter();
       injectPricingNavLink();
       injectMobileMenu();
+      enhanceEditorMobile();
       reorderLandingSections();
     }, 900);
   } catch (err) {
