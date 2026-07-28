@@ -2249,7 +2249,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // page, ce lien les met a un clic depuis le haut.
     function injectPricingNavLink() {
       if (document.querySelector('[data-fidlify-nav-pricing]')) return;
-      var ref = document.querySelector('#fyroot a[href="#avis"]');
+      // On clone un lien de section existant pour heriter de son style.
+      // (Avant : "#avis", supprime avec les faux temoignages — le lien Tarifs
+      // ne s'affichait donc plus du tout.)
+      var ref = document.querySelector('#fyroot nav a[href="#features"]')
+        || document.querySelector('#fyroot nav a[href="#editeur"]');
       if (!ref || !ref.parentNode) return;
       var link = ref.cloneNode(true);
       link.setAttribute('href', '#fidlify-pricing');
