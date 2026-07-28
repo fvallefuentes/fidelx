@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Minus, Plus, Check, AlertCircle, PartyPopper, ScanLine, RotateCcw, Camera, Gift, UserSearch, Search, ChevronRight } from "lucide-react";
+import { Minus, Plus, Check, AlertCircle, PartyPopper, ScanLine, RotateCcw, Camera, Gift, UserSearch, Search, ChevronRight, SwitchCamera } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface CardInfo {
@@ -51,6 +51,37 @@ interface ManualCard {
   program: { name: string };
 }
 
+const REAR_CAMERA_PATTERN =
+  /\b(back|rear|environment|world)\b|arri[eè]re|trasera|traseira|r[uü]ck/i;
+const FRONT_CAMERA_PATTERN =
+  /\b(front|user|facetime)\b|avant|frontal|selfie/i;
+const UNSUITABLE_CAMERA_PATTERN =
+  /\b(infrared|depth|virtual|obs|manycam|snap camera)\b|\bir camera\b/i;
+
+function getUsableCameras(devices: MediaDeviceInfo[]) {
+  const videoInputs = devices.filter((device) => device.kind === "videoinput");
+  const suitable = videoInputs.filter(
+    (device) => !UNSUITABLE_CAMERA_PATTERN.test(device.label)
+  );
+  return suitable.length > 0 ? suitable : videoInputs;
+}
+
+function pickRearCamera(cameras: MediaDeviceInfo[]) {
+  const explicitRear = cameras.find((camera) =>
+    REAR_CAMERA_PATTERN.test(camera.label)
+  );
+  if (explicitRear) return explicitRear;
+
+  const nonFront = cameras.filter(
+    (camera) => !FRONT_CAMERA_PATTERN.test(camera.label)
+  );
+  if (nonFront.length > 0) return nonFront[nonFront.length - 1];
+
+  // Sur les tablettes Windows, la caméra arrière est généralement le
+  // deuxième périphérique quand le pilote ne fournit pas de facingMode.
+  return cameras[cameras.length - 1];
+}
+
 export default function ScanPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -73,6 +104,8 @@ export default function ScanPage() {
     useState<CameraErrorCode | null>(null);
   const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraNeedsActivation, setCameraNeedsActivation] = useState(true);
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [activeCameraId, setActiveCameraId] = useState("");
 
   // Mode "saisie manuelle" — sélection d'un client sans scan
   const [manualCards, setManualCards] = useState<ManualCard[]>([]);
@@ -136,7 +169,7 @@ export default function ScanPage() {
     rafRef.current = requestAnimationFrame(tick);
   }, [stopCamera]);
 
-  const startCamera = useCallback(async () => {
+  const startCamera = useCallback(async (deviceId?: string) => {
     if (cameraStartingRef.current) return;
 
     stopCamera();
@@ -174,23 +207,104 @@ export default function ScanPage() {
     }
 
     try {
-      // Un seul appel : enchaîner immédiatement un second getUserMedia après
-      // un refus empêche Chrome de présenter proprement sa demande.
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
+      const videoConstraints: MediaTrackConstraints = deviceId
+        ? {
+            deviceId: { exact: deviceId },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          }
+        : {
+            // "exact" force réellement la caméra arrière quand le pilote
+            // Windows expose correctement son orientation.
+            facingMode: { exact: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          };
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: videoConstraints,
+          audio: false,
+        });
+      } catch (initialError) {
+        const initialName =
+          initialError instanceof DOMException ? initialError.name : "";
+        if (
+          deviceId ||
+          (initialName !== "OverconstrainedError" &&
+            initialName !== "NotFoundError")
+        ) {
+          throw initialError;
+        }
+
+        // Certains pilotes de tablettes ne publient pas facingMode. On ouvre
+        // alors une caméra, puis on utilise les libellés et deviceId exposés
+        // après autorisation pour sélectionner l'arrière.
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+      }
 
       if (cameraRequestRef.current !== requestId) {
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
 
-      const track = stream.getVideoTracks()[0];
+      let track = stream.getVideoTracks()[0];
+      let detectedCameras: MediaDeviceInfo[] = [];
+      try {
+        detectedCameras = getUsableCameras(
+          await navigator.mediaDevices.enumerateDevices()
+        );
+        setCameras(detectedCameras);
+
+        if (!deviceId && detectedCameras.length > 1) {
+          const currentDeviceId = track.getSettings().deviceId;
+          const preferredRear = pickRearCamera(detectedCameras);
+
+          if (
+            preferredRear?.deviceId &&
+            preferredRear.deviceId !== currentDeviceId
+          ) {
+            try {
+              const rearStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                  deviceId: { exact: preferredRear.deviceId },
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 },
+                },
+                audio: false,
+              });
+
+              if (cameraRequestRef.current !== requestId) {
+                rearStream.getTracks().forEach((rearTrack) => rearTrack.stop());
+                stream.getTracks().forEach((currentTrack) =>
+                  currentTrack.stop()
+                );
+                return;
+              }
+
+              stream.getTracks().forEach((currentTrack) =>
+                currentTrack.stop()
+              );
+              stream = rearStream;
+              track = rearStream.getVideoTracks()[0];
+            } catch {
+              // Si le pilote refuse ce deviceId, on conserve la caméra déjà
+              // ouverte et le bouton de bascule permet d'essayer les autres.
+            }
+          }
+        }
+      } catch {
+        // enumerateDevices n'est pas disponible sur tous les navigateurs.
+      }
+
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const caps = (track as any).getCapabilities?.();
@@ -205,6 +319,7 @@ export default function ScanPage() {
       }
 
       streamRef.current = stream;
+      setActiveCameraId(track.getSettings().deviceId || deviceId || "");
       const video = videoRef.current;
       if (!video) {
         stream.getTracks().forEach((videoTrack) => videoTrack.stop());
@@ -246,6 +361,17 @@ export default function ScanPage() {
       }
     }
   }, [stopCamera, tick]);
+
+  const switchCamera = useCallback(() => {
+    if (cameraStartingRef.current || cameras.length < 2) return;
+
+    const currentIndex = cameras.findIndex(
+      (camera) => camera.deviceId === activeCameraId
+    );
+    const nextIndex =
+      currentIndex >= 0 ? (currentIndex + 1) % cameras.length : 0;
+    void startCamera(cameras[nextIndex].deviceId);
+  }, [activeCameraId, cameras, startCamera]);
 
   useEffect(() => {
     if (step !== "scan") return;
@@ -375,6 +501,7 @@ export default function ScanPage() {
     setError(""); setCameraError(""); setCameraReady(false);
     setCameraErrorCode(null); setCameraStarting(false);
     setCameraNeedsActivation(true);
+    setCameras([]); setActiveCameraId("");
     setStampCount(1); setClaimedClient("");
     setStep("scan");
   }
@@ -466,6 +593,21 @@ export default function ScanPage() {
               <>
                 <video ref={videoRef} className="w-full block" playsInline muted autoPlay style={{ maxHeight: "70vh", objectFit: "cover" }} />
                 <canvas ref={canvasRef} className="hidden" />
+                {cameraReady && cameras.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={switchCamera}
+                    disabled={cameraStarting}
+                    className="absolute right-3 top-3 z-30 gap-2 border border-white/60 bg-white/95 shadow-lg hover:bg-white"
+                    title="Basculer entre les caméras avant et arrière"
+                    aria-label="Changer de caméra"
+                  >
+                    <SwitchCamera className="h-4 w-4" />
+                    <span className="hidden sm:inline">Changer de caméra</span>
+                  </Button>
+                )}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <div className="absolute inset-0 bg-black/30" />
                   <div className="relative z-10 w-56 h-56">
