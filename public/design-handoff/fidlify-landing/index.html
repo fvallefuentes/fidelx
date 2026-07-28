@@ -2137,7 +2137,18 @@ document.addEventListener('DOMContentLoaded', async function() {
           #editeur .fdl-ed-row{display:flex !important;flex-direction:column !important;gap:0 !important}
           /* Les marges d'origine (104/40px + 32px) mangeaient 120px de large :
              il ne restait que 229px utiles sur un ecran de 375. */
-          #editeur .fdl-ed-row{padding:16px !important}
+          #editeur .fdl-ed-wrap{padding:56px 14px !important}
+          #editeur .fdl-ed-row{padding:14px !important}
+          #fdl-voir-carte{
+            position:fixed;right:16px;bottom:18px;z-index:40;
+            display:none;align-items:center;gap:7px;
+            border:0;border-radius:999px;padding:12px 18px;
+            background:#0E1116;color:#D9FF3C;cursor:pointer;
+            font-family:'Instrument Sans',-apple-system,sans-serif;
+            font-size:14px;font-weight:700;
+            box-shadow:0 12px 26px rgba(14,17,22,.32);
+          }
+          #fdl-voir-carte.is-on{display:inline-flex}
           #editeur .fdl-ed-row > *{min-width:0}
           #editeur .fdl-ed-preview{
             order:-1;width:100% !important;max-width:100% !important;
@@ -2290,6 +2301,35 @@ document.addEventListener('DOMContentLoaded', async function() {
       rangee.classList.add('fdl-ed-row');
       rangee.children[0].classList.add('fdl-ed-controls');
       rangee.children[1].classList.add('fdl-ed-preview');
+      if (rangee.parentElement) rangee.parentElement.classList.add('fdl-ed-wrap');
+
+      // La carte fait ~2x plus haut que large : l'epingler mangerait la moitie
+      // de l'ecran. On la laisse en haut et on propose un retour rapide des
+      // qu'elle sort du champ, tant qu'on est dans l'editeur.
+      var apercu = rangee.children[1];
+      var bouton = document.createElement('button');
+      bouton.id = 'fdl-voir-carte';
+      bouton.type = 'button';
+      bouton.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        + '<path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg> Voir ma carte';
+      bouton.addEventListener('click', function () {
+        apercu.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      document.body.appendChild(bouton);
+
+      if ('IntersectionObserver' in window) {
+        var carteVisible = true, editeurVisible = false;
+        var maj = function () {
+          bouton.classList.toggle('is-on', editeurVisible && !carteVisible);
+        };
+        new IntersectionObserver(function (e) {
+          carteVisible = e[0].isIntersecting; maj();
+        }, { threshold: 0.15 }).observe(apercu);
+        new IntersectionObserver(function (e) {
+          editeurVisible = e[0].isIntersecting; maj();
+        }, { threshold: 0 }).observe(ed);
+      }
     }
 
     function injectMobileMenu() {
@@ -2328,7 +2368,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         #fdl-voile.is-open{display:block}
         @media (max-width: 860px){ #fdl-burger{display:inline-flex} }
-        @media (min-width: 861px){ #fdl-menu,#fdl-voile{display:none !important} }
+        @media (min-width: 861px){ #fdl-menu,#fdl-voile,#fdl-voir-carte{display:none !important} }
       `;
       document.head.appendChild(style);
 
