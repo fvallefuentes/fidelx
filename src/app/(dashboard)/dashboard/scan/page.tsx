@@ -32,6 +32,13 @@ interface StampResult {
 }
 
 type Step = "scan" | "manual" | "confirm" | "reward_pending" | "stamping" | "claiming" | "success" | "reward_claimed" | "error";
+type CameraErrorCode =
+  | "permission"
+  | "busy"
+  | "not-found"
+  | "unsupported"
+  | "insecure"
+  | "unknown";
 
 interface ManualCard {
   id: string;
@@ -50,6 +57,8 @@ export default function ScanPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const lastScanRef = useRef<string>("");
+  const cameraRequestRef = useRef(0);
+  const cameraStartingRef = useRef(false);
 
   const [step, setStep] = useState<Step>("scan");
   const [serialNumber, setSerialNumber] = useState("");
@@ -60,6 +69,10 @@ export default function ScanPage() {
   const [error, setError] = useState("");
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [cameraErrorCode, setCameraErrorCode] =
+    useState<CameraErrorCode | null>(null);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraNeedsActivation, setCameraNeedsActivation] = useState(true);
 
   // Mode "saisie manuelle" — sélection d'un client sans scan
   const [manualCards, setManualCards] = useState<ManualCard[]>([]);
@@ -86,12 +99,15 @@ export default function ScanPage() {
   }
 
   const stopCamera = useCallback(() => {
+    cameraRequestRef.current += 1;
+    cameraStartingRef.current = false;
     cancelAnimationFrame(rafRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
     setCameraReady(false);
+    setCameraStarting(false);
   }, []);
 
   const tick = useCallback(async () => {
@@ -118,91 +134,195 @@ export default function ScanPage() {
       }
     } catch { /* ignore */ }
     rafRef.current = requestAnimationFrame(tick);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stopCamera]);
+
+  const startCamera = useCallback(async () => {
+    if (cameraStartingRef.current) return;
+
+    stopCamera();
+    const requestId = ++cameraRequestRef.current;
+    cameraStartingRef.current = true;
+    setCameraStarting(true);
+    setCameraNeedsActivation(false);
+    setCameraReady(false);
+    setCameraError("");
+    setCameraErrorCode(null);
+
+    const fail = (code: CameraErrorCode, message: string) => {
+      if (cameraRequestRef.current !== requestId) return;
+      cameraStartingRef.current = false;
+      setCameraStarting(false);
+      setCameraReady(false);
+      setCameraErrorCode(code);
+      setCameraError(message);
+    };
+
+    if (!window.isSecureContext) {
+      fail(
+        "insecure",
+        "La caméra exige une connexion HTTPS sécurisée."
+      );
+      return;
+    }
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      fail(
+        "unsupported",
+        "Ce navigateur ne permet pas d'utiliser la caméra depuis cette page."
+      );
+      return;
+    }
+
+    try {
+      // Un seul appel : enchaîner immédiatement un second getUserMedia après
+      // un refus empêche Chrome de présenter proprement sa demande.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false,
+      });
+
+      if (cameraRequestRef.current !== requestId) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
+      const track = stream.getVideoTracks()[0];
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const caps = (track as any).getCapabilities?.();
+        if (caps?.focusMode?.includes("continuous")) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (track as any).applyConstraints?.({
+            advanced: [{ focusMode: "continuous" }],
+          });
+        }
+      } catch {
+        /* Le focus continu n'est pas disponible sur toutes les webcams. */
+      }
+
+      streamRef.current = stream;
+      const video = videoRef.current;
+      if (!video) {
+        stream.getTracks().forEach((videoTrack) => videoTrack.stop());
+        return;
+      }
+
+      video.srcObject = stream;
+      await video.play();
+      if (cameraRequestRef.current !== requestId) return;
+
+      cameraStartingRef.current = false;
+      setCameraStarting(false);
+      setCameraReady(true);
+      rafRef.current = requestAnimationFrame(tick);
+    } catch (err) {
+      const name = err instanceof DOMException ? err.name : "";
+      const message = err instanceof Error ? err.message : String(err);
+
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        fail(
+          "permission",
+          "Chrome ou Windows bloque actuellement l'accès à la caméra."
+        );
+      } else if (
+        name === "NotFoundError" ||
+        name === "OverconstrainedError"
+      ) {
+        fail("not-found", "Aucune caméra compatible n'a été détectée.");
+      } else if (name === "NotReadableError" || name === "AbortError") {
+        fail(
+          "busy",
+          "La caméra est déjà utilisée ou bloquée par une autre application."
+        );
+      } else {
+        fail(
+          "unknown",
+          `Impossible d'activer la caméra${message ? ` : ${message}` : "."}`
+        );
+      }
+    }
+  }, [stopCamera, tick]);
 
   useEffect(() => {
     if (step !== "scan") return;
-    lastScanRef.current = "";
+    let disposed = false;
+    let permissionStatus: PermissionStatus | null = null;
 
-    async function startCamera() {
-      let cancelled = false;
-      // Essai 1 : caméra arrière (mobile). Fallback : n'importe quelle caméra (desktop).
-      async function getStream(): Promise<MediaStream> {
-        try {
-          return await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: "environment" },
-              width: { ideal: 1280 },
-              height: { ideal: 720 },
-            },
-            audio: false,
-          });
-        } catch {
-          // facingMode peut bloquer sur certains desktops sans rear camera —
-          // on retente avec une contrainte minimale.
-          return await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: false,
-          });
-        }
+    lastScanRef.current = "";
+    setCameraError("");
+    setCameraErrorCode(null);
+    setCameraReady(false);
+
+    async function prepareCamera() {
+      if (!window.isSecureContext) {
+        setCameraNeedsActivation(false);
+        setCameraErrorCode("insecure");
+        setCameraError("La caméra exige une connexion HTTPS sécurisée.");
+        return;
+      }
+
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraNeedsActivation(false);
+        setCameraErrorCode("unsupported");
+        setCameraError(
+          "Ce navigateur ne permet pas d'utiliser la caméra depuis cette page."
+        );
+        return;
       }
 
       try {
-        const stream = await getStream();
-        if (cancelled) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        const track = stream.getVideoTracks()[0];
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const caps = (track as any).getCapabilities?.();
-          if (caps?.focusMode?.includes("continuous")) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await (track as any).applyConstraints?.({ advanced: [{ focusMode: "continuous" }] });
-          }
-        } catch { /* ignore */ }
-        streamRef.current = stream;
-        const video = videoRef.current;
-        if (!video) {
-          stream.getTracks().forEach((t) => t.stop());
-          return;
-        }
-        video.srcObject = stream;
-        // On attend `play()` plutôt que `onloadedmetadata` : ça évite la race
-        // condition où la metadata se charge plus vite que l'attachement du
-        // handler (qui laissait le spinner "Activation caméra..." infini sur
-        // certains desktops).
-        try {
-          await video.play();
-        } catch {
-          /* autoplay peut être bloqué — on continue quand même, la vidéo
-             affichera le 1er frame statique et le scan tournera dessus */
-        }
-        if (cancelled) return;
-        setCameraReady(true);
-        rafRef.current = requestAnimationFrame(tick);
-      } catch (err) {
-        if (cancelled) return;
-        const msg = err instanceof Error ? err.message : String(err);
-        const low = msg.toLowerCase();
-        setCameraError(
-          low.includes("permission") || low.includes("denied") || low.includes("notallowed")
-            ? "Accès à la caméra refusé. Autorisez la caméra dans les réglages du navigateur."
-            : low.includes("notfound") || low.includes("notreadable")
-              ? "Aucune caméra disponible (ou utilisée par une autre app). Vérifiez vos périphériques."
-              : "Impossible d'accéder à la caméra : " + msg
-        );
-      }
+        permissionStatus = await navigator.permissions.query({
+          name: "camera",
+        } as PermissionDescriptor);
+        if (disposed) return;
 
-      return () => {
-        cancelled = true;
-      };
+        if (permissionStatus.state === "granted") {
+          setCameraNeedsActivation(false);
+          void startCamera();
+        } else if (permissionStatus.state === "denied") {
+          setCameraNeedsActivation(false);
+          setCameraErrorCode("permission");
+          setCameraError(
+            "Chrome ou Windows bloque actuellement l'accès à la caméra."
+          );
+        } else {
+          // L'appel reste associé au clic sur "Activer la caméra" : Chrome
+          // peut alors afficher sa boîte de permission de façon fiable.
+          setCameraNeedsActivation(true);
+        }
+
+        permissionStatus.onchange = () => {
+          if (disposed || !permissionStatus) return;
+          if (permissionStatus.state === "granted") {
+            setCameraNeedsActivation(false);
+            void startCamera();
+          } else if (permissionStatus.state === "denied") {
+            stopCamera();
+            setCameraNeedsActivation(false);
+            setCameraErrorCode("permission");
+            setCameraError(
+              "Chrome ou Windows bloque actuellement l'accès à la caméra."
+            );
+          }
+        };
+      } catch {
+        // Permissions API indisponible : le clic utilisateur déclenchera
+        // directement getUserMedia et la demande native de Chrome.
+        if (!disposed) setCameraNeedsActivation(true);
+      }
     }
-    startCamera();
-    return () => stopCamera();
-  }, [step, tick, stopCamera]);
+
+    void prepareCamera();
+    return () => {
+      disposed = true;
+      if (permissionStatus) permissionStatus.onchange = null;
+      stopCamera();
+    };
+  }, [step, startCamera, stopCamera]);
 
   async function handleScan(text: string) {
     const match = text.match(/\/stamp\/([^/?#]+)/);
@@ -253,6 +373,8 @@ export default function ScanPage() {
   function reset() {
     setSerialNumber(""); setCardInfo(null); setResult(null);
     setError(""); setCameraError(""); setCameraReady(false);
+    setCameraErrorCode(null); setCameraStarting(false);
+    setCameraNeedsActivation(true);
     setStampCount(1); setClaimedClient("");
     setStep("scan");
   }
@@ -268,12 +390,77 @@ export default function ScanPage() {
         <Card className="overflow-hidden">
           <CardContent className="p-0 relative">
             {cameraError ? (
-              <div className="flex flex-col items-center justify-center py-16 px-6 text-center gap-4">
+              <div className="flex flex-col items-center justify-center gap-4 px-6 py-10 text-center">
                 <div className="h-14 w-14 rounded-full bg-red-100 flex items-center justify-center">
                   <Camera className="h-7 w-7 text-red-500" />
                 </div>
                 <p className="text-sm text-red-600 font-medium">{cameraError}</p>
-                <Button variant="outline" onClick={reset}><RotateCcw className="mr-2 h-4 w-4" /> Réessayer</Button>
+                {cameraErrorCode === "permission" && (
+                  <div className="w-full max-w-lg space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left text-sm text-amber-950">
+                    <div>
+                      <p className="font-semibold">1. Autoriser dans Chrome</p>
+                      <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                        Cliquez sur l&apos;icône caméra ou réglages à gauche de
+                        l&apos;adresse, choisissez Caméra → Autoriser, puis
+                        revenez ici.
+                      </p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">2. Vérifier Windows</p>
+                      <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                        Activez « Accès à la caméra » et « Autoriser les
+                        applications de bureau à accéder à votre caméra ».
+                      </p>
+                      <a
+                        href="ms-settings:privacy-webcam"
+                        className="mt-2 inline-flex text-xs font-semibold text-blue-700 underline underline-offset-2"
+                      >
+                        Ouvrir les réglages caméra Windows
+                      </a>
+                    </div>
+                  </div>
+                )}
+                {cameraErrorCode === "busy" && (
+                  <p className="max-w-md text-xs leading-relaxed text-gray-500">
+                    Fermez Teams, Zoom, l&apos;application Caméra ou tout autre
+                    logiciel utilisant la webcam, puis réessayez.
+                  </p>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => void startCamera()}
+                  disabled={cameraStarting}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  {cameraStarting
+                    ? "Activation..."
+                    : cameraErrorCode === "permission"
+                      ? "Réessayer après autorisation"
+                      : "Réessayer"}
+                </Button>
+              </div>
+            ) : cameraNeedsActivation ? (
+              <div className="flex flex-col items-center justify-center gap-4 px-6 py-16 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
+                  <Camera className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="space-y-1">
+                  <h2 className="font-semibold text-gray-900">
+                    Activer la caméra
+                  </h2>
+                  <p className="max-w-sm text-sm text-gray-500">
+                    Cliquez ci-dessous pour que Chrome affiche sa demande
+                    d&apos;autorisation.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => void startCamera()}
+                  disabled={cameraStarting}
+                  className="gap-2"
+                >
+                  <Camera className="h-4 w-4" />
+                  {cameraStarting ? "Activation..." : "Activer la caméra"}
+                </Button>
               </div>
             ) : (
               <>
@@ -288,7 +475,7 @@ export default function ScanPage() {
                     <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-white rounded-br-xl" />
                     {cameraReady && <div className="absolute inset-x-2 h-0.5 bg-blue-400 rounded animate-scan-line" />}
                   </div>
-                  {!cameraReady && (
+                  {!cameraReady && cameraStarting && (
                     <div className="absolute z-20 flex flex-col items-center gap-3">
                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-white border-t-transparent" />
                       <p className="text-white text-sm font-medium">Activation caméra...</p>
