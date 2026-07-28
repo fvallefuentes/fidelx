@@ -8,7 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Plus, Stamp, Award, Percent, Trash2, ExternalLink, Lock, Palette, X, Eye, Archive, ImagePlus } from "lucide-react";
 import ClientPreviewModal from "@/components/dashboard/ClientPreviewModal";
-import { getStampIcon, STAMP_ICON_LIST, STAMP_SPACING_LIST, getStampSpacingMult } from "@/lib/wallet/stamp-icons";
+import {
+  getStampAreaInset,
+  getStampAreaRadius,
+  getStampIcon,
+  getStampSpacingMult,
+  STAMP_AREA_INSET_MAX,
+  STAMP_AREA_RADIUS_MAX,
+  STAMP_ICON_LIST,
+  STAMP_SPACING_LIST,
+} from "@/lib/wallet/stamp-icons";
 
 type WalletPreviewProps = {
   bgColor: string;
@@ -27,6 +36,8 @@ type WalletPreviewProps = {
   unlimited?: boolean;
   stampIcon?: string;
   stampSpacing?: string;
+  stampAreaInset?: number;
+  stampAreaRadius?: number;
   stampBgType?: "none" | "color" | "image";
   stampBgColor?: string;
   stampBgColor2?: string;
@@ -69,6 +80,8 @@ function ProgramCardPreview({ program }: { program: Program }) {
         heroImage={(design.heroImage as string) || undefined}
         stampIcon={(design.stampIcon as string) || undefined}
         stampSpacing={(design.stampSpacing as string) || undefined}
+        stampAreaInset={getStampAreaInset(design.stampAreaInset)}
+        stampAreaRadius={getStampAreaRadius(design.stampAreaRadius)}
         stampBgType={(design.stampBgType as "none" | "color" | "image") || undefined}
         stampBgColor={design.stampBgColor as string | undefined}
         stampBgColor2={design.stampBgColor2 as string | undefined}
@@ -532,6 +545,46 @@ function ColorPicker({
   );
 }
 
+function DesignRange({
+  label,
+  value,
+  max,
+  onChange,
+  dark = false,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  onChange: (value: number) => void;
+  dark?: boolean;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="flex items-center justify-between gap-3 text-xs">
+        <span className={dark ? "text-gray-400" : "text-gray-500"}>{label}</span>
+        <span
+          className="min-w-12 rounded-full px-2 py-0.5 text-center font-mono text-[11px]"
+          style={{
+            color: dark ? "#d4ff4e" : "#374151",
+            background: dark ? "rgba(212,255,78,0.1)" : "#f3f4f6",
+          }}
+        >
+          {value}px
+        </span>
+      </span>
+      <input
+        type="range"
+        min={0}
+        max={max}
+        step={2}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="w-full cursor-pointer accent-[#d4ff4e]"
+      />
+    </label>
+  );
+}
+
 /* ─── Personnalisation des tampons : icône + fond ───────────
    Partagé entre le formulaire de création (thème clair) et le modal
    d'édition (thème sombre via prop `dark`). Réservé aux plans payants
@@ -542,6 +595,10 @@ function StampCustomizer({
   setStampIcon,
   stampSpacing,
   setStampSpacing,
+  stampAreaInset,
+  setStampAreaInset,
+  stampAreaRadius,
+  setStampAreaRadius,
   stampBgType,
   setStampBgType,
   stampBgColor,
@@ -558,6 +615,10 @@ function StampCustomizer({
   setStampIcon: (v: string) => void;
   stampSpacing: string;
   setStampSpacing: (v: string) => void;
+  stampAreaInset: number;
+  setStampAreaInset: (v: number) => void;
+  stampAreaRadius: number;
+  setStampAreaRadius: (v: number) => void;
   stampBgType: "none" | "color" | "image";
   setStampBgType: (v: "none" | "color" | "image") => void;
   stampBgColor: string;
@@ -632,6 +693,31 @@ function StampCustomizer({
             </button>
           ))}
         </div>
+      </div>
+
+      <div
+        className="grid gap-3 rounded-lg p-3 sm:grid-cols-2"
+        style={{
+          background: dark ? "rgb(var(--ovr) / 0.025)" : "#ffffff",
+          border: dark
+            ? "1px solid rgb(var(--ovr) / 0.08)"
+            : "1px solid #e5e7eb",
+        }}
+      >
+        <DesignRange
+          label="Marge gauche / droite"
+          value={stampAreaInset}
+          max={STAMP_AREA_INSET_MAX}
+          onChange={setStampAreaInset}
+          dark={dark}
+        />
+        <DesignRange
+          label="Arrondi des coins"
+          value={stampAreaRadius}
+          max={STAMP_AREA_RADIUS_MAX}
+          onChange={setStampAreaRadius}
+          dark={dark}
+        />
       </div>
 
       {/* Fond derrière les ronds */}
@@ -795,6 +881,8 @@ function WalletCardPreview({
   unlimited = false,
   stampIcon = "check",
   stampSpacing = "normal",
+  stampAreaInset = 0,
+  stampAreaRadius = 0,
   stampBgType = "none",
   stampBgColor,
   stampBgColor2,
@@ -899,7 +987,9 @@ function WalletCardPreview({
             gap: stampGap,
             position: "relative",
             background: stampBg,
-            borderRadius: 0,
+            marginLeft: -18 + getStampAreaInset(stampAreaInset),
+            marginRight: -18 + getStampAreaInset(stampAreaInset),
+            borderRadius: getStampAreaRadius(stampAreaRadius),
             overflow: "hidden",
           }}
         >
@@ -1002,12 +1092,22 @@ function GoogleWalletPreview({
   logoData,
   heroImage,
   samplePoints,
+  stampAreaInset = 0,
+  stampAreaRadius = 0,
   stampBgType = "none",
+  stampBgColor,
+  stampBgColor2,
   stampBgImage,
 }: WalletPreviewProps) {
   const isDarkBg = isDark(bgColor);
   const lblColor = labelColor || (isDarkBg ? "rgb(var(--ovr) / 0.82)" : "rgba(0,0,0,0.68)");
   const mediaImage = stampBgType === "image" && stampBgImage ? stampBgImage : heroImage;
+  const stripBackground =
+    stampBgType === "color" && stampBgColor
+      ? stampBgColor2
+        ? `linear-gradient(135deg, ${stampBgColor}, ${stampBgColor2})`
+        : stampBgColor
+      : undefined;
   const metricLabel =
     programType === "POINTS" ? "Points" : programType === "CASHBACK" ? "Cashback" : "Tampons";
   const metricValue =
@@ -1051,7 +1151,15 @@ function GoogleWalletPreview({
         <span className="gwp-code">IIHL-KHOC-SC2F</span>
       </div>
 
-      <div className="gwp-strip">
+      <div
+        className="gwp-strip"
+        style={{
+          marginLeft: getStampAreaInset(stampAreaInset),
+          marginRight: getStampAreaInset(stampAreaInset),
+          borderRadius: getStampAreaRadius(stampAreaRadius),
+          background: stripBackground,
+        }}
+      >
         {mediaImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={mediaImage} alt="" className="gwp-strip-img" />
@@ -1091,6 +1199,8 @@ function CreateProgramForm({
   // Personnalisation des tampons (plans payants)
   const [stampIcon, setStampIcon] = useState<string>("check");
   const [stampSpacing, setStampSpacing] = useState<string>("normal");
+  const [stampAreaInset, setStampAreaInset] = useState(0);
+  const [stampAreaRadius, setStampAreaRadius] = useState(0);
   const [stampBgType, setStampBgType] = useState<"none" | "color" | "image">("none");
   const [stampBgColor, setStampBgColor] = useState("#1a1a2e");
   const [stampBgColor2, setStampBgColor2] = useState("");
@@ -1220,6 +1330,8 @@ function CreateProgramForm({
             ? {
                 stampIcon,
                 stampSpacing,
+                stampAreaInset,
+                stampAreaRadius,
                 stampBgType,
                 stampBgColor: stampBgType === "color" ? stampBgColor : undefined,
                 stampBgColor2:
@@ -1564,6 +1676,10 @@ function CreateProgramForm({
                   setStampIcon={setStampIcon}
                   stampSpacing={stampSpacing}
                   setStampSpacing={setStampSpacing}
+                  stampAreaInset={stampAreaInset}
+                  setStampAreaInset={setStampAreaInset}
+                  stampAreaRadius={stampAreaRadius}
+                  setStampAreaRadius={setStampAreaRadius}
                   stampBgType={stampBgType}
                   setStampBgType={setStampBgType}
                   stampBgColor={stampBgColor}
@@ -1638,6 +1754,8 @@ function CreateProgramForm({
                   heroImage={heroImage}
                   stampIcon={stampIcon}
                   stampSpacing={stampSpacing}
+                  stampAreaInset={stampAreaInset}
+                  stampAreaRadius={stampAreaRadius}
                   stampBgType={type === "STAMPS" && !isFree ? stampBgType : "none"}
                   stampBgColor={stampBgColor}
                   stampBgColor2={stampBgColor2 || undefined}
@@ -1718,6 +1836,12 @@ function EditProgramDesignModal({
   // Personnalisation tampons
   const [stampIcon, setStampIcon] = useState<string>(design.stampIcon || "check");
   const [stampSpacing, setStampSpacing] = useState<string>(design.stampSpacing || "normal");
+  const [stampAreaInset, setStampAreaInset] = useState(
+    getStampAreaInset(design.stampAreaInset)
+  );
+  const [stampAreaRadius, setStampAreaRadius] = useState(
+    getStampAreaRadius(design.stampAreaRadius)
+  );
   const [stampBgType, setStampBgType] = useState<"none" | "color" | "image">(
     (design.stampBgType as "none" | "color" | "image") || "none"
   );
@@ -1853,6 +1977,8 @@ function EditProgramDesignModal({
             : {
                 stampIcon,
                 stampSpacing,
+                stampAreaInset,
+                stampAreaRadius,
                 stampBgType,
                 stampBgColor: stampBgType === "color" ? stampBgColor : null,
                 stampBgColor2:
@@ -2227,6 +2353,10 @@ function EditProgramDesignModal({
                     setStampIcon={setStampIcon}
                     stampSpacing={stampSpacing}
                     setStampSpacing={setStampSpacing}
+                    stampAreaInset={stampAreaInset}
+                    setStampAreaInset={setStampAreaInset}
+                    stampAreaRadius={stampAreaRadius}
+                    setStampAreaRadius={setStampAreaRadius}
                     stampBgType={stampBgType}
                     setStampBgType={setStampBgType}
                     stampBgColor={stampBgColor}
@@ -2262,6 +2392,8 @@ function EditProgramDesignModal({
                 heroImage={heroImage || undefined}
                 stampIcon={stampIcon}
                 stampSpacing={stampSpacing}
+                stampAreaInset={stampAreaInset}
+                stampAreaRadius={stampAreaRadius}
                 stampBgType={program.type === "STAMPS" && !isFree ? stampBgType : "none"}
                 stampBgColor={stampBgColor}
                 stampBgColor2={stampBgColor2 || undefined}

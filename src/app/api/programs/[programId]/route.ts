@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getEffectiveLimits } from "@/lib/plan-limits";
 import { notifyPassUpdate } from "@/lib/wallet/push";
+import { getStampAreaInset, getStampAreaRadius } from "@/lib/wallet/stamp-icons";
 import type { Prisma } from "@/generated/prisma/client";
 
 /* ─── PATCH : modifier le design + nom + description du programme ───
@@ -54,6 +55,8 @@ export async function PATCH(
       heroImage?: string | null;
       stampIcon?: string;
       stampSpacing?: string;
+      stampAreaInset?: number;
+      stampAreaRadius?: number;
       stampBgType?: "none" | "color" | "image";
       stampBgColor?: string | null;
       stampBgColor2?: string | null;
@@ -132,6 +135,16 @@ export async function PATCH(
       }
       if (typeof body.cardDesign.stampSpacing === "string") {
         nextDesign.stampSpacing = body.cardDesign.stampSpacing;
+      }
+      if (typeof body.cardDesign.stampAreaInset === "number") {
+        nextDesign.stampAreaInset = getStampAreaInset(
+          body.cardDesign.stampAreaInset
+        );
+      }
+      if (typeof body.cardDesign.stampAreaRadius === "number") {
+        nextDesign.stampAreaRadius = getStampAreaRadius(
+          body.cardDesign.stampAreaRadius
+        );
       }
       if (typeof body.cardDesign.stampBgType === "string") {
         nextDesign.stampBgType = body.cardDesign.stampBgType;

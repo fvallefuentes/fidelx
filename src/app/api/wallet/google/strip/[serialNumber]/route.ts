@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { stampIconSvg } from "@/lib/wallet/stamp-icons";
+import {
+  getStampAreaInset,
+  getStampAreaRadius,
+  stampIconSvg,
+} from "@/lib/wallet/stamp-icons";
 
 export async function GET(
   _req: Request,
@@ -33,6 +37,12 @@ export async function GET(
   const stampEmptyStroke = (design.stampEmptyColor as string) || fg;
   const stampIcon = (design.stampIcon as string) || "check";
   const stampSpacing = (design.stampSpacing as string) || "normal";
+  const areaInset = Math.round(getStampAreaInset(design.stampAreaInset) * 2.75);
+  const areaRadius = Math.min(
+    Math.round(getStampAreaRadius(design.stampAreaRadius) * 2.75),
+    H / 2
+  );
+  const areaWidth = W - areaInset * 2;
 
   // Fond derrière les ronds (même logique que le strip Apple).
   const stampBgType = (design.stampBgType as string) || "none";
@@ -42,7 +52,7 @@ export async function GET(
 
   const perRow = maxStamps <= 5 ? maxStamps : 5;
   const rows = Math.ceil(maxStamps / perRow);
-  const padding = 32;
+  const padding = areaInset + 32;
   const availW = W - padding * 2;
   const availH = H - padding * 2;
   const cellW = availW / perRow;
@@ -71,32 +81,50 @@ export async function GET(
   }
 
   // ─── Fond : couleur / dégradé / image (cover) ───
+  // La marge laisse apparaître le fond de carte autour de la zone.
   let backgroundSvg: string;
   let baseImageBuf: Buffer | null = null;
+  const areaRect = `x="${areaInset}" y="0" width="${areaWidth}" height="${H}" rx="${areaRadius}"`;
+  const outerRect = `<rect width="${W}" height="${H}" fill="${bg}"/>`;
   if (stampBgType === "image" && stampBgImage) {
     const m = stampBgImage.match(/^data:image\/[\w+.-]+;base64,(.+)$/);
     if (m) {
       try {
         const sharp = (await import("sharp")).default;
-        baseImageBuf = await sharp(Buffer.from(m[1], "base64"))
-          .resize(W, H, { fit: "cover", position: "center" })
+        const mask = Buffer.from(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${areaWidth}" height="${H}"><rect width="${areaWidth}" height="${H}" rx="${areaRadius}" fill="#fff"/></svg>`
+        );
+        const clippedImage = await sharp(Buffer.from(m[1], "base64"))
+          .resize(areaWidth, H, { fit: "cover", position: "center" })
+          .composite([{ input: mask, blend: "dest-in" }])
           .png()
           .toBuffer();
-        backgroundSvg = `<rect width="${W}" height="${H}" fill="rgba(0,0,0,0.18)"/>`;
+        baseImageBuf = await sharp({
+          create: {
+            width: W,
+            height: H,
+            channels: 4,
+            background: bg,
+          },
+        })
+          .composite([{ input: clippedImage, top: 0, left: areaInset }])
+          .png()
+          .toBuffer();
+        backgroundSvg = `<rect ${areaRect} fill="rgba(0,0,0,0.18)"/>`;
       } catch {
-        backgroundSvg = `<rect width="${W}" height="${H}" fill="${bg}"/>`;
+        backgroundSvg = outerRect;
       }
     } else {
-      backgroundSvg = `<rect width="${W}" height="${H}" fill="${bg}"/>`;
+      backgroundSvg = outerRect;
     }
   } else if (stampBgType === "color" && stampBgColor) {
     if (stampBgColor2) {
-      backgroundSvg = `<defs><linearGradient id="sbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${stampBgColor}"/><stop offset="1" stop-color="${stampBgColor2}"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#sbg)"/>`;
+      backgroundSvg = `<defs><linearGradient id="sbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${stampBgColor}"/><stop offset="1" stop-color="${stampBgColor2}"/></linearGradient></defs>${outerRect}<rect ${areaRect} fill="url(#sbg)"/>`;
     } else {
-      backgroundSvg = `<rect width="${W}" height="${H}" fill="${stampBgColor}"/>`;
+      backgroundSvg = `${outerRect}<rect ${areaRect} fill="${stampBgColor}"/>`;
     }
   } else {
-    backgroundSvg = `<rect width="${W}" height="${H}" fill="${bg}"/>`;
+    backgroundSvg = outerRect;
   }
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">

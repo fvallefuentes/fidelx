@@ -13,7 +13,12 @@
  */
 
 import sharp from "sharp";
-import { stampIconSvg, getStampSpacingMult } from "./stamp-icons";
+import {
+  getStampAreaInset,
+  getStampAreaRadius,
+  getStampSpacingMult,
+  stampIconSvg,
+} from "./stamp-icons";
 
 interface StripOptions {
   currentStamps: number;
@@ -24,6 +29,8 @@ interface StripOptions {
   stampEmptyColor?: string;
   stampIcon?: string;
   stampSpacing?: string;
+  stampAreaInset?: number;
+  stampAreaRadius?: number;
   stampBgType?: "none" | "color" | "image";
   stampBgColor?: string;
   stampBgColor2?: string;
@@ -53,6 +60,8 @@ export async function generateStripImage({
   stampEmptyColor,
   stampIcon,
   stampSpacing,
+  stampAreaInset,
+  stampAreaRadius,
   stampBgType = "none",
   stampBgColor,
   stampBgColor2,
@@ -73,7 +82,15 @@ export async function generateStripImage({
 
   // Espacement (multiplicateur choisi par le merchant)
   const spacingMult = getStampSpacingMult(stampSpacing);
-  const padX = 90;
+  // Les valeurs sont enregistrées en px d'aperçu. Le strip Apple est un
+  // asset @3x : on conserve donc les mêmes proportions en les multipliant.
+  const areaInset = getStampAreaInset(stampAreaInset) * 3;
+  const areaRadius = Math.min(
+    getStampAreaRadius(stampAreaRadius) * 3,
+    STRIP_H / 2
+  );
+  const areaWidth = STRIP_W - areaInset * 2;
+  const padX = areaInset + Math.min(90, Math.round(areaWidth * 0.08));
   const padY = 40;
   const gapX = Math.round(40 * spacingMult);
   const gapY = Math.round(40 * spacingMult);
@@ -115,22 +132,38 @@ export async function generateStripImage({
   }
 
   // ─── Fond derrière les ronds ───
-  // "image" → on composite l'image en cover sous le SVG des ronds.
-  // "color" → rect plein ou dégradé. "none" → bgColor uni (historique).
+  // La carte reste visible autour de la zone lorsqu'une marge est choisie.
+  // L'image est masquée par un rectangle arrondi avant d'être compositée.
   let backgroundSvg: string;
   let baseImageBuf: Buffer | null = null;
+  const areaRect = `x="${areaInset}" y="0" width="${areaWidth}" height="${STRIP_H}" rx="${areaRadius}"`;
+  const outerRect = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(bgColor)}"/>`;
 
   if (stampBgType === "image" && stampBgImage) {
     const raw = decodeDataUrl(stampBgImage);
     if (raw) {
-      baseImageBuf = await sharp(raw)
-        .resize(STRIP_W, STRIP_H, { fit: "cover", position: "center" })
+      const mask = Buffer.from(
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${areaWidth}" height="${STRIP_H}"><rect width="${areaWidth}" height="${STRIP_H}" rx="${areaRadius}" fill="#fff"/></svg>`
+      );
+      const clippedImage = await sharp(raw)
+        .resize(areaWidth, STRIP_H, { fit: "cover", position: "center" })
+        .composite([{ input: mask, blend: "dest-in" }])
         .png()
         .toBuffer();
-      // Léger voile sombre pour garder les ronds lisibles sur l'image.
-      backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="rgba(0,0,0,0.18)"/>`;
+      baseImageBuf = await sharp({
+        create: {
+          width: STRIP_W,
+          height: STRIP_H,
+          channels: 4,
+          background: bgColor,
+        },
+      })
+        .composite([{ input: clippedImage, top: 0, left: areaInset }])
+        .png()
+        .toBuffer();
+      backgroundSvg = `<rect ${areaRect} fill="rgba(0,0,0,0.18)"/>`;
     } else {
-      backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(bgColor)}"/>`;
+      backgroundSvg = outerRect;
     }
   } else if (stampBgType === "color" && stampBgColor) {
     if (stampBgColor2) {
@@ -138,12 +171,12 @@ export async function generateStripImage({
         stampBgColor
       )}"/><stop offset="1" stop-color="${escapeXml(
         stampBgColor2
-      )}"/></linearGradient></defs><rect width="${STRIP_W}" height="${STRIP_H}" fill="url(#sbg)"/>`;
+      )}"/></linearGradient></defs>${outerRect}<rect ${areaRect} fill="url(#sbg)"/>`;
     } else {
-      backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(stampBgColor)}"/>`;
+      backgroundSvg = `${outerRect}<rect ${areaRect} fill="${escapeXml(stampBgColor)}"/>`;
     }
   } else {
-    backgroundSvg = `<rect width="${STRIP_W}" height="${STRIP_H}" fill="${escapeXml(bgColor)}"/>`;
+    backgroundSvg = outerRect;
   }
 
   const overlaySvg = `

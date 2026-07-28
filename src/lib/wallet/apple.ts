@@ -64,6 +64,8 @@ interface PassData {
   stampEmptyColor?: string;
   stampIcon?: string;
   stampSpacing?: string;
+  stampAreaInset?: number;
+  stampAreaRadius?: number;
   stampBgType?: "none" | "color" | "image";
   stampBgColor?: string;
   stampBgColor2?: string;
@@ -123,6 +125,14 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     stampEmptyColor: (design.stampEmptyColor as string) || undefined,
     stampIcon: (design.stampIcon as string) || undefined,
     stampSpacing: (design.stampSpacing as string) || undefined,
+    stampAreaInset:
+      typeof design.stampAreaInset === "number"
+        ? design.stampAreaInset
+        : undefined,
+    stampAreaRadius:
+      typeof design.stampAreaRadius === "number"
+        ? design.stampAreaRadius
+        : undefined,
     stampBgType: (design.stampBgType as "none" | "color" | "image") || undefined,
     stampBgColor: (design.stampBgColor as string) || undefined,
     stampBgColor2: (design.stampBgColor2 as string) || undefined,
@@ -382,6 +392,8 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         stampEmptyColor: passData.stampEmptyColor,
         stampIcon: passData.stampIcon,
         stampSpacing: passData.stampSpacing,
+        stampAreaInset: passData.stampAreaInset,
+        stampAreaRadius: passData.stampAreaRadius,
         stampBgType: passData.stampBgType,
         stampBgColor: passData.stampBgColor,
         stampBgColor2: passData.stampBgColor2,
