@@ -2237,19 +2237,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         #fidlify-trust-band .ftb-wrap{
           max-width:1120px;margin:0 auto;display:grid;
-          grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 26px;
-          padding:18px 0;border-top:1px solid var(--line,rgba(14,17,22,.12));
-          border-bottom:1px solid var(--line,rgba(14,17,22,.12));
+          grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 26px;
+          padding:22px 26px;border-radius:18px;
+          background:var(--card,#fff);
+          border:1px solid var(--line,rgba(14,17,22,.12));
+          box-shadow:var(--cardshadow,0 10px 30px rgba(24,30,10,.07));
         }
         #fidlify-trust-band .ftb-item{
           display:flex;align-items:center;gap:10px;min-width:0;
-          font-family:'Space Mono',monospace;font-size:11px;font-weight:700;
-          letter-spacing:.06em;text-transform:uppercase;color:var(--ink,#0E1116);
+          font-family:'Space Mono',monospace;font-size:12.5px;font-weight:700;
+          letter-spacing:.05em;text-transform:uppercase;color:var(--ink,#0E1116);
         }
-        #fidlify-trust-band .ftb-item svg{flex:0 0 18px;display:block}
+        #fidlify-trust-band .ftb-item svg{flex:0 0 22px;width:22px;height:22px;display:block}
         #fidlify-trust-band .ftb-item a{color:inherit;text-decoration-thickness:1px;text-underline-offset:3px}
         #fidlify-trust-band .ftb-sub{
-          display:block;margin-top:2px;font-family:'Inter',sans-serif;font-size:11px;
+          display:block;margin-top:3px;font-family:'Inter',sans-serif;font-size:12.5px;
           font-weight:500;letter-spacing:0;text-transform:none;color:var(--muted,#5d6355);
         }
         @media(max-width:900px){
@@ -2300,6 +2302,29 @@ document.addEventListener('DOMContentLoaded', async function() {
     // sa carte reagir pendant qu'il fait defiler les reglages.
     // Le rendu bureau n'est pas touche (media query uniquement).
     // Reapplique les metadonnees effacees par la decompression du bundle.
+    // Les apercus de carte creent leurs images a l'execution (URL blob) et les
+    // recreent a chaque rotation : un correctif statique ne tiendrait pas.
+    function fixMissingAlt() {
+      var racine = document.getElementById('fyroot');
+      if (!racine) return;
+      Array.prototype.forEach.call(racine.querySelectorAll('img:not([alt])'), function (img) {
+        var r = img.getBoundingClientRect();
+        // Petits pictogrammes : alt vide, ils ne doivent pas etre annonces.
+        img.setAttribute('alt', r.width > 0 && r.width < 40 ? '' : 'Aperçu de carte de fidélité Fidlify');
+      });
+    }
+
+    function surveillerAlt() {
+      fixMissingAlt();
+      var racine = document.getElementById('fyroot');
+      if (!racine || !window.MutationObserver) return;
+      var minuteur = null;
+      new MutationObserver(function () {
+        if (minuteur) return;
+        minuteur = setTimeout(function () { minuteur = null; fixMissingAlt(); }, 500);
+      }).observe(racine, { childList: true, subtree: true });
+    }
+
     function restoreSeoHead() {
       try {
         if (!document.documentElement.getAttribute('lang')) {
@@ -2702,8 +2727,18 @@ document.addEventListener('DOMContentLoaded', async function() {
           margin:26px 0 0;max-width:520px;color:var(--muted,#5d6355);
           font-size:17px;line-height:1.65;
         }
+        #fidlify-pricing .fpr-trust{
+          margin-top:30px;display:flex;flex-wrap:wrap;gap:10px 12px;
+        }
+        #fidlify-pricing .fpr-trust span{
+          display:inline-flex;align-items:center;
+          border:1px solid var(--line,rgba(14,17,22,.14));border-radius:999px;
+          padding:8px 14px;background:var(--card,#fff);
+          font-family:'Space Mono',monospace;font-size:11.5px;font-weight:700;
+          letter-spacing:.04em;color:var(--ink,#0E1116);
+        }
         #fidlify-pricing .fpr-grid{
-          margin-top:58px;display:grid;gap:18px;
+          margin-top:26px;display:grid;gap:18px;
           grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;
         }
         #fidlify-pricing .fpr-card{
@@ -2822,6 +2857,12 @@ document.addEventListener('DOMContentLoaded', async function() {
           + '<div class="fpr-kicker">Tarifs</div>'
           + '<h2 id="fidlify-pricing-title">Une formule pour chaque commerce.</h2>'
           + '<p class="fpr-intro">Essayez tout pendant 30 jours, sans carte bancaire. Vous choisissez ensuite la formule adaptée à votre commerce.</p>'
+          + '<div class="fpr-trust">'
+            + '<span>🇨🇭 Données hébergées en Suisse</span>'
+            + '<span>Conforme LPD</span>'
+            + '<span>Sans engagement</span>'
+            + '<span>Sans carte bancaire pour l\'essai</span>'
+          + '</div>'
           + '<div class="fpr-grid">' + cards + '</div>'
           + '<p class="fpr-note">Prix en CHF · TVA non incluse · Résiliable à tout moment</p>'
         + '</div>';
@@ -2962,6 +3003,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     window.setTimeout(function() {
       restoreSeoHead();
+      surveillerAlt();
       injectLostRevenueCalculator();
       injectCommerceCardLogos();
       injectMobileFixes();
