@@ -109,6 +109,33 @@
         }
       </style>
   <script>
+    /* Le <style> ci-dessus est emporte par la decompression, comme le reste
+       du <head>. On le memorise et on le replace des que le document est
+       remplace : applique avant la peinture, il n'y a pas de reorganisation
+       visible (c'est ce qui produisait un CLS de 0,607 sur mobile). */
+    (function () {
+      var css = (document.getElementById('fidlify-mobile-fixes') || {}).textContent || '';
+      window.__fidlifyCss = css;
+      function replacer() {
+        if (!css || document.getElementById('fidlify-mobile-fixes')) return;
+        var tete = document.head || document.documentElement;
+        if (!tete) return;
+        var st = document.createElement('style');
+        st.id = 'fidlify-mobile-fixes';
+        st.textContent = css;
+        tete.appendChild(st);
+      }
+      window.__fidlifyReplacerCss = replacer;
+      if (window.MutationObserver) {
+        new MutationObserver(replacer).observe(document.documentElement, { childList: true, subtree: false });
+      }
+      document.addEventListener('DOMContentLoaded', replacer);
+      setTimeout(replacer, 0);
+      setTimeout(replacer, 60);
+      setTimeout(replacer, 250);
+    })();
+  </script>
+  <script>
     /* La decompression du bundle remplace le document entier et emporte le
        <head> : title, description, canonical et donnees structurees
        disparaissent du DOM. Google exécutant le JavaScript, il indexait une
@@ -2340,6 +2367,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     function restoreSeoHead() {
       try {
+        if (window.__fidlifyReplacerCss) window.__fidlifyReplacerCss();
         if (!document.documentElement.getAttribute('lang')) {
           document.documentElement.setAttribute('lang', 'fr');
         }
