@@ -30,6 +30,14 @@
     #__bundler_thumbnail svg { width: 100%; height: 100%; object-fit: contain; }
     #__bundler_placeholder { color: #999; font-size: 14px; }
   </style>
+  <script>
+    /* La decompression du bundle remplace le document entier et emporte le
+       <head> : title, description, canonical et donnees structurees
+       disparaissent du DOM. Google exécutant le JavaScript, il indexait une
+       page sans aucune metadonnee. On memorise le head ici, avant tout
+       remplacement, pour le reappliquer ensuite (cf. restoreSeoHead). */
+    window.__fidlifyHead = document.head.innerHTML;
+  </script>
   <noscript>
     <style>#__bundler_loading { display: none; }</style>
     <div style="position:fixed;bottom:12px;left:12px;font:13px/1.4 -apple-system,BlinkMacSystemFont,sans-serif;color:#999;background:rgba(255,255,255,0.9);padding:6px 12px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08);z-index:10000;">
@@ -2291,6 +2299,34 @@ document.addEventListener('DOMContentLoaded', async function() {
     // On empile, et surtout on epingle l'apercu en haut : le commercant voit
     // sa carte reagir pendant qu'il fait defiler les reglages.
     // Le rendu bureau n'est pas touche (media query uniquement).
+    // Reapplique les metadonnees effacees par la decompression du bundle.
+    function restoreSeoHead() {
+      try {
+        if (!document.documentElement.getAttribute('lang')) {
+          document.documentElement.setAttribute('lang', 'fr');
+        }
+        if (document.querySelector('title') && document.title) return;
+        var sauvegarde = window.__fidlifyHead;
+        if (!sauvegarde) return;
+        var bac = document.createElement('div');
+        bac.innerHTML = sauvegarde;
+        Array.prototype.forEach.call(
+          bac.querySelectorAll('title, meta[name], meta[property], link[rel="canonical"], script[type="application/ld+json"]'),
+          function (el) {
+            var sel = el.tagName === 'TITLE' ? 'title'
+              : el.tagName === 'LINK' ? 'link[rel="canonical"]'
+              : el.tagName === 'SCRIPT' ? 'script[type="application/ld+json"]'
+              : el.getAttribute('name')
+                ? 'meta[name="' + el.getAttribute('name') + '"]'
+                : 'meta[property="' + el.getAttribute('property') + '"]';
+            if (!document.head.querySelector(sel)) {
+              document.head.appendChild(el.cloneNode(true));
+            }
+          }
+        );
+      } catch (err) { /* le rendu prime sur les metadonnees */ }
+    }
+
     function enhanceEditorMobile() {
       var ed = document.getElementById('editeur');
       if (!ed || ed.querySelector('.fdl-ed-row')) return;
@@ -2925,6 +2961,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     window.setTimeout(function() {
+      restoreSeoHead();
       injectLostRevenueCalculator();
       injectCommerceCardLogos();
       injectMobileFixes();
