@@ -2214,7 +2214,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // rogné par overflow:clip. On marque les éléments en JS (sélecteurs stables)
     // puis on applique une feuille de style dédiée au mobile.
     function injectMobileFixes() {
-      if (document.getElementById('fidlify-mobile-fixes')) return;
+      // Le garde portait sur le <style>, qui est desormais toujours present
+      // (servi dans le <head> et replace apres decompression) : la fonction
+      // sortait donc immediatement et le marquage n'etait plus applique,
+      // privant le menu burger de son point d'ancrage.
+      if (document.querySelector('.fdl-nav-links')) return;
 
       var probe = document.querySelector('#fyroot nav a[href="#editeur"]');
       if (probe && probe.parentElement) probe.parentElement.classList.add('fdl-nav-links');
