@@ -5822,27 +5822,28 @@ html, body { overflow-x: clip; }
   background: transparent;
 }
 .export-btn-active {
-  color: #d4ff4e;
-  border-color: rgba(212, 255, 78, 0.3);
-  background: rgba(212, 255, 78, 0.04);
+  color: #0b0f07;
+  border-color: #0b0f07;
+  background: transparent;
 }
 .export-btn-active:hover:not(:disabled) {
-  background: rgba(212, 255, 78, 0.08);
-  border-color: rgba(212, 255, 78, 0.5);
+  color: #ffffff;
+  background: #0b0f07;
+  border-color: #0b0f07;
 }
 .export-btn-active:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 .export-btn-locked {
-  color: #8a8e84;
-  border-color: rgb(var(--ovr) / 0.12);
+  color: #0b0f07;
+  border-color: #0b0f07;
   background: rgb(var(--ovr) / 0.02);
 }
 .export-btn-locked:hover {
-  color: #c9ccc3;
-  border-color: rgba(212, 255, 78, 0.25);
-  background: rgba(212, 255, 78, 0.04);
+  color: #ffffff;
+  border-color: #0b0f07;
+  background: #0b0f07;
 }
 .export-btn-pill {
   margin-left: 4px;
@@ -5851,7 +5852,7 @@ html, body { overflow-x: clip; }
   padding: 1px 5px;
   border-radius: 999px;
   background: rgba(255,214,107,0.15);
-  color: #ffd66b;
+  color: #0b0f07;
   letter-spacing: 0.04em;
 }
 .export-btn-error {
