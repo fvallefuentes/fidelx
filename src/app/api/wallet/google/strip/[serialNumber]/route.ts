@@ -50,8 +50,8 @@ export async function GET(
   const stampBgColor2 = design.stampBgColor2 as string | undefined;
   const stampBgImage = design.stampBgImage as string | undefined;
 
-  const perRow = maxStamps <= 5 ? maxStamps : 5;
-  const rows = Math.ceil(maxStamps / perRow);
+  const rows = maxStamps <= 5 ? 1 : 2;
+  const perRow = Math.ceil(maxStamps / rows);
   const padding = areaInset + 32;
   const availW = W - padding * 2;
   const availH = H - padding * 2;

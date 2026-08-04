@@ -1148,7 +1148,8 @@ function GoogleWalletPreview({
   const mediaImage = stampBgType === "image" && stampBgImage ? stampBgImage : heroImage;
   const total = Math.max(1, Math.min(20, maxStamps || 10));
   const sampleFilled = programType === "STAMPS" ? Math.min(1, total) : 0;
-  const perRow = total <= 5 ? total : 5;
+  const rows = total <= 5 ? 1 : 2;
+  const perRow = Math.ceil(total / rows);
   const iconDef = getStampIcon(stampIcon);
   const stampGap = Math.max(5, 7 * getStampSpacingMult(stampSpacing));
   const sFill = stampColor || (isDarkBg ? "#ffffff" : "#0a0a0a");
