@@ -31,15 +31,32 @@ export async function GET(
 
   const card = await prisma.loyaltyCard.findUnique({
     where: { serialNumber },
-    select: { id: true, updatedAt: true },
+    select: {
+      id: true,
+      updatedAt: true,
+      program: {
+        select: {
+          updatedAt: true,
+          merchant: { select: { updatedAt: true } },
+        },
+      },
+    },
   });
   if (!card) return new NextResponse(null, { status: 404 });
+
+  const passUpdatedAt = new Date(
+    Math.max(
+      card.updatedAt.getTime(),
+      card.program.updatedAt.getTime(),
+      card.program.merchant.updatedAt.getTime()
+    )
+  );
 
   // If-Modified-Since (Apple envoie le timestamp du dernier fetch)
   const ims = req.headers.get("if-modified-since");
   if (ims) {
     const since = new Date(ims);
-    if (!isNaN(since.getTime()) && card.updatedAt <= since) {
+    if (!isNaN(since.getTime()) && passUpdatedAt <= since) {
       return new NextResponse(null, { status: 304 });
     }
   }
@@ -56,7 +73,7 @@ export async function GET(
   return new NextResponse(new Uint8Array(buf), {
     headers: {
       "Content-Type": "application/vnd.apple.pkpass",
-      "Last-Modified": card.updatedAt.toUTCString(),
+      "Last-Modified": passUpdatedAt.toUTCString(),
       "Cache-Control": "no-cache, no-store, must-revalidate",
     },
   });

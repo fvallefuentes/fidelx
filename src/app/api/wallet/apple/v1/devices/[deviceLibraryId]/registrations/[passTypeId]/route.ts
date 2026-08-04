@@ -33,7 +33,16 @@ export async function GET(
     where: { deviceLibraryId, platform: "APPLE" },
     include: {
       card: {
-        select: { serialNumber: true, updatedAt: true },
+        select: {
+          serialNumber: true,
+          updatedAt: true,
+          program: {
+            select: {
+              updatedAt: true,
+              merchant: { select: { updatedAt: true } },
+            },
+          },
+        },
       },
     },
   });
@@ -47,7 +56,7 @@ export async function GET(
   if (since) {
     const sinceDate = new Date(parseInt(since));
     if (!isNaN(sinceDate.getTime())) {
-      cards = cards.filter((c) => c.updatedAt > sinceDate);
+      cards = cards.filter((c) => getPassUpdatedAt(c) > sinceDate);
     }
   }
 
@@ -55,10 +64,23 @@ export async function GET(
     return new NextResponse(null, { status: 204 });
   }
 
-  const lastUpdated = Math.max(...cards.map((c) => c.updatedAt.getTime()));
+  const lastUpdated = Math.max(...cards.map((c) => getPassUpdatedAt(c).getTime()));
 
   return NextResponse.json({
     lastUpdated: String(lastUpdated),
     serialNumbers: cards.map((c) => c.serialNumber),
   });
+}
+
+function getPassUpdatedAt(card: {
+  updatedAt: Date;
+  program: { updatedAt: Date; merchant: { updatedAt: Date } };
+}) {
+  return new Date(
+    Math.max(
+      card.updatedAt.getTime(),
+      card.program.updatedAt.getTime(),
+      card.program.merchant.updatedAt.getTime()
+    )
+  );
 }
