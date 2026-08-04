@@ -361,7 +361,7 @@ export default function CampaignsPage() {
       )}
 
       {activeTab === "history" && (
-        <CampaignHistory campaigns={campaigns} onCreate={startBlankCampaign} />
+        <CampaignHistory campaigns={campaigns} onCreate={startBlankCampaign} onDeleted={fetchCampaigns} />
       )}
     </div>
   );
@@ -515,10 +515,36 @@ function CampaignStartPanel({
 function CampaignHistory({
   campaigns,
   onCreate,
+  onDeleted,
 }: {
   campaigns: Campaign[];
   onCreate: () => void;
+  onDeleted: () => void;
 }) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+
+  async function deleteScheduledCampaign(campaign: Campaign) {
+    const ok = window.confirm(
+      `Supprimer la campagne programmée "${campaign.name}" ? Elle ne sera pas envoyée.`
+    );
+    if (!ok) return;
+
+    setDeletingId(campaign.id);
+    setDeleteError("");
+    const res = await fetch(`/api/campaigns?id=${encodeURIComponent(campaign.id)}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      setDeleteError(data?.error || "Impossible de supprimer cette campagne.");
+      setDeletingId(null);
+      return;
+    }
+    setDeletingId(null);
+    onDeleted();
+  }
+
   if (campaigns.length === 0) {
     return (
       <Card>
@@ -537,8 +563,15 @@ function CampaignHistory({
 
   return (
     <div className="space-y-3">
+      {deleteError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {deleteError}
+        </div>
+      )}
       {campaigns.map((campaign) => {
         const Icon = triggerIcons[campaign.triggerType] || Bell;
+        const canDelete =
+          campaign.status === "SCHEDULED" && !campaign.sentAt && campaign.sentCount === 0;
         const impact = campaign.impact;
         const hasImpact =
           impact &&
@@ -579,6 +612,18 @@ function CampaignHistory({
                     <CampaignSentCountBadge count={campaign.sentCount} />
                   )}
                   <CampaignStatusBadge status={campaign.status} />
+                  {canDelete && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteScheduledCampaign(campaign)}
+                      disabled={deletingId === campaign.id}
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      {deletingId === campaign.id ? "Suppression..." : "Supprimer"}
+                    </Button>
+                  )}
                 </div>
               </div>
               {impact && campaign.sentCount > 0 && (

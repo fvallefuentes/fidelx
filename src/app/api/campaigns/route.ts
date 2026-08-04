@@ -221,6 +221,46 @@ export async function POST(req: Request) {
   return NextResponse.json(campaign, { status: 201 });
 }
 
+export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const campaignId = searchParams.get("id");
+  if (!campaignId) {
+    return NextResponse.json({ error: "Campagne manquante" }, { status: 400 });
+  }
+
+  const campaign = await prisma.notificationCampaign.findFirst({
+    where: { id: campaignId, merchantId: session.user.id },
+    include: { _count: { select: { logs: true } } },
+  });
+
+  if (!campaign) {
+    return NextResponse.json({ error: "Campagne introuvable" }, { status: 404 });
+  }
+
+  if (isAutomationRule(campaign.triggerConfig)) {
+    return NextResponse.json(
+      { error: "Cette règle automatique se gère depuis l'onglet Automatisations." },
+      { status: 400 }
+    );
+  }
+
+  if (campaign.status !== "SCHEDULED" || campaign.sentAt || campaign._count.logs > 0) {
+    return NextResponse.json(
+      { error: "Cette campagne ne peut plus être supprimée car elle a déjà été traitée." },
+      { status: 409 }
+    );
+  }
+
+  await prisma.notificationCampaign.delete({ where: { id: campaign.id } });
+
+  return NextResponse.json({ ok: true });
+}
+
 function resolveScheduledAt(
   triggerType: string,
   triggerConfig: {
