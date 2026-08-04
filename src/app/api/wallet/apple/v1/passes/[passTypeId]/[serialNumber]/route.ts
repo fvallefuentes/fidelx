@@ -44,7 +44,7 @@ export async function GET(
   });
   if (!card) return new NextResponse(null, { status: 404 });
 
-  const passUpdatedAt = new Date(
+  const passUpdatedAt = toHttpDate(
     Math.max(
       card.updatedAt.getTime(),
       card.program.updatedAt.getTime(),
@@ -56,7 +56,7 @@ export async function GET(
   const ims = req.headers.get("if-modified-since");
   if (ims) {
     const since = new Date(ims);
-    if (!isNaN(since.getTime()) && passUpdatedAt <= since) {
+    if (!isNaN(since.getTime()) && passUpdatedAt.getTime() <= toHttpDate(since.getTime()).getTime()) {
       return new NextResponse(null, { status: 304 });
     }
   }
@@ -77,4 +77,8 @@ export async function GET(
       "Cache-Control": "no-cache, no-store, must-revalidate",
     },
   });
+}
+
+function toHttpDate(timestamp: number) {
+  return new Date(Math.floor(timestamp / 1000) * 1000);
 }

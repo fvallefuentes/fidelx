@@ -52,16 +52,19 @@ export async function GET(
   }
 
   // Filtre par "modifié depuis" si fourni
-  let cards = regs.map((r) => r.card);
+  const registeredCards = regs.map((r) => r.card);
+  let cards = registeredCards;
   if (since) {
     const sinceDate = new Date(parseInt(since));
     if (!isNaN(sinceDate.getTime())) {
-      cards = cards.filter((c) => getPassUpdatedAt(c) > sinceDate);
+      cards = registeredCards.filter(
+        (c) => getPassUpdatedAt(c).getTime() > sinceDate.getTime()
+      );
     }
   }
 
   if (cards.length === 0) {
-    return new NextResponse(null, { status: 204 });
+    cards = registeredCards;
   }
 
   const lastUpdated = Math.max(...cards.map((c) => getPassUpdatedAt(c).getTime()));
