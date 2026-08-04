@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   // ─── Limite cartes actives du plan ───
   const merchant = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true, trialEndsAt: true, manualPlanUntil: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true },
   });
   const limits = getEffectiveLimits(merchant);
   if (limits.maxActiveCards !== null) {

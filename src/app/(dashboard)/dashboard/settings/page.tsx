@@ -20,6 +20,7 @@ interface MerchantSettings {
   notificationDefaultLogo: string | null;
   notificationDefaultBgColor: string | null;
   plan: string;
+  testMode?: boolean;
   planState?: string;
   trialDaysLeft?: number;
   manualPlanUntil: string | null;
@@ -309,6 +310,7 @@ export default function SettingsPage() {
   }
 
   const planColors: Record<string, string> = {
+    TEST:       "bg-sky-100 text-sky-800",
     TRIAL:      "bg-lime-100 text-lime-800",
     DORMANT:    "bg-amber-100 text-amber-800",
     FREE:       "bg-gray-100 text-gray-800",
@@ -369,6 +371,16 @@ export default function SettingsPage() {
         "Programmes illimites",
         "15 campagnes par mois",
         "Scans illimites, stats avancees et anti-spam",
+      ],
+    },
+    TEST: {
+      price: "Mode test interne",
+      description: "Compte deverrouille pour tester les campagnes et les quotas sans impact Stripe.",
+      highlights: [
+        "Campagnes illimitees",
+        "Programmes et clients illimites",
+        "Scans illimites",
+        "Exports et automatisations disponibles",
       ],
     },
     MULTI_SITE: {

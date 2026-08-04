@@ -262,8 +262,10 @@ export default function CampaignsPage() {
   const campaignsThisMonth = campaigns.filter((c) => new Date(c.createdAt) >= periodStart);
   // Limite renvoyee par le serveur (essai = illimite plafonne a 15,
   // veille = 0). En attendant le chargement, on ne bloque pas.
-  const monthlyCampaignLimit = campaignMax ?? 15;
-  const campaignLimitReached = campaignsThisMonth.length >= monthlyCampaignLimit;
+  const monthlyCampaignLimit = campaignMax;
+  const displayedMonthlyCampaignLimit = monthlyCampaignLimit ?? 0;
+  const campaignLimitReached =
+    monthlyCampaignLimit !== null && campaignsThisMonth.length >= monthlyCampaignLimit;
 
   if (loading) {
     return (
@@ -298,13 +300,13 @@ export default function CampaignsPage() {
       {(isFree || campaignLimitReached) && (
         <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
           {isDormant ? "Essai terminé" : isFree ? "Plan Gratuit" : "Limite mensuelle"} —{" "}
-          <strong>{monthlyCampaignLimit} campagne{monthlyCampaignLimit > 1 ? "s" : ""} / mois</strong>
+          <strong>{displayedMonthlyCampaignLimit} campagne{displayedMonthlyCampaignLimit > 1 ? "s" : ""} / mois</strong>
           {isDormant
             ? ". Vos cartes restent actives chez vos clients, mais l'envoi de campagnes est suspendu. "
             : isFree ? ", envoi immédiat uniquement. " : ". "}
           {campaignLimitReached
             ? "Limite atteinte ce mois-ci."
-            : `Il vous reste ${monthlyCampaignLimit - campaignsThisMonth.length} campagne(s) ce mois-ci.`}
+            : `Il vous reste ${Math.max(0, displayedMonthlyCampaignLimit - campaignsThisMonth.length)} campagne(s) ce mois-ci.`}
         </div>
       )}
 
@@ -337,7 +339,11 @@ export default function CampaignsPage() {
         ) : (
           <CampaignStartPanel
             campaignLimitReached={campaignLimitReached}
-            remainingCampaigns={Math.max(0, monthlyCampaignLimit - campaignsThisMonth.length)}
+            remainingCampaigns={
+              monthlyCampaignLimit === null
+                ? null
+                : Math.max(0, monthlyCampaignLimit - campaignsThisMonth.length)
+            }
             onStart={startBlankCampaign}
           />
         )
@@ -457,7 +463,7 @@ function CampaignStartPanel({
   onStart,
 }: {
   campaignLimitReached: boolean;
-  remainingCampaigns: number;
+  remainingCampaigns: number | null;
   onStart: () => void;
 }) {
   return (
@@ -487,8 +493,14 @@ function CampaignStartPanel({
           </div>
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
             <p className="text-sm font-medium text-gray-900">Ce mois-ci</p>
-            <p className="mt-1 text-3xl font-semibold text-gray-900">{remainingCampaigns}</p>
-            <p className="text-xs text-gray-500">campagne{remainingCampaigns > 1 ? "s" : ""} restante{remainingCampaigns > 1 ? "s" : ""}</p>
+            <p className="mt-1 text-3xl font-semibold text-gray-900">
+              {remainingCampaigns === null ? "∞" : remainingCampaigns}
+            </p>
+            <p className="text-xs text-gray-500">
+              {remainingCampaigns === null
+                ? "campagnes disponibles"
+                : `campagne${remainingCampaigns > 1 ? "s" : ""} restante${remainingCampaigns > 1 ? "s" : ""}`}
+            </p>
             <Button className="mt-4 w-full" onClick={onStart} disabled={campaignLimitReached}>
               <Plus className="mr-2 h-4 w-4" />
               Créer une campagne

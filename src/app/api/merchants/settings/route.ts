@@ -29,6 +29,7 @@ export async function GET() {
       notificationDefaultLogo: true,
       notificationDefaultBgColor: true,
       plan: true,
+      testMode: true,
       trialEndsAt: true,
       manualPlanUntil: true,
       createdAt: true,

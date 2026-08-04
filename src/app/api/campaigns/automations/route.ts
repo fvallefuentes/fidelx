@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { parseJsonBody } from "@/lib/api/validation";
 import { calculateCampaignImpact, emptyCampaignImpact, type CampaignImpact } from "@/lib/campaign-impact";
+import { resolvePlanState } from "@/lib/plan-limits";
 import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -178,9 +179,10 @@ export async function POST(req: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { plan: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true },
   });
-  if (!user?.plan || user.plan === "FREE") {
+  const planState = resolvePlanState(user);
+  if (planState === "FREE" || planState === "DORMANT") {
     return NextResponse.json(
       { error: "Les automatisations sont reservees aux plans payants." },
       { status: 403 }

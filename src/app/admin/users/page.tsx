@@ -26,6 +26,7 @@ interface UserRow {
   email: string;
   role: "ADMIN" | "USER" | "STAFF";
   plan: string;
+  testMode: boolean;
   phone: string | null;
   createdAt: string;
   stripeSubscriptionId: string | null;
@@ -557,6 +558,22 @@ export default function AdminUsersPage() {
                       {u.role === "USER" ? (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                           <PlanBadge plan={u.plan} />
+                          {u.testMode && (
+                            <span
+                              title="Mode test : quotas desactives"
+                              style={{
+                                fontSize: 10,
+                                padding: "2px 7px",
+                                borderRadius: 20,
+                                background: "rgba(130,216,255,0.12)",
+                                border: "1px solid rgba(130,216,255,0.25)",
+                                color: "#82d8ff",
+                                fontWeight: 700,
+                              }}
+                            >
+                              TEST
+                            </span>
+                          )}
                           {u.manualPlanUntil && (
                             <span
                               title={`Plan offert${u.manualPlanReason ? ` — ${u.manualPlanReason}` : ""} jusqu'au ${new Date(u.manualPlanUntil).toLocaleDateString("fr-CH")}`}

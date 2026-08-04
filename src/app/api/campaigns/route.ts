@@ -102,7 +102,7 @@ export async function POST(req: Request) {
   // Vérification limites du plan
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, createdAt: true, stripeCurrentPeriodStart: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true, createdAt: true, stripeCurrentPeriodStart: true },
   });
   const limits: { maxCampaignsPerMonth: number | null } = { maxCampaignsPerMonth: null };
   // Un compte en essai a plan=FREE : c'est l'etat effectif qui compte.
@@ -132,7 +132,7 @@ export async function POST(req: Request) {
       NOT: { triggerConfig: { path: ["automationRule"], equals: true } },
     },
   });
-  if (visibleCampaignsThisPeriod >= globalMaxCampaignsPerMonth) {
+  if (globalMaxCampaignsPerMonth !== null && visibleCampaignsThisPeriod >= globalMaxCampaignsPerMonth) {
     return NextResponse.json(
       { error: `Limite atteinte : ${globalMaxCampaignsPerMonth} campagnes par mois sur votre compte.` },
       { status: 403 }

@@ -22,7 +22,7 @@ export async function GET() {
   // Plan gating
   const user = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true, trialEndsAt: true, manualPlanUntil: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true },
   });
   const limits = getEffectiveLimits(user);
   if (!limits.canExportCsv) {

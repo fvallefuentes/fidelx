@@ -16,7 +16,7 @@ export async function GET(
       type: true,
       config: true,
       cardDesign: true,
-      merchant: { select: { name: true, plan: true, trialEndsAt: true, manualPlanUntil: true } },
+      merchant: { select: { name: true, plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true } },
       establishment: { select: { name: true, address: true } },
     },
   });

@@ -70,7 +70,7 @@ export async function PATCH(
   // Gating : logo personnalisé réservé aux plans payants
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { plan: true, trialEndsAt: true, manualPlanUntil: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true },
   });
   const limits = getEffectiveLimits(user);
   const wantsCustomLogo =

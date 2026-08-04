@@ -29,6 +29,7 @@ export async function GET(
       phone: true,
       role: true,
       plan: true,
+      testMode: true,
       language: true,
       currency: true,
       createdAt: true,
@@ -139,6 +140,7 @@ export async function PATCH(
   const body = (await req.json()) as {
     plan?: string;
     role?: string;
+    testMode?: boolean;
     manualPlanUntil?: string | null;
     manualPlanReason?: string | null;
   };
@@ -150,6 +152,7 @@ export async function PATCH(
       email: true,
       role: true,
       plan: true,
+      testMode: true,
       manualPlanUntil: true,
       manualPlanReason: true,
     },
@@ -161,6 +164,7 @@ export async function PATCH(
   const updates: {
     plan?: AdminPlan;
     role?: AdminRole;
+    testMode?: boolean;
     manualPlanUntil?: Date | null;
     manualPlanReason?: string | null;
   } = {};
@@ -169,6 +173,9 @@ export async function PATCH(
   }
   if (body.role && VALID_ROLES.includes(body.role as AdminRole)) {
     updates.role = body.role as AdminRole;
+  }
+  if (body.testMode !== undefined) {
+    updates.testMode = body.testMode === true;
   }
   if (body.manualPlanUntil !== undefined) {
     updates.manualPlanUntil = body.manualPlanUntil
@@ -186,6 +193,7 @@ export async function PATCH(
       id: true,
       role: true,
       plan: true,
+      testMode: true,
       manualPlanUntil: true,
       manualPlanReason: true,
     },
@@ -201,6 +209,14 @@ export async function PATCH(
       actions.push({
         action: "UPDATE_USER_ROLE",
         meta: { from: existing.role, to: updates.role },
+      });
+    }
+    if (
+      updates.testMode !== undefined && updates.testMode !== existing.testMode
+    ) {
+      actions.push({
+        action: "OTHER",
+        meta: { action: "TOGGLE_TEST_MODE", from: existing.testMode, to: updates.testMode },
       });
     }
     if (

@@ -255,6 +255,7 @@ model User {
   // Si défini, le plan revient automatiquement à FREE après cette date
   manualPlanUntil  DateTime?
   manualPlanReason String?
+  testMode          Boolean   @default(false)
 
   // Onboarding : null = pas encore terminé, redirige vers le wizard.
   // Set quand le commerçant a (1) créé son 1er programme, (2) téléchargé

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolvePlanState } from "@/lib/plan-limits";
 
 /* ─── Types ───────────────────────────────────────────────── */
 interface DayBucket { date: string; count: number }
@@ -121,13 +122,14 @@ export async function GET() {
   // Get current plan from DB (authoritative)
   const dbUser = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true },
   });
-  const plan: string = (dbUser?.plan as string | undefined) ?? "FREE";
+  const planState = resolvePlanState(dbUser);
+  const plan: string = planState === "TEST" ? "TEST" : (dbUser?.plan as string | undefined) ?? "FREE";
 
-  const isEssential = plan === "ESSENTIAL" || plan === "GROWTH" || plan === "MULTI_SITE";
-  const isGrowth = plan === "GROWTH" || plan === "MULTI_SITE";
-  const isMultiSite = plan === "MULTI_SITE";
+  const isEssential = planState === "TEST" || plan === "ESSENTIAL" || plan === "GROWTH" || plan === "MULTI_SITE";
+  const isGrowth = planState === "TEST" || plan === "GROWTH" || plan === "MULTI_SITE";
+  const isMultiSite = planState === "TEST" || plan === "MULTI_SITE";
 
   // Get all program IDs for this merchant
   const programs = await prisma.loyaltyProgram.findMany({

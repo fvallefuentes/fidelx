@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   // Limite du plan : nombre de tampons donnés ce mois-ci
   const merchant = await prisma.user.findUnique({
     where: { id: merchantId },
-    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, createdAt: true, stripeCurrentPeriodStart: true },
+    select: { plan: true, trialEndsAt: true, manualPlanUntil: true, testMode: true, createdAt: true, stripeCurrentPeriodStart: true },
   });
   const limits = getEffectiveLimits(merchant);
   if (limits.maxStampsPerMonth !== null) {

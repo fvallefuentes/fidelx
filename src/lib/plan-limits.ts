@@ -22,6 +22,15 @@ export const GLOBAL_MAX_CAMPAIGNS_PER_MONTH = 15;
 export const TRIAL_DAYS = 30;
 
 export const PLAN_LIMITS: Record<string, PlanLimits> = {
+  TEST: {
+    maxActiveCards: null,
+    maxStampsPerMonth: null,
+    allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK"],
+    showFidlifyBranding: false,
+    maxPrograms: null,
+    maxCampaignsPerMonth: null,
+    canExportCsv: true,
+  },
   /** Essai complet, 30 jours, sans carte bancaire. */
   TRIAL: {
     maxActiveCards: 1000,
@@ -93,6 +102,7 @@ export function getPlanLimits(plan: string | null | undefined): PlanLimits {
 /** État réellement applicable à un compte : le plan payé, ou — pour un compte
  *  non abonné — l'essai en cours puis le mode veille. */
 export type PlanState =
+  | "TEST"
   | "TRIAL"
   | "DORMANT"
   | "FREE"
@@ -104,6 +114,7 @@ export type PlanStateUser = {
   plan?: string | null;
   trialEndsAt?: Date | null;
   manualPlanUntil?: Date | null;
+  testMode?: boolean | null;
 };
 
 /**
@@ -118,6 +129,7 @@ export function resolvePlanState(
   user: PlanStateUser | null | undefined,
   now: Date = new Date()
 ): PlanState {
+  if (user?.testMode) return "TEST";
   const plan = (user?.plan || "FREE") as PlanState;
 
   if (plan !== "FREE") {
@@ -151,13 +163,14 @@ export function trialDaysLeft(
 
 export function getEffectiveMaxCampaignsPerMonth(
   user: PlanStateUser | string | null | undefined
-): number {
+): number | null {
   // Accepte encore un plan brut (appels historiques) en plus de l'utilisateur.
   const limits =
     typeof user === "string" || user == null
       ? getPlanLimits(user as string | null | undefined)
       : getEffectiveLimits(user);
   const planLimit = limits.maxCampaignsPerMonth;
+  if (typeof user !== "string" && user?.testMode) return null;
   if (planLimit === null) return GLOBAL_MAX_CAMPAIGNS_PER_MONTH;
   return Math.min(planLimit, GLOBAL_MAX_CAMPAIGNS_PER_MONTH);
 }

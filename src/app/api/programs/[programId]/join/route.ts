@@ -74,7 +74,7 @@ export async function POST(
   const program = await prisma.loyaltyProgram.findUnique({
     where: { id: programId, isActive: true },
     include: {
-      merchant: { select: { plan: true, name: true, trialEndsAt: true, manualPlanUntil: true } },
+      merchant: { select: { plan: true, name: true, trialEndsAt: true, manualPlanUntil: true, testMode: true } },
       _count: { select: { cards: true } },
     },
   });

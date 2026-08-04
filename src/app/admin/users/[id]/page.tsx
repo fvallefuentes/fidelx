@@ -60,6 +60,7 @@ interface MerchantDetail {
   phone: string | null;
   role: "ADMIN" | "USER" | "STAFF";
   plan: string;
+  testMode: boolean;
   language: string;
   currency: string;
   createdAt: string;
@@ -246,6 +247,7 @@ export default function MerchantDetailPage() {
   const [planDraft, setPlanDraft] = useState<string>("");
   const [savingPlan, setSavingPlan] = useState(false);
   const [planSaved, setPlanSaved] = useState(false);
+  const [savingTestMode, setSavingTestMode] = useState(false);
 
   // Manual plan grant (partenariat)
   const [manualEnabled, setManualEnabled] = useState(false);
@@ -295,6 +297,26 @@ export default function MerchantDetailPage() {
       }
     } finally {
       setSavingPlan(false);
+    }
+  }
+
+  async function handleToggleTestMode(nextValue: boolean) {
+    if (!id || !data) return;
+    setSavingTestMode(true);
+    try {
+      const res = await fetch(`/api/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ testMode: nextValue }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setData((prev) =>
+          prev ? { ...prev, testMode: updated.testMode } : prev
+        );
+      }
+    } finally {
+      setSavingTestMode(false);
     }
   }
 
@@ -501,6 +523,21 @@ export default function MerchantDetailPage() {
               {PLAN_LABELS[data.plan] ?? data.plan}
             </span>
           )}
+          {data.role === "USER" && data.testMode && (
+            <span
+              style={{
+                background: "rgba(130,216,255,0.12)",
+                border: "1px solid rgba(130,216,255,0.25)",
+                borderRadius: 20,
+                padding: "3px 10px",
+                fontSize: 11,
+                color: "#82d8ff",
+                fontWeight: 700,
+              }}
+            >
+              MODE TEST
+            </span>
+          )}
           {data.role === "STAFF" && data.employerMerchant && (
             <Link
               href={`/admin/users/${data.employerMerchant.id}`}
@@ -687,6 +724,63 @@ export default function MerchantDetailPage() {
               Modifie directement le plan dans la base de données. Aucune
               charge Stripe n&apos;est déclenchée.
             </p>
+            {data.role === "USER" && (
+              <div
+                style={{
+                  marginTop: 8,
+                  padding: "12px 14px",
+                  borderRadius: 10,
+                  border: data.testMode
+                    ? "1px solid rgba(130,216,255,0.28)"
+                    : `1px solid ${BORDER}`,
+                  background: data.testMode
+                    ? "rgba(130,216,255,0.08)"
+                    : "rgba(255,255,255,0.03)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div>
+                  <p style={{ color: VAL_COLOR, fontSize: 13, fontWeight: 700 }}>
+                    Mode test campagnes
+                  </p>
+                  <p style={{ color: MUTED, fontSize: 12, marginTop: 3, maxWidth: 560 }}>
+                    Retire les quotas du compte pour les essais internes :
+                    campagnes, programmes, clients, scans, exports et automatisations.
+                    N&apos;affecte pas Stripe.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleTestMode(!data.testMode)}
+                  disabled={savingTestMode}
+                  style={{
+                    padding: "9px 14px",
+                    borderRadius: 9,
+                    background: data.testMode ? "rgba(255,80,80,0.12)" : "#82d8ff",
+                    color: data.testMode ? "#ff7a7a" : "#061018",
+                    border: data.testMode
+                      ? "1px solid rgba(255,80,80,0.25)"
+                      : 0,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: savingTestMode ? "not-allowed" : "pointer",
+                    opacity: savingTestMode ? 0.5 : 1,
+                    fontFamily: "inherit",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {savingTestMode
+                    ? "Mise a jour..."
+                    : data.testMode
+                      ? "Desactiver le test"
+                      : "Activer le test"}
+                </button>
+              </div>
+            )}
           </div>
         </SectionCard>
 

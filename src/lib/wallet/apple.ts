@@ -91,7 +91,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
       client: true,
       program: {
         include: {
-          merchant: { select: { id: true, name: true, plan: true } },
+          merchant: { select: { id: true, name: true, plan: true, testMode: true } },
           establishment: true,
         },
       },
@@ -149,7 +149,9 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     pointsTarget:
       ((config.tiers as { points?: number }[] | undefined)?.[0]?.points) ||
       undefined,
-    showFidlifyBranding: (card.program.merchant.plan || "FREE") === "FREE",
+    showFidlifyBranding:
+      !card.program.merchant.testMode &&
+      (card.program.merchant.plan || "FREE") === "FREE",
     voided:
       (card.status as string) === "EXPIRED" ||
       (card.status as string) === "REVOKED",
