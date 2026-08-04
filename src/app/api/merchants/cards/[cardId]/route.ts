@@ -148,8 +148,16 @@ export async function GET(
     })),
     campaigns: card.notifications.map((n) => ({
       id: n.id,
+      messageSnapshot: n.messageSnapshot,
       delivered: n.delivered,
       deliveredAt: n.deliveredAt,
+      walletStatus: n.walletStatus,
+      appleStatus: n.appleStatus,
+      applePushSentAt: n.applePushSentAt,
+      applePassSyncedAt: n.applePassSyncedAt,
+      googleStatus: n.googleStatus,
+      googleAcceptedAt: n.googleAcceptedAt,
+      errorMessage: n.errorMessage,
       createdAt: n.createdAt,
       campaign: n.campaign
         ? { name: n.campaign.name, message: n.campaign.message }

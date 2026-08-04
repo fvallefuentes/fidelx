@@ -70,6 +70,21 @@ export async function GET(
   }
   if (!buf) return new NextResponse(null, { status: 500 });
 
+  const syncedAt = new Date();
+  await prisma.notificationLog.updateMany({
+    where: {
+      cardId: card.id,
+      applePassSyncedAt: null,
+      createdAt: { gte: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2) },
+      walletStatus: { in: ["PENDING", "SENT", "ACCEPTED"] },
+    },
+    data: {
+      appleStatus: "SYNCED",
+      applePassSyncedAt: syncedAt,
+      walletStatus: "SYNCED",
+    },
+  });
+
   return new NextResponse(new Uint8Array(buf), {
     headers: {
       "Content-Type": "application/vnd.apple.pkpass",

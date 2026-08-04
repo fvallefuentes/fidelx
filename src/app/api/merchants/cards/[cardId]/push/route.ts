@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { notifyPassUpdate } from "@/lib/wallet/push";
+import { buildNotificationLogUpdate, notifyPassUpdate } from "@/lib/wallet/push";
 
 /**
  * POST /api/merchants/cards/[cardId]/push
@@ -55,28 +55,49 @@ export async function POST(
   }
 
   // Mettre à jour le message visible au verso du pass + push
+  const sentAt = new Date();
+  const log = await prisma.notificationLog.create({
+    data: {
+      cardId: card.id,
+      messageSnapshot: message.trim(),
+    },
+  });
+
   await prisma.loyaltyCard.update({
     where: { id: card.id },
-    data: { lastMessage: message.trim(), lastMessageAt: new Date() },
+    data: { lastMessage: message.trim(), lastMessageAt: sentAt },
   });
 
   try {
-    await notifyPassUpdate(card.id, {
+    const result = await notifyPassUpdate(card.id, {
       header: card.program.name,
       body: message.trim(),
     });
+    const current = await prisma.notificationLog.findUnique({
+      where: { id: log.id },
+      select: { applePassSyncedAt: true },
+    });
+    await prisma.notificationLog.update({
+      where: { id: log.id },
+      data: {
+        ...buildNotificationLogUpdate(result, sentAt),
+        ...(current?.applePassSyncedAt
+          ? { walletStatus: "SYNCED", appleStatus: "SYNCED" }
+          : {}),
+      },
+    });
   } catch (e) {
     console.error("[card/push] notifyPassUpdate failed:", (e as Error).message);
+    await prisma.notificationLog.update({
+      where: { id: log.id },
+      data: {
+        walletStatus: "FAILED",
+        appleStatus: "FAILED",
+        googleStatus: "FAILED",
+        errorMessage: (e as Error).message,
+      },
+    });
   }
-
-  // Logger une NotificationLog (campagne = null, c'est un envoi direct)
-  await prisma.notificationLog.create({
-    data: {
-      cardId: card.id,
-      delivered: true,
-      deliveredAt: new Date(),
-    },
-  });
 
   return NextResponse.json({ ok: true });
 }

@@ -627,19 +627,30 @@ enum CampaignStatus {
 }
 
 model NotificationLog {
-  id          String    @id @default(cuid())
-  campaignId  String?
-  cardId      String
-  delivered   Boolean   @default(false)
-  deliveredAt DateTime?
+  id                String    @id @default(cuid())
+  campaignId        String?
+  cardId            String
+  messageSnapshot   String?   @db.Text
+  delivered         Boolean   @default(false)
+  deliveredAt       DateTime?
+  walletStatus      String    @default("PENDING") // PENDING | SENT | SYNCED | ACCEPTED | FAILED | NO_DEVICE
+  appleStatus       String? // SENT | SYNCED | FAILED | NO_DEVICE
+  applePushSentAt   DateTime?
+  applePassSyncedAt DateTime?
+  googleStatus      String? // ACCEPTED | OBJECT_UPDATED | FAILED | SKIPPED
+  googleAcceptedAt  DateTime?
+  errorMessage      String?   @db.Text
 
   campaign NotificationCampaign? @relation(fields: [campaignId], references: [id])
   card     LoyaltyCard           @relation(fields: [cardId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([campaignId])
   @@index([cardId])
+  @@index([walletStatus])
+  @@index([applePassSyncedAt])
 }
 
 // =============================================

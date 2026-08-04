@@ -12,10 +12,19 @@ type GoogleVisibleMessage = {
   body: string;
 };
 
+export type WalletDeliveryResult = {
+  appleRegistrations: number;
+  applePushSent: boolean;
+  applePushFailures: number;
+  googleObjectUpdated: boolean;
+  googleMessageAccepted: boolean;
+  errors: string[];
+};
+
 export async function notifyPassUpdate(
   cardId: string,
   googleMessage?: GoogleVisibleMessage
-) {
+): Promise<WalletDeliveryResult> {
   // Apple : on n'envoie l'APNs push QUE si on a une registration (le device
   // s'est enregistré via le web service Apple Wallet en téléchargeant le pass).
   const registrations = await prisma.passRegistration.findMany({
@@ -35,22 +44,88 @@ export async function notifyPassUpdate(
     where: { id: cardId },
     select: { serialNumber: true, programId: true },
   });
-  const googleUpdate = card
-    ? updateGoogleWalletObject(card.serialNumber).then(async (updated) => {
-        if (googleMessage?.body && updated) {
-          await updateGoogleWalletClass(card.programId);
-          await sendGoogleWalletMessage(
-            card.serialNumber,
-            googleMessage.header,
-            googleMessage.body
-          );
-        }
-        return updated;
-      })
-    : Promise.resolve(false);
+  const googleUpdate = async () => {
+    if (!card) return { objectUpdated: false, messageAccepted: false };
+    const objectUpdated = await updateGoogleWalletObject(card.serialNumber);
+    let messageAccepted = false;
+    if (googleMessage?.body && objectUpdated) {
+      await updateGoogleWalletClass(card.programId);
+      messageAccepted = await sendGoogleWalletMessage(
+        card.serialNumber,
+        googleMessage.header,
+        googleMessage.body
+      );
+    }
+    return { objectUpdated, messageAccepted };
+  };
 
-  const results = await Promise.allSettled([...applePushes, googleUpdate]);
-  return results;
+  const [appleResults, googleResult] = await Promise.allSettled([
+    Promise.allSettled(applePushes),
+    googleUpdate(),
+  ]);
+
+  const settledApple =
+    appleResults.status === "fulfilled" ? appleResults.value : [];
+  const applePushSent = settledApple.some(
+    (result) => result.status === "fulfilled" && result.value
+  );
+  const applePushFailures = settledApple.filter(
+    (result) => result.status === "rejected" || !result.value
+  ).length;
+  const google =
+    googleResult.status === "fulfilled"
+      ? googleResult.value
+      : { objectUpdated: false, messageAccepted: false };
+
+  return {
+    appleRegistrations: registrations.length,
+    applePushSent,
+    applePushFailures,
+    googleObjectUpdated: google.objectUpdated,
+    googleMessageAccepted: google.messageAccepted,
+    errors: [
+      ...(appleResults.status === "rejected"
+        ? [`Apple: ${(appleResults.reason as Error)?.message || "erreur push"}`]
+        : []),
+      ...(googleResult.status === "rejected"
+        ? [`Google: ${(googleResult.reason as Error)?.message || "erreur Wallet"}`]
+        : []),
+    ],
+  };
+}
+
+export function buildNotificationLogUpdate(
+  result: WalletDeliveryResult,
+  now = new Date()
+) {
+  const delivered = result.applePushSent || result.googleMessageAccepted;
+  const walletStatus = result.applePushSent
+    ? "SENT"
+    : result.googleMessageAccepted
+      ? "ACCEPTED"
+      : result.appleRegistrations === 0 && !result.googleObjectUpdated
+        ? "NO_DEVICE"
+        : "FAILED";
+
+  return {
+    delivered,
+    deliveredAt: delivered ? now : null,
+    walletStatus,
+    appleStatus:
+      result.appleRegistrations === 0
+        ? "NO_DEVICE"
+        : result.applePushSent
+          ? "SENT"
+          : "FAILED",
+    applePushSentAt: result.applePushSent ? now : null,
+    googleStatus: result.googleMessageAccepted
+      ? "ACCEPTED"
+      : result.googleObjectUpdated
+        ? "OBJECT_UPDATED"
+        : "FAILED",
+    googleAcceptedAt: result.googleMessageAccepted ? now : null,
+    errorMessage: result.errors.length > 0 ? result.errors.join(" | ") : null,
+  };
 }
 
 async function sendApplePushNotification(pushToken: string): Promise<boolean> {
@@ -162,29 +237,41 @@ export async function notifyAllCardsInProgram(
   const deliveredAt = new Date();
 
   await Promise.allSettled(
-    cards.map((card) =>
-      prisma.loyaltyCard.update({
+    cards.map(async (card) => {
+      const log = campaignId
+        ? await prisma.notificationLog.create({
+            data: {
+              campaignId,
+              cardId: card.id,
+              messageSnapshot: message,
+            },
+          })
+        : null;
+      await prisma.loyaltyCard.update({
         where: { id: card.id },
         data: { lastMessage: message, lastMessageAt: deliveredAt },
-      }).then(() =>
-        notifyPassUpdate(card.id, {
+      });
+      const result = await notifyPassUpdate(card.id, {
           header: title || card.program.name,
           body: message,
-        })
-      )
-    )
+      });
+      if (log) {
+        const current = await prisma.notificationLog.findUnique({
+          where: { id: log.id },
+          select: { applePassSyncedAt: true },
+        });
+        await prisma.notificationLog.update({
+          where: { id: log.id },
+          data: {
+            ...buildNotificationLogUpdate(result, deliveredAt),
+            ...(current?.applePassSyncedAt
+              ? { walletStatus: "SYNCED", appleStatus: "SYNCED" }
+              : {}),
+          },
+        });
+      }
+    })
   );
-
-  if (campaignId && cards.length > 0) {
-    await prisma.notificationLog.createMany({
-      data: cards.map((card) => ({
-        campaignId,
-        cardId: card.id,
-        delivered: true,
-        deliveredAt,
-      })),
-    });
-  }
 
   return { total: cards.length, sent: cards.length };
 }
@@ -223,29 +310,41 @@ export async function notifyCardsInProgram(
   const deliveredAt = new Date();
 
   await Promise.allSettled(
-    cards.map((card) =>
-      prisma.loyaltyCard.update({
+    cards.map(async (card) => {
+      const log = campaignId
+        ? await prisma.notificationLog.create({
+            data: {
+              campaignId,
+              cardId: card.id,
+              messageSnapshot: message,
+            },
+          })
+        : null;
+      await prisma.loyaltyCard.update({
         where: { id: card.id },
         data: { lastMessage: message, lastMessageAt: deliveredAt },
-      }).then(() =>
-        notifyPassUpdate(card.id, {
+      });
+      const result = await notifyPassUpdate(card.id, {
           header: title || card.program.name,
           body: message,
-        })
-      )
-    )
+      });
+      if (log) {
+        const current = await prisma.notificationLog.findUnique({
+          where: { id: log.id },
+          select: { applePassSyncedAt: true },
+        });
+        await prisma.notificationLog.update({
+          where: { id: log.id },
+          data: {
+            ...buildNotificationLogUpdate(result, deliveredAt),
+            ...(current?.applePassSyncedAt
+              ? { walletStatus: "SYNCED", appleStatus: "SYNCED" }
+              : {}),
+          },
+        });
+      }
+    })
   );
-
-  if (campaignId && cards.length > 0) {
-    await prisma.notificationLog.createMany({
-      data: cards.map((card) => ({
-        campaignId,
-        cardId: card.id,
-        delivered: true,
-        deliveredAt,
-      })),
-    });
-  }
 
   return { total: uniqueCardIds.length, sent: cards.length };
 }

@@ -86,8 +86,16 @@ type DetailResponse = {
   }[];
   campaigns: {
     id: string;
+    messageSnapshot: string | null;
     delivered: boolean;
     deliveredAt: string | null;
+    walletStatus: string;
+    appleStatus: string | null;
+    applePushSentAt: string | null;
+    applePassSyncedAt: string | null;
+    googleStatus: string | null;
+    googleAcceptedAt: string | null;
+    errorMessage: string | null;
     createdAt: string;
     campaign: { name: string; message: string } | null;
   }[];
@@ -109,6 +117,15 @@ const STATUS_LABELS: Record<string, string> = {
   REWARD_PENDING: "Récompense",
   EXPIRED: "Expiré",
   REVOKED: "Révoqué",
+};
+
+const WALLET_STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  PENDING: { label: "En cours", className: "bg-gray-100 text-gray-700" },
+  SENT: { label: "Envoyé", className: "bg-lime-100 text-lime-800" },
+  SYNCED: { label: "Wallet synchronisé", className: "bg-emerald-100 text-emerald-800" },
+  ACCEPTED: { label: "Accepté", className: "bg-lime-100 text-lime-800" },
+  FAILED: { label: "Erreur", className: "bg-red-100 text-red-700" },
+  NO_DEVICE: { label: "Non confirmé", className: "bg-amber-100 text-amber-800" },
 };
 
 export default function ClientProfilePage() {
@@ -514,12 +531,31 @@ export default function ClientProfilePage() {
                 <ul className="space-y-2">
                   {data.campaigns.slice(0, 5).map((c) => (
                     <li key={c.id} className="text-sm flex flex-col py-1">
-                      <span className="font-medium">
-                        {c.campaign?.name || "Message direct"}
-                      </span>
-                      {c.campaign?.message && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-medium">
+                          {c.campaign?.name || "Message direct"}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                            WALLET_STATUS_LABELS[c.walletStatus]?.className ||
+                            "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {WALLET_STATUS_LABELS[c.walletStatus]?.label ||
+                            c.walletStatus}
+                        </span>
+                      </div>
+                      {(c.messageSnapshot || c.campaign?.message) && (
                         <span className="text-xs text-gray-500 line-clamp-2">
-                          {c.campaign.message}
+                          {c.messageSnapshot || c.campaign?.message}
+                        </span>
+                      )}
+                      <span className="text-[11px] text-gray-500">
+                        {formatDeliveryDetails(c)}
+                      </span>
+                      {c.errorMessage && (
+                        <span className="text-[11px] text-red-500 line-clamp-2">
+                          {c.errorMessage}
                         </span>
                       )}
                       <span className="text-xs text-gray-400 font-mono">
@@ -601,6 +637,38 @@ function KpiCard({
       {sub && <div className="text-[11px] text-gray-500 mt-0.5">{sub}</div>}
     </div>
   );
+}
+
+function formatDeliveryDetails(
+  campaign: DetailResponse["campaigns"][number]
+) {
+  const details: string[] = [];
+  if (campaign.applePassSyncedAt) {
+    details.push(
+      `Apple synchronisé ${formatShortDate(campaign.applePassSyncedAt)}`
+    );
+  } else if (campaign.applePushSentAt) {
+    details.push(`Apple envoyé ${formatShortDate(campaign.applePushSentAt)}`);
+  } else if (campaign.appleStatus === "NO_DEVICE") {
+    details.push("Apple non installé");
+  }
+
+  if (campaign.googleAcceptedAt) {
+    details.push(
+      `Google accepté ${formatShortDate(campaign.googleAcceptedAt)}`
+    );
+  } else if (campaign.googleStatus === "OBJECT_UPDATED") {
+    details.push("Google carte mise à jour");
+  }
+
+  return details.length > 0 ? details.join(" · ") : "En attente de retour Wallet";
+}
+
+function formatShortDate(value: string) {
+  return new Date(value).toLocaleTimeString("fr-CH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function SendPushModal({
