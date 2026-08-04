@@ -1506,6 +1506,19 @@ function CreateCampaignForm({
     setCampaignStep((step) => Math.min(lastWizardStep, step + 1));
   }
 
+  function goToStep(stepIndex: number) {
+    setError("");
+    if (stepIndex <= campaignStep) {
+      setCampaignStep(stepIndex);
+      return;
+    }
+    if (stepIndex === campaignStep + 1) {
+      goToNextStep();
+      return;
+    }
+    setError("Avancez étape par étape pour vérifier la campagne avant l'envoi.");
+  }
+
   useEffect(() => {
     if (!programId) {
       return;
@@ -1562,6 +1575,10 @@ function CreateCampaignForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!isReviewStep) {
+      goToNextStep();
+      return;
+    }
 
     // Le titre de la notif est obligatoire — refus côté UI avant l'appel API.
     const trimmedTitle = notifTitle.trim();
@@ -1631,7 +1648,7 @@ function CreateCampaignForm({
               key={step}
               type="button"
               className={`campaign-wizard-step ${index === campaignStep ? "is-active" : ""} ${index < campaignStep ? "is-done" : ""}`}
-              onClick={() => setCampaignStep(index)}
+              onClick={() => goToStep(index)}
             >
               <span>{index + 1}</span>
               {step}
