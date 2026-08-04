@@ -107,11 +107,10 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
   };
 
   if (data.programType === "STAMPS") {
-    const stampProgress = `${data.currentStamps}/${data.maxStamps}`;
     object.loyaltyPoints = {
-      label: "Tampons",
+      label: "Tampons requis",
       balance: {
-        string: stampProgress,
+        string: `${data.maxStamps}`,
       },
     };
 
@@ -146,7 +145,7 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
         {
           id: "stamp_progress",
           header: "Progression",
-          body: `${stampProgress} tampons valides`,
+          body: `${data.currentStamps}/${data.maxStamps} tampons valides`,
         },
       ];
     }

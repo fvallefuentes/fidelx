@@ -1095,7 +1095,7 @@ function WalletCardPreview({
       <div className="wcp-fields">
         <div className="wcp-field">
           <span className="wcp-label" style={{ color: lblColor }}>
-            {programType === "POINTS" ? "POINTS" : "TAMPONS REQUIS POUR LA RÉCOMPENSE"}
+            {programType === "POINTS" ? "POINTS" : "TAMPONS REQUIS"}
           </span>
           <span className="wcp-value">
             {programType === "POINTS"
@@ -1163,13 +1163,13 @@ function GoogleWalletPreview({
         : stampBgColor
       : undefined;
   const metricLabel =
-    programType === "POINTS" ? "Points" : programType === "CASHBACK" ? "Cashback" : "Tampons";
+    programType === "POINTS" ? "Points" : programType === "CASHBACK" ? "Cashback" : "Tampons requis";
   const metricValue =
     programType === "POINTS"
       ? String(samplePoints ?? 0)
       : programType === "CASHBACK"
         ? "CHF 0"
-        : `${sampleFilled}/${total}`;
+        : `${total}`;
 
   return (
     <div className="gwp" style={{ background: bgColor, color: textColor }}>

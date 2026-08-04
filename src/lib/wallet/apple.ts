@@ -252,7 +252,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   } else {
     pass.secondaryFields.push({
       key: "stamps_required",
-      label: "TAMPONS REQUIS POUR LA RÉCOMPENSE",
+      label: "TAMPONS REQUIS",
       value: `${passData.maxStamps}`,
     });
     pass.secondaryFields.push({
