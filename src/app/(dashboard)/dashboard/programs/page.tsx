@@ -1123,15 +1123,21 @@ function WalletCardPreview({
 function GoogleWalletPreview({
   bgColor,
   textColor,
+  stampColor,
+  stampCheckColor,
+  stampEmptyColor,
   labelColor,
   programName,
   merchantName,
+  maxStamps,
   programType = "STAMPS",
   logoData,
   heroImage,
   samplePoints,
   stampAreaInset = 0,
   stampAreaRadius = 0,
+  stampIcon = "check",
+  stampSpacing = "normal",
   stampBgType = "none",
   stampBgColor,
   stampBgColor2,
@@ -1140,6 +1146,14 @@ function GoogleWalletPreview({
   const isDarkBg = isDark(bgColor);
   const lblColor = labelColor || (isDarkBg ? "rgb(var(--ovr) / 0.82)" : "rgba(0,0,0,0.68)");
   const mediaImage = stampBgType === "image" && stampBgImage ? stampBgImage : heroImage;
+  const total = Math.max(1, Math.min(20, maxStamps || 10));
+  const sampleFilled = programType === "STAMPS" ? Math.min(1, total) : 0;
+  const perRow = total <= 5 ? total : 5;
+  const iconDef = getStampIcon(stampIcon);
+  const stampGap = Math.max(5, 7 * getStampSpacingMult(stampSpacing));
+  const sFill = stampColor || (isDarkBg ? "#ffffff" : "#0a0a0a");
+  const sCheck = stampCheckColor || bgColor;
+  const sEmpty = stampEmptyColor || sFill;
   const stripBackground =
     stampBgType === "color" && stampBgColor
       ? stampBgColor2
@@ -1153,7 +1167,7 @@ function GoogleWalletPreview({
       ? String(samplePoints ?? 0)
       : programType === "CASHBACK"
         ? "CHF 0"
-        : "0";
+        : `${sampleFilled}/${total}`;
 
   return (
     <div className="gwp" style={{ background: bgColor, color: textColor }}>
@@ -1198,7 +1212,53 @@ function GoogleWalletPreview({
           background: stripBackground,
         }}
       >
-        {mediaImage ? (
+        {programType === "STAMPS" ? (
+          <>
+            {mediaImage ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={mediaImage} alt="" className="gwp-strip-img" />
+            ) : (
+              <div className="gwp-strip-empty" />
+            )}
+            <div
+              className="gwp-stamps"
+              style={{
+                gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`,
+                gap: stampGap,
+              }}
+            >
+              {Array.from({ length: total }).map((_, i) => {
+                const filled = i < sampleFilled;
+                return (
+                  <span
+                    key={i}
+                    className="gwp-stamp"
+                    style={{
+                      borderColor: filled ? sFill : sEmpty,
+                      background: filled ? sFill : "rgb(var(--ovr) / 0.08)",
+                      color: sCheck,
+                    }}
+                  >
+                    {filled && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="58%"
+                        height="58%"
+                        fill={iconDef.mode === "fill" ? "currentColor" : "none"}
+                        stroke={iconDef.mode === "stroke" ? "currentColor" : "none"}
+                        strokeWidth={iconDef.mode === "stroke" ? 3.2 : 0}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d={iconDef.path} />
+                      </svg>
+                    )}
+                  </span>
+                );
+              })}
+            </div>
+          </>
+        ) : mediaImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={mediaImage} alt="" className="gwp-strip-img" />
         ) : (

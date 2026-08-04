@@ -2789,9 +2789,10 @@ html, body { overflow-x: clip; }
 }
 .dashboard .gwp-strip {
   margin-top: auto;
-  height: 88px;
+  height: 112px;
   background: rgba(0,0,0,0.15);
   overflow: hidden;
+  position: relative;
 }
 .dashboard .gwp-strip-img,
 .dashboard .gwp-strip-empty {
@@ -2808,6 +2809,32 @@ html, body { overflow-x: clip; }
     radial-gradient(circle at 24% 36%, rgb(var(--ovr) / 0.18), transparent 24%),
     radial-gradient(circle at 60% 58%, rgb(var(--ovr) / 0.12), transparent 28%),
     rgba(0,0,0,0.12);
+}
+.dashboard .gwp-stamps {
+  position: absolute;
+  inset: 12px 18px;
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  z-index: 2;
+}
+.dashboard .gwp-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0.08));
+  pointer-events: none;
+}
+.dashboard .gwp-stamp {
+  width: clamp(24px, 7.2vw, 36px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  border: 2.4px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.22);
 }
 
 .join-shell {

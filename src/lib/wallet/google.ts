@@ -107,10 +107,11 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
   };
 
   if (data.programType === "STAMPS") {
+    const stampProgress = `${data.currentStamps}/${data.maxStamps}`;
     object.loyaltyPoints = {
       label: "Tampons",
       balance: {
-        int: data.currentStamps,
+        string: stampProgress,
       },
     };
 
@@ -123,7 +124,7 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
         ? `${data.currentStamps}-${data.designVersion}`
         : `${data.currentStamps}`;
       const stripUrl = `${data.appUrl.replace(/\/$/, "")}/api/wallet/google/strip/${data.serialNumber}?v=${version}`;
-      object.heroImage = {
+      const stampImage = {
         sourceUri: { uri: stripUrl },
         contentDescription: {
           defaultValue: {
@@ -132,6 +133,22 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
           },
         },
       };
+      object.heroImage = {
+        ...stampImage,
+      };
+      object.imageModulesData = [
+        {
+          id: "stamp_grid",
+          mainImage: stampImage,
+        },
+      ];
+      object.textModulesData = [
+        {
+          id: "stamp_progress",
+          header: "Progression",
+          body: `${stampProgress} tampons valides`,
+        },
+      ];
     }
   } else if (data.programType === "POINTS") {
     object.loyaltyPoints = {
