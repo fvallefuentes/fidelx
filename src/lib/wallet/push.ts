@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { sendGoogleWalletMessage, updateGoogleWalletObject } from "./google";
+import {
+  sendGoogleWalletMessage,
+  updateGoogleWalletClass,
+  updateGoogleWalletObject,
+} from "./google";
 import { buildCampaignAudienceWhere, type CampaignSegment } from "@/lib/campaign-audience";
 import * as http2 from "http2";
 
@@ -29,11 +33,12 @@ export async function notifyPassUpdate(
   // un upsert qui crée l'objet via POST insert s'il n'existe pas encore.
   const card = await prisma.loyaltyCard.findUnique({
     where: { id: cardId },
-    select: { serialNumber: true },
+    select: { serialNumber: true, programId: true },
   });
   const googleUpdate = card
     ? updateGoogleWalletObject(card.serialNumber).then(async (updated) => {
         if (googleMessage?.body && updated) {
+          await updateGoogleWalletClass(card.programId);
           await sendGoogleWalletMessage(
             card.serialNumber,
             googleMessage.header,

@@ -689,7 +689,7 @@ function SendPushModal({
             rows={5}
             maxLength={240}
             autoFocus
-            className="w-full rounded-lg px-3 py-2 text-sm"
+            className="client-push-message w-full rounded-lg px-3 py-2 text-sm"
             style={{
               background: "rgb(var(--ovr) / 0.04)",
               border: "1px solid rgb(var(--ovr) / 0.12)",

@@ -2491,6 +2491,14 @@ html, body { overflow-x: clip; }
 }
 .dashboard input[data-slot="input"]::placeholder,
 .dashboard textarea::placeholder { color: var(--ink-4) !important; }
+.dashboard .client-push-message {
+  background: rgb(255 255 255 / 0.04) !important;
+  border-color: rgb(255 255 255 / 0.12) !important;
+  color: #f4f5f1 !important;
+}
+.dashboard .client-push-message::placeholder {
+  color: rgb(244 245 241 / 0.48) !important;
+}
 .dashboard input[data-slot="input"]:focus-visible,
 .dashboard textarea:focus-visible,
 .dashboard select:focus-visible {
