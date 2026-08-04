@@ -91,7 +91,15 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
       client: true,
       program: {
         include: {
-          merchant: { select: { id: true, name: true, plan: true, testMode: true } },
+          merchant: {
+            select: {
+              id: true,
+              name: true,
+              plan: true,
+              testMode: true,
+              notificationDefaultLogo: true,
+            },
+          },
           establishment: true,
         },
       },
@@ -143,7 +151,10 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     // Le logo de la carte vient TOUJOURS du programme. Le logo
     // d'une campagne ne sert qu'à l'aperçu côté merchant — iOS
     // utilise toujours sa propre icône Wallet pour les notifications.
-    logoData: (design.logoData as string) || null,
+    logoData:
+      card.program.merchant.notificationDefaultLogo ||
+      (design.logoData as string) ||
+      null,
     heroImage: (design.heroImage as string) || null,
     programType: card.program.type,
     pointsTarget:
@@ -302,8 +313,8 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
       "Vos données sont hébergées en Suisse et traitées conformément à la LPD. Vous pouvez demander la suppression de vos données à tout moment.",
   });
 
-  // Logo haut-gauche du pass + icône notifications
-  // FREE : logo Fidlify imposé / Payant : logo merchant ou fallback icône Fidlify
+  // Logo haut-gauche du pass + icône notifications.
+  // Le réglage Notifications Wallet est prioritaire, avec fallback Fidlify.
   let iconAdded = false;
   {
     const sharp = (await import("sharp")).default;
@@ -312,17 +323,15 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
 
     // Détermine le buffer source du logo
     let logoBuf: Buffer | null = null;
-    if (passData.showFidlifyBranding) {
-      // Plan FREE → logo Fidlify blanc (fond sombre) ou noir (fond clair)
+    if (!passData.logoData && passData.showFidlifyBranding) {
       const dark = isBgDark(passData.bgColor);
       const logoFile = dark ? "fidlify_logo_white.png" : "fidlify_logo_black.svg";
       logoBuf = readFileSync(join(process.cwd(), `src/lib/wallet/${logoFile}`));
     } else if (passData.logoData) {
-      // Plan payant → logo du merchant
       logoBuf = decodeDataUrl(passData.logoData);
     }
 
-    // Fallback : plan payant sans logo perso (ou logoData invalide) →
+    // Fallback : sans logo perso (ou logoData invalide) →
     // on affiche quand même le logo Fidlify pour que l'emplacement haut-gauche
     // du pass ne reste pas vide.
     if (!logoBuf) {

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateGoogleWalletClass } from "@/lib/wallet/google";
+import { notifyPassUpdate } from "@/lib/wallet/push";
 import {
   countStampsThisMonth,
   getEffectiveMaxCampaignsPerMonth,
@@ -137,12 +138,24 @@ export async function PUT(req: Request) {
     typeof notificationDefaultLogo === "string" ||
     typeof notificationDefaultBgColor === "string"
   ) {
-    const programs = await prisma.loyaltyProgram.findMany({
-      where: { merchantId: session.user.id, isActive: true },
-      select: { id: true },
-    });
+    const [programs, cards] = await Promise.all([
+      prisma.loyaltyProgram.findMany({
+        where: { merchantId: session.user.id, isActive: true },
+        select: { id: true },
+      }),
+      prisma.loyaltyCard.findMany({
+        where: {
+          program: { merchantId: session.user.id },
+          status: { in: ["ACTIVE", "REWARD_PENDING"] },
+        },
+        select: { id: true },
+      }),
+    ]);
     void Promise.allSettled(
-      programs.map((program) => updateGoogleWalletClass(program.id))
+      [
+        ...programs.map((program) => updateGoogleWalletClass(program.id)),
+        ...cards.map((card) => notifyPassUpdate(card.id)),
+      ]
     ).catch(() => {});
   }
 
