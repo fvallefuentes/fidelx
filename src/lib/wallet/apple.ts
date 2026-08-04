@@ -74,6 +74,7 @@ interface PassData {
   description: string;
   lastMessage?: string | null;
   logoData?: string | null; // data URL "data:image/png;base64,..."
+  notificationIconData?: string | null;
   heroImage?: string | null; // data URL — pour POINTS, remplace le strip à pastilles
   programType?: string;
   pointsTarget?: number; // pour POINTS : seuil pour la récompense
@@ -151,10 +152,8 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     // Le logo de la carte vient TOUJOURS du programme. Le logo
     // d'une campagne ne sert qu'à l'aperçu côté merchant — iOS
     // utilise toujours sa propre icône Wallet pour les notifications.
-    logoData:
-      card.program.merchant.notificationDefaultLogo ||
-      (design.logoData as string) ||
-      null,
+    logoData: (design.logoData as string) || null,
+    notificationIconData: card.program.merchant.notificationDefaultLogo || null,
     heroImage: (design.heroImage as string) || null,
     programType: card.program.type,
     pointsTarget:
@@ -348,16 +347,26 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         pass.addBuffer("logo.png", logo1x);
         pass.addBuffer("logo@2x.png", logo2x);
         pass.addBuffer("logo@3x.png", logo3x);
+      } catch (err) {
+        console.error("[apple] logo resize failed:", err);
+      }
+    }
 
-        const icon1x = await sharp(logoBuf).resize(29, 29, { fit: "cover", position: "center" }).png().toBuffer();
-        const icon2x = await sharp(logoBuf).resize(58, 58, { fit: "cover", position: "center" }).png().toBuffer();
-        const icon3x = await sharp(logoBuf).resize(87, 87, { fit: "cover", position: "center" }).png().toBuffer();
+    const iconBuf = passData.notificationIconData
+      ? decodeDataUrl(passData.notificationIconData) || logoBuf
+      : logoBuf;
+
+    if (iconBuf) {
+      try {
+        const icon1x = await sharp(iconBuf).resize(29, 29, { fit: "cover", position: "center" }).png().toBuffer();
+        const icon2x = await sharp(iconBuf).resize(58, 58, { fit: "cover", position: "center" }).png().toBuffer();
+        const icon3x = await sharp(iconBuf).resize(87, 87, { fit: "cover", position: "center" }).png().toBuffer();
         pass.addBuffer("icon.png", icon1x);
         pass.addBuffer("icon@2x.png", icon2x);
         pass.addBuffer("icon@3x.png", icon3x);
         iconAdded = true;
       } catch (err) {
-        console.error("[apple] logo resize failed:", err);
+        console.error("[apple] icon resize failed:", err);
       }
     }
   }
