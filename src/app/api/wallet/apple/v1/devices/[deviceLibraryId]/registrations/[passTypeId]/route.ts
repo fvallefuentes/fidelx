@@ -64,7 +64,7 @@ export async function GET(
   }
 
   if (cards.length === 0) {
-    cards = registeredCards;
+    return new NextResponse(null, { status: 204 });
   }
 
   const lastUpdated = Math.max(...cards.map((c) => getPassUpdatedAt(c).getTime()));

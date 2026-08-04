@@ -25,6 +25,11 @@ const createCampaignSchema = z.object({
   triggerConfig: z
     .object({
       sendAt: z.string().datetime().optional(),
+      sendAtLocal: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/, "Date programmée invalide")
+        .optional(),
+      timezoneOffsetMinutes: z.number().int().min(-840).max(840).optional(),
       // Titre de la notif : obligatoire. Affiché en gras sur le lockscreen.
       notifTitle: z
         .string()
@@ -165,6 +170,8 @@ export async function POST(req: Request) {
     }
   }
 
+  const scheduledAt = resolveScheduledAt(triggerType, triggerConfig);
+
   const campaign = await prisma.notificationCampaign.create({
     data: {
       merchantId: session.user.id,
@@ -175,10 +182,7 @@ export async function POST(req: Request) {
       triggerConfig: triggerConfig as Prisma.InputJsonValue,
       targetSegment,
       status: triggerType === "IMMEDIATE" ? "SENT" : "SCHEDULED",
-      scheduledAt:
-        triggerType === "SCHEDULED" && triggerConfig?.sendAt
-          ? new Date(triggerConfig.sendAt)
-          : undefined,
+      scheduledAt,
     },
   });
 
@@ -215,4 +219,31 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(campaign, { status: 201 });
+}
+
+function resolveScheduledAt(
+  triggerType: string,
+  triggerConfig: {
+    sendAt?: string;
+    sendAtLocal?: string;
+    timezoneOffsetMinutes?: number;
+  }
+) {
+  if (triggerType !== "SCHEDULED") return undefined;
+
+  if (
+    triggerConfig.sendAtLocal &&
+    typeof triggerConfig.timezoneOffsetMinutes === "number"
+  ) {
+    const [datePart, timePart] = triggerConfig.sendAtLocal.split("T");
+    const [year, month, day] = datePart.split("-").map(Number);
+    const [hour, minute, second = 0] = timePart.split(":").map(Number);
+    const utcMillis =
+      Date.UTC(year, month - 1, day, hour, minute, second) +
+      triggerConfig.timezoneOffsetMinutes * 60_000;
+    const scheduledAt = new Date(utcMillis);
+    if (!Number.isNaN(scheduledAt.getTime())) return scheduledAt;
+  }
+
+  return triggerConfig.sendAt ? new Date(triggerConfig.sendAt) : undefined;
 }
