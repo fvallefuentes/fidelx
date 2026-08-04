@@ -20,6 +20,9 @@ interface MerchantSettings {
   notificationDefaultLogo: string | null;
   notificationDefaultBgColor: string | null;
   plan: string;
+  planState?: string;
+  trialDaysLeft?: number;
+  manualPlanUntil: string | null;
   createdAt: string;
   stripeCurrentPeriodStart: string | null;
   stripeCurrentPeriodEnd: string | null;
@@ -306,11 +309,82 @@ export default function SettingsPage() {
   }
 
   const planColors: Record<string, string> = {
+    TRIAL:      "bg-lime-100 text-lime-800",
+    DORMANT:    "bg-amber-100 text-amber-800",
     FREE:       "bg-gray-100 text-gray-800",
     ESSENTIAL:  "bg-blue-100 text-blue-800",
-    GROWTH:     "bg-purple-100 text-purple-800",
+    GROWTH:     "bg-lime-100 text-lime-800",
     MULTI_SITE: "bg-orange-100 text-orange-800",
   };
+  const effectivePlan = settings?.planState || settings?.plan || "FREE";
+  const planDetails: Record<
+    string,
+    { price: string; description: string; highlights: string[] }
+  > = {
+    TRIAL: {
+      price: "0 CHF / 30 jours",
+      description: "Tout le produit pour valider Fidlify sans carte bancaire.",
+      highlights: [
+        "Toutes les fonctionnalites",
+        "Jusqu'a 1 000 clients actifs",
+        "Campagnes et statistiques incluses",
+        "Cartes deja installees conservees apres l'essai",
+      ],
+    },
+    DORMANT: {
+      price: "Essai termine",
+      description: "Les cartes deja installees continuent de fonctionner, mais la croissance est suspendue.",
+      highlights: [
+        "Cartes existantes conservees",
+        "Nouvelles inscriptions bloquees",
+        "Campagnes suspendues",
+        "Passage a un plan possible a tout moment",
+      ],
+    },
+    FREE: {
+      price: "0 CHF",
+      description: "Plan de demarrage pour tester une carte a tampons simple.",
+      highlights: [
+        "1 programme a tampons",
+        "10 clients actifs",
+        "1 campagne par mois",
+        "Logo Fidlify affiche",
+      ],
+    },
+    ESSENTIAL: {
+      price: "39 CHF / mois",
+      description: "Le necessaire pour un commerce independant qui veut digitaliser sa fidelite.",
+      highlights: [
+        "Jusqu'a 1 000 clients actifs",
+        "Programmes tampons, points ou cashback",
+        "4 campagnes par mois",
+        "Personnalisation avancee et exports CSV",
+      ],
+    },
+    GROWTH: {
+      price: "59 CHF / mois",
+      description: "Pour cibler les clients, suivre les performances et envoyer plus regulierement.",
+      highlights: [
+        "Jusqu'a 5 000 clients actifs",
+        "Programmes illimites",
+        "15 campagnes par mois",
+        "Scans illimites, stats avancees et anti-spam",
+      ],
+    },
+    MULTI_SITE: {
+      price: "Sur mesure",
+      description: "Pour les reseaux, franchises et groupes avec plusieurs points de vente.",
+      highlights: [
+        "Jusqu'a 25 000 clients actifs",
+        "Programmes illimites",
+        "Campagnes et scans illimites",
+        "Accompagnement prioritaire",
+      ],
+    },
+  };
+  const currentPlanDetails = planDetails[effectivePlan] || planDetails.FREE;
+  const formatUsageLimit = (max: number | null) =>
+    max === null ? "illimite" : max.toLocaleString("fr-CH");
   const hasEstablishment = (settings?.establishments?.length ?? 0) > 0;
   const addPreviewLocation = getValidMapLocation(estLatitude, estLongitude);
   const editPreviewLocation = getValidMapLocation(editLatitude, editLongitude);
@@ -558,11 +632,41 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Plan + dates */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-500">Plan actuel :</span>
-              <Badge className={planColors[settings?.plan || "FREE"]}>
-                {PLAN_LABELS[settings?.plan || "FREE"] ?? settings?.plan}
-              </Badge>
+            <div className="rounded-xl border p-4" style={{ background: "#fcfcfc", borderColor: "rgb(var(--ovr) / 0.10)" }}>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className={planColors[effectivePlan] || planColors.FREE}>
+                      {PLAN_LABELS[effectivePlan] ?? effectivePlan}
+                    </Badge>
+                    {effectivePlan === "TRIAL" && settings?.trialDaysLeft !== undefined && (
+                      <span className="text-xs font-medium text-gray-500">
+                        {settings.trialDaysLeft} jour{settings.trialDaysLeft > 1 ? "s" : ""} restant{settings.trialDaysLeft > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-3 text-2xl font-semibold text-gray-950">
+                    {currentPlanDetails.price}
+                  </p>
+                  <p className="mt-1 max-w-xl text-sm text-gray-500">
+                    {currentPlanDetails.description}
+                  </p>
+                </div>
+                {settings?.plan !== "FREE" && !settings?.stripeCustomerId && (
+                  <Badge className="bg-amber-100 text-amber-800">
+                    Active manuellement
+                  </Badge>
+                )}
+              </div>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                {currentPlanDetails.highlights.map((feature) => (
+                  <div key={feature} className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-100">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#739c12]" />
+                    <span>{feature}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {settings?.plan !== "FREE" && settings?.stripeCurrentPeriodStart && (
@@ -600,21 +704,24 @@ export default function SettingsPage() {
                   <TrendingUp className="h-4 w-4" /> Utilisation
                 </p>
                 {[
-                  { label: "Programmes",          ...settings.usage.programs },
-                  { label: "Clients actifs",       ...settings.usage.activeCards },
-                  { label: "Campagnes (période)",  ...settings.usage.campaigns },
-                  { label: "Scans (période)",      ...settings.usage.stamps },
-                ].map(({ label, current, max }) => {
+                  { label: "Programmes", helper: "crees sur le compte", ...settings.usage.programs },
+                  { label: "Clients actifs", helper: "cartes actives dans les Wallets", ...settings.usage.activeCards },
+                  { label: "Campagnes", helper: "sur la periode en cours", ...settings.usage.campaigns },
+                  { label: "Scans", helper: "sur la periode en cours", ...settings.usage.stamps },
+                ].map(({ label, helper, current, max }) => {
                   const pct = max ? Math.min(100, Math.round((current / max) * 100)) : 0;
-                  const danger = max !== null && current >= max;
+                  const danger = max !== null && current > max;
                   const warn   = max !== null && !danger && pct >= 80;
                   const barColor = danger ? "#ff4e4e" : warn ? "#f59e0b" : "#d4ff4e";
                   return (
-                    <div key={label}>
-                      <div className="flex justify-between text-xs mb-1" style={{ color: "rgb(var(--ovr) / 0.5)" }}>
-                        <span>{label}</span>
+                    <div key={label} className="rounded-lg bg-[#fcfcfc] px-3 py-2 ring-1 ring-gray-100">
+                      <div className="flex justify-between gap-3 text-xs mb-1" style={{ color: "rgb(var(--ovr) / 0.5)" }}>
+                        <span>
+                          <span className="font-medium text-gray-700">{label}</span>
+                          {helper && <span className="ml-1 text-gray-400">{helper}</span>}
+                        </span>
                         <span style={{ color: danger ? "#ff4e4e" : warn ? "#f59e0b" : "rgb(var(--ovr) / 0.7)", fontWeight: danger ? 600 : 400 }}>
-                          {current}{max !== null ? ` / ${max}` : " / illimité"}
+                          {current.toLocaleString("fr-CH")} / {formatUsageLimit(max)}
                         </span>
                       </div>
                       {max !== null && (
@@ -631,9 +738,9 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {settings?.plan === "FREE" && (
-              <a href="/register?plan=essential" className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
-                Passer à Essentiel — 39 CHF/mois →
+            {(effectivePlan === "FREE" || effectivePlan === "DORMANT") && (
+              <a href="/register?plan=essential" className="inline-flex items-center gap-2 rounded-lg bg-[#d4ff4e] px-4 py-2 text-sm font-semibold text-gray-950 hover:bg-[#c8f43f] transition-colors">
+                Passer a Essentiel - 39 CHF/mois
               </a>
             )}
 

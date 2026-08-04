@@ -71,7 +71,7 @@ export const PLAN_LIMITS: Record<string, PlanLimits> = {
     maxStampsPerMonth: null,
     allowedProgramTypes: ["STAMPS", "POINTS", "CASHBACK"],
     showFidlifyBranding: false,
-    maxPrograms: 10,
+    maxPrograms: null,
     maxCampaignsPerMonth: null,
     canExportCsv: true,
   },
