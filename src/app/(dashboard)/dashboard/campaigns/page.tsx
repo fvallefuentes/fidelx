@@ -1581,7 +1581,8 @@ function CreateCampaignForm({
       ...(initialRecommendation?.triggerConfig || {}),
     };
     if (triggerType === "SCHEDULED" && scheduledDate && scheduledTime) {
-      triggerConfig = { ...triggerConfig, sendAt: `${scheduledDate}T${scheduledTime}:00Z` };
+      const localSendAt = new Date(`${scheduledDate}T${scheduledTime}:00`);
+      triggerConfig = { ...triggerConfig, sendAt: localSendAt.toISOString() };
     } else if (triggerType === "INACTIVITY") {
       triggerConfig = { ...triggerConfig, daysInactive: inactivityDays };
     }
