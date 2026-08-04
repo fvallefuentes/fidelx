@@ -1979,6 +1979,87 @@ html, body { overflow-x: clip; }
   box-shadow: 0 0 18px rgba(212,255,78,0.15);
 }
 
+/* Admin pages were originally built on dark translucent cards. Keep their
+   structure, but remap those old inline colors to the light dashboard theme. */
+.admin-dashboard {
+  --admin-accent-text: #6f9513;
+  --admin-surface-soft: #fcfcfc;
+  --admin-surface-muted: #f2f3ef;
+}
+.admin-dashboard .dx-content {
+  background: var(--bg);
+}
+.admin-dashboard .dx-plan-pill.paid,
+.admin-dashboard .dx-brand span span {
+  color: var(--admin-accent-text) !important;
+}
+.admin-dashboard .text-white,
+.admin-dashboard .text-gray-200,
+.admin-dashboard .text-gray-300 {
+  color: var(--ink) !important;
+}
+.admin-dashboard .text-gray-400,
+.admin-dashboard .text-gray-500,
+.admin-dashboard .text-gray-600 {
+  color: var(--ink-3) !important;
+}
+.admin-dashboard .text-green-600 {
+  color: var(--admin-accent-text) !important;
+}
+.admin-dashboard .bg-white\/\[0\.02\],
+.admin-dashboard .hover\:bg-white\/\[0\.02\]:hover {
+  background: var(--admin-surface-muted) !important;
+}
+.admin-dashboard [style*="rgba(255,255,255,0.04)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.04)"],
+.admin-dashboard [style*="rgba(255,255,255,0.03)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.03)"],
+.admin-dashboard [style*="rgba(255,255,255,0.02)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.02)"] {
+  background: var(--admin-surface-soft) !important;
+}
+.admin-dashboard [style*="rgba(255,255,255,0.08)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.08)"],
+.admin-dashboard [style*="rgba(255,255,255,0.06)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.06)"],
+.admin-dashboard [style*="rgba(255,255,255,0.05)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.05)"] {
+  border-color: var(--line) !important;
+}
+.admin-dashboard [style*="rgba(255,255,255,0.92)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.92)"],
+.admin-dashboard [style*="color: #fff"],
+.admin-dashboard [style*="color: rgb(255, 255, 255)"] {
+  color: var(--ink) !important;
+}
+.admin-dashboard [style*="rgba(255,255,255,0.55)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.55)"],
+.admin-dashboard [style*="rgba(255,255,255,0.5)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.5)"],
+.admin-dashboard [style*="rgba(255,255,255,0.4)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.4)"],
+.admin-dashboard [style*="rgba(255,255,255,0.38)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.38)"],
+.admin-dashboard [style*="rgba(255,255,255,0.3)"],
+.admin-dashboard [style*="rgba(255, 255, 255, 0.3)"] {
+  color: var(--ink-3) !important;
+}
+.admin-dashboard [style*="color: rgb(212, 255, 78)"],
+.admin-dashboard [style*="color: #d4ff4e"] {
+  color: var(--admin-accent-text) !important;
+}
+.admin-dashboard input,
+.admin-dashboard select,
+.admin-dashboard textarea {
+  color: var(--ink) !important;
+  background-color: var(--admin-surface-soft) !important;
+  border-color: var(--line-2) !important;
+}
+.admin-dashboard input::placeholder,
+.admin-dashboard textarea::placeholder {
+  color: var(--ink-4) !important;
+}
+
 /* ─── Page head ───────────────────────────────────────────── */
 .dx-page { display: flex; flex-direction: column; gap: 26px; }
 .dx-page-head { display: flex; flex-direction: column; gap: 6px; }

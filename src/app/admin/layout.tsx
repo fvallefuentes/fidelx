@@ -44,7 +44,7 @@ export default function AdminLayout({
   if (role !== "ADMIN") redirect("/dashboard");
 
   return (
-    <div className="dashboard">
+    <div className="dashboard admin-dashboard">
       <div className="dx-shell">
         <div
           className={`dx-sidebar-backdrop${mobileNavOpen ? " visible" : ""}`}
