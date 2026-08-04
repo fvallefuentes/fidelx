@@ -53,6 +53,7 @@ interface Program {
   cardDesign: Record<string, unknown>;
   establishmentId?: string | null;
   establishment?: { id: string; name: string } | null;
+  merchant?: { name: string | null } | null;
   rewards: { id: string; name: string; threshold: number; rewardType: string }[];
   _count: { cards: number };
 }
@@ -76,7 +77,7 @@ function ProgramCardPreview({ program }: { program: Program }) {
         stampEmptyColor={design.stampEmptyColor as string | undefined}
         labelColor={design.labelColor as string | undefined}
         logoData={(design.logoData as string) || undefined}
-        merchantName={program.establishment?.name}
+        merchantName={program.establishment?.name || program.merchant?.name || "Votre commerce"}
         heroImage={(design.heroImage as string) || undefined}
         stampIcon={(design.stampIcon as string) || undefined}
         stampSpacing={(design.stampSpacing as string) || undefined}
@@ -1312,6 +1313,11 @@ function CreateProgramForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const selectedEstablishmentName = establishments.find((est) => est.id === establishmentId)?.name;
+  const merchantDisplayName =
+    selectedEstablishmentName ||
+    (session?.user as { name?: string | null } | undefined)?.name ||
+    "Votre commerce";
 
   useEffect(() => {
     fetch("/api/merchants/settings")
@@ -1495,6 +1501,7 @@ function CreateProgramForm({
       stampEmptyColor={stampEmptyColor}
       labelColor={labelColor}
       programName={name || "Mon programme"}
+      merchantName={merchantDisplayName}
       maxStamps={maxStamps}
       logoData={logoData}
       programType={type}
@@ -2565,7 +2572,13 @@ function EditProgramDesignModal({
                 stampEmptyColor={stampEmptyColor}
                 labelColor={labelColor}
                 programName={name}
-                merchantName={establishments.find((est) => est.id === establishmentId)?.name || program.establishment?.name}
+                merchantName={
+                  establishments.find((est) => est.id === establishmentId)?.name ||
+                  program.establishment?.name ||
+                  program.merchant?.name ||
+                  (session?.user as { name?: string | null } | undefined)?.name ||
+                  "Votre commerce"
+                }
                 maxStamps={maxStamps}
                 logoData={logoData || undefined}
                 programType={program.type}

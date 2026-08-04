@@ -2716,6 +2716,7 @@ html, body { overflow-x: clip; }
   object-fit: contain;
 }
 .dashboard .gwp-merchant {
+  color: inherit;
   font-size: 14px;
   line-height: 1.1;
   font-weight: 700;
@@ -2730,6 +2731,7 @@ html, body { overflow-x: clip; }
   gap: 18px;
 }
 .dashboard .gwp-title {
+  color: inherit;
   margin: 0;
   font-size: 28px;
   line-height: 1;
@@ -2740,6 +2742,7 @@ html, body { overflow-x: clip; }
   text-overflow: ellipsis;
 }
 .dashboard .gwp-metric {
+  color: inherit;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -2747,6 +2750,7 @@ html, body { overflow-x: clip; }
   line-height: 1.05;
 }
 .dashboard .gwp-metric strong {
+  color: inherit;
   font-size: 17px;
   line-height: 1;
   font-weight: 700;
