@@ -1660,6 +1660,7 @@ function CreateCampaignForm({
         programId,
         name,
         message,
+        reviewConfirmed: true,
         triggerType,
         triggerConfig: {
           ...triggerConfig,

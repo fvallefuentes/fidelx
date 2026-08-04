@@ -13,6 +13,9 @@ const createCampaignSchema = z.object({
   programId: z.string().trim().min(1).optional().nullable(),
   name: z.string().trim().min(1, "Nom de campagne requis").max(120, "Nom de campagne trop long"),
   message: z.string().trim().min(1, "Message requis").max(350, "Message trop long"),
+  reviewConfirmed: z.literal(true, {
+    error: "Validez l'étape de vérification avant de créer la campagne.",
+  }),
   triggerType: z.enum([
     "IMMEDIATE",
     "SCHEDULED",
@@ -99,10 +102,18 @@ export async function POST(req: Request) {
     programId,
     name,
     message,
+    reviewConfirmed,
     triggerType,
     triggerConfig,
     targetSegment,
   } = parsed.data;
+
+  if (!reviewConfirmed) {
+    return NextResponse.json(
+      { error: "Validez l'étape de vérification avant de créer la campagne." },
+      { status: 400 }
+    );
+  }
 
   // Vérification limites du plan
   const user = await prisma.user.findUnique({
