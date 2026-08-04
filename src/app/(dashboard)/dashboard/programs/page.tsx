@@ -29,6 +29,7 @@ type WalletPreviewProps = {
   programName: string;
   maxStamps: number;
   logoData?: string;
+  notificationLogoData?: string;
   merchantName?: string;
   programType?: string;
   heroImage?: string;
@@ -53,7 +54,7 @@ interface Program {
   cardDesign: Record<string, unknown>;
   establishmentId?: string | null;
   establishment?: { id: string; name: string } | null;
-  merchant?: { name: string | null } | null;
+  merchant?: { name: string | null; notificationDefaultLogo?: string | null } | null;
   rewards: { id: string; name: string; threshold: number; rewardType: string }[];
   _count: { cards: number };
 }
@@ -77,6 +78,7 @@ function ProgramCardPreview({ program }: { program: Program }) {
         stampEmptyColor={design.stampEmptyColor as string | undefined}
         labelColor={design.labelColor as string | undefined}
         logoData={(design.logoData as string) || undefined}
+        notificationLogoData={program.merchant?.notificationDefaultLogo || undefined}
         merchantName={program.establishment?.name || program.merchant?.name || "Votre commerce"}
         heroImage={(design.heroImage as string) || undefined}
         stampIcon={(design.stampIcon as string) || undefined}
@@ -1133,6 +1135,7 @@ function GoogleWalletPreview({
   maxStamps,
   programType = "STAMPS",
   logoData,
+  notificationLogoData,
   heroImage,
   samplePoints,
   stampAreaInset = 0,
@@ -1147,6 +1150,7 @@ function GoogleWalletPreview({
   const isDarkBg = isDark(bgColor);
   const lblColor = labelColor || (isDarkBg ? "rgb(var(--ovr) / 0.82)" : "rgba(0,0,0,0.68)");
   const mediaImage = stampBgType === "image" && stampBgImage ? stampBgImage : heroImage;
+  const googleLogoData = notificationLogoData || logoData;
   const total = Math.max(1, Math.min(20, maxStamps || 10));
   const sampleFilled = programType === "STAMPS" ? Math.min(1, total) : 0;
   const rows = total <= 5 ? 1 : 2;
@@ -1175,9 +1179,9 @@ function GoogleWalletPreview({
     <div className="gwp" style={{ background: bgColor, color: textColor }}>
       <div className="gwp-head">
         <span className="gwp-logo-badge">
-          {logoData ? (
+          {googleLogoData ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoData} alt="" className="gwp-logo" />
+            <img src={googleLogoData} alt="" className="gwp-logo" />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -1310,6 +1314,7 @@ function CreateProgramForm({
   const [establishments, setEstablishments] = useState<
     { id: string; name: string; latitude: number | null; longitude: number | null }[]
   >([]);
+  const [notificationLogoData, setNotificationLogoData] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -1322,7 +1327,12 @@ function CreateProgramForm({
   useEffect(() => {
     fetch("/api/merchants/settings")
       .then((r) => r.json())
-      .then((d) => setEstablishments(d.establishments ?? []))
+      .then((d) => {
+        setEstablishments(d.establishments ?? []);
+        setNotificationLogoData(
+          typeof d.notificationDefaultLogo === "string" ? d.notificationDefaultLogo : ""
+        );
+      })
       .catch(() => {});
   }, []);
 
@@ -1504,6 +1514,7 @@ function CreateProgramForm({
       merchantName={merchantDisplayName}
       maxStamps={maxStamps}
       logoData={logoData}
+      notificationLogoData={notificationLogoData || undefined}
       programType={type}
       heroImage={heroImage}
       stampIcon={stampIcon}
@@ -2065,12 +2076,20 @@ function EditProgramDesignModal({
   const [establishments, setEstablishments] = useState<
     { id: string; name: string }[]
   >([]);
+  const [notificationLogoData, setNotificationLogoData] = useState(
+    program.merchant?.notificationDefaultLogo || ""
+  );
 
   // Charge les établissements du merchant pour le sélecteur
   useEffect(() => {
     fetch("/api/merchants/settings")
       .then((r) => r.json())
-      .then((d) => setEstablishments(d.establishments ?? []))
+      .then((d) => {
+        setEstablishments(d.establishments ?? []);
+        setNotificationLogoData(
+          typeof d.notificationDefaultLogo === "string" ? d.notificationDefaultLogo : ""
+        );
+      })
       .catch(() => {});
   }, []);
 
@@ -2581,6 +2600,7 @@ function EditProgramDesignModal({
                 }
                 maxStamps={maxStamps}
                 logoData={logoData || undefined}
+                notificationLogoData={notificationLogoData || undefined}
                 programType={program.type}
                 heroImage={heroImage || undefined}
                 stampIcon={stampIcon}

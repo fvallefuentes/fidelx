@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { updateGoogleWalletClass } from "@/lib/wallet/google";
 import {
   countStampsThisMonth,
   getEffectiveMaxCampaignsPerMonth,
@@ -131,6 +132,19 @@ export async function PUT(req: Request) {
         typeof notificationDefaultBgColor === "string" ? notificationDefaultBgColor || null : undefined,
     },
   });
+
+  if (
+    typeof notificationDefaultLogo === "string" ||
+    typeof notificationDefaultBgColor === "string"
+  ) {
+    const programs = await prisma.loyaltyProgram.findMany({
+      where: { merchantId: session.user.id, isActive: true },
+      select: { id: true },
+    });
+    void Promise.allSettled(
+      programs.map((program) => updateGoogleWalletClass(program.id))
+    ).catch(() => {});
+  }
 
   return NextResponse.json({ success: true, user });
 }

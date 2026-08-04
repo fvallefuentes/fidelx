@@ -319,6 +319,8 @@ export default function SettingsPage() {
     MULTI_SITE: "bg-orange-100 text-orange-800",
   };
   const effectivePlan = settings?.planState || settings?.plan || "FREE";
+  const transparentPreviewBackground =
+    "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)";
   const planDetails: Record<
     string,
     { price: string; description: string; highlights: string[] }
@@ -540,7 +542,10 @@ export default function SettingsPage() {
                       className="h-14 w-14 rounded-lg border object-contain p-1"
                       style={{
                         background:
-                          settings.notificationDefaultBgColor || "#1a1a2e",
+                          settings.notificationDefaultBgColor || transparentPreviewBackground,
+                        backgroundColor: settings.notificationDefaultBgColor || "#ffffff",
+                        backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0",
+                        backgroundSize: settings.notificationDefaultBgColor ? undefined : "12px 12px",
                       }}
                     />
                   )}
@@ -598,6 +603,18 @@ export default function SettingsPage() {
                     maxLength={7}
                     className="max-w-36"
                   />
+                  <Button
+                    type="button"
+                    variant={!settings?.notificationDefaultBgColor ? "default" : "outline"}
+                    size="sm"
+                    onClick={() =>
+                      setSettings((s) =>
+                        s ? { ...s, notificationDefaultBgColor: null } : s
+                      )
+                    }
+                  >
+                    Fond transparent
+                  </Button>
                   {settings?.notificationDefaultBgColor && (
                     <Button
                       type="button"

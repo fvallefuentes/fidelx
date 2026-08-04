@@ -21,13 +21,20 @@ export async function GET(
 
   const program = await prisma.loyaltyProgram.findUnique({
     where: { id: programId },
-    select: { cardDesign: true },
+    select: {
+      cardDesign: true,
+      merchant: { select: { notificationDefaultLogo: true } },
+    },
   });
 
   const design = (program?.cardDesign as Record<string, unknown> | null) ?? {};
-  const logoData = design.logoData as string | undefined;
+  const notificationLogo = program?.merchant.notificationDefaultLogo;
+  const logoData =
+    typeof notificationLogo === "string" && notificationLogo.startsWith("data:image/")
+      ? notificationLogo
+      : (design.logoData as string | undefined);
 
-  // Pas de logo merchant : redirige vers le default Fidlify
+  // Pas de logo notification ni de logo programme : redirige vers le default Fidlify
   if (!logoData || !logoData.startsWith("data:image/")) {
     const fallback = new URL("/api/wallet/google/default-logo", req.url);
     return NextResponse.redirect(fallback, 302);

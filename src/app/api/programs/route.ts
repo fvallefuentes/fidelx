@@ -82,7 +82,7 @@ export async function GET() {
     include: {
       rewards: true,
       establishment: true,
-      merchant: { select: { name: true } },
+      merchant: { select: { name: true, notificationDefaultLogo: true } },
       _count: { select: { cards: true } },
     },
     orderBy: { createdAt: "desc" },

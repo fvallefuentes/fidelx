@@ -223,8 +223,13 @@ export async function generateGoogleWalletLink(
   // L'URL est versionnée par program.updatedAt → invalidation cache CDN
   // Google à chaque modification du design merchant.
   const base = appUrl.replace(/\/$/, "");
-  const ver = String(card.program.updatedAt.getTime());
-  const logoUrl = design.logoData
+  const merchantLogo =
+    typeof card.program.merchant.notificationDefaultLogo === "string" &&
+    card.program.merchant.notificationDefaultLogo.startsWith("data:image/");
+  const ver = String(
+    Math.max(card.program.updatedAt.getTime(), card.program.merchant.updatedAt.getTime())
+  );
+  const logoUrl = merchantLogo || design.logoData
     ? `${base}/api/wallet/google/logo/${card.program.id}?v=${ver}`
     : ((design.logoUrl as string) || `${base}/api/wallet/google/default-logo`);
 
@@ -356,7 +361,15 @@ export async function updateGoogleWalletClass(
 
   const program = await prisma.loyaltyProgram.findUnique({
     where: { id: programId },
-    include: { merchant: { select: { name: true } } },
+    include: {
+      merchant: {
+        select: {
+          name: true,
+          notificationDefaultLogo: true,
+          updatedAt: true,
+        },
+      },
+    },
   });
   if (!program) return false;
 
@@ -367,8 +380,13 @@ export async function updateGoogleWalletClass(
   // Mêmes 3 cas que generateGoogleWalletLink : logoData merchant > logoUrl externe > fallback Fidlify.
   // URL logo versionnée par updatedAt pour cache bust à chaque modif design.
   const base = appUrl.replace(/\/$/, "");
-  const ver = String(program.updatedAt.getTime());
-  const logoUrl = design.logoData
+  const merchantLogo =
+    typeof program.merchant.notificationDefaultLogo === "string" &&
+    program.merchant.notificationDefaultLogo.startsWith("data:image/");
+  const ver = String(
+    Math.max(program.updatedAt.getTime(), program.merchant.updatedAt.getTime())
+  );
+  const logoUrl = merchantLogo || design.logoData
     ? `${base}/api/wallet/google/logo/${programId}?v=${ver}`
     : ((design.logoUrl as string) || `${base}/api/wallet/google/default-logo`);
 
