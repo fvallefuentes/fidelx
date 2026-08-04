@@ -71,10 +71,20 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
       key: APPLE_CERTS.signerKey,
       cert: certChain,
     });
+    const finish = (result: boolean) => {
+      clearTimeout(timeout);
+      client.close();
+      resolve(result);
+    };
+
+    const timeout = setTimeout(() => {
+      console.error("[APNs] timeout");
+      finish(false);
+    }, 10000);
 
     client.on("error", (err) => {
       console.error("[APNs] connection error:", err.message);
-      resolve(false);
+      finish(false);
     });
 
     const payload = Buffer.from("{}");
@@ -103,10 +113,9 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
     });
 
     req.on("end", async () => {
-      client.close();
       if (status === 200) {
         console.log("[APNs] push sent:", pushToken.slice(0, 8) + "...");
-        resolve(true);
+        finish(true);
       } else if (status === 410) {
         // Token mort : l'utilisateur a supprimé le pass de son Wallet
         // → on supprime la registration pour ne plus jamais re-pousser
@@ -118,25 +127,18 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
         } catch (err) {
           console.error("[APNs] cleanup failed:", err);
         }
-        resolve(false);
+        finish(false);
       } else {
         console.error(`[APNs] push failed, status: ${status} ${body}`);
-        resolve(false);
+        finish(false);
       }
     });
 
     req.on("error", (err) => {
-      client.close();
       console.error("[APNs] request error:", err.message);
-      resolve(false);
+      finish(false);
     });
 
-    // Timeout 10s
-    setTimeout(() => {
-      client.close();
-      console.error("[APNs] timeout");
-      resolve(false);
-    }, 10000);
   });
 }
 
