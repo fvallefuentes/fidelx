@@ -18,6 +18,11 @@ import {
   STAMP_ICON_GROUPS,
   STAMP_SPACING_LIST,
 } from "@/lib/wallet/stamp-icons";
+import {
+  DEFAULT_JOIN_FORM_REQUIREMENTS,
+  getJoinFormRequirements,
+  type JoinFormRequirements,
+} from "@/lib/join-form";
 
 type WalletPreviewProps = {
   bgColor: string;
@@ -444,7 +449,7 @@ export default function ProgramsPage() {
                       className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900"
                     >
                       <Palette className="h-3 w-3" />
-                      Modifier le design
+                      Modifier le programme
                     </button>
                     <div className="flex-1" />
                     {!program.isActive ? (
@@ -1275,6 +1280,99 @@ function GoogleWalletPreview({
   );
 }
 
+function JoinFormRequirementsEditor({
+  value,
+  onChange,
+  dark = false,
+}: {
+  value: JoinFormRequirements;
+  onChange: (value: JoinFormRequirements) => void;
+  dark?: boolean;
+}) {
+  const options: Array<{
+    key: keyof JoinFormRequirements;
+    label: string;
+    description: string;
+  }> = [
+    {
+      key: "emailRequired",
+      label: "Email obligatoire",
+      description: "Utile pour récupérer une carte et contacter le client.",
+    },
+    {
+      key: "phoneRequired",
+      label: "Téléphone obligatoire",
+      description: "Demande systématiquement un numéro au client.",
+    },
+    {
+      key: "birthDateRequired",
+      label: "Date de naissance obligatoire",
+      description: "Permet d'activer les campagnes d'anniversaire pour tous.",
+    },
+  ];
+
+  return (
+    <section
+      className={dark
+        ? "space-y-3 border-t border-white/10 pt-4"
+        : "space-y-3 border-t border-gray-200 pt-4"}
+    >
+      <div>
+        <h3 className={dark
+          ? "text-sm font-semibold text-white"
+          : "text-sm font-semibold text-gray-900"}>
+          Formulaire d&apos;inscription client
+        </h3>
+        <p className={dark
+          ? "mt-1 text-xs text-gray-400"
+          : "mt-1 text-xs text-gray-500"}>
+          Le prénom est toujours requis. Choisissez les autres informations que
+          le client doit obligatoirement renseigner après avoir scanné le QR code.
+        </p>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {options.map((option) => (
+          <label
+            key={option.key}
+            className={dark
+              ? "flex cursor-pointer items-start gap-2 border-l-2 border-white/15 py-1 pl-3"
+              : "flex cursor-pointer items-start gap-2 border-l-2 border-gray-200 py-1 pl-3"}
+          >
+            <input
+              type="checkbox"
+              checked={value[option.key]}
+              onChange={(event) =>
+                onChange({ ...value, [option.key]: event.target.checked })
+              }
+              className="mt-0.5 h-4 w-4 accent-[#a8d51b]"
+            />
+            <span>
+              <span className={dark
+                ? "block text-xs font-semibold text-white"
+                : "block text-xs font-semibold text-gray-900"}>
+                {option.label}
+              </span>
+              <span className={dark
+                ? "mt-0.5 block text-[11px] leading-4 text-gray-400"
+                : "mt-0.5 block text-[11px] leading-4 text-gray-500"}>
+                {option.description}
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {!value.emailRequired && !value.phoneRequired && (
+        <p className={dark
+          ? "text-[11px] text-gray-400"
+          : "text-[11px] text-gray-500"}>
+          Email et téléphone sont optionnels individuellement, mais le client
+          devra renseigner au moins l&apos;un des deux.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function CreateProgramForm({
   onSuccess,
   onCancel,
@@ -1318,6 +1416,9 @@ function CreateProgramForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [joinForm, setJoinForm] = useState<JoinFormRequirements>({
+    ...DEFAULT_JOIN_FORM_REQUIREMENTS,
+  });
   const selectedEstablishmentName = establishments.find((est) => est.id === establishmentId)?.name;
   const merchantDisplayName =
     selectedEstablishmentName ||
@@ -1431,7 +1532,7 @@ function CreateProgramForm({
     setSaving(true);
     setError("");
 
-    const config =
+    const baseConfig =
       type === "STAMPS"
         ? { maxStamps, reward: rewardName }
         : type === "POINTS"
@@ -1439,6 +1540,7 @@ function CreateProgramForm({
             ? { pointsPerChf: 1, unlimited: true }
             : { pointsPerChf: 1, tiers: [{ points: maxStamps, reward: rewardName }] }
           : { percentage: 5, minSpend: 10 }; // CASHBACK
+    const config = { ...baseConfig, joinForm };
 
     const res = await fetch("/api/programs", {
       method: "POST",
@@ -1685,6 +1787,11 @@ function CreateProgramForm({
               </p>
             </div>
               </div>
+
+              <JoinFormRequirementsEditor
+                value={joinForm}
+                onChange={setJoinForm}
+              />
 
               {/* Card Design */}
               <div className="space-y-4">
@@ -2054,6 +2161,9 @@ function EditProgramDesignModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [joinForm, setJoinForm] = useState<JoinFormRequirements>(() =>
+    getJoinFormRequirements(program.config)
+  );
 
   function handleStampBgImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     setStampBgError("");
@@ -2194,6 +2304,7 @@ function EditProgramDesignModal({
               }),
         },
         establishmentId: establishmentId || null,
+        joinForm,
       }),
     });
 
@@ -2228,7 +2339,7 @@ function EditProgramDesignModal({
               size={15}
               style={{ display: "inline", marginRight: 8, verticalAlign: -2 }}
             />
-            Modifier le design — {program.name}
+            Modifier le programme — {program.name}
           </h2>
           <button
             type="button"
@@ -2248,7 +2359,7 @@ function EditProgramDesignModal({
           )}
           {success && (
             <div className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700">
-              Design enregistré. Les cartes Wallet existantes vont se mettre à jour automatiquement.
+              Programme enregistré. Les cartes Wallet existantes vont se mettre à jour automatiquement.
             </div>
           )}
 
@@ -2293,6 +2404,12 @@ function EditProgramDesignModal({
                   Utilis? pour le nom du point de vente et la position Wallet.
                 </p>
               </div>
+
+              <JoinFormRequirementsEditor
+                value={joinForm}
+                onChange={setJoinForm}
+                dark
+              />
 
               {/* Lock notice for stamps count */}
               <div
@@ -2630,7 +2747,7 @@ function EditProgramDesignModal({
               Annuler
             </Button>
             <Button type="submit" disabled={saving}>
-              {saving ? "Enregistrement…" : "Enregistrer le design"}
+              {saving ? "Enregistrement…" : "Enregistrer"}
             </Button>
           </div>
         </form>

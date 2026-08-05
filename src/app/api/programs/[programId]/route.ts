@@ -6,6 +6,7 @@ import { getEffectiveLimits } from "@/lib/plan-limits";
 import { notifyPassUpdate } from "@/lib/wallet/push";
 import { getStampAreaInset, getStampAreaRadius } from "@/lib/wallet/stamp-icons";
 import type { Prisma } from "@/generated/prisma/client";
+import { getJoinFormRequirements } from "@/lib/join-form";
 
 /* ─── PATCH : modifier le design + nom + description du programme ───
    Le nombre de tampons (maxStamps), le type de programme et la config
@@ -29,6 +30,7 @@ export async function PATCH(
       merchantId: true,
       name: true,
       cardDesign: true,
+      config: true,
     },
   });
 
@@ -65,6 +67,11 @@ export async function PATCH(
       proximityMessage?: string | null;
     };
     establishmentId?: string | null;
+    joinForm?: {
+      emailRequired?: boolean;
+      phoneRequired?: boolean;
+      birthDateRequired?: boolean;
+    };
   };
 
   // Gating : logo personnalisé réservé aux plans payants
@@ -88,6 +95,7 @@ export async function PATCH(
   // Construction du nouveau cardDesign en mergeant l'existant
   const currentDesign =
     (program.cardDesign as Record<string, unknown>) ?? {};
+  const currentConfig = (program.config as Record<string, unknown>) ?? {};
   type Design = Record<string, unknown>;
   const nextDesign: Design = { ...currentDesign };
   if (body.cardDesign) {
@@ -183,11 +191,20 @@ export async function PATCH(
       cardDesign: nextDesign as Prisma.InputJsonValue,      ...(establishmentUpdate !== undefined
         ? { establishmentId: establishmentUpdate }
         : {}),
+      ...(body.joinForm
+        ? {
+            config: {
+              ...currentConfig,
+              joinForm: getJoinFormRequirements({ joinForm: body.joinForm }),
+            } as Prisma.InputJsonValue,
+          }
+        : {}),
     },
     select: {
       id: true,
       name: true,
       cardDesign: true,
+      config: true,
     },
   });
 

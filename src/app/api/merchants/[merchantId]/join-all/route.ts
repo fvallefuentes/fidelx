@@ -14,6 +14,11 @@ import { verifyJoinIntent } from "@/lib/anti-abuse/join-intent";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
 import { parseJsonBody } from "@/lib/api/validation";
+import {
+  combineJoinFormRequirements,
+  getJoinFormRequirements,
+  validateJoinFormRequirements,
+} from "@/lib/join-form";
 
 /**
  * POST /api/merchants/[merchantId]/join-all
@@ -138,18 +143,6 @@ export async function POST(
     );
   }
 
-  if (!email && !phone) {
-    await logAttempt({
-      programId: programIds[0],
-      result: "VALIDATION_ERROR",
-      blockedReason: "missing_email_phone",
-    });
-    return NextResponse.json(
-      { error: "Email ou téléphone requis" },
-      { status: 400, headers: responseHeaders }
-    );
-  }
-
   // ─── Vérif merchant + récupération des programmes demandés ───
   const merchant = await prisma.user.findUnique({
     where: { id: merchantId },
@@ -183,6 +176,24 @@ export async function POST(
     });
     return NextResponse.json(
       { error: "Aucun programme valide" },
+      { status: 400, headers: responseHeaders }
+    );
+  }
+
+  const formValidation = validateJoinFormRequirements(
+    { firstName, email, phone, birthDate },
+    combineJoinFormRequirements(
+      programs.map((program) => getJoinFormRequirements(program.config))
+    )
+  );
+  if (formValidation) {
+    await logAttempt({
+      programId: programs[0].id,
+      result: "VALIDATION_ERROR",
+      blockedReason: formValidation.reason,
+    });
+    return NextResponse.json(
+      { error: formValidation.message },
       { status: 400, headers: responseHeaders }
     );
   }

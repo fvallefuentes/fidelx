@@ -14,6 +14,10 @@ import { verifyJoinIntent } from "@/lib/anti-abuse/join-intent";
 import { getEffectiveLimits, countActiveCards } from "@/lib/plan-limits";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
+import {
+  getJoinFormRequirements,
+  validateJoinFormRequirements,
+} from "@/lib/join-form";
 
 export async function POST(
   req: Request,
@@ -119,14 +123,6 @@ export async function POST(
     );
   }
 
-  if (!firstName) {
-    return respond(
-      { error: "Le prénom est requis" },
-      { status: 400 },
-      { result: "VALIDATION_ERROR", blockedReason: "missing_first_name" }
-    );
-  }
-
   const email = normalizeEmail(rawEmail);
   const phone = normalizePhone(rawPhone);
 
@@ -153,11 +149,15 @@ export async function POST(
     birthDate = parsed;
   }
 
-  if (!email && !phone) {
+  const formValidation = validateJoinFormRequirements(
+    { firstName, email, phone, birthDate },
+    getJoinFormRequirements(program.config)
+  );
+  if (formValidation) {
     return respond(
-      { error: "Un email ou téléphone est requis" },
+      { error: formValidation.message },
       { status: 400 },
-      { result: "VALIDATION_ERROR", blockedReason: "missing_email_phone" }
+      { result: "VALIDATION_ERROR", blockedReason: formValidation.reason }
     );
   }
 

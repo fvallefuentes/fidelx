@@ -1,12 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  combineJoinFormRequirements,
+  type JoinFormRequirements,
+} from "@/lib/join-form";
 
 type Program = {
   id: string;
   name: string;
   type: string;
   rewardLabel: string;
+  joinForm: JoinFormRequirements;
 };
 
 type CardResult = {
@@ -53,6 +58,11 @@ export default function JoinAllForm({
   const [results, setResults] = useState<CardResult[] | null>(null);
   const [clientFirstName, setClientFirstName] = useState("");
   const [joinIntent, setJoinIntent] = useState<JoinIntent | null>(null);
+  const requirements = combineJoinFormRequirements(
+    programs
+      .filter((program) => selected.has(program.id))
+      .map((program) => program.joinForm)
+  );
 
   useEffect(() => {
     requestJoinIntent(merchantId)
@@ -74,8 +84,20 @@ export default function JoinAllForm({
       setError("Sélectionnez au moins une carte de fidélité.");
       return;
     }
+    if (requirements.emailRequired && !email) {
+      setError("Email requis.");
+      return;
+    }
+    if (requirements.phoneRequired && !phone) {
+      setError("Téléphone requis.");
+      return;
+    }
     if (!email && !phone) {
       setError("Email ou téléphone requis.");
+      return;
+    }
+    if (requirements.birthDateRequired && !birthDate) {
+      setError("Date de naissance requise.");
       return;
     }
     if (!firstName.trim()) {
@@ -221,7 +243,9 @@ export default function JoinAllForm({
         </div>
 
         <div className="join-field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">
+            Email{requirements.emailRequired ? " *" : ""}
+          </label>
           <input
             id="email"
             type="email"
@@ -230,11 +254,14 @@ export default function JoinAllForm({
             autoComplete="email"
             placeholder="vous@email.com"
             maxLength={200}
+            required={requirements.emailRequired}
           />
         </div>
 
         <div className="join-field">
-          <label htmlFor="phone">Téléphone</label>
+          <label htmlFor="phone">
+            Téléphone{requirements.phoneRequired ? " *" : ""}
+          </label>
           <input
             id="phone"
             type="tel"
@@ -243,16 +270,26 @@ export default function JoinAllForm({
             autoComplete="tel"
             placeholder="+41 79 123 45 67"
             maxLength={40}
+            required={requirements.phoneRequired}
           />
         </div>
 
         <p style={{ fontSize: 12, color: "var(--ink-4)", marginTop: -8 }}>
-          Email ou téléphone, au moins l&apos;un des deux.
+          {requirements.emailRequired && requirements.phoneRequired
+            ? "Email et téléphone requis."
+            : requirements.emailRequired
+              ? "Email requis, téléphone optionnel."
+              : requirements.phoneRequired
+                ? "Téléphone requis, email optionnel."
+                : "Email ou téléphone, au moins l'un des deux."}
         </p>
 
         <div className="join-field">
           <label htmlFor="birthDate">
-            Date de naissance <span style={{ opacity: 0.6 }}>(facultatif)</span>
+            Date de naissance{" "}
+            {!requirements.birthDateRequired && (
+              <span style={{ opacity: 0.6 }}>(facultatif)</span>
+            )}
           </label>
           <input
             id="birthDate"
@@ -260,6 +297,7 @@ export default function JoinAllForm({
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
             max={new Date().toISOString().slice(0, 10)}
+            required={requirements.birthDateRequired}
           />
           <p style={{ fontSize: 11, color: "var(--ink-4)", marginTop: 4 }}>
             Pour recevoir une surprise le jour de votre anniversaire 🎂

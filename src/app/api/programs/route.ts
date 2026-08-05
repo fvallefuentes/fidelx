@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getEffectiveLimits, type ProgramType } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
+import { getJoinFormRequirements } from "@/lib/join-form";
 import type { Prisma } from "@/generated/prisma/client";
 import type { RewardType } from "@/generated/prisma/enums";
 
@@ -128,6 +129,10 @@ export async function POST(req: Request) {
     where: { id: session.user.id },
   });
   const limits = getEffectiveLimits(user);
+  const normalizedConfig = {
+    ...config,
+    joinForm: getJoinFormRequirements(config),
+  };
 
   // Limite du nombre de programmes actifs
   if (limits.maxPrograms !== null) {
@@ -159,7 +164,7 @@ export async function POST(req: Request) {
       establishmentId: linkedEstablishmentId,
       name,
       type,
-      config: config as Prisma.InputJsonValue,
+      config: normalizedConfig as Prisma.InputJsonValue,
       cardDesign: cardDesign as Prisma.InputJsonValue,
       rewards: rewards?.length
         ? {

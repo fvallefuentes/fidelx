@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import LogoMark from "@/components/landing/LogoMark";
+import { getJoinFormRequirements } from "@/lib/join-form";
 
 interface ProgramInfo {
   id: string;
@@ -49,6 +50,7 @@ export default function JoinPage() {
   const [error, setError] = useState("");
   const [recoverySent, setRecoverySent] = useState(false);
   const [joinIntent, setJoinIntent] = useState<JoinIntent | null>(null);
+  const requirements = getJoinFormRequirements(program?.config);
 
   useEffect(() => {
     Promise.all([
@@ -68,8 +70,20 @@ export default function JoinPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (requirements.emailRequired && !email) {
+      setError(t("emailRequired"));
+      return;
+    }
+    if (requirements.phoneRequired && !phone) {
+      setError(t("phoneRequired"));
+      return;
+    }
     if (!email && !phone) {
       setError(t("contactRequired"));
+      return;
+    }
+    if (requirements.birthDateRequired && !birthDate) {
+      setError(t("birthDateRequired"));
       return;
     }
     setSubmitting(true);
@@ -198,7 +212,9 @@ export default function JoinPage() {
               </div>
 
               <div className="join-field">
-                <label htmlFor="email">Email</label>
+                <label htmlFor="email">
+                  Email{requirements.emailRequired ? " *" : ""}
+                </label>
                 <input
                   id="email"
                   type="email"
@@ -206,13 +222,21 @@ export default function JoinPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
+                  required={requirements.emailRequired}
                 />
               </div>
 
-              <div className="join-or">{t("or")}</div>
+              {!requirements.emailRequired && !requirements.phoneRequired && (
+                <div className="join-or">{t("or")}</div>
+              )}
+              {requirements.emailRequired && requirements.phoneRequired && (
+                <div className="join-or">{t("and")}</div>
+              )}
 
               <div className="join-field">
-                <label htmlFor="phone">{t("phone")}</label>
+                <label htmlFor="phone">
+                  {t("phone")}{requirements.phoneRequired ? " *" : ""}
+                </label>
                 <input
                   id="phone"
                   type="tel"
@@ -220,14 +244,17 @@ export default function JoinPage() {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   autoComplete="tel"
+                  required={requirements.phoneRequired}
                 />
               </div>
 
               <div className="join-field">
                 <label htmlFor="birthDate">
-                  {t("birthDate")}{" "}
+                  {t("birthDate")}{requirements.birthDateRequired ? " *" : " "}
                   <span style={{ color: "#8a8e84", fontSize: 11 }}>
-                    {t("birthDateHint")}
+                    {requirements.birthDateRequired
+                      ? t("birthDateRequiredHint")
+                      : t("birthDateHint")}
                   </span>
                 </label>
                 <input
@@ -237,6 +264,7 @@ export default function JoinPage() {
                   onChange={(e) => setBirthDate(e.target.value)}
                   autoComplete="bday"
                   max={new Date().toISOString().split("T")[0]}
+                  required={requirements.birthDateRequired}
                 />
               </div>
 

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import LogoMark from "@/components/landing/LogoMark";
 import JoinAllForm from "@/components/join-all/JoinAllForm";
+import { getJoinFormRequirements } from "@/lib/join-form";
 
 export const metadata: Metadata = {
   title: "Rejoindre les cartes de fidélité",
@@ -71,6 +72,7 @@ export default async function JoinAllPage({
       config: p.config as Record<string, unknown>,
       rewards: p.rewards,
     }),
+    joinForm: getJoinFormRequirements(p.config),
   }));
 
   if (programs.length === 0) {
