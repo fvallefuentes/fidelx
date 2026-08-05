@@ -2774,7 +2774,12 @@ function EditProgramDesignModal({
           </div>
 
           <div className="flex gap-2 justify-end pt-2 border-t border-white/10">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button
+              type="button"
+              variant="outline"
+              className="program-edit-cancel"
+              onClick={onClose}
+            >
               Annuler
             </Button>
             <Button type="submit" disabled={saving}>

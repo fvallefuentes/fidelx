@@ -7342,6 +7342,17 @@ html, body { overflow-x: clip; }
   font-size: 11px;
   line-height: 1.45;
 }
+.dashboard .program-edit-modal button.program-edit-cancel {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: #f4f5f1 !important;
+  box-shadow: none !important;
+}
+.dashboard .program-edit-modal button.program-edit-cancel:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.48) !important;
+  color: #ffffff !important;
+}
 .recovery-modal-explain {
   margin: 0;
   font-size: 13.5px;
