@@ -7305,6 +7305,43 @@ html, body { overflow-x: clip; }
   align-items: center;
   gap: 16px;
 }
+
+/* Program editor stays dark in both dashboard themes. */
+.dashboard .program-edit-modal input:not([type]),
+.dashboard .program-edit-modal input[type="text"],
+.dashboard .program-edit-modal input[type="number"],
+.dashboard .program-edit-modal select {
+  min-height: 40px;
+  background: #151615 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #f4f5f1 !important;
+  caret-color: #d4ff4e;
+  box-shadow: none !important;
+}
+.dashboard .program-edit-modal input::placeholder {
+  color: rgba(244, 245, 241, 0.46) !important;
+}
+.dashboard .program-edit-modal select option {
+  background: #151615;
+  color: #f4f5f1;
+}
+.dashboard .program-edit-modal label.text-gray-500,
+.dashboard .program-edit-modal p.text-gray-400,
+.dashboard .program-edit-modal p.text-gray-500 {
+  color: #aeb3a8 !important;
+}
+.dashboard .program-edit-modal input:focus,
+.dashboard .program-edit-modal select:focus {
+  border-color: rgba(212, 255, 78, 0.72) !important;
+  box-shadow: 0 0 0 3px rgba(212, 255, 78, 0.12) !important;
+  outline: none;
+}
+.program-edit-help {
+  margin: 4px 0 0;
+  color: #aeb3a8;
+  font-size: 11px;
+  line-height: 1.45;
+}
 .recovery-modal-explain {
   margin: 0;
   font-size: 13.5px;

@@ -2118,12 +2118,13 @@ function EditProgramDesignModal({
   const isFree = plan === "FREE";
   const design = (program.cardDesign || {}) as Record<string, string>;
   const config = (program.config || {}) as Record<string, unknown>;
-  const maxStamps =
+  const initialMaxStamps =
     (config.maxStamps as number) ||
     ((config.tiers as { points: number }[])?.[0]?.points) ||
     10;
 
   const [name, setName] = useState(program.name);
+  const [maxStamps, setMaxStamps] = useState(initialMaxStamps);
   const [bgColor, setBgColor] = useState(design.bgColor || "#1a1a2e");
   const [textColor, setTextColor] = useState(design.textColor || "#ffffff");
   const [stampColor, setStampColor] = useState(
@@ -2280,6 +2281,7 @@ function EditProgramDesignModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name,
+        ...(program.type === "STAMPS" ? { maxStamps } : {}),
         cardDesign: {
           bgColor,
           textColor,
@@ -2336,7 +2338,7 @@ function EditProgramDesignModal({
       style={{ alignItems: "flex-start", paddingTop: "5vh", paddingBottom: "5vh" }}
     >
       <div
-        className="recovery-modal"
+        className="recovery-modal program-edit-modal"
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 760, maxHeight: "90vh" }}
       >
@@ -2346,7 +2348,7 @@ function EditProgramDesignModal({
               size={15}
               style={{ display: "inline", marginRight: 8, verticalAlign: -2 }}
             />
-            Modifier le programme — {program.name}
+            Modifier le programme - {program.name}
           </h2>
           <button
             type="button"
@@ -2387,20 +2389,41 @@ function EditProgramDesignModal({
                 <Input
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ex: Le 10ᵉ café offert"
+                  placeholder="Ex : Le 10e café offert"
                 />
               </div>
 
+              {program.type === "STAMPS" && (
+                <div className="space-y-1">
+                  <label htmlFor="edit-max-stamps" className="text-xs text-gray-500">
+                    Tampons requis
+                  </label>
+                  <Input
+                    id="edit-max-stamps"
+                    type="number"
+                    min={1}
+                    max={20}
+                    step={1}
+                    value={maxStamps}
+                    onChange={(e) => setMaxStamps(Number(e.target.value))}
+                    required
+                  />
+                  <p className="program-edit-help">
+                    Entre 1 et 20. Les tampons déjà acquis par les clients sont conservés.
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-1">
                 <label className="text-xs text-gray-500">
-                  ?tablissement associ?
+                  Établissement associé
                 </label>
                 <select
                   value={establishmentId}
                   onChange={(e) => setEstablishmentId(e.target.value)}
                   className="w-full rounded border border-gray-300 bg-white px-2 py-2 text-sm"
                 >
-                  <option value="">Aucun ?tablissement</option>
+                  <option value="">Aucun établissement</option>
                   {establishments.map((est) => (
                     <option key={est.id} value={est.id}>
                       {est.name}
@@ -2408,7 +2431,7 @@ function EditProgramDesignModal({
                   ))}
                 </select>
                 <p className="text-xs text-gray-400">
-                  Utilis? pour le nom du point de vente et la position Wallet.
+                  Utilisé pour le nom du point de vente et la position Wallet.
                 </p>
               </div>
 
@@ -2418,7 +2441,7 @@ function EditProgramDesignModal({
                 dark
               />
 
-              {/* Lock notice for stamps count */}
+              {/* Program type remains immutable; client progress is preserved. */}
               <div
                 className="rounded-lg flex items-start gap-2 px-3 py-2 text-xs"
                 style={{
@@ -2429,8 +2452,8 @@ function EditProgramDesignModal({
               >
                 <Lock size={12} style={{ flexShrink: 0, marginTop: 2 }} />
                 <span>
-                  Le type de programme n&apos;est pas modifiable — cela casserait
-                  les progressions des cartes déjà émises. Pour changer ces paramètres, créez un nouveau programme.
+                  Le type de programme n&apos;est pas modifiable. Le nombre de tampons
+                  requis peut évoluer sans remettre à zéro les cartes déjà émises.
                 </span>
               </div>
 

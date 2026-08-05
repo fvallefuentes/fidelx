@@ -8,10 +8,7 @@ import { getStampAreaInset, getStampAreaRadius } from "@/lib/wallet/stamp-icons"
 import type { Prisma } from "@/generated/prisma/client";
 import { getJoinFormRequirements } from "@/lib/join-form";
 
-/* ─── PATCH : modifier le design + nom + description du programme ───
-   Le nombre de tampons (maxStamps), le type de programme et la config
-   structurelle ne sont volontairement PAS modifiables car cela casserait
-   les progressions des cartes déjà émises. */
+/* Modifier les informations et le design d'un programme existant. */
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ programId: string }> }
@@ -29,8 +26,14 @@ export async function PATCH(
       id: true,
       merchantId: true,
       name: true,
+      type: true,
       cardDesign: true,
       config: true,
+      rewards: {
+        where: { isActive: true },
+        select: { id: true, threshold: true },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
@@ -46,6 +49,7 @@ export async function PATCH(
 
   const body = (await req.json()) as {
     name?: string;
+    maxStamps?: number;
     cardDesign?: {
       bgColor?: string;
       textColor?: string;
@@ -96,6 +100,26 @@ export async function PATCH(
   const currentDesign =
     (program.cardDesign as Record<string, unknown>) ?? {};
   const currentConfig = (program.config as Record<string, unknown>) ?? {};
+  let nextMaxStamps: number | undefined;
+  if (body.maxStamps !== undefined) {
+    if (program.type !== "STAMPS") {
+      return NextResponse.json(
+        { error: "Le nombre de tampons ne concerne que les programmes à tampons." },
+        { status: 400 }
+      );
+    }
+    if (
+      !Number.isInteger(body.maxStamps) ||
+      body.maxStamps < 1 ||
+      body.maxStamps > 20
+    ) {
+      return NextResponse.json(
+        { error: "Le nombre de tampons doit être compris entre 1 et 20." },
+        { status: 400 }
+      );
+    }
+    nextMaxStamps = body.maxStamps;
+  }
   type Design = Record<string, unknown>;
   const nextDesign: Design = { ...currentDesign };
   if (body.cardDesign) {
@@ -182,30 +206,55 @@ export async function PATCH(
     }
   }
 
-  const updated = await prisma.loyaltyProgram.update({
-    where: { id: programId },
-    data: {
-      name: typeof body.name === "string" && body.name.trim()
-        ? body.name.trim()
-        : program.name,
-      cardDesign: nextDesign as Prisma.InputJsonValue,      ...(establishmentUpdate !== undefined
-        ? { establishmentId: establishmentUpdate }
-        : {}),
-      ...(body.joinForm
-        ? {
-            config: {
-              ...currentConfig,
-              joinForm: getJoinFormRequirements({ joinForm: body.joinForm }),
-            } as Prisma.InputJsonValue,
-          }
-        : {}),
-    },
-    select: {
-      id: true,
-      name: true,
-      cardDesign: true,
-      config: true,
-    },
+  const nextConfig = {
+    ...currentConfig,
+    ...(nextMaxStamps !== undefined ? { maxStamps: nextMaxStamps } : {}),
+    ...(body.joinForm
+      ? { joinForm: getJoinFormRequirements({ joinForm: body.joinForm }) }
+      : {}),
+  };
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const nextProgram = await tx.loyaltyProgram.update({
+      where: { id: programId },
+      data: {
+        name:
+          typeof body.name === "string" && body.name.trim()
+            ? body.name.trim()
+            : program.name,
+        cardDesign: nextDesign as Prisma.InputJsonValue,
+        ...(establishmentUpdate !== undefined
+          ? { establishmentId: establishmentUpdate }
+          : {}),
+        ...(nextMaxStamps !== undefined || body.joinForm
+          ? { config: nextConfig as Prisma.InputJsonValue }
+          : {}),
+      },
+      select: {
+        id: true,
+        name: true,
+        cardDesign: true,
+        config: true,
+      },
+    });
+
+    if (nextMaxStamps !== undefined) {
+      const previousMaxStamps =
+        typeof currentConfig.maxStamps === "number"
+          ? currentConfig.maxStamps
+          : 10;
+      const rewardToUpdate =
+        program.rewards.find((reward) => reward.threshold === previousMaxStamps) ??
+        program.rewards[0];
+      if (rewardToUpdate) {
+        await tx.reward.update({
+          where: { id: rewardToUpdate.id },
+          data: { threshold: nextMaxStamps },
+        });
+      }
+    }
+
+    return nextProgram;
   });
 
   // Propager le nouveau design aux cartes Wallet existantes via push.
