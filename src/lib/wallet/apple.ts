@@ -230,8 +230,8 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
 
   // Type de pass: storeCard — c'est le seul (avec coupon) qui supporte
   // un strip image visible côté iOS. generic et eventTicket ne l'affichent
-  // pas. storeCard limite à 1 primary field, donc on met PROGRAMME en
-  // secondaryField (qui rend à droite sous le strip).
+  // pas. Le programme reste compact dans le header et l'offre profite de la
+  // zone secondaire, plus large, sous le strip.
   pass.type = "storeCard";
 
   // QR code en bas avec serial visible — setBarcodes() est la vraie API
@@ -243,8 +243,9 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     altText: passData.serialNumber,
   });
 
-  // Sous le strip : 2 secondary fields côte à côte (gauche + droite)
-  // — pas de primary qui s'afficherait en gros et écraserait le strip
+  // Sous le strip : progression à gauche, dernière offre à droite.
+  // Le champ offer conserve changeMessage : c'est lui qui fournit le texte
+  // de la notification Apple Wallet lors d'une campagne.
   const isPointsProgram = passData.programType === "POINTS";
   if (isPointsProgram) {
     pass.secondaryFields.push({
@@ -255,35 +256,30 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
         : `${passData.currentPoints}`,
       changeMessage: "Vous avez maintenant %@ points !",
     });
-    pass.secondaryFields.push({
-      key: "program",
-      label: "PROGRAMME",
-      value: passData.programName,
-      textAlignment: "PKTextAlignmentRight",
-    });
   } else {
     pass.secondaryFields.push({
       key: "stamps_required",
       label: "TAMPONS REQUIS",
       value: `${passData.maxStamps}`,
     });
-    pass.secondaryFields.push({
-      key: "program",
-      label: "PROGRAMME",
-      value: passData.programName,
-      textAlignment: "PKTextAlignmentRight",
-    });
   }
 
-  // Header top-right : uniquement pour les plans payants
-  if (!passData.showFidlifyBranding) {
-    pass.headerFields.push({
-      key: "offer",
-      label: "OFFRE",
-      value: passData.lastMessage || "",
-      changeMessage: "%@",
-    });
-  }
+  pass.secondaryFields.push({
+    key: "offer",
+    label: "OFFRE",
+    value: passData.lastMessage || "",
+    changeMessage: "%@",
+    textAlignment: "PKTextAlignmentRight",
+  });
+
+  // Le nom du programme est plus stable et plus court que le texte d'une
+  // offre : il convient mieux à la petite zone en haut à droite.
+  pass.headerFields.push({
+    key: "program",
+    label: "PROGRAMME",
+    value: passData.programName,
+    textAlignment: "PKTextAlignmentRight",
+  });
 
   // Champs verso
 
@@ -292,18 +288,6 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     label: "Commerce",
     value: passData.merchantName,
   });
-
-  // Pour le plan FREE, lastMessage ne peut pas être dans le header
-  // (occupé par le branding). On le met au verso avec changeMessage
-  // pour que la notif iOS marche quand même lors d'une campagne.
-  if (passData.showFidlifyBranding) {
-    pass.backFields.push({
-      key: "lastMessage",
-      label: "Dernière offre",
-      value: passData.lastMessage || "Aucune offre récente",
-      changeMessage: "%@",
-    });
-  }
 
   pass.backFields.push({
     key: "privacy",

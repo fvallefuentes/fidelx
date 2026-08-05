@@ -32,6 +32,7 @@ type WalletPreviewProps = {
   stampEmptyColor?: string;
   labelColor?: string;
   programName: string;
+  offerText?: string;
   maxStamps: number;
   logoData?: string;
   notificationLogoData?: string;
@@ -96,6 +97,7 @@ function ProgramCardPreview({ program }: { program: Program }) {
         stampBgImage={(design.stampBgImage as string) || undefined}
         programType={program.type}
         programName={program.name}
+        offerText={program.rewards[0]?.name || "Votre dernière offre"}
         maxStamps={max}
         unlimited={
           program.type === "POINTS" && config.unlimited === true
@@ -919,6 +921,7 @@ function WalletCardPreview({
   stampEmptyColor,
   labelColor,
   programName,
+  offerText = "Votre dernière offre",
   maxStamps,
   logoData,
   programType = "STAMPS",
@@ -965,7 +968,7 @@ function WalletCardPreview({
 
   return (
     <div className="wcp" style={{ background: bgColor, color: textColor }}>
-      {/* Header : logo top-left, OFFRE top-right */}
+      {/* Header : logo top-left, PROGRAMME top-right */}
       <div className="wcp-head">
         {logoData ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -979,7 +982,10 @@ function WalletCardPreview({
           />
         )}
         <div className="wcp-offer">
-          <span style={{ color: lblColor }}>OFFRE</span>
+          <span className="wcp-header-label" style={{ color: lblColor }}>
+            PROGRAMME
+          </span>
+          <span className="wcp-header-value">{programName || "—"}</span>
         </div>
       </div>
 
@@ -1112,11 +1118,11 @@ function WalletCardPreview({
               : maxStamps}
           </span>
         </div>
-        <div className="wcp-field" style={{ textAlign: "right" }}>
+        <div className="wcp-field wcp-field-offer" style={{ textAlign: "right" }}>
           <span className="wcp-label" style={{ color: lblColor }}>
-            PROGRAMME
+            OFFRE
           </span>
-          <span className="wcp-value">{programName || "—"}</span>
+          <span className="wcp-value">{offerText}</span>
         </div>
       </div>
 
@@ -1613,6 +1619,7 @@ function CreateProgramForm({
       stampEmptyColor={stampEmptyColor}
       labelColor={labelColor}
       programName={name || "Mon programme"}
+      offerText={rewardName || "Votre dernière offre"}
       merchantName={merchantDisplayName}
       maxStamps={maxStamps}
       logoData={logoData}
@@ -2708,6 +2715,7 @@ function EditProgramDesignModal({
                 stampEmptyColor={stampEmptyColor}
                 labelColor={labelColor}
                 programName={name}
+                offerText={program.rewards[0]?.name || "Votre dernière offre"}
                 merchantName={
                   establishments.find((est) => est.id === establishmentId)?.name ||
                   program.establishment?.name ||
