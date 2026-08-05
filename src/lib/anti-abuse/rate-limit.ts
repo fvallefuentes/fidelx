@@ -31,32 +31,39 @@ export type RateLimitInput = {
 };
 
 export type RateLimitVerdict =
-  | { ok: true }
-  | { ok: false; rule: string; retryAfterSeconds: number };
+  | { ok: true; warnings: string[] }
+  | {
+      ok: false;
+      rule: string;
+      retryAfterSeconds: number;
+      warnings: string[];
+    };
 
 /**
  * Règles par défaut. Tunables sans recompil — on peut les exposer via env si besoin.
  *
  * Logique :
- * - IP : 3 cartes / 15 min sur le même programme (cas du flot normal en boutique
- *   où plusieurs clients passent par le même Wi-Fi)
+ * - IP : jamais bloquante. A partir de 20 succès / heure, une alerte est
+ *   attachée au journal admin afin de ne pas pénaliser un Wi-Fi de boutique.
  * - email : 1 carte / 24h / programme (anti-doublon, déjà couvert par dedup mais
  *   limite les retry abusifs)
  * - phone : idem
  * - cookie : 3 cartes / 24h tous programmes confondus (un même appareil ne devrait
  *   pas légitimement inscrire 10 personnes différentes en 1 jour)
- * - fingerprint : 5 cartes / 24h tous programmes (filet de sécurité si cookie effacé)
- * - IP global : 20 cartes / 1h tous programmes (anti-bot agressif)
+ * - fingerprint : 5 cartes / 24h, uniquement si le cookie est absent
  */
 const RULES: Record<keyof Omit<RateLimitInput, "programId">, RateLimitRule[]> = {
-  ipPrefix: [
-    { name: "ip-program-15min", windowMs: 15 * 60_000, max: 3 },
-    { name: "ip-global-1h", windowMs: 60 * 60_000, max: 20 },
-  ],
+  ipPrefix: [],
   email: [{ name: "email-program-24h", windowMs: 24 * 60 * 60_000, max: 1 }],
   phone: [{ name: "phone-program-24h", windowMs: 24 * 60 * 60_000, max: 1 }],
   deviceCookie: [{ name: "cookie-global-24h", windowMs: 24 * 60 * 60_000, max: 3 }],
   fingerprint: [{ name: "fp-global-24h", windowMs: 24 * 60 * 60_000, max: 5 }],
+};
+
+const IP_ALERT_RULE: RateLimitRule = {
+  name: "ip-global-1h-alert",
+  windowMs: 60 * 60_000,
+  max: 20,
 };
 
 /**
@@ -70,22 +77,6 @@ export async function evaluateRateLimits(
     rule: RateLimitRule;
     where: Record<string, unknown>;
   }> = [];
-
-  // ipPrefix : par programme (15 min) ET global (1h)
-  if (input.ipPrefix) {
-    for (const rule of RULES.ipPrefix) {
-      const isPerProgram = rule.name.includes("program");
-      checks.push({
-        rule,
-        where: {
-          ipPrefix: input.ipPrefix,
-          ...(isPerProgram ? { programId: input.programId } : {}),
-          createdAt: { gte: new Date(Date.now() - rule.windowMs) },
-          result: "SUCCESS" satisfies JoinResult,
-        },
-      });
-    }
-  }
 
   // email : par programme uniquement
   if (input.email) {
@@ -131,8 +122,8 @@ export async function evaluateRateLimits(
     }
   }
 
-  // fingerprint : global, tous programmes
-  if (input.fingerprint) {
+  // fingerprint : filet de sécurité seulement si aucun cookie device fiable
+  if (input.fingerprint && !input.deviceCookie) {
     for (const rule of RULES.fingerprint) {
       checks.push({
         rule,
@@ -145,12 +136,25 @@ export async function evaluateRateLimits(
     }
   }
 
-  // Exécute tous les counts en parallèle pour la perf
-  const results = await Promise.all(
-    checks.map((c) =>
-      prisma.joinAttempt.count({ where: c.where })
-    )
-  );
+  // L'IP reste un signal visible par l'admin, jamais une cause de blocage.
+  const ipAlertPromise = input.ipPrefix
+    ? prisma.joinAttempt.count({
+        where: {
+          ipPrefix: input.ipPrefix,
+          createdAt: {
+            gte: new Date(Date.now() - IP_ALERT_RULE.windowMs),
+          },
+          result: "SUCCESS" satisfies JoinResult,
+        },
+      })
+    : Promise.resolve(0);
+
+  const [results, ipSuccessCount] = await Promise.all([
+    Promise.all(checks.map((c) => prisma.joinAttempt.count({ where: c.where }))),
+    ipAlertPromise,
+  ]);
+  const warnings =
+    ipSuccessCount >= IP_ALERT_RULE.max ? [IP_ALERT_RULE.name] : [];
 
   for (let i = 0; i < checks.length; i++) {
     const count = results[i];
@@ -160,9 +164,10 @@ export async function evaluateRateLimits(
         ok: false,
         rule: rule.name,
         retryAfterSeconds: Math.ceil(rule.windowMs / 1000),
+        warnings,
       };
     }
   }
 
-  return { ok: true };
+  return { ok: true, warnings };
 }

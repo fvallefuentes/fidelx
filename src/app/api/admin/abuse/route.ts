@@ -16,6 +16,7 @@ export async function GET(req: Request) {
 
   const since24h = new Date(Date.now() - 24 * 60 * 60_000);
   const since7d = new Date(Date.now() - 7 * 24 * 60 * 60_000);
+  const since1h = new Date(Date.now() - 60 * 60_000);
 
   // Filtre principal
   const where: Record<string, unknown> = {};
@@ -83,6 +84,21 @@ export async function GET(req: Request) {
     take: 10,
   });
 
+  // Alerte uniquement : une IP partagée peut légitimement dépasser ce seuil.
+  // Aucun blocage automatique n'est créé à partir de cette liste.
+  const ipAlertGroups = await prisma.joinAttempt.groupBy({
+    by: ["ipPrefix"],
+    where: {
+      createdAt: { gte: since1h },
+      ipPrefix: { not: null },
+      result: "SUCCESS",
+    },
+    _count: { _all: true },
+    orderBy: { _count: { ipPrefix: "desc" } },
+    having: { ipPrefix: { _count: { gt: 19 } } },
+    take: 10,
+  });
+
   // IPs actuellement bloquées (non expirées)
   const blockedIps = await prisma.blockedIp.findMany({
     where: {
@@ -101,6 +117,10 @@ export async function GET(req: Request) {
       total7d,
     },
     suspicious: {
+      ipAlerts: ipAlertGroups.map((g) => ({
+        ipPrefix: g.ipPrefix,
+        count: g._count._all,
+      })),
       ips: ipGroups.map((g) => ({
         ipPrefix: g.ipPrefix,
         count: g._count._all,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Program = {
   id: string;
@@ -17,6 +17,19 @@ type CardResult = {
   googleWalletUrl: string | null;
   alreadyExisted: boolean;
 };
+
+type JoinIntent = { token: string; fetchedAt: number };
+
+async function requestJoinIntent(merchantId: string): Promise<JoinIntent> {
+  const res = await fetch(
+    `/api/join-intent?scope=merchant&targetId=${encodeURIComponent(merchantId)}`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) throw new Error("join_intent_unavailable");
+  const data = (await res.json()) as { token?: string };
+  if (!data.token) throw new Error("join_intent_missing");
+  return { token: data.token, fetchedAt: Date.now() };
+}
 
 export default function JoinAllForm({
   merchantId,
@@ -39,6 +52,13 @@ export default function JoinAllForm({
   const [error, setError] = useState("");
   const [results, setResults] = useState<CardResult[] | null>(null);
   const [clientFirstName, setClientFirstName] = useState("");
+  const [joinIntent, setJoinIntent] = useState<JoinIntent | null>(null);
+
+  useEffect(() => {
+    requestJoinIntent(merchantId)
+      .then(setJoinIntent)
+      .catch(() => setError("Impossible de sécuriser l'inscription. Rechargez la page."));
+  }, [merchantId]);
 
   function toggleProgram(id: string) {
     const next = new Set(selected);
@@ -65,6 +85,11 @@ export default function JoinAllForm({
 
     setSubmitting(true);
     try {
+      let activeIntent = joinIntent;
+      if (!activeIntent || Date.now() - activeIntent.fetchedAt > 10 * 60_000) {
+        activeIntent = await requestJoinIntent(merchantId);
+        setJoinIntent(activeIntent);
+      }
       const res = await fetch(`/api/merchants/${merchantId}/join-all`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,10 +99,16 @@ export default function JoinAllForm({
           phone,
           birthDate,
           programIds: Array.from(selected),
+          joinIntentToken: activeIntent.token,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 403 && data.code === "JOIN_INTENT_INVALID") {
+          requestJoinIntent(merchantId)
+            .then(setJoinIntent)
+            .catch(() => undefined);
+        }
         setError(data.error ?? "Erreur lors de l'inscription.");
       } else {
         setResults(data.cards);

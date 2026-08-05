@@ -97,7 +97,7 @@ model JoinAttempt {
   ipPrefix      String? // IP anonymisée (IPv4 /24, IPv6 /48)
   userAgent     String?    @db.Text
   deviceCookie  String? // valeur du cookie fid_dev (UUID)
-  fingerprint   String? // hash(UA + IP/24 + Accept-Language)
+  fingerprint   String? // hash(UA + IP/24 + Accept-Language), fallback si cookie absent
   email         String? // email normalisé (peut être null)
   phone         String? // phone normalisé E.164 (peut être null)
   cardId        String? // si succès, ID de la carte créée

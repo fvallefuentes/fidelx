@@ -10,6 +10,7 @@ import {
   newDeviceCookieValue,
 } from "@/lib/anti-abuse/fingerprint";
 import { evaluateRateLimits } from "@/lib/anti-abuse/rate-limit";
+import { verifyJoinIntent } from "@/lib/anti-abuse/join-intent";
 import { getEffectiveLimits, countActiveCards } from "@/lib/plan-limits";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
@@ -94,7 +95,29 @@ export async function POST(
     phone: rawPhone,
     birthDate: rawBirthDate,
     referralCode,
+    joinIntentToken,
   } = await req.json();
+
+  const joinIntent = verifyJoinIntent({
+    token: typeof joinIntentToken === "string" ? joinIntentToken : null,
+    scope: "program",
+    targetId: programId,
+    deviceCookie,
+  });
+  if (!joinIntent.ok) {
+    return respond(
+      {
+        error:
+          "Votre session d'inscription a expiré. Rechargez la page puis réessayez.",
+        code: "JOIN_INTENT_INVALID",
+      },
+      { status: 403 },
+      {
+        result: "VALIDATION_ERROR",
+        blockedReason: `join-intent-${joinIntent.reason}`,
+      }
+    );
+  }
 
   if (!firstName) {
     return respond(
@@ -144,7 +167,7 @@ export async function POST(
     ipPrefix: ctx.ipPrefix,
     email,
     phone,
-    deviceCookie,
+    deviceCookie: ctx.deviceCookie,
     fingerprint: ctx.fingerprint,
   });
   if (!rl.ok) {
@@ -329,6 +352,12 @@ export async function POST(
       googleWalletUrl,
     },
     { status: 201 },
-    { result: "SUCCESS", cardId: card.id, email, phone }
+    {
+      result: "SUCCESS",
+      cardId: card.id,
+      email,
+      phone,
+      blockedReason: rl.warnings.join(",") || undefined,
+    }
   );
 }

@@ -10,6 +10,7 @@ import {
   newDeviceCookieValue,
 } from "@/lib/anti-abuse/fingerprint";
 import { evaluateRateLimits } from "@/lib/anti-abuse/rate-limit";
+import { verifyJoinIntent } from "@/lib/anti-abuse/join-intent";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
 import { parseJsonBody } from "@/lib/api/validation";
@@ -54,6 +55,7 @@ const schema = z.object({
       { message: "Date de naissance future : refusée" },
     ),
   programIds: z.array(z.string().trim().min(1)).min(1, "Au moins 1 programme requis").max(20),
+  joinIntentToken: z.string().trim().min(1).max(2_000).optional(),
 });
 
 export async function POST(
@@ -79,27 +81,69 @@ export async function POST(
   const phone = parsed.data.phone ? normalizePhone(parsed.data.phone) : null;
   const birthDate = parsed.data.birthDate ? new Date(parsed.data.birthDate) : null;
 
-  // ─── Rate limit (clé sur le 1er programme sélectionné — l'IP/cookie/fingerprint
-  // restent les vraies barrières même si l'attacker alterne les programmes) ───
-  const rateVerdict = await evaluateRateLimits({
-    programId: programIds[0],
-    ipPrefix: ctx.ipPrefix,
-    email,
-    phone,
+  async function logAttempt({
+    programId,
+    result,
+    blockedReason,
+    cardId,
+  }: {
+    programId: string;
+    result:
+      | "SUCCESS"
+      | "RATE_LIMITED"
+      | "PROGRAM_NOT_FOUND"
+      | "VALIDATION_ERROR";
+    blockedReason?: string;
+    cardId?: string;
+  }) {
+    try {
+      await prisma.joinAttempt.create({
+        data: {
+          programId,
+          ipPrefix: ctx.ipPrefix,
+          userAgent: ctx.userAgent,
+          deviceCookie,
+          fingerprint: ctx.fingerprint,
+          email,
+          phone,
+          cardId: cardId ?? null,
+          result,
+          blockedReason: blockedReason ?? null,
+        },
+      });
+    } catch (error) {
+      console.error("[join-all attempt log] failed:", (error as Error).message);
+    }
+  }
+
+  const joinIntent = verifyJoinIntent({
+    token: parsed.data.joinIntentToken,
+    scope: "merchant",
+    targetId: merchantId,
     deviceCookie,
-    fingerprint: ctx.fingerprint,
   });
-  if (!rateVerdict.ok) {
+  if (!joinIntent.ok) {
+    await logAttempt({
+      programId: programIds[0],
+      result: "VALIDATION_ERROR",
+      blockedReason: `join-intent-${joinIntent.reason}`,
+    });
     return NextResponse.json(
       {
-        error: "Trop de tentatives. Réessayez plus tard.",
-        retryAfterSeconds: rateVerdict.retryAfterSeconds,
+        error:
+          "Votre session d'inscription a expiré. Rechargez la page puis réessayez.",
+        code: "JOIN_INTENT_INVALID",
       },
-      { status: 429, headers: responseHeaders }
+      { status: 403, headers: responseHeaders }
     );
   }
 
   if (!email && !phone) {
+    await logAttempt({
+      programId: programIds[0],
+      result: "VALIDATION_ERROR",
+      blockedReason: "missing_email_phone",
+    });
     return NextResponse.json(
       { error: "Email ou téléphone requis" },
       { status: 400, headers: responseHeaders }
@@ -112,6 +156,11 @@ export async function POST(
     select: { id: true, name: true, suspendedAt: true },
   });
   if (!merchant || merchant.suspendedAt) {
+    await logAttempt({
+      programId: programIds[0],
+      result: "PROGRAM_NOT_FOUND",
+      blockedReason: "merchant_not_found",
+    });
     return NextResponse.json(
       { error: "Commerçant introuvable" },
       { status: 404, headers: responseHeaders }
@@ -127,11 +176,52 @@ export async function POST(
     select: { id: true, name: true, type: true, config: true },
   });
   if (programs.length === 0) {
+    await logAttempt({
+      programId: programIds[0],
+      result: "PROGRAM_NOT_FOUND",
+      blockedReason: "programs_not_found",
+    });
     return NextResponse.json(
       { error: "Aucun programme valide" },
       { status: 400, headers: responseHeaders }
     );
   }
+
+  // Vérifie chaque programme demandé : email et téléphone restent limités
+  // par programme, tandis que l'IP demeure une alerte admin non bloquante.
+  const rateVerdicts = await Promise.all(
+    programs.map((program) =>
+      evaluateRateLimits({
+        programId: program.id,
+        ipPrefix: ctx.ipPrefix,
+        email,
+        phone,
+        deviceCookie: ctx.deviceCookie,
+        fingerprint: ctx.fingerprint,
+      })
+    )
+  );
+  const blockedRateIndex = rateVerdicts.findIndex((verdict) => !verdict.ok);
+  if (blockedRateIndex >= 0) {
+    const blockedVerdict = rateVerdicts[blockedRateIndex];
+    if (!blockedVerdict.ok) {
+      await logAttempt({
+        programId: programs[blockedRateIndex].id,
+        result: "RATE_LIMITED",
+        blockedReason: blockedVerdict.rule,
+      });
+      return NextResponse.json(
+        {
+          error: "Trop de tentatives. Réessayez plus tard.",
+          retryAfterSeconds: blockedVerdict.retryAfterSeconds,
+        },
+        { status: 429, headers: responseHeaders }
+      );
+    }
+  }
+  const rateWarnings = [
+    ...new Set(rateVerdicts.flatMap((verdict) => verdict.warnings)),
+  ];
 
   // ─── Lookup/create client ───
   // On cherche d'abord par email (priorité), sinon par téléphone.
@@ -209,6 +299,14 @@ export async function POST(
     }
 
     const googleWalletUrl = await generateGoogleWalletLink(card.id).catch(() => null);
+    if (!alreadyExisted) {
+      await logAttempt({
+        programId: program.id,
+        result: "SUCCESS",
+        blockedReason: rateWarnings.join(",") || undefined,
+        cardId: card.id,
+      });
+    }
     results.push({
       programId: program.id,
       programName: program.name,

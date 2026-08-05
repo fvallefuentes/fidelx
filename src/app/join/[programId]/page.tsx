@@ -19,6 +19,19 @@ interface ProgramInfo {
   showFidlifyBranding: boolean;
 }
 
+type JoinIntent = { token: string; fetchedAt: number };
+
+async function requestJoinIntent(programId: string): Promise<JoinIntent> {
+  const res = await fetch(
+    `/api/join-intent?scope=program&targetId=${encodeURIComponent(programId)}`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) throw new Error("join_intent_unavailable");
+  const data = (await res.json()) as { token?: string };
+  if (!data.token) throw new Error("join_intent_missing");
+  return { token: data.token, fetchedAt: Date.now() };
+}
+
 export default function JoinPage() {
   const t = useTranslations("Public.join");
   const params = useParams();
@@ -35,11 +48,20 @@ export default function JoinPage() {
   const [googleWalletUrl, setGoogleWalletUrl] = useState("");
   const [error, setError] = useState("");
   const [recoverySent, setRecoverySent] = useState(false);
+  const [joinIntent, setJoinIntent] = useState<JoinIntent | null>(null);
 
   useEffect(() => {
-    fetch(`/api/programs/${programId}/public`)
-      .then((res) => res.json())
-      .then(setProgram)
+    Promise.all([
+      fetch(`/api/programs/${programId}/public`).then((res) => {
+        if (!res.ok) throw new Error("program_not_found");
+        return res.json() as Promise<ProgramInfo>;
+      }),
+      requestJoinIntent(programId),
+    ])
+      .then(([programData, intent]) => {
+        setProgram(programData);
+        setJoinIntent(intent);
+      })
       .catch(() => setError(t("notFoundError")))
       .finally(() => setLoading(false));
   }, [programId, t]);
@@ -53,6 +75,18 @@ export default function JoinPage() {
     setSubmitting(true);
     setError("");
 
+    let activeIntent = joinIntent;
+    if (!activeIntent || Date.now() - activeIntent.fetchedAt > 10 * 60_000) {
+      try {
+        activeIntent = await requestJoinIntent(programId);
+        setJoinIntent(activeIntent);
+      } catch {
+        setError(t("submitError"));
+        setSubmitting(false);
+        return;
+      }
+    }
+
     const res = await fetch(`/api/programs/${programId}/join`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -61,6 +95,7 @@ export default function JoinPage() {
         email: email || undefined,
         phone: phone || undefined,
         birthDate: birthDate || undefined,
+        joinIntentToken: activeIntent.token,
       }),
     });
     const data = await res.json();
@@ -69,6 +104,9 @@ export default function JoinPage() {
         setRecoverySent(true);
         setSubmitting(false);
         return;
+      }
+      if (res.status === 403 && data.code === "JOIN_INTENT_INVALID") {
+        requestJoinIntent(programId).then(setJoinIntent).catch(() => undefined);
       }
       setError(data.error || t("submitError"));
       setSubmitting(false);

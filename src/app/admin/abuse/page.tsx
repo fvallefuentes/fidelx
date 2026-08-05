@@ -57,6 +57,7 @@ type ApiResponse = {
     total7d: number;
   };
   suspicious: {
+    ipAlerts: { ipPrefix: string | null; count: number }[];
     ips: { ipPrefix: string | null; count: number }[];
     cookies: { deviceCookie: string | null; count: number }[];
   };
@@ -156,6 +157,33 @@ export default function AbusePage() {
           icon={Activity}
         />
       </div>
+
+      {data.suspicious.ipAlerts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-400" />
+              Activité IP élevée sur la dernière heure
+            </CardTitle>
+            <CardDescription>
+              Alerte informative uniquement : aucun client n&apos;est bloqué
+              automatiquement, car plusieurs clients peuvent partager le Wi-Fi
+              du commerce.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1.5">
+            {data.suspicious.ipAlerts.map((alert) => (
+              <div
+                key={alert.ipPrefix}
+                className="flex items-center justify-between gap-3 rounded border px-3 py-2 text-xs"
+              >
+                <code className="font-mono">{alert.ipPrefix}</code>
+                <Badge variant="secondary">{alert.count} inscriptions / 1h</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* IPs actuellement bloquées — toujours visible pour pouvoir débloquer */}
       <Card>
