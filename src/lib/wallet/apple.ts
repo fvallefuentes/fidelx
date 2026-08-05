@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { splitAppleOfferText } from "@/lib/wallet/apple-offer";
 
 /**
  * Décode une data URL "data:image/...;base64,XXX" en Buffer,
@@ -243,10 +244,10 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     altText: passData.serialNumber,
   });
 
-  // Sous le strip : progression à gauche, dernière offre à droite.
-  // Le champ offer conserve changeMessage : c'est lui qui fournit le texte
-  // de la notification Apple Wallet lors d'une campagne.
+  // Sous le strip : progression à gauche, première ligne de l'offre à droite.
+  // La suite utilise un champ auxiliaire pour exploiter la ligne inférieure.
   const isPointsProgram = passData.programType === "POINTS";
+  const offerLines = splitAppleOfferText(passData.lastMessage);
   if (isPointsProgram) {
     pass.secondaryFields.push({
       key: "points",
@@ -265,12 +266,19 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
   }
 
   pass.secondaryFields.push({
-    key: "offer",
+    key: "offer_preview_1",
     label: "OFFRE",
-    value: passData.lastMessage || "",
-    changeMessage: "%@",
+    value: offerLines.firstLine,
     textAlignment: "PKTextAlignmentRight",
   });
+
+  if (offerLines.secondLine) {
+    pass.auxiliaryFields.push({
+      key: "offer_preview_2",
+      value: offerLines.secondLine,
+      textAlignment: "PKTextAlignmentRight",
+    });
+  }
 
   // Le nom du programme est plus stable et plus court que le texte d'une
   // offre : il convient mieux à la petite zone en haut à droite.
@@ -287,6 +295,16 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     key: "merchant",
     label: "Commerce",
     value: passData.merchantName,
+  });
+
+  // On conserve la clé historique `offer` et le message intégral pour que les
+  // cartes déjà installées continuent de recevoir une seule notification,
+  // même si le recto présente désormais le texte sur deux champs.
+  pass.backFields.push({
+    key: "offer",
+    label: "Dernière offre",
+    value: passData.lastMessage || "Aucune offre récente",
+    changeMessage: "%@",
   });
 
   pass.backFields.push({

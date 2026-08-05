@@ -2770,6 +2770,17 @@ html, body { overflow-x: clip; }
 .dashboard .wcp-field-offer .wcp-value {
   font-size: 16px;
 }
+.dashboard .wcp-offer-more {
+  min-height: 20px;
+  margin-top: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .dashboard .wcp-qr-wrap {
   display: flex; justify-content: center; padding-top: 8px;
 }
