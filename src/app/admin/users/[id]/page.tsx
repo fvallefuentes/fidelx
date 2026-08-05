@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 import { UserAdminActions } from "@/components/admin/UserAdminActions";
+import { MerchantOperationsPanel } from "@/components/admin/MerchantOperationsPanel";
 
 const ROLE_META: Record<
   string,
@@ -99,6 +100,7 @@ interface MerchantDetail {
     _count: { cards: number };
   }[];
   stats: {
+    clientCount: number;
     cardCount: number;
     scanCount: number;
     rewardCount: number;
@@ -621,9 +623,9 @@ export default function MerchantDetailPage() {
         />
         <KpiCard
           label="Clients"
-          value={data.stats.cardCount}
+          value={data.stats.clientCount}
           icon={CreditCard}
-          sub="Cartes émises"
+          sub="Personnes uniques"
         />
         <KpiCard
           label="Cartes wallet"
@@ -1242,106 +1244,7 @@ export default function MerchantDetailPage() {
       </SectionCard>
       )}
 
-      {/* Programs — USER only */}
-      {data.role === "USER" && (
-      <SectionCard title="Programmes">
-        {data.programs.length === 0 ? (
-          <p style={{ color: MUTED, fontSize: 13 }}>Aucun programme.</p>
-        ) : (
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: 13,
-            }}
-          >
-            <thead>
-              <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-                {["Nom", "Type", "Cartes", "Statut", "Créé le"].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      padding: "10px 0",
-                      textAlign: "left",
-                      color: MUTED,
-                      fontSize: 11,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.programs.map((p, i) => (
-                <tr
-                  key={p.id}
-                  style={{
-                    borderBottom:
-                      i < data.programs.length - 1
-                        ? `1px solid rgba(255,255,255,0.05)`
-                        : undefined,
-                  }}
-                >
-                  <td
-                    style={{
-                      padding: "12px 0",
-                      color: VAL_COLOR,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {p.name}
-                  </td>
-                  <td
-                    style={{ padding: "12px 0", color: "rgba(255,255,255,0.55)" }}
-                  >
-                    {p.type}
-                  </td>
-                  <td
-                    style={{ padding: "12px 0", color: ACCENT, fontWeight: 600 }}
-                  >
-                    {p._count.cards}
-                  </td>
-                  <td style={{ padding: "12px 0" }}>
-                    <span
-                      style={{
-                        background: p.isActive
-                          ? "rgba(212,255,78,0.1)"
-                          : "rgba(255,255,255,0.05)",
-                        border: `1px solid ${
-                          p.isActive
-                            ? "rgba(212,255,78,0.18)"
-                            : "rgba(255,255,255,0.12)"
-                        }`,
-                        borderRadius: 20,
-                        padding: "2px 9px",
-                        fontSize: 11,
-                        color: p.isActive ? ACCENT : MUTED,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {p.isActive ? "Actif" : "Inactif"}
-                    </span>
-                  </td>
-                  <td
-                    style={{
-                      padding: "12px 0",
-                      color: "rgba(255,255,255,0.4)",
-                      fontSize: 12,
-                    }}
-                  >
-                    {new Date(p.createdAt).toLocaleDateString("fr-CH")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </SectionCard>
-      )}
+      {data.role === "USER" && <MerchantOperationsPanel merchantId={data.id} />}
 
       {/* Recent activity — USER + STAFF (STAFF sees employer's activity) */}
       {(data.role === "USER" || data.role === "STAFF") && (

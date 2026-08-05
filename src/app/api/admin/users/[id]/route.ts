@@ -88,12 +88,15 @@ export async function GET(
     programIds = employerPrograms.map((p) => p.id);
   }
 
-  const [cardCount, scanCount, rewardCount, recentTx] =
+  const [cardCount, clientCount, scanCount, rewardCount, recentTx] =
     programIds.length === 0
-      ? [0, 0, 0, []]
+      ? [0, 0, 0, 0, []]
       : await Promise.all([
           prisma.loyaltyCard.count({
             where: { programId: { in: programIds } },
+          }),
+          prisma.client.count({
+            where: { cards: { some: { programId: { in: programIds } } } },
           }),
           prisma.transaction.count({
             where: {
@@ -119,7 +122,7 @@ export async function GET(
 
   return NextResponse.json({
     ...user,
-    stats: { cardCount, scanCount, rewardCount },
+    stats: { cardCount, clientCount, scanCount, rewardCount },
     recentTx,
   });
 }
