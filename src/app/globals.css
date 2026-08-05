@@ -5936,6 +5936,18 @@ html, body { overflow-x: clip; }
   border-color: #0b0f07;
   background: #0b0f07;
 }
+.dashboard[data-theme="dark"] .export-btn-active,
+.dashboard[data-theme="dark"] .export-btn-locked {
+  color: #f7f7f0;
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.02);
+}
+.dashboard[data-theme="dark"] .export-btn-active:hover:not(:disabled),
+.dashboard[data-theme="dark"] .export-btn-locked:hover {
+  color: #0b0f07;
+  border-color: #d4ff4e;
+  background: #d4ff4e;
+}
 .export-btn-pill {
   margin-left: 4px;
   font-family: var(--font-geist-mono, monospace);
@@ -5958,6 +5970,54 @@ html, body { overflow-x: clip; }
   border-radius: 8px;
   white-space: nowrap;
   z-index: 50;
+}
+
+.dashboard .settings-plan-panel {
+  background: #fcfcfc;
+  border-color: rgb(var(--ovr) / 0.1);
+}
+.dashboard .settings-plan-price {
+  color: var(--ink);
+}
+.dashboard .settings-plan-description {
+  color: var(--ink-3);
+}
+.dashboard .settings-plan-feature {
+  color: var(--ink-2);
+  background: rgb(var(--ovr) / 0.025);
+  border: 1px solid rgb(var(--ovr) / 0.08);
+}
+.dashboard .settings-usage-row {
+  background: #fcfcfc;
+  border: 1px solid rgb(var(--ovr) / 0.08);
+}
+.dashboard .settings-usage-meta {
+  color: rgb(var(--ovr) / 0.55);
+}
+.dashboard .settings-usage-label {
+  color: var(--ink-2);
+}
+.dashboard .settings-usage-helper {
+  color: var(--ink-4);
+}
+.dashboard[data-theme="dark"] .settings-plan-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025)),
+    #0d0f0c;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.dashboard[data-theme="dark"] .settings-plan-feature,
+.dashboard[data-theme="dark"] .settings-usage-row {
+  color: rgba(247, 247, 240, 0.88);
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.dashboard[data-theme="dark"] .settings-usage-meta {
+  color: rgba(247, 247, 240, 0.62);
+}
+.dashboard[data-theme="dark"] .settings-usage-helper {
+  color: rgba(247, 247, 240, 0.46);
 }
 
 /* ═══════════════════════════════════════════════════════════

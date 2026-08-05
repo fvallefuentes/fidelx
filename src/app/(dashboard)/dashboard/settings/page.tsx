@@ -661,7 +661,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Plan + dates */}
-            <div className="rounded-xl border p-4" style={{ background: "#fcfcfc", borderColor: "rgb(var(--ovr) / 0.10)" }}>
+            <div className="settings-plan-panel rounded-xl border p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -674,10 +674,10 @@ export default function SettingsPage() {
                       </span>
                     )}
                   </div>
-                  <p className="mt-3 text-2xl font-semibold text-gray-950">
+                  <p className="settings-plan-price mt-3 text-2xl font-semibold">
                     {currentPlanDetails.price}
                   </p>
-                  <p className="mt-1 max-w-xl text-sm text-gray-500">
+                  <p className="settings-plan-description mt-1 max-w-xl text-sm">
                     {currentPlanDetails.description}
                   </p>
                 </div>
@@ -690,7 +690,7 @@ export default function SettingsPage() {
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {currentPlanDetails.highlights.map((feature) => (
-                  <div key={feature} className="flex items-start gap-2 rounded-lg bg-white px-3 py-2 text-sm text-gray-700 ring-1 ring-gray-100">
+                  <div key={feature} className="settings-plan-feature flex items-start gap-2 rounded-lg px-3 py-2 text-sm">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#739c12]" />
                     <span>{feature}</span>
                   </div>
@@ -743,11 +743,11 @@ export default function SettingsPage() {
                   const warn   = max !== null && !danger && pct >= 80;
                   const barColor = danger ? "#ff4e4e" : warn ? "#f59e0b" : "#d4ff4e";
                   return (
-                    <div key={label} className="rounded-lg bg-[#fcfcfc] px-3 py-2 ring-1 ring-gray-100">
-                      <div className="flex justify-between gap-3 text-xs mb-1" style={{ color: "rgb(var(--ovr) / 0.5)" }}>
+                    <div key={label} className="settings-usage-row rounded-lg px-3 py-2">
+                      <div className="settings-usage-meta flex justify-between gap-3 text-xs mb-1">
                         <span>
-                          <span className="font-medium text-gray-700">{label}</span>
-                          {helper && <span className="ml-1 text-gray-400">{helper}</span>}
+                          <span className="settings-usage-label font-medium">{label}</span>
+                          {helper && <span className="settings-usage-helper ml-1">{helper}</span>}
                         </span>
                         <span style={{ color: danger ? "#ff4e4e" : warn ? "#f59e0b" : "rgb(var(--ovr) / 0.7)", fontWeight: danger ? 600 : 400 }}>
                           {current.toLocaleString("fr-CH")} / {formatUsageLimit(max)}
