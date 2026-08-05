@@ -2499,6 +2499,17 @@ html, body { overflow-x: clip; }
 .dashboard .client-push-message::placeholder {
   color: rgb(244 245 241 / 0.48) !important;
 }
+.dashboard .recovery-modal button.client-push-cancel[data-slot="button"] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #f4f5f1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.24) !important;
+  box-shadow: none !important;
+}
+.dashboard .recovery-modal button.client-push-cancel[data-slot="button"]:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.42) !important;
+}
 .dashboard input[data-slot="input"]:focus-visible,
 .dashboard textarea:focus-visible,
 .dashboard select:focus-visible {

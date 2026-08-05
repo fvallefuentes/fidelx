@@ -771,7 +771,7 @@ function SendPushModal({
             {error && <span className="text-red-400">{error}</span>}
           </div>
           <div className="flex gap-2 justify-end w-full pt-2">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="outline" onClick={onClose} className="client-push-cancel">
               Annuler
             </Button>
             <Button
