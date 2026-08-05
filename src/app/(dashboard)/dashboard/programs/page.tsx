@@ -23,7 +23,6 @@ import {
   getJoinFormRequirements,
   type JoinFormRequirements,
 } from "@/lib/join-form";
-import { splitAppleOfferText } from "@/lib/wallet/apple-offer";
 
 type WalletPreviewProps = {
   bgColor: string;
@@ -966,7 +965,6 @@ function WalletCardPreview({
           ? `linear-gradient(135deg, ${stampBgColor}, ${stampBgColor2})`
           : stampBgColor
         : undefined;
-  const offerLines = splitAppleOfferText(offerText);
 
   return (
     <div className="wcp" style={{ background: bgColor, color: textColor }}>
@@ -1124,13 +1122,9 @@ function WalletCardPreview({
           <span className="wcp-label" style={{ color: lblColor }}>
             OFFRE
           </span>
-          <span className="wcp-value">{offerLines.firstLine}</span>
+          <span className="wcp-value">{offerText}</span>
         </div>
       </div>
-
-      {offerLines.secondLine && (
-        <div className="wcp-offer-more">{offerLines.secondLine}</div>
-      )}
 
       {/* Mock QR */}
       <div className="wcp-qr-wrap">
