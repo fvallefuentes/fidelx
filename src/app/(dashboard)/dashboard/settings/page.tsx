@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, LocateFixed, Mail, Bell } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, MapPin, Mail, Bell } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
+import { LocationMap, LocationPicker } from "@/components/settings/LocationPicker";
 
 interface UsageStat { current: number; max: number | null; }
 
@@ -61,12 +62,11 @@ export default function SettingsPage() {
   const [estLongitude, setEstLongitude] = useState("");
   const [savingEst, setSavingEst] = useState(false);
   const [deletingEstId, setDeletingEstId] = useState<string | null>(null);
-  const [locatingEst, setLocatingEst] = useState(false);
   const [editingEstId, setEditingEstId] = useState<string | null>(null);
+  const [editAddress, setEditAddress] = useState("");
   const [editLatitude, setEditLatitude] = useState("");
   const [editLongitude, setEditLongitude] = useState("");
   const [savingEditEst, setSavingEditEst] = useState(false);
-  const [locatingEditEst, setLocatingEditEst] = useState(false);
 
   // Staff
   const [staffList, setStaffList] = useState<{id:string;name:string|null;email:string}[]>([]);
@@ -150,52 +150,11 @@ export default function SettingsPage() {
     setSavingEst(false);
   }
 
-  function fillCurrentLocation() {
-    if (!navigator.geolocation) {
-      alert("La géolocalisation n'est pas disponible dans ce navigateur.");
-      return;
-    }
-
-    setLocatingEst(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setEstLatitude(position.coords.latitude.toFixed(6));
-        setEstLongitude(position.coords.longitude.toFixed(6));
-        setLocatingEst(false);
-      },
-      () => {
-        alert("Impossible de récupérer votre position. Vous pouvez saisir les coordonnées manuellement.");
-        setLocatingEst(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }
-
   function startEditLocation(est: MerchantSettings["establishments"][number]) {
     setEditingEstId(est.id);
+    setEditAddress(est.address ?? "");
     setEditLatitude(est.latitude?.toString() ?? "");
     setEditLongitude(est.longitude?.toString() ?? "");
-  }
-
-  function fillCurrentEditLocation() {
-    if (!navigator.geolocation) {
-      alert("La geolocalisation n'est pas disponible dans ce navigateur.");
-      return;
-    }
-
-    setLocatingEditEst(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setEditLatitude(position.coords.latitude.toFixed(6));
-        setEditLongitude(position.coords.longitude.toFixed(6));
-        setLocatingEditEst(false);
-      },
-      () => {
-        alert("Impossible de recuperer votre position. Vous pouvez saisir les coordonnees manuellement.");
-        setLocatingEditEst(false);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
   }
 
   async function saveEstablishmentLocation(id: string) {
@@ -205,6 +164,7 @@ export default function SettingsPage() {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        address: editAddress,
         latitude: editLatitude ? Number(editLatitude) : null,
         longitude: editLongitude ? Number(editLongitude) : null,
       }),
@@ -400,8 +360,6 @@ export default function SettingsPage() {
   const formatUsageLimit = (max: number | null) =>
     max === null ? "illimite" : max.toLocaleString("fr-CH");
   const hasEstablishment = (settings?.establishments?.length ?? 0) > 0;
-  const addPreviewLocation = getValidMapLocation(estLatitude, estLongitude);
-  const editPreviewLocation = getValidMapLocation(editLatitude, editLongitude);
 
   return (
     <div className="space-y-6">
@@ -829,11 +787,12 @@ export default function SettingsPage() {
                       <p className="font-medium">{est.name}</p>
                       <p className="text-sm text-gray-500">{est.address}</p>
                       {est.latitude !== null && est.longitude !== null ? (
-                        <p className="text-xs text-gray-400">
-                          Position Wallet : {est.latitude.toFixed(5)}, {est.longitude.toFixed(5)}
+                        <p className="mt-1 flex items-center gap-1 text-xs font-medium text-lime-700">
+                          <Check className="h-3.5 w-3.5" />
+                          Emplacement Wallet configuré
                         </p>
                       ) : (
-                        <p className="text-xs text-gray-400">Position Wallet non definie</p>
+                        <p className="mt-1 text-xs text-amber-700">Emplacement Wallet à configurer</p>
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
@@ -844,7 +803,7 @@ export default function SettingsPage() {
                         onClick={() => startEditLocation(est)}
                         title="Modifier la position Wallet"
                       >
-                        <LocateFixed className="h-4 w-4" />
+                        <MapPin className="h-4 w-4" />
                         <span className="sr-only">Modifier la position</span>
                       </Button>
                       <Button
@@ -861,51 +820,28 @@ export default function SettingsPage() {
                     </div>
                     </div>
                     {est.latitude !== null && est.longitude !== null && editingEstId !== est.id && (
-                      <EstablishmentMap
-                        latitude={est.latitude}
-                        longitude={est.longitude}
-                        name={est.name}
-                      />
+                      <div className="mt-3">
+                        <LocationMap
+                          latitude={est.latitude}
+                          longitude={est.longitude}
+                          name={est.address || est.name}
+                        />
+                      </div>
                     )}
                     {editingEstId === est.id && (
-                      <div className="mt-3 grid gap-2 border-t pt-3 md:grid-cols-[1fr_1fr_auto]">
-                        <Input
-                          type="number"
-                          step="any"
-                          min={-90}
-                          max={90}
-                          placeholder="Latitude Wallet"
-                          value={editLatitude}
-                          onChange={(e) => setEditLatitude(e.target.value)}
+                      <div className="mt-3 space-y-3 border-t pt-3">
+                        <LocationPicker
+                          name={est.name}
+                          address={editAddress}
+                          latitude={editLatitude}
+                          longitude={editLongitude}
+                          onChange={(value) => {
+                            setEditAddress(value.address);
+                            setEditLatitude(value.latitude);
+                            setEditLongitude(value.longitude);
+                          }}
                         />
-                        <Input
-                          type="number"
-                          step="any"
-                          min={-180}
-                          max={180}
-                          placeholder="Longitude Wallet"
-                          value={editLongitude}
-                          onChange={(e) => setEditLongitude(e.target.value)}
-                        />
-                        {editPreviewLocation && (
-                          <div className="md:col-span-3">
-                            <EstablishmentMap
-                              latitude={editPreviewLocation.latitude}
-                              longitude={editPreviewLocation.longitude}
-                              name={`${est.name} - aperçu avant enregistrement`}
-                            />
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-2 md:flex-nowrap">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={fillCurrentEditLocation}
-                            disabled={locatingEditEst}
-                          >
-                            <LocateFixed className="mr-2 h-4 w-4" />
-                            {locatingEditEst ? "Localisation..." : "Ma position"}
-                          </Button>
+                        <div className="flex flex-wrap justify-end gap-2">
                           <Button
                             type="button"
                             onClick={() => saveEstablishmentLocation(est.id)}
@@ -940,51 +876,23 @@ export default function SettingsPage() {
                   required
                 />
                 <Input
-                  placeholder="Adresse"
-                  value={estAddress}
-                  onChange={(e) => setEstAddress(e.target.value)}
-                />
-                <Input
                   placeholder="Téléphone"
                   value={estPhone}
                   onChange={(e) => setEstPhone(e.target.value)}
                 />
-                <Input
-                  type="number"
-                  step="any"
-                  min={-90}
-                  max={90}
-                  placeholder="Latitude Wallet"
-                  value={estLatitude}
-                  onChange={(e) => setEstLatitude(e.target.value)}
-                />
-                <Input
-                  type="number"
-                  step="any"
-                  min={-180}
-                  max={180}
-                  placeholder="Longitude Wallet"
-                  value={estLongitude}
-                  onChange={(e) => setEstLongitude(e.target.value)}
-                />
               </div>
-              {addPreviewLocation && (
-                <EstablishmentMap
-                  latitude={addPreviewLocation.latitude}
-                  longitude={addPreviewLocation.longitude}
-                  name={estName || "Nouvel établissement - aperçu avant ajout"}
-                />
-              )}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={fillCurrentLocation}
-                  disabled={locatingEst}
-                >
-                  <LocateFixed className="mr-2 h-4 w-4" />
-                  {locatingEst ? "Localisation..." : "Utiliser ma position"}
-                </Button>
+              <LocationPicker
+                name={estName}
+                address={estAddress}
+                latitude={estLatitude}
+                longitude={estLongitude}
+                onChange={(value) => {
+                  setEstAddress(value.address);
+                  setEstLatitude(value.latitude);
+                  setEstLongitude(value.longitude);
+                }}
+              />
+              <div className="flex justify-end">
                 <Button type="submit" variant="outline" disabled={savingEst}>
                   {savingEst ? "Ajout..." : "Ajouter l'établissement"}
                 </Button>
@@ -1061,62 +969,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
-}
-
-function getValidMapLocation(latitudeValue: string, longitudeValue: string) {
-  const latitude = parseCoordinate(latitudeValue);
-  const longitude = parseCoordinate(longitudeValue);
-  if (latitude === null || longitude === null) return null;
-  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
-    return null;
-  }
-  return { latitude, longitude };
-}
-
-function parseCoordinate(value: string) {
-  if (!value.trim()) return null;
-  const parsed = Number(value.replace(",", "."));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function EstablishmentMap({
-  latitude,
-  longitude,
-  name,
-}: {
-  latitude: number;
-  longitude: number;
-  name: string;
-}) {
-  const query = `${latitude},${longitude}`;
-  const embedUrl = `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=16&output=embed`;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-
-  return (
-    <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-      <div className="flex items-center justify-between gap-3 border-b border-gray-200 px-3 py-2">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Emplacement Google Maps</p>
-          <p className="text-xs text-gray-500">{name}</p>
-        </div>
-        <a
-          href={mapsUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="shrink-0 text-sm font-medium text-lime-700 hover:underline"
-        >
-          Ouvrir
-        </a>
-      </div>
-      <iframe
-        title={`Carte Google Maps - ${name}`}
-        src={embedUrl}
-        className="h-64 w-full border-0"
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-      />
     </div>
   );
 }
