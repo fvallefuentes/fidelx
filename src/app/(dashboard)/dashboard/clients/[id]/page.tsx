@@ -64,6 +64,7 @@ type DetailResponse = {
   };
   wallet: {
     devices: number;
+    isManual: boolean;
     apple: number;
     google: number;
     registrations: { platform: string; registeredAt: string }[];
@@ -286,7 +287,9 @@ export default function ClientProfilePage() {
             value={
               data.wallet.devices > 0
                 ? `${data.wallet.devices} appareil${data.wallet.devices > 1 ? "s" : ""}`
-                : "Non installé"
+                : data.wallet.isManual
+                  ? "Sans smartphone"
+                  : "Non installé"
             }
           />
           <InfoLine

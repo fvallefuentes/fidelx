@@ -22,6 +22,37 @@ interface CampaignPerf {
 }
 interface ProgressionBucket { range: string; count: number }
 interface ActiveVsInactive { name: string; value: number }
+export interface ProgramStat {
+  id: string;
+  name: string;
+  type: string;
+  isActive: boolean;
+  clientCount: number;
+  activeCardCount: number;
+  scanCount: number;
+  scansLast30: number;
+  rewardCount: number;
+  redeemedCount: number;
+  returnRate: number;
+  walletInstallRate: number;
+  avgProgressionPct: number | null;
+}
+
+interface ProgramStatRow {
+  id: string;
+  name: string;
+  type: string;
+  isActive: boolean;
+  clientCount: number;
+  activeCardCount: number;
+  scanCount: number;
+  scansLast30: number;
+  rewardCount: number;
+  redeemedCount: number;
+  returningCardCount: number;
+  installedCardCount: number;
+  avgProgressionPct: number | null;
+}
 
 export interface FullStatsResponse {
   plan: string;
@@ -32,6 +63,7 @@ export interface FullStatsResponse {
   rewardsClaimed: number;
   avgProgressionPct: number | null;
   activityLast7: DayBucket[];
+  programStats: ProgramStat[];
   // ESSENTIAL+
   newClientsLast30: number | null;
   walletInstallRate: number | null;
@@ -152,6 +184,7 @@ export async function GET() {
     rewardsClaimed: 0,
     avgProgressionPct: null,
     activityLast7: emptyDays(7),
+    programStats: [],
     newClientsLast30: null,
     walletInstallRate: null,
     activeClientsLast30: null,
@@ -186,6 +219,7 @@ export async function GET() {
     rewardsClaimed,
     stampsCards,
     activityLast7Rows,
+    programStatRows,
   ] = await Promise.all([
     prisma.loyaltyCard.count({ where: { programId: { in: programIds } } }),
     prisma.loyaltyCard.count({
@@ -219,6 +253,65 @@ export async function GET() {
       },
       select: { createdAt: true },
     }),
+    prisma.$queryRaw<ProgramStatRow[]>`
+      SELECT
+        p.id,
+        p.name,
+        p.type::text AS type,
+        p."isActive" AS "isActive",
+        COALESCE(cards."clientCount", 0)::int AS "clientCount",
+        COALESCE(cards."activeCardCount", 0)::int AS "activeCardCount",
+        COALESCE(scans."scanCount", 0)::int AS "scanCount",
+        COALESCE(scans."scansLast30", 0)::int AS "scansLast30",
+        COALESCE(rewards."rewardCount", 0)::int AS "rewardCount",
+        COALESCE(rewards."redeemedCount", 0)::int AS "redeemedCount",
+        COALESCE(cards."returningCardCount", 0)::int AS "returningCardCount",
+        COALESCE(cards."installedCardCount", 0)::int AS "installedCardCount",
+        cards."avgProgressionPct"::float8 AS "avgProgressionPct"
+      FROM "LoyaltyProgram" p
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*) AS "clientCount",
+          COUNT(*) FILTER (WHERE c.status IN ('ACTIVE', 'REWARD_PENDING')) AS "activeCardCount",
+          COUNT(*) FILTER (WHERE c."totalVisits" >= 2) AS "returningCardCount",
+          COUNT(*) FILTER (
+            WHERE EXISTS (
+              SELECT 1 FROM "PassRegistration" registration
+              WHERE registration."cardId" = c.id
+            )
+          ) AS "installedCardCount",
+          AVG(
+            CASE WHEN p.type::text = 'STAMPS' THEN
+              LEAST(
+                100,
+                c."currentStamps" * 100.0 /
+                  GREATEST(1, COALESCE(NULLIF(p.config->>'maxStamps', '')::numeric, 10))
+              )
+            END
+          ) AS "avgProgressionPct"
+        FROM "LoyaltyCard" c
+        WHERE c."programId" = p.id
+      ) cards ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*) AS "scanCount",
+          COUNT(*) FILTER (WHERE tx."createdAt" >= ${start30}) AS "scansLast30"
+        FROM "Transaction" tx
+        INNER JOIN "LoyaltyCard" card ON card.id = tx."cardId"
+        WHERE card."programId" = p.id
+          AND tx.type IN ('STAMP', 'POINTS_EARN', 'CASHBACK_EARN')
+      ) scans ON TRUE
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*) AS "rewardCount",
+          COUNT(*) FILTER (WHERE claim.status = 'REDEEMED') AS "redeemedCount"
+        FROM "RewardClaim" claim
+        INNER JOIN "LoyaltyCard" card ON card.id = claim."cardId"
+        WHERE card."programId" = p.id
+      ) rewards ON TRUE
+      WHERE p."merchantId" = ${merchantId}
+      ORDER BY p."createdAt" ASC
+    `,
   ]);
 
   // Compute avgProgressionPct
@@ -233,6 +326,30 @@ export async function GET() {
   }
 
   const activityLast7 = bucketDays(activityLast7Rows.map((t) => t.createdAt), 7);
+  const programStats: ProgramStat[] = programStatRows.map((program) => ({
+    id: program.id,
+    name: program.name,
+    type: program.type,
+    isActive: program.isActive,
+    clientCount: program.clientCount,
+    activeCardCount: program.activeCardCount,
+    scanCount: program.scanCount,
+    scansLast30: program.scansLast30,
+    rewardCount: program.rewardCount,
+    redeemedCount: program.redeemedCount,
+    returnRate:
+      program.clientCount > 0
+        ? round1((program.returningCardCount / program.clientCount) * 100)
+        : 0,
+    walletInstallRate:
+      program.clientCount > 0
+        ? round1((program.installedCardCount / program.clientCount) * 100)
+        : 0,
+    avgProgressionPct:
+      program.avgProgressionPct === null
+        ? null
+        : round1(Number(program.avgProgressionPct)),
+  }));
 
   const result: FullStatsResponse = {
     ...defaults,
@@ -243,6 +360,7 @@ export async function GET() {
     rewardsClaimed,
     avgProgressionPct,
     activityLast7,
+    programStats,
   };
 
   if (!isEssential) {

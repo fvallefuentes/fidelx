@@ -27,7 +27,7 @@ interface ClientCard {
   status: string;
   lastVisitAt: string | null;
   createdAt: string;
-  walletStatus: "installed" | "removed" | "never_installed";
+  walletStatus: "installed" | "manual" | "removed" | "never_installed";
   walletDevices: { apple: number; google: number; total: number };
   client: { id: string; firstName: string; lastName?: string | null; email: string | null; phone: string | null };
   program: { name: string; type: string; config: Record<string, unknown> };
@@ -36,7 +36,7 @@ interface ClientCard {
 type SortKey = "firstName" | "progression" | "totalVisits" | "lastVisitAt" | "walletStatus" | "status";
 type SortDir = "asc" | "desc";
 
-const WALLET_ORDER = { installed: 0, removed: 1, never_installed: 2 };
+const WALLET_ORDER = { installed: 0, manual: 1, removed: 2, never_installed: 3 };
 const STATUS_ORDER: Record<string, number> = { PENDING: 0, ACTIVE: 1, REWARD_PENDING: 2, COMPLETED: 3, EXPIRED: 4, REVOKED: 5 };
 const STATUS_LABELS: Record<string, string> = {
   PENDING: "En attente", ACTIVE: "Actif", COMPLETED: "Complété", REWARD_PENDING: "Récompense", EXPIRED: "Expiré", REVOKED: "Révoqué",
@@ -50,7 +50,7 @@ function getProgression(card: ClientCard): number {
   return card.currentPoints;
 }
 
-type WalletFilter = "all" | "installed" | "removed" | "never_installed";
+type WalletFilter = "all" | "installed" | "manual" | "removed" | "never_installed";
 type StatusFilter = "all" | "PENDING" | "ACTIVE" | "COMPLETED" | "REWARD_PENDING" | "EXPIRED" | "REVOKED";
 
 export default function ClientsPage() {
@@ -186,6 +186,7 @@ export default function ClientsPage() {
           {([
             { val: "all",             label: "Tous" },
             { val: "installed",       label: "Dans le Wallet" },
+            { val: "manual",          label: "Sans smartphone" },
             { val: "removed",         label: "Supprimée" },
             { val: "never_installed", label: "Pas installée" },
           ] as { val: WalletFilter; label: string }[]).map(({ val, label }) => (
@@ -273,7 +274,7 @@ export default function ClientsPage() {
                     return (
                       <tr
                         key={card.id}
-                        className="hover:bg-gray-50 cursor-pointer transition-colors"
+                        className="client-table-row cursor-pointer transition-colors"
                         onClick={() => router.push(`/dashboard/clients/${card.id}`)}
                       >
                         <td className="py-3 px-2">
@@ -454,6 +455,7 @@ function CreateManualCardModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="manual-card-modal"
         style={{
           background: "#0c0d0c",
           border: "1px solid rgb(var(--ovr) / 0.12)",
@@ -626,9 +628,16 @@ function WalletStatusCell({
   status,
   devices,
 }: {
-  status: "installed" | "removed" | "never_installed";
+  status: "installed" | "manual" | "removed" | "never_installed";
   devices: { apple: number; google: number; total: number };
 }) {
+  if (status === "manual") {
+    return (
+      <span className="wallet-status-manual inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold">
+        <span className="h-1.5 w-1.5 rounded-full" /> Sans smartphone
+      </span>
+    );
+  }
   if (status === "removed") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">

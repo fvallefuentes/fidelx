@@ -38,8 +38,9 @@ export async function GET() {
     const google = card.registrations.filter((r) => r.platform === "GOOGLE").length;
     const total = apple + google;
 
-    let walletStatus: "installed" | "removed" | "never_installed";
+    let walletStatus: "installed" | "manual" | "removed" | "never_installed";
     if (total > 0) walletStatus = "installed";
+    else if (card.client.lastName) walletStatus = "manual";
     else {
       // Si la carte a déjà été utilisée (visites > 0 ou tampons > 0),
       // c'est qu'elle a été installée puis supprimée

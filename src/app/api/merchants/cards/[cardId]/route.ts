@@ -121,6 +121,7 @@ export async function GET(
     },
     wallet: {
       devices: card.registrations.length,
+      isManual: card.registrations.length === 0 && Boolean(card.client.lastName),
       apple: card.registrations.filter((r) => r.platform === "APPLE").length,
       google: card.registrations.filter((r) => r.platform === "GOOGLE").length,
       registrations: card.registrations.map((r) => ({

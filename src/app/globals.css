@@ -2738,6 +2738,44 @@ html, body { overflow-x: clip; }
   text-align: center;
   color: var(--ink-3) !important;
 }
+.stats-table-scroll {
+  overflow-x: auto;
+}
+.stats-program-table {
+  min-width: 940px;
+}
+.stats-program-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 170px;
+}
+.stats-program-name strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+.stats-program-name span,
+.stats-program-name em {
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: var(--ink-3);
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.stats-program-name em {
+  border-color: rgba(255, 122, 107, 0.28);
+  color: var(--danger);
+}
+.stats-program-sub {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-3);
+  font-size: 11px;
+}
 .stats-error {
   border: 1px solid rgba(255,122,107,0.25);
   border-radius: var(--radius);
@@ -7444,6 +7482,9 @@ html, body { overflow-x: clip; }
 }
 
 /* Bouton "Récup carte" sur la ligne client */
+.client-table-row:hover {
+  background: rgb(var(--ovr) / 0.045);
+}
 .client-row-action {
   background: transparent;
   border: 1px solid rgb(var(--ovr) / 0.12);
@@ -7463,6 +7504,51 @@ html, body { overflow-x: clip; }
   background: rgba(212, 255, 78, 0.08);
   border-color: rgba(212, 255, 78, 0.3);
   color: #d4ff4e;
+}
+.client-table-row:hover .client-row-action {
+  background: rgb(var(--accent-rgb) / 0.12);
+  border-color: rgb(var(--accent-rgb) / 0.4);
+  color: var(--accent-ink);
+}
+.wallet-status-manual {
+  border: 1px solid rgb(var(--accent-rgb) / 0.3);
+  background: rgb(var(--accent-rgb) / 0.14);
+  color: var(--accent-ink);
+}
+.wallet-status-manual > span {
+  background: var(--accent-ink);
+}
+
+/* La création d'une carte manuelle reste volontairement sombre dans les deux thèmes. */
+.dashboard .manual-card-modal {
+  --ovr: 255 255 255;
+  color-scheme: dark;
+}
+.dashboard .manual-card-modal input,
+.dashboard .manual-card-modal select {
+  background: #151615 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #f4f5f1 !important;
+  caret-color: #d4ff4e;
+  box-shadow: none !important;
+}
+.dashboard .manual-card-modal input::placeholder {
+  color: rgba(244, 245, 241, 0.46) !important;
+}
+.dashboard .manual-card-modal select option {
+  background: #151615;
+  color: #f4f5f1;
+}
+.dashboard .manual-card-modal input:focus,
+.dashboard .manual-card-modal select:focus {
+  border-color: rgba(212, 255, 78, 0.72) !important;
+  box-shadow: 0 0 0 3px rgba(212, 255, 78, 0.12) !important;
+  outline: none;
+}
+.dashboard .manual-card-modal button[data-slot="button"][data-variant="outline"] {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  color: #f4f5f1 !important;
 }
 
 /* ═══════════════════════════════════════════════════════════

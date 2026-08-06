@@ -554,6 +554,76 @@ function GrowthSection({ stats }: { stats: FullStatsResponse }) {
   );
 }
 
+function ProgramComparisonSection({ stats }: { stats: FullStatsResponse }) {
+  const programs = stats.programStats ?? [];
+  if (programs.length === 0) return null;
+
+  const typeLabels: Record<string, string> = {
+    STAMPS: "Tampons",
+    POINTS: "Points",
+    CASHBACK: "Cashback",
+  };
+
+  return (
+    <>
+      <SectionLabel>Statistiques par programme</SectionLabel>
+      <div className="stats-table-card stats-table-scroll">
+        <table className="stats-table stats-program-table">
+          <thead>
+            <tr>
+              {[
+                "Programme",
+                "Clients actifs",
+                "Scans 30j",
+                "Scans total",
+                "Récompenses",
+                "Taux de retour",
+                "Ajout Wallet",
+                "Progression",
+              ].map((heading) => (
+                <th key={heading}>{heading}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {programs.map((program, index) => (
+              <tr
+                key={program.id}
+                className={index < programs.length - 1 ? "with-border" : undefined}
+              >
+                <td>
+                  <div className="stats-program-name">
+                    <strong>{program.name}</strong>
+                    <span>{typeLabels[program.type] ?? program.type}</span>
+                    {!program.isActive && <em>Inactif</em>}
+                  </div>
+                </td>
+                <td className="stats-table-value">
+                  {program.activeCardCount} / {program.clientCount}
+                </td>
+                <td className="stats-table-value">{program.scansLast30}</td>
+                <td>{program.scanCount}</td>
+                <td>
+                  <strong>{program.redeemedCount}</strong> utilisée
+                  {program.redeemedCount > 1 ? "s" : ""}
+                  <span className="stats-program-sub">{program.rewardCount} débloquée{program.rewardCount > 1 ? "s" : ""}</span>
+                </td>
+                <td>{program.returnRate}%</td>
+                <td>{program.walletInstallRate}%</td>
+                <td>
+                  {program.avgProgressionPct === null
+                    ? "—"
+                    : `${program.avgProgressionPct}%`}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 function MultiSiteSection({ stats }: { stats: FullStatsResponse }) {
   const ests = stats.establishments ?? [];
   return (
@@ -631,6 +701,8 @@ export default function StatsPage() {
       {!loading && !error && stats && (
         <>
           <FreeSection stats={stats} />
+
+          <ProgramComparisonSection stats={stats} />
 
           {/* Insights avancés : delta période + heatmap + cohorts. */}
           <div className="stats-insights-wrap">
