@@ -41,6 +41,9 @@ export async function GET(
             select: {
               updatedAt: true,
               merchant: { select: { updatedAt: true } },
+              establishment: {
+                select: { latitude: true, longitude: true },
+              },
             },
           },
         },

@@ -12,14 +12,22 @@ export const APPLE_PASS_SCHEMA_UPDATED_AT = new Date(
 
 export function getApplePassUpdatedAt(card: {
   updatedAt: Date;
-  program: { updatedAt: Date; merchant: { updatedAt: Date } };
+  program: {
+    updatedAt: Date;
+    merchant: { updatedAt: Date };
+    establishment?: { latitude: number | null; longitude: number | null } | null;
+  };
 }) {
+  const hasLocation =
+    typeof card.program.establishment?.latitude === "number" &&
+    typeof card.program.establishment.longitude === "number";
+
   return new Date(
     Math.max(
       card.updatedAt.getTime(),
       card.program.updatedAt.getTime(),
       card.program.merchant.updatedAt.getTime(),
-      APPLE_PASS_SCHEMA_UPDATED_AT.getTime()
+      hasLocation ? APPLE_PASS_SCHEMA_UPDATED_AT.getTime() : 0
     )
   );
 }
