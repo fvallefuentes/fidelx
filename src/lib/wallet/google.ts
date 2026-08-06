@@ -513,15 +513,21 @@ export async function updateGoogleWalletObject(
     const accessToken = await getGoogleAccessToken();
     if (!accessToken) return false;
 
-    // Upsert : si l'objet existe → PATCH, sinon → POST insert. Le JWT
+    // Upsert : si l'objet existe → remplacement complet via PUT, sinon →
+    // POST insert. Un PATCH peut conserver un ancien type de balance
+    // (string/int) et Google rejette alors l'objet avec « More than one type
+    // of loyalty point balances cannot be set ». PUT remplace proprement
+    // l'objet et propage aussi merchantLocations.
+    //
+    // Le JWT
     // "save to wallet" ne garantit pas que l'objet est créé côté API
-    // (il l'est dans la copie privée du user), donc tout PATCH ultérieur
+    // (il l'est dans la copie privée du user), donc tout PUT ultérieur
     // peut tomber sur un 404. Dans ce cas on POST pour créer l'objet
     // côté API ; les prochains push (tampons, design, etc.) marcheront.
-    const patchRes = await fetch(
+    const updateRes = await fetch(
       `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${objectId}`,
       {
-        method: "PATCH",
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
@@ -530,9 +536,9 @@ export async function updateGoogleWalletObject(
       }
     );
 
-    if (patchRes.ok) return true;
+    if (updateRes.ok) return true;
 
-    if (patchRes.status === 404) {
+    if (updateRes.status === 404) {
       // Assurer la class avant de POST l'objet — sans class existante
       // l'insert objet retournerait aussi 404.
       try {
@@ -560,9 +566,9 @@ export async function updateGoogleWalletObject(
       return insertRes.ok;
     }
 
-    const text = await patchRes.text();
+    const text = await updateRes.text();
     console.error(
-      `[GoogleWallet] object update failed (${patchRes.status}):`,
+      `[GoogleWallet] object update failed (${updateRes.status}):`,
       text.slice(0, 200)
     );
     return false;

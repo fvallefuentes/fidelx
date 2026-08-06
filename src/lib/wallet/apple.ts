@@ -204,7 +204,6 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     labelColor: passData.labelColor || passData.textColor,
     // barcodes set via pass.setBarcodes() below — passkit-generator
     // ne les prend pas toujours via passProps
-    locations: passData.locations || [],
     webServiceURL: `${process.env.NEXT_PUBLIC_APP_URL}/api/wallet/apple`,
     authenticationToken: passData.serialNumber.replace(/-/g, "") + "0000",
     // voided : iOS déplace le pass dans la section "Expirés" du Wallet et le grise.
@@ -227,6 +226,14 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     },
     passProps
   );
+
+  // passkit-generator exclut volontairement `locations` des propriétés du
+  // constructeur : les ajouter à passProps ne les écrivait donc jamais dans
+  // pass.json. L'API dédiée est obligatoire pour activer la pertinence
+  // géographique et le message affiché sur l'écran verrouillé.
+  if (passData.locations?.length) {
+    pass.setLocations(...passData.locations);
+  }
 
   // Type de pass: storeCard — c'est le seul (avec coupon) qui supporte
   // un strip image visible côté iOS. generic et eventTicket ne l'affichent

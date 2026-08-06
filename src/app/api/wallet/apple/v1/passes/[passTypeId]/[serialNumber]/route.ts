@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateApplePass } from "@/lib/wallet/apple";
+import { getApplePassUpdatedAt } from "@/lib/wallet/apple-version";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -44,13 +45,7 @@ export async function GET(
   });
   if (!card) return new NextResponse(null, { status: 404 });
 
-  const passUpdatedAt = toHttpDate(
-    Math.max(
-      card.updatedAt.getTime(),
-      card.program.updatedAt.getTime(),
-      card.program.merchant.updatedAt.getTime()
-    )
-  );
+  const passUpdatedAt = toHttpDate(getApplePassUpdatedAt(card).getTime());
 
   // If-Modified-Since (Apple envoie le timestamp du dernier fetch)
   const ims = req.headers.get("if-modified-since");

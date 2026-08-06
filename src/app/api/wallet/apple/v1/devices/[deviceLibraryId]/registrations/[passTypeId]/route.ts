@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getApplePassUpdatedAt } from "@/lib/wallet/apple-version";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ export async function GET(
     const sinceDate = new Date(parseInt(since));
     if (!isNaN(sinceDate.getTime())) {
       cards = registeredCards.filter(
-        (c) => getPassUpdatedAt(c).getTime() > sinceDate.getTime()
+        (c) => getApplePassUpdatedAt(c).getTime() > sinceDate.getTime()
       );
     }
   }
@@ -67,23 +68,12 @@ export async function GET(
     return new NextResponse(null, { status: 204 });
   }
 
-  const lastUpdated = Math.max(...cards.map((c) => getPassUpdatedAt(c).getTime()));
+  const lastUpdated = Math.max(
+    ...cards.map((c) => getApplePassUpdatedAt(c).getTime())
+  );
 
   return NextResponse.json({
     lastUpdated: String(lastUpdated),
     serialNumbers: cards.map((c) => c.serialNumber),
   });
-}
-
-function getPassUpdatedAt(card: {
-  updatedAt: Date;
-  program: { updatedAt: Date; merchant: { updatedAt: Date } };
-}) {
-  return new Date(
-    Math.max(
-      card.updatedAt.getTime(),
-      card.program.updatedAt.getTime(),
-      card.program.merchant.updatedAt.getTime()
-    )
-  );
 }
