@@ -222,7 +222,7 @@ export async function notifyCardInProgram(
   cardId: string,
   message: string,
   title: string,
-  campaignId: string
+  campaignId?: string
 ) {
   const card = await prisma.loyaltyCard.findFirst({
     where: {
@@ -241,7 +241,7 @@ export async function notifyCardInProgram(
   const deliveredAt = new Date();
   const log = await prisma.notificationLog.create({
     data: {
-      campaignId,
+      campaignId: campaignId || undefined,
       cardId: card.id,
       messageSnapshot: message,
     },

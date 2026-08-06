@@ -1,11 +1,26 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildRewardCompletionNotification,
   didEnterRewardProximity,
   findUpcomingRewardThreshold,
   selectStampTriggeredCampaign,
 } from "@/lib/campaign-event-rules";
 
 describe("stamp-triggered campaign rules", () => {
+  it("builds a visible completed-card notification with the reward", () => {
+    expect(buildRewardCompletionNotification("  Un café   offert ")).toEqual({
+      title: "Récompense débloquée 🎉",
+      message:
+        "Carte complète ! Votre récompense « Un café offert » est disponible. Présentez votre carte en caisse.",
+    });
+  });
+
+  it("builds a useful fallback when no reward name is configured", () => {
+    expect(buildRewardCompletionNotification().message).toBe(
+      "Carte complète ! Votre récompense est disponible. Présentez votre carte en caisse."
+    );
+  });
+
   it("finds the next stamp reward, including the program maximum", () => {
     expect(findUpcomingRewardThreshold({
       programType: "STAMPS",

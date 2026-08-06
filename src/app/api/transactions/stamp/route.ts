@@ -8,7 +8,11 @@ import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { parseJsonBody } from "@/lib/api/validation";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
 import { dispatchStampTriggeredCampaign } from "@/lib/campaign-event-dispatch";
-import { findUpcomingRewardThreshold } from "@/lib/campaign-event-rules";
+import {
+  buildRewardCompletionNotification,
+  findUpcomingRewardThreshold,
+} from "@/lib/campaign-event-rules";
+import { notifyCardInProgram } from "@/lib/wallet/push";
 
 const stampSchema = z.object({
   serialNumber: z.string().trim().min(1, "Numéro de série requis"),
@@ -130,7 +134,8 @@ export async function POST(req: Request) {
   }
 
   const config = card.program.config as Record<string, unknown>;
-  let rewardUnlocked = null;
+  let rewardUnlocked: { id: string; name: string } | null = null;
+  let cardCompleted = false;
   const progressBefore =
     card.program.type === "STAMPS"
       ? card.currentStamps
@@ -149,6 +154,7 @@ export async function POST(req: Request) {
     const maxStamps = (config.maxStamps as number) || 10;
     const newStamps = card.currentStamps + stampCount;
     const reachedMax = newStamps >= maxStamps;
+    cardCompleted = reachedMax;
     // Quand on dépasse, on cap currentStamps au seuil et on stocke l'excédent
     // dans pendingExtraStamps. À la validation, claim-reward repassera ces
     // extras dans currentStamps → ils démarrent le cycle suivant.
@@ -218,6 +224,7 @@ export async function POST(req: Request) {
       : ((config.tiers as { points?: number }[] | undefined)?.[0]?.points ?? null);
     const reachedMax =
       pointsTarget !== null && newPoints >= pointsTarget;
+    cardCompleted = reachedMax;
     progressAfter = pointsTarget !== null ? Math.min(newPoints, pointsTarget) : newPoints;
 
     const reward = card.program.rewards.find(
@@ -315,17 +322,28 @@ export async function POST(req: Request) {
 
   let campaignNotificationSent = false;
   try {
-    const campaignResult = await dispatchStampTriggeredCampaign({
-      merchantId,
-      programId: card.programId,
-      cardId: card.id,
-      progress: {
-        before: progressBefore,
-        after: progressAfter,
-        upcomingRewardThreshold,
-      },
-    });
-    campaignNotificationSent = campaignResult.sent > 0;
+    if (cardCompleted) {
+      const notification = buildRewardCompletionNotification(rewardUnlocked?.name);
+      const result = await notifyCardInProgram(
+        card.programId,
+        card.id,
+        notification.message,
+        notification.title
+      );
+      campaignNotificationSent = result.sent > 0;
+    } else {
+      const campaignResult = await dispatchStampTriggeredCampaign({
+        merchantId,
+        programId: card.programId,
+        cardId: card.id,
+        progress: {
+          before: progressBefore,
+          after: progressAfter,
+          upcomingRewardThreshold,
+        },
+      });
+      campaignNotificationSent = campaignResult.sent > 0;
+    }
   } catch (error) {
     console.error("[stamp] campaign trigger failed:", error);
   }

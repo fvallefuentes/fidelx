@@ -11,6 +11,16 @@ export interface StampProgress {
   upcomingRewardThreshold: number | null;
 }
 
+export function buildRewardCompletionNotification(rewardName?: string | null) {
+  const cleanRewardName = rewardName?.replace(/\s+/g, " ").trim().slice(0, 100);
+  return {
+    title: "Récompense débloquée 🎉",
+    message: cleanRewardName
+      ? `Carte complète ! Votre récompense « ${cleanRewardName} » est disponible. Présentez votre carte en caisse.`
+      : "Carte complète ! Votre récompense est disponible. Présentez votre carte en caisse.",
+  };
+}
+
 export function findUpcomingRewardThreshold({
   programType,
   programConfig,
