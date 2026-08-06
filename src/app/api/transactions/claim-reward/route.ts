@@ -10,6 +10,8 @@ export async function POST(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
+  const merchantId =
+    (session.user as { merchantId?: string }).merchantId ?? session.user.id;
 
   const { serialNumber } = await req.json();
   if (!serialNumber) {
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
   });
 
   if (!card) return NextResponse.json({ error: "Carte introuvable" }, { status: 404 });
-  if (card.program.merchant.id !== session.user.id) {
+  if (card.program.merchant.id !== merchantId) {
     return NextResponse.json({ error: "Ce programme ne vous appartient pas" }, { status: 403 });
   }
   if ((card.status as string) !== "REWARD_PENDING") {

@@ -156,16 +156,26 @@ export default function ScanPage() {
     if (!ctx) { rafRef.current = requestAnimationFrame(tick); return; }
     ctx.drawImage(video, 0, 0);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let decodedValue = "";
     try {
       const jsQR = (await import("jsqr")).default;
       const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
       if (code && code.data && code.data !== lastScanRef.current) {
-        lastScanRef.current = code.data;
-        stopCamera();
-        await handleScan(code.data);
-        return;
+        decodedValue = code.data;
       }
     } catch { /* ignore */ }
+
+    if (decodedValue) {
+      lastScanRef.current = decodedValue;
+      stopCamera();
+      try {
+        await handleScan(decodedValue);
+      } catch {
+        setError("Impossible de vérifier cette carte. Réessayez dans un instant.");
+        setStep("error");
+      }
+      return;
+    }
     rafRef.current = requestAnimationFrame(tick);
   }, [stopCamera]);
 

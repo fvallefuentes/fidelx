@@ -52,6 +52,19 @@ const createCampaignSchema = z.object({
   targetSegment: z.enum(["ALL", "ACTIVE", "DORMANT", "NEW", "VIP"]).optional().default("ALL"),
 });
 
+const updateScheduledCampaignSchema = z.object({
+  id: z.string().trim().min(1, "Campagne requise"),
+  programId: z.string().trim().min(1, "Programme requis"),
+  name: z.string().trim().min(1, "Nom de campagne requis").max(120),
+  message: z.string().trim().min(1, "Message requis").max(350),
+  reviewConfirmed: z.literal(true, {
+    error: "Confirmez explicitement la campagne avant de l'enregistrer.",
+  }),
+  triggerType: z.literal("SCHEDULED"),
+  triggerConfig: createCampaignSchema.shape.triggerConfig,
+  targetSegment: z.enum(["ALL", "ACTIVE", "DORMANT", "NEW", "VIP"]),
+});
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -184,6 +197,15 @@ export async function POST(req: Request) {
   }
 
   const scheduledAt = resolveScheduledAt(triggerType, triggerConfig);
+  if (
+    triggerType === "SCHEDULED" &&
+    (!scheduledAt || scheduledAt.getTime() <= Date.now())
+  ) {
+    return NextResponse.json(
+      { error: "Choisissez une date et une heure futures." },
+      { status: 400 }
+    );
+  }
 
   const campaign = await prisma.notificationCampaign.create({
     data: {
@@ -248,6 +270,89 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json(campaign, { status: 201 });
+}
+
+export async function PATCH(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+  }
+
+  const parsed = await parseJsonBody(req, updateScheduledCampaignSchema);
+  if (!parsed.ok) return parsed.response;
+  const {
+    id,
+    programId,
+    name,
+    message,
+    triggerType,
+    triggerConfig,
+    targetSegment,
+  } = parsed.data;
+
+  const campaign = await prisma.notificationCampaign.findFirst({
+    where: { id, merchantId: session.user.id },
+    include: { _count: { select: { logs: true } } },
+  });
+  if (!campaign) {
+    return NextResponse.json({ error: "Campagne introuvable" }, { status: 404 });
+  }
+  if (
+    campaign.status !== "SCHEDULED" ||
+    campaign.triggerType !== "SCHEDULED" ||
+    campaign.sentAt ||
+    campaign._count.logs > 0
+  ) {
+    return NextResponse.json(
+      { error: "Cette campagne a déjà été prise en charge et ne peut plus être modifiée." },
+      { status: 409 }
+    );
+  }
+
+  const program = await prisma.loyaltyProgram.findFirst({
+    where: { id: programId, merchantId: session.user.id },
+    select: { id: true },
+  });
+  if (!program) {
+    return NextResponse.json({ error: "Programme introuvable" }, { status: 404 });
+  }
+
+  const scheduledAt = resolveScheduledAt(triggerType, triggerConfig);
+  if (!scheduledAt || scheduledAt.getTime() <= Date.now()) {
+    return NextResponse.json(
+      { error: "Choisissez une date et une heure futures." },
+      { status: 400 }
+    );
+  }
+
+  const updated = await prisma.notificationCampaign.updateMany({
+    where: {
+      id,
+      merchantId: session.user.id,
+      status: "SCHEDULED",
+      sentAt: null,
+    },
+    data: {
+      programId,
+      name,
+      message,
+      triggerConfig: triggerConfig as Prisma.InputJsonValue,
+      targetSegment,
+      scheduledAt,
+    },
+  });
+  if (updated.count === 0) {
+    return NextResponse.json(
+      { error: "La campagne vient d'être prise en charge et ne peut plus être modifiée." },
+      { status: 409 }
+    );
+  }
+
+  const savedCampaign = await prisma.notificationCampaign.findUnique({
+    where: { id },
+    include: { program: { select: { name: true } }, _count: { select: { logs: true } } },
+  });
+  return NextResponse.json(savedCampaign);
 }
 
 export async function DELETE(req: Request) {

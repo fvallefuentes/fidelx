@@ -18,15 +18,26 @@ import {
   Sparkles,
   Wand2,
   Trash2,
+  Pencil,
 } from "lucide-react";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { CAMPAIGN_TEMPLATES, type CampaignTemplate } from "@/lib/campaign-templates";
 
 interface Campaign {
   id: string;
+  programId: string | null;
   name: string;
   message: string;
   triggerType: string;
+  triggerConfig: {
+    sendAt?: string;
+    sendAtLocal?: string;
+    timezoneOffsetMinutes?: number;
+    notifTitle?: string;
+    notifLogo?: string;
+    notifBgColor?: string;
+    [key: string]: unknown;
+  };
   targetSegment: string;
   status: string;
   sentCount: number;
@@ -205,6 +216,7 @@ export default function CampaignsPage() {
   const [establishments, setEstablishments] = useState<Establishment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [activeTab, setActiveTab] = useState<CampaignTab>("send");
 
   useEffect(() => {
@@ -249,6 +261,13 @@ export default function CampaignsPage() {
   }
 
   function startBlankCampaign() {
+    setEditingCampaign(null);
+    setActiveTab("send");
+    setShowForm(true);
+  }
+
+  function startEditingCampaign(campaign: Campaign) {
+    setEditingCampaign(campaign);
     setActiveTab("send");
     setShowForm(true);
   }
@@ -317,24 +336,30 @@ export default function CampaignsPage() {
         automationsCount={automations.length}
         onChange={(tab) => {
           setActiveTab(tab);
-          if (tab !== "send") setShowForm(false);
+          if (tab !== "send") {
+            setShowForm(false);
+            setEditingCampaign(null);
+          }
         }}
       />
 
       {activeTab === "send" && (
         showForm ? (
           <CreateCampaignForm
-            key="blank"
+            key={editingCampaign?.id ?? "blank"}
             programs={programs}
             isFree={isFree}
             notificationDefaults={notificationDefaults}
+            initialCampaign={editingCampaign}
             onSuccess={() => {
               setShowForm(false);
+              setEditingCampaign(null);
               fetchCampaigns();
               setActiveTab("history");
             }}
             onCancel={() => {
               setShowForm(false);
+              setEditingCampaign(null);
             }}
           />
         ) : (
@@ -362,7 +387,12 @@ export default function CampaignsPage() {
       )}
 
       {activeTab === "history" && (
-        <CampaignHistory campaigns={campaigns} onCreate={startBlankCampaign} onDeleted={fetchCampaigns} />
+        <CampaignHistory
+          campaigns={campaigns}
+          onCreate={startBlankCampaign}
+          onEdit={startEditingCampaign}
+          onDeleted={fetchCampaigns}
+        />
       )}
     </div>
   );
@@ -521,10 +551,12 @@ function CampaignStartPanel({
 function CampaignHistory({
   campaigns,
   onCreate,
+  onEdit,
   onDeleted,
 }: {
   campaigns: Campaign[];
   onCreate: () => void;
+  onEdit: (campaign: Campaign) => void;
   onDeleted: () => void;
 }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -585,6 +617,11 @@ function CampaignHistory({
         const canDelete =
           campaign.status === "SCHEDULED" &&
           (isStampEventCampaign || (!campaign.sentAt && campaign.sentCount === 0));
+        const canEdit =
+          campaign.status === "SCHEDULED" &&
+          campaign.triggerType === "SCHEDULED" &&
+          !campaign.sentAt &&
+          campaign.sentCount === 0;
         const impact = campaign.impact;
         const hasImpact =
           impact &&
@@ -625,6 +662,17 @@ function CampaignHistory({
                     <CampaignSentCountBadge count={campaign.sentCount} />
                   )}
                   <CampaignStatusBadge status={campaign.status} triggerType={campaign.triggerType} />
+                  {canEdit && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onEdit(campaign)}
+                    >
+                      <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                      Modifier
+                    </Button>
+                  )}
                   {canDelete && (
                     <Button
                       type="button"
@@ -1456,11 +1504,23 @@ function getProgramBgColor(program?: Program) {
   return isHexColor(color) ? color : "#1a1a2e";
 }
 
+function getLocalScheduleParts(value?: string | null) {
+  if (!value) return { date: "", time: "" };
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return { date: "", time: "" };
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return {
+    date: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
+    time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
+  };
+}
+
 function CreateCampaignForm({
   programs,
   isFree,
   notificationDefaults,
   initialRecommendation,
+  initialCampaign,
   onSuccess,
   onCancel,
 }: {
@@ -1468,19 +1528,27 @@ function CreateCampaignForm({
   isFree: boolean;
   notificationDefaults: NotificationDefaults;
   initialRecommendation?: CampaignRecommendation | null;
+  initialCampaign?: Campaign | null;
   onSuccess: () => void;
   onCancel: () => void;
 }) {
-  const [name, setName] = useState(initialRecommendation?.name || "");
-  const [message, setMessage] = useState(initialRecommendation?.message || "");
-  const [programId, setProgramId] = useState(initialRecommendation?.programId || programs[0]?.id || "");
-  const [triggerType, setTriggerType] = useState(
-    isFree && initialRecommendation?.triggerType !== "IMMEDIATE"
-      ? "IMMEDIATE"
-      : initialRecommendation?.triggerType || "IMMEDIATE"
+  const isEditing = Boolean(initialCampaign);
+  const initialSchedule = getLocalScheduleParts(initialCampaign?.scheduledAt);
+  const [name, setName] = useState(initialCampaign?.name || initialRecommendation?.name || "");
+  const [message, setMessage] = useState(initialCampaign?.message || initialRecommendation?.message || "");
+  const [programId, setProgramId] = useState(
+    initialCampaign?.programId || initialRecommendation?.programId || programs[0]?.id || ""
   );
-  const [targetSegment, setTargetSegment] = useState(initialRecommendation?.targetSegment || "ALL");
-  const [showTemplates, setShowTemplates] = useState(!initialRecommendation);
+  const [triggerType, setTriggerType] = useState(
+    initialCampaign?.triggerType ||
+    (isFree && initialRecommendation?.triggerType !== "IMMEDIATE"
+      ? "IMMEDIATE"
+      : initialRecommendation?.triggerType || "IMMEDIATE")
+  );
+  const [targetSegment, setTargetSegment] = useState(
+    initialCampaign?.targetSegment || initialRecommendation?.targetSegment || "ALL"
+  );
+  const [showTemplates, setShowTemplates] = useState(!initialRecommendation && !initialCampaign);
 
   function applyTemplate(tpl: CampaignTemplate) {
     setName(tpl.name);
@@ -1497,16 +1565,18 @@ function CreateCampaignForm({
     setShowTemplates(false);
     setCampaignStep(1);
   }
-  const [notifTitle, setNotifTitle] = useState(initialRecommendation?.notifTitle || ""); // optionnel, override du titre
+  const [notifTitle, setNotifTitle] = useState(
+    initialCampaign?.triggerConfig.notifTitle || initialRecommendation?.notifTitle || ""
+  );
   const [notifLogo, setNotifLogo] = useState<string>(
-    initialRecommendation?.triggerConfig?.notifLogo || ""
-  ); // optionnel, base64 data URL
+    initialCampaign?.triggerConfig.notifLogo || initialRecommendation?.triggerConfig?.notifLogo || ""
+  );
   const [notifBgColor, setNotifBgColor] = useState<string>(
-    initialRecommendation?.triggerConfig?.notifBgColor || ""
+    initialCampaign?.triggerConfig.notifBgColor || initialRecommendation?.triggerConfig?.notifBgColor || ""
   );
   const [logoError, setLogoError] = useState("");
-  const [scheduledDate, setScheduledDate] = useState("");
-  const [scheduledTime, setScheduledTime] = useState("");
+  const [scheduledDate, setScheduledDate] = useState(initialSchedule.date);
+  const [scheduledTime, setScheduledTime] = useState(initialSchedule.time);
   const [inactivityDays, setInactivityDays] = useState(
     initialRecommendation?.triggerConfig?.daysInactive || 30
   );
@@ -1517,6 +1587,7 @@ function CreateCampaignForm({
   const [error, setError] = useState("");
   const [spamWarning, setSpamWarning] = useState<SpamWarning | null>(null);
   const [spamWarningLoading, setSpamWarningLoading] = useState(false);
+  const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
   const selectedProgram = programs.find((p) => p.id === programId);
   const programBgColor = getProgramBgColor(selectedProgram);
@@ -1536,8 +1607,8 @@ function CreateCampaignForm({
     initialRecommendation?.triggerConfig?.targetCardIds ||
     [];
   const exactTargetCardIdsKey = exactTargetCardIds.join("|");
-  const [campaignStep, setCampaignStep] = useState(isRecommendedMode ? 0 : 0);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [campaignStep, setCampaignStep] = useState(isEditing ? 2 : 0);
+  const [showAdvanced, setShowAdvanced] = useState(isEditing);
   const wizardSteps = isRecommendedMode
     ? ["Audience", "Message", "Vérifier"]
     : ["Objectif", "Clients", "Message", "Vérifier"];
@@ -1567,12 +1638,17 @@ function CreateCampaignForm({
       setError("Complétez les champs de cette étape avant de continuer.");
       return;
     }
-    setCampaignStep((step) => Math.min(lastWizardStep, step + 1));
+    setCampaignStep((step) => {
+      const nextStep = Math.min(lastWizardStep, step + 1);
+      if (nextStep === lastWizardStep) setReviewConfirmed(false);
+      return nextStep;
+    });
   }
 
   function goToStep(stepIndex: number) {
     setError("");
     if (stepIndex <= campaignStep) {
+      if (stepIndex !== lastWizardStep) setReviewConfirmed(false);
       setCampaignStep(stepIndex);
       return;
     }
@@ -1643,6 +1719,10 @@ function CreateCampaignForm({
       goToNextStep();
       return;
     }
+    if (!reviewConfirmed) {
+      setError("Cochez la confirmation après avoir vérifié la campagne.");
+      return;
+    }
 
     // Le titre de la notif est obligatoire — refus côté UI avant l'appel API.
     const trimmedTitle = notifTitle.trim();
@@ -1659,6 +1739,7 @@ function CreateCampaignForm({
     setError("");
 
     let triggerConfig: Record<string, unknown> = {
+      ...(initialCampaign?.triggerConfig || {}),
       ...(initialRecommendation?.triggerConfig || {}),
     };
     if (triggerType === "SCHEDULED" && scheduledDate && scheduledTime) {
@@ -1675,13 +1756,14 @@ function CreateCampaignForm({
     }
 
     const res = await fetch("/api/campaigns", {
-      method: "POST",
+      method: isEditing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        id: initialCampaign?.id,
         programId,
         name,
         message,
-        reviewConfirmed: true,
+        reviewConfirmed,
         triggerType,
         triggerConfig: {
           ...triggerConfig,
@@ -1706,7 +1788,13 @@ function CreateCampaignForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{isRecommendedMode ? "Préparer l'envoi ciblé" : "Nouvelle campagne"}</CardTitle>
+        <CardTitle>
+          {isEditing
+            ? "Modifier la campagne programmée"
+            : isRecommendedMode
+              ? "Préparer l'envoi ciblé"
+              : "Nouvelle campagne"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="campaign-wizard-steps">
@@ -1999,7 +2087,7 @@ function CreateCampaignForm({
                             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                             value={triggerType}
                             onChange={(e) => setTriggerType(e.target.value)}
-                            disabled={isFree}
+                            disabled={isFree || isEditing}
                           >
                             <option value="IMMEDIATE">Envoyer maintenant</option>
                             {!isFree && <option value="SCHEDULED">Programmer une date</option>}
@@ -2107,6 +2195,14 @@ function CreateCampaignForm({
                   <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                     <p className="text-xs text-gray-400">Envoi</p>
                     <p className="font-medium text-gray-900">{triggerLabels[triggerType] || triggerType}</p>
+                    {triggerType === "SCHEDULED" && scheduledDate && scheduledTime && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        {new Intl.DateTimeFormat("fr-CH", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        }).format(new Date(`${scheduledDate}T${scheduledTime}:00`))}
+                      </p>
+                    )}
                   </div>
                   <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                     <p className="text-xs text-gray-400">Titre</p>
@@ -2117,6 +2213,21 @@ function CreateCampaignForm({
                   <p className="text-xs text-gray-400">Message</p>
                   <p className="mt-1 text-sm text-gray-800">{message || "À compléter"}</p>
                 </div>
+                <label className="campaign-review-confirmation">
+                  <input
+                    type="checkbox"
+                    checked={reviewConfirmed}
+                    onChange={(event) => setReviewConfirmed(event.target.checked)}
+                  />
+                  <span>
+                    <strong>Je confirme cette campagne.</strong>
+                    {triggerType === "IMMEDIATE"
+                      ? " Elle sera envoyée uniquement après mon clic sur le bouton ci-dessous."
+                      : isEditing
+                        ? " Les modifications seront enregistrées sans envoyer la campagne maintenant."
+                        : " Elle sera enregistrée et envoyée selon le mode indiqué ci-dessus."}
+                  </span>
+                </label>
               </div>
             )}
 
@@ -2129,16 +2240,24 @@ function CreateCampaignForm({
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => setCampaignStep((step) => Math.max(0, step - 1))}
+                    onClick={() => {
+                      setReviewConfirmed(false);
+                      setCampaignStep((step) => Math.max(0, step - 1));
+                    }}
                   >
                     Retour
                   </Button>
                 )}
                 {isReviewStep ? (
-                  <Button type="submit" disabled={saving || !notifTitle.trim() || !message.trim()}>
+                  <Button
+                    type="submit"
+                    disabled={saving || !reviewConfirmed || !notifTitle.trim() || !message.trim()}
+                  >
                     {saving
-                      ? "Envoi..."
-                      : isRecommendedMode
+                      ? isEditing ? "Enregistrement..." : "Envoi..."
+                      : isEditing
+                        ? "Enregistrer les modifications"
+                        : isRecommendedMode
                         ? `Envoyer aux ${exactAudienceCount} clients ciblés`
                         : triggerType === "IMMEDIATE"
                           ? "Envoyer maintenant"

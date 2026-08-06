@@ -230,7 +230,10 @@ export default function JoinAllForm({
 
         {/* Form fields */}
         <div className="join-field">
-          <label htmlFor="firstName">Prénom *</label>
+          <label htmlFor="firstName">
+            Prénom
+            <span className="join-field-requirement is-required">Obligatoire</span>
+          </label>
           <input
             id="firstName"
             type="text"
@@ -244,7 +247,12 @@ export default function JoinAllForm({
 
         <div className="join-field">
           <label htmlFor="email">
-            Email{requirements.emailRequired ? " *" : ""}
+            Email
+            <span
+              className={`join-field-requirement ${requirements.emailRequired ? "is-required" : ""}`}
+            >
+              {requirements.emailRequired ? "Obligatoire" : "Optionnel"}
+            </span>
           </label>
           <input
             id="email"
@@ -260,7 +268,12 @@ export default function JoinAllForm({
 
         <div className="join-field">
           <label htmlFor="phone">
-            Téléphone{requirements.phoneRequired ? " *" : ""}
+            Téléphone
+            <span
+              className={`join-field-requirement ${requirements.phoneRequired ? "is-required" : ""}`}
+            >
+              {requirements.phoneRequired ? "Obligatoire" : "Optionnel"}
+            </span>
           </label>
           <input
             id="phone"
@@ -286,10 +299,12 @@ export default function JoinAllForm({
 
         <div className="join-field">
           <label htmlFor="birthDate">
-            Date de naissance{" "}
-            {!requirements.birthDateRequired && (
-              <span style={{ opacity: 0.6 }}>(facultatif)</span>
-            )}
+            Date de naissance
+            <span
+              className={`join-field-requirement ${requirements.birthDateRequired ? "is-required" : ""}`}
+            >
+              {requirements.birthDateRequired ? "Obligatoire" : "Optionnel"}
+            </span>
           </label>
           <input
             id="birthDate"

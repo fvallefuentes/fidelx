@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getGoogleWalletHasUsersMap } from "@/lib/wallet/google";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -9,8 +10,11 @@ export async function GET() {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
+  const merchantId =
+    (session.user as { merchantId?: string }).merchantId ?? session.user.id;
+
   const programs = await prisma.loyaltyProgram.findMany({
-    where: { merchantId: session.user.id },
+    where: { merchantId },
     select: { id: true },
   });
 
@@ -32,10 +36,22 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
+  // Google ne crée pas de PassRegistration. Son champ API `hasUsers` indique
+  // si l'objet est réellement présent dans le Wallet d'au moins un utilisateur.
+  const googleUsage = await getGoogleWalletHasUsersMap(
+    cards
+      .filter(
+        (card) =>
+          !card.client.lastName &&
+          !card.registrations.some((registration) => registration.platform === "APPLE")
+      )
+      .map((card) => card.serialNumber)
+  );
+
   // Enrichir avec le statut Wallet
   const enriched = cards.map((card) => {
     const apple = card.registrations.filter((r) => r.platform === "APPLE").length;
-    const google = card.registrations.filter((r) => r.platform === "GOOGLE").length;
+    const google = googleUsage?.get(card.serialNumber) === true ? 1 : 0;
     const total = apple + google;
 
     let walletStatus: "installed" | "manual" | "removed" | "never_installed";
@@ -44,7 +60,11 @@ export async function GET() {
     else {
       // Si la carte a déjà été utilisée (visites > 0 ou tampons > 0),
       // c'est qu'elle a été installée puis supprimée
-      const wasUsed = card.totalVisits > 0 || card.currentStamps > 0;
+      const wasUsed =
+        card.totalVisits > 0 ||
+        card.currentStamps > 0 ||
+        card.currentPoints > 0 ||
+        card.cashbackBalance > 0;
       walletStatus = wasUsed ? "removed" : "never_installed";
     }
 

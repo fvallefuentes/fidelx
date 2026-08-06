@@ -3539,6 +3539,22 @@ html, body { overflow-x: clip; }
   font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--jt-3); font-weight: 500;
 }
+.join-field-requirement {
+  display: inline-flex;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border: 1px solid #deded8;
+  border-radius: 999px;
+  color: var(--jt-3);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  vertical-align: 1px;
+}
+.join-field-requirement.is-required {
+  border-color: rgba(112, 148, 18, 0.32);
+  background: rgba(212, 255, 78, 0.18);
+  color: #58730f;
+}
 .join-field input {
   height: 48px; padding: 0 16px;
   background: #fff;
@@ -3568,6 +3584,24 @@ html, body { overflow-x: clip; }
 }
 .join-or::before { left: 0; }
 .join-or::after { right: 0; }
+.join-contact-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--jt-3);
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 10px;
+}
+.join-contact-choice > span {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.join-contact-choice > small {
+  color: var(--jt-2);
+  font-family: inherit;
+  font-size: 10px;
+}
 
 .join-submit {
   margin-top: 6px;
@@ -3660,11 +3694,17 @@ html, body { overflow-x: clip; }
   position: sticky;
   top: 100px;
   align-self: start;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgb(var(--ovr) / 0.025);
 }
 
 /* iPhone lock-screen style notification mockup */
 .dashboard .dx-notif-preview {
   display: flex; flex-direction: column; gap: 14px; align-items: center;
+  color-scheme: dark;
+  --ovr: 255 255 255;
 }
 .dashboard .dx-iphone {
   width: 280px;
@@ -3697,14 +3737,14 @@ html, body { overflow-x: clip; }
 }
 .dashboard .dx-iphone-battery {
   width: 24px; height: 11px; border-radius: 3px;
-  border: 1px solid rgb(var(--ovr) / 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   display: inline-block; padding: 1px;
   position: relative;
 }
 .dashboard .dx-iphone-battery::after {
   content: ""; position: absolute; right: -3px; top: 3px;
   width: 2px; height: 5px; border-radius: 0 1px 1px 0;
-  background: rgb(var(--ovr) / 0.6);
+  background: rgba(255, 255, 255, 0.6);
 }
 .dashboard .dx-iphone-battery-fill {
   display: block; width: 78%; height: 100%;
@@ -3804,6 +3844,29 @@ html, body { overflow-x: clip; }
 }
 .dashboard .dx-notif-helper span {
   color: var(--ink-3); line-height: 1.4;
+}
+.dashboard .campaign-review-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgb(var(--accent-rgb) / 0.36);
+  border-radius: 12px;
+  background: rgb(var(--accent-rgb) / 0.1);
+  color: var(--ink-2);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.dashboard .campaign-review-confirmation input {
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  accent-color: var(--accent-ink);
+  flex: 0 0 auto;
+}
+.dashboard .campaign-review-confirmation strong {
+  color: var(--ink);
 }
 
 /* Badge "APERÇU" floating on the program list preview */

@@ -8,6 +8,8 @@ export async function GET(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
+  const merchantId =
+    (session.user as { merchantId?: string }).merchantId ?? session.user.id;
 
   const { searchParams } = new URL(req.url);
   const serialNumber = searchParams.get("serialNumber");
@@ -24,7 +26,7 @@ export async function GET(req: Request) {
   });
 
   if (!card) return NextResponse.json({ error: "Carte introuvable" }, { status: 404 });
-  if (card.program.merchant.id !== session.user.id) {
+  if (card.program.merchant.id !== merchantId) {
     return NextResponse.json({ error: "Cette carte n'appartient pas à votre programme" }, { status: 403 });
   }
   if (card.status === "REVOKED" || card.status === "EXPIRED") {

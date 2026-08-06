@@ -17,6 +17,11 @@ const GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL =
 const GOOGLE_WALLET_SERVICE_ACCOUNT_KEY = (
   process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || ""
 ).replace(/\\n/g, "\n");
+const GOOGLE_USAGE_CACHE_TTL_MS = 5 * 60 * 1000;
+const googleUsageCache = new Map<
+  string,
+  { hasUsers: boolean; expiresAt: number }
+>();
 
 interface LoyaltyClassData {
   programId: string;
@@ -285,6 +290,71 @@ export async function generateGoogleWalletLink(
   });
 
   return `https://pay.google.com/gp/v/save/${token}`;
+}
+
+/**
+ * Vérifie côté Google si les objets Wallet sont réellement enregistrés par
+ * au moins un utilisateur. Contrairement à Apple, Google ne crée aucune
+ * PassRegistration chez l'issuer : le champ `hasUsers`, géré par Google, est
+ * donc la source fiable pour le statut affiché dans le dashboard.
+ */
+export async function getGoogleWalletHasUsersMap(
+  serialNumbers: string[]
+): Promise<Map<string, boolean> | null> {
+  const uniqueSerials = [...new Set(serialNumbers.filter(Boolean))];
+  if (uniqueSerials.length === 0) return new Map();
+  if (!GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || !GOOGLE_WALLET_ISSUER_ID) {
+    return null;
+  }
+
+  const now = Date.now();
+  const usage = new Map<string, boolean>();
+  const serialsToRefresh = uniqueSerials.filter((serialNumber) => {
+    const cached = googleUsageCache.get(serialNumber);
+    if (!cached || cached.expiresAt <= now) return true;
+    usage.set(serialNumber, cached.hasUsers);
+    return false;
+  });
+  if (serialsToRefresh.length === 0) return usage;
+
+  const accessToken = await getGoogleAccessToken();
+  if (!accessToken) return usage.size > 0 ? usage : null;
+
+  const concurrency = 8;
+  for (let index = 0; index < serialsToRefresh.length; index += concurrency) {
+    const batch = serialsToRefresh.slice(index, index + concurrency);
+    await Promise.all(
+      batch.map(async (serialNumber) => {
+        const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${serialNumber}`;
+        try {
+          const response = await fetch(
+            `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${encodeURIComponent(objectId)}`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+          if (response.status === 404) {
+            usage.set(serialNumber, false);
+            googleUsageCache.set(serialNumber, {
+              hasUsers: false,
+              expiresAt: now + GOOGLE_USAGE_CACHE_TTL_MS,
+            });
+            return;
+          }
+          if (!response.ok) return;
+          const object = (await response.json()) as { hasUsers?: boolean };
+          const hasUsers = object.hasUsers === true;
+          usage.set(serialNumber, hasUsers);
+          googleUsageCache.set(serialNumber, {
+            hasUsers,
+            expiresAt: now + GOOGLE_USAGE_CACHE_TTL_MS,
+          });
+        } catch {
+          // Un échec Google ponctuel ne doit pas empêcher d'afficher les clients.
+        }
+      })
+    );
+  }
+
+  return usage;
 }
 
 /**

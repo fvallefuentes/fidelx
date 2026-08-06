@@ -199,7 +199,10 @@ export default function JoinPage() {
               {error && <div className="join-error">{error}</div>}
 
               <div className="join-field">
-                <label htmlFor="firstName">{t("firstName")}</label>
+                <label htmlFor="firstName">
+                  {t("firstName")}
+                  <span className="join-field-requirement is-required">Obligatoire</span>
+                </label>
                 <input
                   id="firstName"
                   type="text"
@@ -213,7 +216,12 @@ export default function JoinPage() {
 
               <div className="join-field">
                 <label htmlFor="email">
-                  Email{requirements.emailRequired ? " *" : ""}
+                  Email
+                  <span
+                    className={`join-field-requirement ${requirements.emailRequired ? "is-required" : ""}`}
+                  >
+                    {requirements.emailRequired ? "Obligatoire" : "Optionnel"}
+                  </span>
                 </label>
                 <input
                   id="email"
@@ -227,7 +235,10 @@ export default function JoinPage() {
               </div>
 
               {!requirements.emailRequired && !requirements.phoneRequired && (
-                <div className="join-or">{t("or")}</div>
+                <div className="join-contact-choice">
+                  <span>{t("or")}</span>
+                  <small>Renseignez au moins l&apos;un des deux.</small>
+                </div>
               )}
               {requirements.emailRequired && requirements.phoneRequired && (
                 <div className="join-or">{t("and")}</div>
@@ -235,7 +246,12 @@ export default function JoinPage() {
 
               <div className="join-field">
                 <label htmlFor="phone">
-                  {t("phone")}{requirements.phoneRequired ? " *" : ""}
+                  {t("phone")}
+                  <span
+                    className={`join-field-requirement ${requirements.phoneRequired ? "is-required" : ""}`}
+                  >
+                    {requirements.phoneRequired ? "Obligatoire" : "Optionnel"}
+                  </span>
                 </label>
                 <input
                   id="phone"
@@ -250,7 +266,12 @@ export default function JoinPage() {
 
               <div className="join-field">
                 <label htmlFor="birthDate">
-                  {t("birthDate")}{requirements.birthDateRequired ? " *" : " "}
+                  {t("birthDate")}
+                  <span
+                    className={`join-field-requirement ${requirements.birthDateRequired ? "is-required" : ""}`}
+                  >
+                    {requirements.birthDateRequired ? "Obligatoire" : "Optionnel"}
+                  </span>
                   <span style={{ color: "#8a8e84", fontSize: 11 }}>
                     {requirements.birthDateRequired
                       ? t("birthDateRequiredHint")

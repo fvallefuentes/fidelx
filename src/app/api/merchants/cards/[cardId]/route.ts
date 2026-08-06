@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getGoogleWalletHasUsersMap } from "@/lib/wallet/google";
 
 /**
  * GET /api/merchants/cards/[cardId]
@@ -81,6 +82,12 @@ export async function GET(
   // Montant moyen par visite
   const avgPerVisit =
     card.totalVisits > 0 ? card.totalSpent / card.totalVisits : 0;
+  const googleUsage = await getGoogleWalletHasUsersMap([card.serialNumber]);
+  const googleInstalled = googleUsage?.get(card.serialNumber) === true;
+  const appleDevices = card.registrations.filter(
+    (registration) => registration.platform === "APPLE"
+  ).length;
+  const walletDevices = appleDevices + (googleInstalled ? 1 : 0);
 
   return NextResponse.json({
     card: {
@@ -120,10 +127,10 @@ export async function GET(
       visitCount: visitTxs.length,
     },
     wallet: {
-      devices: card.registrations.length,
-      isManual: card.registrations.length === 0 && Boolean(card.client.lastName),
-      apple: card.registrations.filter((r) => r.platform === "APPLE").length,
-      google: card.registrations.filter((r) => r.platform === "GOOGLE").length,
+      devices: walletDevices,
+      isManual: walletDevices === 0 && Boolean(card.client.lastName),
+      apple: appleDevices,
+      google: googleInstalled ? 1 : 0,
       registrations: card.registrations.map((r) => ({
         platform: r.platform,
         registeredAt: r.registeredAt,
