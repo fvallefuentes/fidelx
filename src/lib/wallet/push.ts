@@ -217,6 +217,62 @@ async function sendApplePushNotification(pushToken: string): Promise<boolean> {
   });
 }
 
+export async function notifyCardInProgram(
+  programId: string,
+  cardId: string,
+  message: string,
+  title: string,
+  campaignId: string
+) {
+  const card = await prisma.loyaltyCard.findFirst({
+    where: {
+      id: cardId,
+      programId,
+      status: { in: ["ACTIVE", "REWARD_PENDING"] },
+    },
+    select: {
+      id: true,
+      program: { select: { name: true } },
+    },
+  });
+
+  if (!card) return { total: 0, sent: 0 };
+
+  const deliveredAt = new Date();
+  const log = await prisma.notificationLog.create({
+    data: {
+      campaignId,
+      cardId: card.id,
+      messageSnapshot: message,
+    },
+  });
+
+  await prisma.loyaltyCard.update({
+    where: { id: card.id },
+    data: { lastMessage: message, lastMessageAt: deliveredAt },
+  });
+
+  const result = await notifyPassUpdate(card.id, {
+    header: title || card.program.name,
+    body: message,
+  });
+  const current = await prisma.notificationLog.findUnique({
+    where: { id: log.id },
+    select: { applePassSyncedAt: true },
+  });
+  await prisma.notificationLog.update({
+    where: { id: log.id },
+    data: {
+      ...buildNotificationLogUpdate(result, deliveredAt),
+      ...(current?.applePassSyncedAt
+        ? { walletStatus: "SYNCED", appleStatus: "SYNCED" }
+        : {}),
+    },
+  });
+
+  return { total: 1, sent: 1 };
+}
+
 export async function notifyAllCardsInProgram(
   programId: string,
   message: string,

@@ -98,6 +98,7 @@ interface CampaignRecommendation {
   targetSegment: string;
   triggerConfig?: {
     daysInactive?: number;
+    remainingBeforeReward?: number;
     targetCardIds?: string[];
     notifLogo?: string;
     notifBgColor?: string;
@@ -171,7 +172,7 @@ const triggerLabels: Record<string, string> = {
   GEOFENCE: "Position Wallet",
   INACTIVITY: "Win-back",
   POST_STAMP: "Après tampon",
-  MILESTONE: "Palier atteint",
+  MILESTONE: "Récompense proche",
   BIRTHDAY: "Anniversaire",
 };
 
@@ -380,14 +381,19 @@ function CampaignSentCountBadge({ count }: { count: number }) {
   );
 }
 
-function CampaignStatusBadge({ status }: { status: string }) {
+function CampaignStatusBadge({ status, triggerType }: { status: string; triggerType: string }) {
+  const isActiveEventCampaign =
+    status === "SCHEDULED" &&
+    (triggerType === "POST_STAMP" || triggerType === "MILESTONE");
   const states: Record<string, { label: string; background: string; color: string; dot: string }> = {
     SENT: { label: "Envoyé", background: "#effbd0", color: "#5d7d13", dot: "#739c12" },
     SCHEDULED: { label: "Programmé", background: "#fff2d6", color: "#a16207", dot: "#d97706" },
     DRAFT: { label: "Brouillon", background: "#efefeb", color: "#797a72", dot: "#989891" },
     CANCELLED: { label: "Annulé", background: "#fee9eb", color: "#db3a42", dot: "#ef4444" },
   };
-  const state = states[status] ?? { label: status, background: "#efefeb", color: "#797a72", dot: "#989891" };
+  const state = isActiveEventCampaign
+    ? { label: "Active", background: "#effbd0", color: "#5d7d13", dot: "#739c12" }
+    : states[status] ?? { label: status, background: "#efefeb", color: "#797a72", dot: "#989891" };
 
   return (
     <span
@@ -525,8 +531,12 @@ function CampaignHistory({
   const [deleteError, setDeleteError] = useState("");
 
   async function deleteScheduledCampaign(campaign: Campaign) {
+    const isStampEventCampaign =
+      campaign.triggerType === "POST_STAMP" || campaign.triggerType === "MILESTONE";
     const ok = window.confirm(
-      `Supprimer la campagne programmée "${campaign.name}" ? Elle ne sera pas envoyée.`
+      isStampEventCampaign
+        ? `Désactiver la campagne "${campaign.name}" ? Elle ne se déclenchera plus lors des prochains tampons.`
+        : `Supprimer la campagne programmée "${campaign.name}" ? Elle ne sera pas envoyée.`
     );
     if (!ok) return;
 
@@ -570,8 +580,11 @@ function CampaignHistory({
       )}
       {campaigns.map((campaign) => {
         const Icon = triggerIcons[campaign.triggerType] || Bell;
+        const isStampEventCampaign =
+          campaign.triggerType === "POST_STAMP" || campaign.triggerType === "MILESTONE";
         const canDelete =
-          campaign.status === "SCHEDULED" && !campaign.sentAt && campaign.sentCount === 0;
+          campaign.status === "SCHEDULED" &&
+          (isStampEventCampaign || (!campaign.sentAt && campaign.sentCount === 0));
         const impact = campaign.impact;
         const hasImpact =
           impact &&
@@ -611,7 +624,7 @@ function CampaignHistory({
                   {campaign.sentCount > 0 && (
                     <CampaignSentCountBadge count={campaign.sentCount} />
                   )}
-                  <CampaignStatusBadge status={campaign.status} />
+                  <CampaignStatusBadge status={campaign.status} triggerType={campaign.triggerType} />
                   {canDelete && (
                     <Button
                       type="button"
@@ -621,7 +634,9 @@ function CampaignHistory({
                       disabled={deletingId === campaign.id}
                     >
                       <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                      {deletingId === campaign.id ? "Suppression..." : "Supprimer"}
+                      {deletingId === campaign.id
+                        ? isStampEventCampaign ? "Désactivation..." : "Suppression..."
+                        : isStampEventCampaign ? "Désactiver" : "Supprimer"}
                     </Button>
                   )}
                 </div>
@@ -1478,6 +1493,7 @@ function CreateCampaignForm({
       setTriggerType(tpl.triggerType);
     }
     setTargetSegment(tpl.targetSegment);
+    if (tpl.triggerType === "MILESTONE") setRemainingBeforeReward(1);
     setShowTemplates(false);
     setCampaignStep(1);
   }
@@ -1493,6 +1509,9 @@ function CreateCampaignForm({
   const [scheduledTime, setScheduledTime] = useState("");
   const [inactivityDays, setInactivityDays] = useState(
     initialRecommendation?.triggerConfig?.daysInactive || 30
+  );
+  const [remainingBeforeReward, setRemainingBeforeReward] = useState(
+    initialRecommendation?.triggerConfig?.remainingBeforeReward || 1
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -1651,6 +1670,8 @@ function CreateCampaignForm({
       };
     } else if (triggerType === "INACTIVITY") {
       triggerConfig = { ...triggerConfig, daysInactive: inactivityDays };
+    } else if (triggerType === "MILESTONE") {
+      triggerConfig = { ...triggerConfig, remainingBeforeReward };
     }
 
     const res = await fetch("/api/campaigns", {
@@ -1983,8 +2004,8 @@ function CreateCampaignForm({
                             <option value="IMMEDIATE">Envoyer maintenant</option>
                             {!isFree && <option value="SCHEDULED">Programmer une date</option>}
                             {!isFree && <option value="INACTIVITY">Client inactif</option>}
-                            {!isFree && <option value="POST_STAMP">Après tamponnage</option>}
-                            {!isFree && <option value="MILESTONE">Palier atteint</option>}
+                            {!isFree && <option value="POST_STAMP">Après chaque tamponnage</option>}
+                            {!isFree && <option value="MILESTONE">Récompense proche</option>}
                             {!isFree && <option value="BIRTHDAY">Anniversaire</option>}
                           </select>
                         </div>
@@ -2001,6 +2022,37 @@ function CreateCampaignForm({
                             />
                           </div>
                         )}
+
+                        {triggerType === "MILESTONE" && (
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                              Prévenir quand il reste
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                min={1}
+                                max={50}
+                                value={remainingBeforeReward}
+                                onChange={(e) => setRemainingBeforeReward(Number(e.target.value) || 1)}
+                                className="max-w-24"
+                              />
+                              <span className="text-sm text-gray-600">tampon(s) ou point(s)</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {triggerType === "POST_STAMP" && (
+                      <div className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
+                        Cette notification part automatiquement juste après le passage en caisse du client.
+                      </div>
+                    )}
+
+                    {triggerType === "MILESTONE" && (
+                      <div className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
+                        La notification part une seule fois au moment où le client entre dans cette zone proche de sa prochaine récompense.
                       </div>
                     )}
 
@@ -2090,6 +2142,8 @@ function CreateCampaignForm({
                         ? `Envoyer aux ${exactAudienceCount} clients ciblés`
                         : triggerType === "IMMEDIATE"
                           ? "Envoyer maintenant"
+                          : triggerType === "POST_STAMP" || triggerType === "MILESTONE"
+                            ? "Activer la campagne"
                           : "Programmer"}
                   </Button>
                 ) : (

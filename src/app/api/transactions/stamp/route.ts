@@ -7,6 +7,8 @@ import { getEffectiveLimits, getPeriodStart, countStampsThisMonth } from "@/lib/
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { parseJsonBody } from "@/lib/api/validation";
 import { trackServerEvent } from "@/lib/analytics/posthog-server";
+import { dispatchStampTriggeredCampaign } from "@/lib/campaign-event-dispatch";
+import { findUpcomingRewardThreshold } from "@/lib/campaign-event-rules";
 
 const stampSchema = z.object({
   serialNumber: z.string().trim().min(1, "Numéro de série requis"),
@@ -129,6 +131,19 @@ export async function POST(req: Request) {
 
   const config = card.program.config as Record<string, unknown>;
   let rewardUnlocked = null;
+  const progressBefore =
+    card.program.type === "STAMPS"
+      ? card.currentStamps
+      : card.program.type === "POINTS"
+        ? card.currentPoints
+        : 0;
+  let progressAfter = progressBefore;
+  const upcomingRewardThreshold = findUpcomingRewardThreshold({
+    programType: card.program.type,
+    programConfig: config,
+    rewardThresholds: card.program.rewards.map((reward) => reward.threshold),
+    progressBefore,
+  });
 
   if (card.program.type === "STAMPS") {
     const maxStamps = (config.maxStamps as number) || 10;
@@ -139,6 +154,7 @@ export async function POST(req: Request) {
     // extras dans currentStamps → ils démarrent le cycle suivant.
     const cappedStamps = Math.min(newStamps, maxStamps);
     const extra = Math.max(0, newStamps - maxStamps);
+    progressAfter = cappedStamps;
 
     // Check reward threshold
     const reward = card.program.rewards.find(
@@ -202,6 +218,7 @@ export async function POST(req: Request) {
       : ((config.tiers as { points?: number }[] | undefined)?.[0]?.points ?? null);
     const reachedMax =
       pointsTarget !== null && newPoints >= pointsTarget;
+    progressAfter = pointsTarget !== null ? Math.min(newPoints, pointsTarget) : newPoints;
 
     const reward = card.program.rewards.find(
       (r) => newPoints >= r.threshold && card.currentPoints < r.threshold
@@ -296,10 +313,29 @@ export async function POST(req: Request) {
     hasAmount: !!amountSpent,
   });
 
+  let campaignNotificationSent = false;
   try {
-    const { notifyPassUpdate } = await import("@/lib/wallet/push");
-    await notifyPassUpdate(card.id);
-  } catch { /* non bloquant */ }
+    const campaignResult = await dispatchStampTriggeredCampaign({
+      merchantId,
+      programId: card.programId,
+      cardId: card.id,
+      progress: {
+        before: progressBefore,
+        after: progressAfter,
+        upcomingRewardThreshold,
+      },
+    });
+    campaignNotificationSent = campaignResult.sent > 0;
+  } catch (error) {
+    console.error("[stamp] campaign trigger failed:", error);
+  }
+
+  if (!campaignNotificationSent) {
+    try {
+      const { notifyPassUpdate } = await import("@/lib/wallet/push");
+      await notifyPassUpdate(card.id);
+    } catch { /* non bloquant */ }
+  }
 
   const updatedCard = await prisma.loyaltyCard.findUnique({
     where: { id: card.id },

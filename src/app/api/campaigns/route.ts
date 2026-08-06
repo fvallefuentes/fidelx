@@ -44,6 +44,8 @@ const createCampaignSchema = z.object({
         .string()
         .regex(/^#[0-9a-fA-F]{6}$/, "Couleur de notification invalide")
         .optional(),
+      remainingBeforeReward: z.coerce.number().int().min(1).max(50).optional(),
+      stampsReached: z.coerce.number().min(1).max(1_000_000).optional(),
     })
     .catchall(z.unknown())
     .default({ notifTitle: "" }),
@@ -197,6 +199,22 @@ export async function POST(req: Request) {
     },
   });
 
+  if (
+    programId &&
+    (triggerType === "POST_STAMP" || triggerType === "MILESTONE")
+  ) {
+    await prisma.notificationCampaign.updateMany({
+      where: {
+        id: { not: campaign.id },
+        merchantId: session.user.id,
+        programId,
+        triggerType,
+        status: "SCHEDULED",
+      },
+      data: { status: "CANCELLED" },
+    });
+  }
+
   // Si envoi immédiat, envoyer maintenant
   if (triggerType === "IMMEDIATE" && programId) {
     const notifTitle = triggerConfig.notifTitle || name;
@@ -258,6 +276,20 @@ export async function DELETE(req: Request) {
       { error: "Cette règle automatique se gère depuis l'onglet Automatisations." },
       { status: 400 }
     );
+  }
+
+  const isStampEventCampaign =
+    campaign.triggerType === "POST_STAMP" || campaign.triggerType === "MILESTONE";
+  if (
+    isStampEventCampaign &&
+    campaign.status === "SCHEDULED" &&
+    (campaign.sentAt || campaign._count.logs > 0)
+  ) {
+    await prisma.notificationCampaign.update({
+      where: { id: campaign.id },
+      data: { status: "CANCELLED" },
+    });
+    return NextResponse.json({ ok: true, cancelled: true });
   }
 
   if (campaign.status !== "SCHEDULED" || campaign.sentAt || campaign._count.logs > 0) {
