@@ -7,6 +7,7 @@ import { notifyAllCardsInProgram, notifyCardsInProgram } from "@/lib/wallet/push
 import { getEffectiveMaxCampaignsPerMonth, getPeriodStart, resolvePlanState } from "@/lib/plan-limits";
 import { parseJsonBody } from "@/lib/api/validation";
 import { calculateCampaignImpact } from "@/lib/campaign-impact";
+import { MAX_BIRTHDAY_DAYS_BEFORE } from "@/lib/birthday-campaign";
 import type { Prisma } from "@/generated/prisma/client";
 
 const createCampaignSchema = z.object({
@@ -33,6 +34,12 @@ const createCampaignSchema = z.object({
         .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/, "Date programmée invalide")
         .optional(),
       timezoneOffsetMinutes: z.number().int().min(-840).max(840).optional(),
+      daysBefore: z
+        .number()
+        .int()
+        .min(0)
+        .max(MAX_BIRTHDAY_DAYS_BEFORE)
+        .optional(),
       // Titre de la notif : obligatoire. Affiché en gras sur le lockscreen.
       notifTitle: z
         .string()

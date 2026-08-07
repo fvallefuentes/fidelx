@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { CAMPAIGN_TEMPLATES, type CampaignTemplate } from "@/lib/campaign-templates";
+import { MAX_BIRTHDAY_DAYS_BEFORE } from "@/lib/birthday-campaign";
 
 interface Campaign {
   id: string;
@@ -110,9 +111,8 @@ interface CampaignRecommendation {
   triggerConfig?: {
     daysInactive?: number;
     remainingBeforeReward?: number;
+    daysBefore?: number;
     targetCardIds?: string[];
-    notifLogo?: string;
-    notifBgColor?: string;
   };
   targetCardIds?: string[];
   priorityScore?: number;
@@ -1406,8 +1406,6 @@ function NotificationPreview({
   program,
   message,
   title,
-  customLogo,
-  customBgColor,
   defaultLogo,
   defaultBgColor,
   triggerType,
@@ -1415,16 +1413,13 @@ function NotificationPreview({
   program?: Program;
   message: string;
   title?: string;
-  customLogo?: string;
-  customBgColor?: string;
   defaultLogo?: string;
   defaultBgColor?: string;
   triggerType: string;
 }) {
-  const bgColor = customBgColor || defaultBgColor || program?.cardDesign?.bgColor || "#1a1a2e";
+  const bgColor = defaultBgColor || program?.cardDesign?.bgColor || "#1a1a2e";
   const accent = program?.cardDesign?.stampColor || "#d4ff4e";
-  // Priorité: campagne, réglage global, puis programme.
-  const logoData = customLogo || defaultLogo || program?.cardDesign?.logoData;
+  const logoData = defaultLogo || program?.cardDesign?.logoData;
   const programName = program?.name || "Mon programme";
   const finalTitle = title || programName;
   const body = message || "Votre message apparaîtra ici…";
@@ -1487,8 +1482,7 @@ function NotificationPreview({
       <div className="dx-notif-helper">
         <strong>Aperçu lock-screen iPhone</strong>
         <span>
-          Le titre, l&apos;icône et le fond reprennent les choix de cette campagne.
-          Sans surcharge, les valeurs par défaut des paramètres sont utilisées.
+          L&apos;icône et le fond reprennent l&apos;apparence définie dans Paramètres.
         </span>
       </div>
     </div>
@@ -1497,11 +1491,6 @@ function NotificationPreview({
 
 function isHexColor(value: string) {
   return /^#[0-9a-fA-F]{6}$/.test(value);
-}
-
-function getProgramBgColor(program?: Program) {
-  const color = program?.cardDesign?.bgColor || "";
-  return isHexColor(color) ? color : "#1a1a2e";
 }
 
 function getLocalScheduleParts(value?: string | null) {
@@ -1568,13 +1557,6 @@ function CreateCampaignForm({
   const [notifTitle, setNotifTitle] = useState(
     initialCampaign?.triggerConfig.notifTitle || initialRecommendation?.notifTitle || ""
   );
-  const [notifLogo, setNotifLogo] = useState<string>(
-    initialCampaign?.triggerConfig.notifLogo || initialRecommendation?.triggerConfig?.notifLogo || ""
-  );
-  const [notifBgColor, setNotifBgColor] = useState<string>(
-    initialCampaign?.triggerConfig.notifBgColor || initialRecommendation?.triggerConfig?.notifBgColor || ""
-  );
-  const [logoError, setLogoError] = useState("");
   const [scheduledDate, setScheduledDate] = useState(initialSchedule.date);
   const [scheduledTime, setScheduledTime] = useState(initialSchedule.time);
   const [inactivityDays, setInactivityDays] = useState(
@@ -1583,6 +1565,9 @@ function CreateCampaignForm({
   const [remainingBeforeReward, setRemainingBeforeReward] = useState(
     initialRecommendation?.triggerConfig?.remainingBeforeReward || 1
   );
+  const [birthdayDaysBefore, setBirthdayDaysBefore] = useState(
+    initialRecommendation?.triggerConfig?.daysBefore || 0
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [spamWarning, setSpamWarning] = useState<SpamWarning | null>(null);
@@ -1590,13 +1575,9 @@ function CreateCampaignForm({
   const [reviewConfirmed, setReviewConfirmed] = useState(false);
 
   const selectedProgram = programs.find((p) => p.id === programId);
-  const programBgColor = getProgramBgColor(selectedProgram);
   const defaultBgColor = isHexColor(notificationDefaults.bgColor)
     ? notificationDefaults.bgColor
     : "";
-  const inheritedBgColor = defaultBgColor || programBgColor;
-  const previewBgColor = isHexColor(notifBgColor) ? notifBgColor : inheritedBgColor;
-  const inheritedLogo = notificationDefaults.logo || selectedProgram?.cardDesign?.logoData || "";
   const isRecommendedMode = Boolean(initialRecommendation);
   const exactAudienceCount =
     initialRecommendation?.targetCardIds?.length || initialRecommendation?.potentialCount || 0;
@@ -1608,7 +1589,6 @@ function CreateCampaignForm({
     [];
   const exactTargetCardIdsKey = exactTargetCardIds.join("|");
   const [campaignStep, setCampaignStep] = useState(isEditing ? 2 : 0);
-  const [showAdvanced, setShowAdvanced] = useState(isEditing);
   const wizardSteps = isRecommendedMode
     ? ["Audience", "Message", "Vérifier"]
     : ["Objectif", "Clients", "Message", "Vérifier"];
@@ -1692,27 +1672,6 @@ function CreateCampaignForm({
     };
   }, [programId, targetSegment, exactTargetCardIdsKey]);
 
-  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setLogoError("");
-    const file = e.target.files?.[0];
-    if (!file) {
-      setNotifLogo("");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      setLogoError("Le fichier doit être une image");
-      return;
-    }
-    if (file.size > 500 * 1024) {
-      setLogoError("Image trop lourde (max 500 KB)");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => setNotifLogo(reader.result as string);
-    reader.onerror = () => setLogoError("Erreur de lecture du fichier");
-    reader.readAsDataURL(file);
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isReviewStep) {
@@ -1730,11 +1689,6 @@ function CreateCampaignForm({
       setError("Le titre de la notification est obligatoire.");
       return;
     }
-    if (notifBgColor && !isHexColor(notifBgColor)) {
-      setError("La couleur de fond doit être au format hexadécimal, par exemple #ff5638.");
-      return;
-    }
-
     setSaving(true);
     setError("");
 
@@ -1753,6 +1707,8 @@ function CreateCampaignForm({
       triggerConfig = { ...triggerConfig, daysInactive: inactivityDays };
     } else if (triggerType === "MILESTONE") {
       triggerConfig = { ...triggerConfig, remainingBeforeReward };
+    } else if (triggerType === "BIRTHDAY") {
+      triggerConfig = { ...triggerConfig, daysBefore: birthdayDaysBefore };
     }
 
     const res = await fetch("/api/campaigns", {
@@ -1768,8 +1724,6 @@ function CreateCampaignForm({
         triggerConfig: {
           ...triggerConfig,
           notifTitle: trimmedTitle,
-          notifLogo: notifLogo || undefined,
-          notifBgColor: notifBgColor || undefined,
         },
         targetSegment,
       }),
@@ -2011,161 +1965,124 @@ function CreateCampaignForm({
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="text-sm font-medium text-gray-600 underline-offset-4 hover:underline"
-                  onClick={() => setShowAdvanced((value) => !value)}
-                >
-                  {showAdvanced ? "Masquer les options avancées" : "Options avancées"}
-                </button>
+                {!isRecommendedMode && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Mode d&apos;envoi</label>
+                    <select
+                      className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                      value={triggerType}
+                      onChange={(e) => setTriggerType(e.target.value)}
+                      disabled={isFree || isEditing}
+                    >
+                      <option value="IMMEDIATE">Envoyer maintenant</option>
+                      {!isFree && <option value="SCHEDULED">Programmer une date</option>}
+                      {!isFree && <option value="INACTIVITY">Client inactif</option>}
+                      {!isFree && <option value="POST_STAMP">Après chaque tamponnage</option>}
+                      {!isFree && <option value="MILESTONE">Récompense proche</option>}
+                      {!isFree && <option value="BIRTHDAY">Anniversaire</option>}
+                    </select>
+                  </div>
+                )}
 
-                {showAdvanced && (
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Logo de cette campagne</label>
-                        <div className="flex items-center gap-3">
-                          {notifLogo ? (
-                            <div className="flex items-center gap-3">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={notifLogo}
-                                alt="Logo"
-                                className="h-14 w-14 rounded-lg border object-contain"
-                                style={{ background: previewBgColor }}
-                              />
-                              <Button type="button" variant="outline" size="sm" onClick={() => setNotifLogo("")}>
-                                Retirer
-                              </Button>
-                            </div>
-                          ) : (
-                            <input
-                              type="file"
-                              accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                              onChange={handleLogoChange}
-                              className="text-sm"
-                            />
-                          )}
-                        </div>
-                        {logoError && <p className="text-xs text-red-500">{logoError}</p>}
-                        {!notifLogo && inheritedLogo && (
-                          <p className="text-xs text-gray-400">Le logo par défaut sera utilisé.</p>
-                        )}
-                      </div>
-
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Fond de cette campagne</label>
-                        <div className="flex flex-wrap items-center gap-3">
-                          <input
-                            type="color"
-                            value={previewBgColor}
-                            onChange={(e) => setNotifBgColor(e.target.value)}
-                            className="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
-                            aria-label="Couleur de fond de la notification"
-                          />
-                          <Input
-                            value={notifBgColor || inheritedBgColor}
-                            onChange={(e) => setNotifBgColor(e.target.value)}
-                            maxLength={7}
-                            placeholder={inheritedBgColor}
-                            className="max-w-36"
-                          />
-                          {notifBgColor && (
-                            <Button type="button" variant="outline" size="sm" onClick={() => setNotifBgColor("")}>
-                              Défaut
-                            </Button>
-                          )}
-                        </div>
-                      </div>
+                {triggerType === "SCHEDULED" && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Date</label>
+                      <Input
+                        type="date"
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        required
+                      />
                     </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Heure</label>
+                      <Input
+                        type="time"
+                        value={scheduledTime}
+                        onChange={(e) => setScheduledTime(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
 
-                    {!isRecommendedMode && (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Mode d&apos;envoi</label>
-                          <select
-                            className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                            value={triggerType}
-                            onChange={(e) => setTriggerType(e.target.value)}
-                            disabled={isFree || isEditing}
-                          >
-                            <option value="IMMEDIATE">Envoyer maintenant</option>
-                            {!isFree && <option value="SCHEDULED">Programmer une date</option>}
-                            {!isFree && <option value="INACTIVITY">Client inactif</option>}
-                            {!isFree && <option value="POST_STAMP">Après chaque tamponnage</option>}
-                            {!isFree && <option value="MILESTONE">Récompense proche</option>}
-                            {!isFree && <option value="BIRTHDAY">Anniversaire</option>}
-                          </select>
-                        </div>
+                {triggerType === "INACTIVITY" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Jours d&apos;inactivité</label>
+                    <Input
+                      type="number"
+                      min={7}
+                      max={365}
+                      value={inactivityDays}
+                      onChange={(e) => setInactivityDays(parseInt(e.target.value))}
+                    />
+                  </div>
+                )}
 
-                        {triggerType === "INACTIVITY" && (
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">Jours d&apos;inactivité</label>
-                            <Input
-                              type="number"
-                              min={7}
-                              max={365}
-                              value={inactivityDays}
-                              onChange={(e) => setInactivityDays(parseInt(e.target.value))}
-                            />
-                          </div>
-                        )}
+                {triggerType === "MILESTONE" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Prévenir quand il reste</label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={remainingBeforeReward}
+                        onChange={(e) => setRemainingBeforeReward(Number(e.target.value) || 1)}
+                        className="max-w-24"
+                      />
+                      <span className="text-sm text-gray-600">tampon(s) ou point(s)</span>
+                    </div>
+                  </div>
+                )}
 
-                        {triggerType === "MILESTONE" && (
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                              Prévenir quand il reste
-                            </label>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                min={1}
-                                max={50}
-                                value={remainingBeforeReward}
-                                onChange={(e) => setRemainingBeforeReward(Number(e.target.value) || 1)}
-                                className="max-w-24"
-                              />
-                              <span className="text-sm text-gray-600">tampon(s) ou point(s)</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                {triggerType === "POST_STAMP" && (
+                  <div className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
+                    Cette notification part automatiquement juste après le passage en caisse du client.
+                  </div>
+                )}
 
-                    {triggerType === "POST_STAMP" && (
-                      <div className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
-                        Cette notification part automatiquement juste après le passage en caisse du client.
-                      </div>
-                    )}
+                {triggerType === "MILESTONE" && (
+                  <div className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
+                    La notification part une seule fois au moment où le client entre dans cette zone proche de sa prochaine récompense.
+                  </div>
+                )}
 
-                    {triggerType === "MILESTONE" && (
-                      <div className="rounded-lg border border-lime-200 bg-lime-50 px-3 py-2 text-sm text-lime-900">
-                        La notification part une seule fois au moment où le client entre dans cette zone proche de sa prochaine récompense.
-                      </div>
-                    )}
-
-                    {triggerType === "SCHEDULED" && (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Date</label>
-                          <Input
-                            type="date"
-                            value={scheduledDate}
-                            onChange={(e) => setScheduledDate(e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium">Heure</label>
-                          <Input
-                            type="time"
-                            value={scheduledTime}
-                            onChange={(e) => setScheduledTime(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
-                    )}
+                {triggerType === "BIRTHDAY" && (
+                  <div className="rounded-lg border border-lime-200 bg-lime-50 p-4">
+                    <label className="text-sm font-medium text-gray-900" htmlFor="birthday-days-before">
+                      Quand envoyer la notification ?
+                    </label>
+                    <div className="mt-2 flex items-center gap-3">
+                      <Input
+                        id="birthday-days-before"
+                        type="number"
+                        min={0}
+                        max={MAX_BIRTHDAY_DAYS_BEFORE}
+                        value={birthdayDaysBefore}
+                        onChange={(event) => {
+                          const value = Number(event.target.value);
+                          setBirthdayDaysBefore(
+                            Number.isFinite(value)
+                              ? Math.min(
+                                  MAX_BIRTHDAY_DAYS_BEFORE,
+                                  Math.max(0, Math.trunc(value))
+                                )
+                              : 0
+                          );
+                        }}
+                        className="max-w-24"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {birthdayDaysBefore === 0
+                          ? "Le jour même"
+                          : `${birthdayDaysBefore} jour${birthdayDaysBefore > 1 ? "s" : ""} avant`}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Choisissez de 0 à {MAX_BIRTHDAY_DAYS_BEFORE} jours avant l&apos;anniversaire.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2194,7 +2111,13 @@ function CreateCampaignForm({
                   </div>
                   <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
                     <p className="text-xs text-gray-400">Envoi</p>
-                    <p className="font-medium text-gray-900">{triggerLabels[triggerType] || triggerType}</p>
+                    <p className="font-medium text-gray-900">
+                      {triggerType === "BIRTHDAY"
+                        ? birthdayDaysBefore === 0
+                          ? "Anniversaire · le jour même"
+                          : `Anniversaire · ${birthdayDaysBefore} jour${birthdayDaysBefore > 1 ? "s" : ""} avant`
+                        : triggerLabels[triggerType] || triggerType}
+                    </p>
                     {triggerType === "SCHEDULED" && scheduledDate && scheduledTime && (
                       <p className="mt-1 text-xs text-gray-500">
                         {new Intl.DateTimeFormat("fr-CH", {
@@ -2279,8 +2202,6 @@ function CreateCampaignForm({
               program={selectedProgram}
               message={message}
               title={notifTitle}
-              customLogo={notifLogo}
-              customBgColor={isHexColor(notifBgColor) ? notifBgColor : undefined}
               defaultLogo={notificationDefaults.logo}
               defaultBgColor={defaultBgColor}
               triggerType={triggerType}

@@ -24,7 +24,7 @@ describe("Campaign templates", () => {
     }
   });
 
-  it("au moins 1 template BIRTHDAY (pour le cron J-7)", () => {
+  it("au moins 1 template BIRTHDAY", () => {
     const birthday = CAMPAIGN_TEMPLATES.filter((t) => t.triggerType === "BIRTHDAY");
     expect(birthday.length).toBeGreaterThanOrEqual(1);
   });

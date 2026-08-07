@@ -36,10 +36,10 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     id: "birthday",
     emoji: "🎂",
     title: "Anniversaire client",
-    description: "Envoyé automatiquement 7 jours avant l'anniversaire d'un client.",
-    name: "Anniversaire — Cadeau J-7",
+    description: "Envoyé le jour même ou quelques jours avant, selon votre réglage.",
+    name: "Anniversaire — Cadeau client",
     message:
-      "🎂 Joyeux anniversaire bientôt ! Une boisson offerte t'attend cette semaine en boutique. À très vite.",
+      "🎂 Joyeux anniversaire ! Une attention spéciale t'attend cette semaine en boutique. À très vite.",
     triggerType: "BIRTHDAY",
     targetSegment: "ALL",
   },
