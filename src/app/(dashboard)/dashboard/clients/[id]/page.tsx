@@ -20,6 +20,7 @@ import {
   Stamp,
   Megaphone,
   Loader2,
+  CircleOff,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -140,6 +141,9 @@ export default function ClientProfilePage() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [notesSaved, setNotesSaved] = useState(false);
   const [pushOpen, setPushOpen] = useState(false);
+  const [expireOpen, setExpireOpen] = useState(false);
+  const [expiringCard, setExpiringCard] = useState(false);
+  const [expireError, setExpireError] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -178,6 +182,34 @@ export default function ClientProfilePage() {
       }
     } finally {
       setSavingNotes(false);
+    }
+  }
+
+  async function expireCard() {
+    if (!data) return;
+
+    setExpiringCard(true);
+    setExpireError("");
+    try {
+      const res = await fetch(`/api/merchants/cards/${cardId}/expire`, {
+        method: "POST",
+      });
+      const body = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setExpireError(body.error || "Impossible de faire expirer cette carte.");
+        return;
+      }
+
+      setData((current) =>
+        current
+          ? { ...current, card: { ...current.card, status: "EXPIRED" } }
+          : current
+      );
+      setExpireOpen(false);
+    } catch {
+      setExpireError("Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setExpiringCard(false);
     }
   }
 
@@ -252,8 +284,34 @@ export default function ClientProfilePage() {
               <Send className="h-3.5 w-3.5 mr-1.5" />
               Envoyer une notification
             </Button>
+            {data.card.status !== "EXPIRED" &&
+              data.card.status !== "REVOKED" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setExpireError("");
+                    setExpireOpen(true);
+                  }}
+                  disabled={expiringCard}
+                  className="gap-1.5 border-red-300 text-red-600 hover:border-red-400 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40 dark:hover:text-red-200"
+                >
+                  {expiringCard ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <CircleOff className="h-3.5 w-3.5" />
+                  )}
+                  {expiringCard ? "Expiration..." : "Faire expirer la carte"}
+                </Button>
+              )}
           </div>
         </div>
+        {expireError && (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-300" role="alert">
+            {expireError}
+          </p>
+        )}
       </div>
 
       {/* Identité */}
@@ -585,6 +643,17 @@ export default function ClientProfilePage() {
           }}
         />
       )}
+      {expireOpen && (
+        <ConfirmExpireModal
+          clientName={data.client.firstName}
+          pending={expiringCard}
+          error={expireError}
+          onClose={() => {
+            if (!expiringCard) setExpireOpen(false);
+          }}
+          onConfirm={expireCard}
+        />
+      )}
     </div>
   );
 }
@@ -672,6 +741,110 @@ function formatShortDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function ConfirmExpireModal({
+  clientName,
+  pending,
+  error,
+  onClose,
+  onConfirm,
+}: {
+  clientName: string;
+  pending: boolean;
+  error: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !pending) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [onClose, pending]);
+
+  return (
+    <div
+      className="recovery-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="expire-card-title"
+      onClick={() => {
+        if (!pending) onClose();
+      }}
+    >
+      <div
+        className="recovery-modal"
+        onClick={(event) => event.stopPropagation()}
+        style={{ maxWidth: 460 }}
+      >
+        <header className="recovery-modal-head">
+          <h2 id="expire-card-title" style={{ fontSize: 16 }}>
+            <CircleOff
+              size={16}
+              style={{ display: "inline", marginRight: 8, verticalAlign: -2 }}
+            />
+            Faire expirer la carte
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            aria-label="Fermer"
+            className="recovery-modal-close"
+          >
+            ×
+          </button>
+        </header>
+        <div className="recovery-modal-body">
+          <p className="text-sm text-gray-300">
+            La carte de <strong className="text-white">{clientName}</strong> ne
+            pourra plus être utilisée pour les tampons, les récompenses ou les
+            notifications.
+          </p>
+          <div className="rounded-lg border border-amber-800/60 bg-amber-950/30 p-3 text-sm text-amber-100">
+            L&apos;historique, les visites et la progression seront conservés. Cette
+            action ne supprime aucune donnée client.
+          </div>
+          {error && (
+            <p className="text-sm text-red-400" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="flex gap-2 justify-end w-full pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={pending}
+              className="client-push-cancel"
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={onConfirm}
+              disabled={pending}
+              className="bg-red-600 text-white hover:bg-red-700"
+            >
+              {pending ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <CircleOff className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              {pending ? "Expiration..." : "Confirmer l'expiration"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function SendPushModal({
