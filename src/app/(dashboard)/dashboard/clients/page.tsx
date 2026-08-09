@@ -13,6 +13,9 @@ import {
   RotateCcw,
   UserPlus,
   X,
+  ListPlus,
+  Trash2,
+  Plus,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CardRecoveryModal from "@/components/dashboard/CardRecoveryModal";
@@ -31,6 +34,21 @@ interface ClientCard {
   walletDevices: { apple: number; google: number; total: number };
   client: { id: string; firstName: string; lastName?: string | null; email: string | null; phone: string | null };
   program: { name: string; type: string; config: Record<string, unknown> };
+}
+
+interface ClientList {
+  id: string;
+  name: string;
+  members: Array<{
+    clientId: string;
+    client: {
+      firstName: string;
+      lastName: string | null;
+      email: string | null;
+      phone: string | null;
+    };
+  }>;
+  _count: { members: number };
 }
 
 type SortKey = "firstName" | "progression" | "totalVisits" | "lastVisitAt" | "walletStatus" | "status";
@@ -64,6 +82,8 @@ export default function ClientsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [recoveryCard, setRecoveryCard] = useState<ClientCard | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showListsModal, setShowListsModal] = useState(false);
+  const [selectedClientIds, setSelectedClientIds] = useState<Set<string>>(new Set());
 
   // Refresh sans toucher au loading (utilisé après création manuelle d'une
   // carte — pas besoin de re-bloquer toute la page sur un spinner).
@@ -130,6 +150,32 @@ export default function ClientsPage() {
       return sortDir === "asc" ? cmp : -cmp;
     });
 
+  const filteredClientIds = [...new Set(filtered.map((card) => card.client.id))];
+  const allFilteredSelected =
+    filteredClientIds.length > 0 &&
+    filteredClientIds.every((clientId) => selectedClientIds.has(clientId));
+
+  function toggleClient(clientId: string) {
+    setSelectedClientIds((current) => {
+      const next = new Set(current);
+      if (next.has(clientId)) next.delete(clientId);
+      else next.add(clientId);
+      return next;
+    });
+  }
+
+  function toggleFilteredClients() {
+    setSelectedClientIds((current) => {
+      const next = new Set(current);
+      if (allFilteredSelected) {
+        filteredClientIds.forEach((clientId) => next.delete(clientId));
+      } else {
+        filteredClientIds.forEach((clientId) => next.add(clientId));
+      }
+      return next;
+    });
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -148,6 +194,15 @@ export default function ClientsPage() {
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowListsModal(true)}
+            className="gap-2"
+          >
+            <ListPlus className="h-4 w-4" />
+            Listes clients
+          </Button>
           <Button
             onClick={() => setShowCreateModal(true)}
             className="gap-2"
@@ -231,6 +286,32 @@ export default function ClientsPage() {
         </div>
       </div>
 
+      {selectedClientIds.size > 0 && (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3"
+          style={{
+            borderColor: "rgba(132, 180, 18, 0.35)",
+            background: "rgba(212, 255, 78, 0.12)",
+          }}
+        >
+          <div>
+            <strong>
+              {selectedClientIds.size} client{selectedClientIds.size > 1 ? "s" : ""} sélectionné{selectedClientIds.size > 1 ? "s" : ""}
+            </strong>
+            <p className="text-xs text-gray-500">Ajoutez cette sélection à une liste réutilisable.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={() => setSelectedClientIds(new Set())}>
+              Effacer
+            </Button>
+            <Button type="button" className="gap-2" onClick={() => setShowListsModal(true)}>
+              <ListPlus className="h-4 w-4" />
+              Ajouter à une liste
+            </Button>
+          </div>
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -258,6 +339,14 @@ export default function ClientsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-gray-500">
+                    <th className="pb-3 pr-2 font-medium" style={{ width: 36 }}>
+                      <input
+                        type="checkbox"
+                        aria-label="Sélectionner les clients affichés"
+                        checked={allFilteredSelected}
+                        onChange={toggleFilteredClients}
+                      />
+                    </th>
                     <SortTh label="Client"         col="firstName"  active={sortKey} dir={sortDir} onSort={handleSort} />
                     <th className="pb-3 font-medium px-2">Programme</th>
                     <SortTh label="Progression"    col="progression" active={sortKey} dir={sortDir} onSort={handleSort} />
@@ -277,6 +366,14 @@ export default function ClientsPage() {
                         className="client-table-row cursor-pointer transition-colors"
                         onClick={() => router.push(`/dashboard/clients/${card.id}`)}
                       >
+                        <td className="py-3 pr-2" onClick={(event) => event.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            aria-label={`Sélectionner ${card.client.firstName}`}
+                            checked={selectedClientIds.has(card.client.id)}
+                            onChange={() => toggleClient(card.client.id)}
+                          />
+                        </td>
                         <td className="py-3 px-2">
                           <p className="font-medium">
                             {card.client.firstName}
@@ -355,6 +452,258 @@ export default function ClientsPage() {
           }}
         />
       )}
+
+      {showListsModal && (
+        <ClientListsModal
+          selectedClientIds={[...selectedClientIds]}
+          onClose={() => setShowListsModal(false)}
+          onSelectionAdded={() => setSelectedClientIds(new Set())}
+        />
+      )}
+    </div>
+  );
+}
+
+function ClientListsModal({
+  selectedClientIds,
+  onClose,
+  onSelectionAdded,
+}: {
+  selectedClientIds: string[];
+  onClose: () => void;
+  onSelectionAdded: () => void;
+}) {
+  const [lists, setLists] = useState<ClientList[]>([]);
+  const [expandedListId, setExpandedListId] = useState<string | null>(null);
+  const [newListName, setNewListName] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  async function loadLists() {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/merchants/client-lists");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Impossible de charger les listes.");
+      setLists(data);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Impossible de charger les listes.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadLists();
+  }, []);
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose]);
+
+  async function createList() {
+    if (!newListName.trim()) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/merchants/client-lists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newListName.trim(), clientIds: selectedClientIds }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Impossible de créer la liste.");
+      setNewListName("");
+      if (selectedClientIds.length > 0) onSelectionAdded();
+      await loadLists();
+      setExpandedListId(data.id);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Impossible de créer la liste.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function updateMembers(
+    listId: string,
+    input: { addClientIds?: string[]; removeClientIds?: string[] }
+  ) {
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/merchants/client-lists", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: listId, ...input }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Impossible de modifier la liste.");
+      if (input.addClientIds?.length) onSelectionAdded();
+      await loadLists();
+      setExpandedListId(listId);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "Impossible de modifier la liste.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteList(listId: string, name: string) {
+    if (!window.confirm(`Supprimer la liste « ${name} » ? Les clients ne seront pas supprimés.`)) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/merchants/client-lists?id=${encodeURIComponent(listId)}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Impossible de supprimer la liste.");
+      if (expandedListId === listId) setExpandedListId(null);
+      await loadLists();
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Impossible de supprimer la liste.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="client-lists-title"
+      className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg border p-5 shadow-xl"
+        style={{ background: "var(--bg)", borderColor: "rgb(var(--ovr) / 0.16)" }}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="client-lists-title" className="text-lg font-semibold text-gray-900">Listes clients</h2>
+            <p className="text-sm text-gray-500">Créez des groupes réutilisables dans vos campagnes.</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Fermer" className="p-1 text-gray-500">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {error && <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>}
+
+        <div className="mt-5 flex gap-2">
+          <Input
+            value={newListName}
+            onChange={(event) => setNewListName(event.target.value)}
+            placeholder="Ex : Abonnements à renouveler"
+            maxLength={80}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void createList();
+              }
+            }}
+          />
+          <Button type="button" onClick={() => void createList()} disabled={saving || !newListName.trim()} className="gap-2 shrink-0">
+            <Plus className="h-4 w-4" />
+            Créer
+          </Button>
+        </div>
+        {selectedClientIds.length > 0 && (
+          <p className="mt-2 text-xs text-gray-500">
+            La nouvelle liste contiendra les {selectedClientIds.length} clients actuellement sélectionnés.
+          </p>
+        )}
+
+        <div className="mt-5 space-y-2">
+          {loading ? (
+            <p className="py-6 text-center text-sm text-gray-500">Chargement des listes...</p>
+          ) : lists.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-gray-500">
+              Aucune liste enregistrée.
+            </div>
+          ) : (
+            lists.map((list) => {
+              const expanded = expandedListId === list.id;
+              return (
+                <div key={list.id} className="rounded-lg border" style={{ borderColor: "rgb(var(--ovr) / 0.13)" }}>
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3">
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left"
+                      onClick={() => setExpandedListId(expanded ? null : list.id)}
+                    >
+                      <strong className="block truncate text-sm text-gray-900">{list.name}</strong>
+                      <span className="text-xs text-gray-500">{list._count.members} client{list._count.members !== 1 ? "s" : ""}</span>
+                    </button>
+                    <div className="flex gap-2">
+                      {selectedClientIds.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={saving}
+                          onClick={() => void updateMembers(list.id, { addClientIds: selectedClientIds })}
+                        >
+                          Ajouter la sélection
+                        </Button>
+                      )}
+                      <button
+                        type="button"
+                        title="Supprimer la liste"
+                        aria-label={`Supprimer ${list.name}`}
+                        className="rounded-md border p-2 text-red-500"
+                        onClick={() => void deleteList(list.id, list.name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  {expanded && (
+                    <div className="border-t px-3 py-2" style={{ borderColor: "rgb(var(--ovr) / 0.1)" }}>
+                      {list.members.length === 0 ? (
+                        <p className="py-2 text-xs text-gray-500">Cette liste est vide.</p>
+                      ) : (
+                        <div className="divide-y">
+                          {list.members.map((member) => (
+                            <div key={member.clientId} className="flex items-center justify-between gap-3 py-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm text-gray-900">
+                                  {member.client.firstName}{member.client.lastName ? ` ${member.client.lastName}` : ""}
+                                </p>
+                                <p className="truncate text-xs text-gray-500">{member.client.email || member.client.phone || "Sans coordonnées"}</p>
+                              </div>
+                              <button
+                                type="button"
+                                className="text-xs font-medium text-red-500"
+                                disabled={saving}
+                                onClick={() => void updateMembers(list.id, { removeClientIds: [member.clientId] })}
+                              >
+                                Retirer
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
     </div>
   );
 }

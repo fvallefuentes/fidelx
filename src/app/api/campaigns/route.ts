@@ -14,6 +14,11 @@ import {
   offerIntervalsOverlap,
 } from "@/lib/card-offers";
 import type { Prisma } from "@/generated/prisma/client";
+import {
+  getExactAudienceMode,
+  getExactAudienceCooldownDays,
+  getExactTargetCardIds,
+} from "@/lib/campaign-targeting";
 
 const createCampaignSchema = z.object({
   programId: z.string().trim().min(1).optional().nullable(),
@@ -58,6 +63,10 @@ const createCampaignSchema = z.object({
         .optional(),
       remainingBeforeReward: z.coerce.number().int().min(1).max(50).optional(),
       stampsReached: z.coerce.number().min(1).max(1_000_000).optional(),
+      targetCardIds: z.array(z.string().trim().min(1)).max(10_000).optional(),
+      audienceMode: z.enum(["MANUAL", "LIST"]).optional(),
+      clientListId: z.string().trim().min(1).optional(),
+      clientListName: z.string().trim().min(1).max(80).optional(),
     })
     .catchall(z.unknown())
     .default({ notifTitle: "" }),
@@ -215,6 +224,13 @@ export async function POST(req: Request) {
         { status: 404 }
       );
     }
+
+    const audienceError = await validateExactAudience({
+      merchantId: session.user.id,
+      programId,
+      triggerConfig,
+    });
+    if (audienceError) return audienceError;
   }
 
   const scheduledAt = resolveScheduledAt(triggerType, triggerConfig);
@@ -287,10 +303,8 @@ export async function POST(req: Request) {
         endsAt: offerPreparation.offerEndsAt,
       });
     }
-    const rawTargetCardIds = (triggerConfig as { targetCardIds?: unknown }).targetCardIds;
-    const targetCardIds = Array.isArray(rawTargetCardIds)
-      ? rawTargetCardIds.filter((id): id is string => typeof id === "string" && id.length > 0)
-      : [];
+    const targetCardIds = getExactTargetCardIds(triggerConfig);
+    const exactAudienceCooldownDays = getExactAudienceCooldownDays(triggerConfig);
     const result =
       targetCardIds.length > 0
         ? await notifyCardsInProgram(
@@ -298,7 +312,7 @@ export async function POST(req: Request) {
             targetCardIds,
             message,
             notifTitle,
-            7,
+            exactAudienceCooldownDays,
             campaign.id,
             { offerEndsAt: offerPreparation.offerEndsAt }
           )
@@ -375,6 +389,13 @@ export async function PATCH(req: Request) {
   if (!program) {
     return NextResponse.json({ error: "Programme introuvable" }, { status: 404 });
   }
+
+  const audienceError = await validateExactAudience({
+    merchantId: session.user.id,
+    programId,
+    triggerConfig,
+  });
+  if (audienceError) return audienceError;
 
   const scheduledAt = resolveScheduledAt(triggerType, triggerConfig);
   if (!scheduledAt || scheduledAt.getTime() <= Date.now()) {
@@ -618,6 +639,43 @@ async function prepareCardOffer(input: {
   }
 
   return { offerEndsAt };
+}
+
+async function validateExactAudience(input: {
+  merchantId: string;
+  programId: string;
+  triggerConfig: unknown;
+}) {
+  const audienceMode = getExactAudienceMode(input.triggerConfig);
+  const targetCardIds = getExactTargetCardIds(input.triggerConfig);
+
+  if (audienceMode && targetCardIds.length === 0) {
+    return NextResponse.json(
+      { error: "Sélectionnez au moins un client pour cette campagne." },
+      { status: 400 }
+    );
+  }
+  if (targetCardIds.length === 0) return null;
+
+  const ownedActiveCards = await prisma.loyaltyCard.count({
+    where: {
+      id: { in: targetCardIds },
+      programId: input.programId,
+      status: "ACTIVE",
+      program: { merchantId: input.merchantId },
+    },
+  });
+  if (ownedActiveCards !== targetCardIds.length) {
+    return NextResponse.json(
+      {
+        error:
+          "La sélection contient une carte supprimée, inactive ou rattachée à un autre programme. Actualisez l'audience.",
+      },
+      { status: 400 }
+    );
+  }
+
+  return null;
 }
 
 function hasExactTargetCardIds(triggerConfig: Record<string, unknown>): boolean {

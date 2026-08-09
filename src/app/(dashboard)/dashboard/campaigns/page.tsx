@@ -1515,6 +1515,28 @@ function getLocalScheduleParts(value?: string | null) {
   };
 }
 
+type AudienceMode = "SEGMENT" | "MANUAL" | "LIST";
+
+interface CampaignAudienceCard {
+  id: string;
+  clientId: string;
+  totalVisits: number;
+  lastVisitAt: string | null;
+  client: {
+    firstName: string;
+    lastName: string | null;
+    email: string | null;
+    phone: string | null;
+  };
+}
+
+interface SavedClientList {
+  id: string;
+  name: string;
+  members: Array<{ clientId: string }>;
+  _count: { members: number };
+}
+
 function getDateInputValue(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
@@ -1549,6 +1571,17 @@ function CreateCampaignForm({
   onCancel: () => void;
 }) {
   const isEditing = Boolean(initialCampaign);
+  const isRecommendedMode = Boolean(initialRecommendation);
+  const persistedTargetCardIds = Array.isArray(initialCampaign?.triggerConfig.targetCardIds)
+    ? initialCampaign.triggerConfig.targetCardIds.filter(
+        (id): id is string => typeof id === "string" && id.length > 0
+      )
+    : [];
+  const persistedAudienceMode = initialCampaign?.triggerConfig.audienceMode;
+  const initialAudienceMode: AudienceMode =
+    persistedAudienceMode === "MANUAL" || persistedAudienceMode === "LIST"
+      ? persistedAudienceMode
+      : "SEGMENT";
   const initialSchedule = getLocalScheduleParts(initialCampaign?.scheduledAt);
   const [name, setName] = useState(initialCampaign?.name || initialRecommendation?.name || "");
   const [message, setMessage] = useState(initialCampaign?.message || initialRecommendation?.message || "");
@@ -1564,6 +1597,17 @@ function CreateCampaignForm({
   const [targetSegment, setTargetSegment] = useState(
     initialCampaign?.targetSegment || initialRecommendation?.targetSegment || "ALL"
   );
+  const [audienceMode, setAudienceMode] = useState<AudienceMode>(initialAudienceMode);
+  const [selectedCardIds, setSelectedCardIds] = useState<string[]>(persistedTargetCardIds);
+  const [selectedListId, setSelectedListId] = useState(
+    typeof initialCampaign?.triggerConfig.clientListId === "string"
+      ? initialCampaign.triggerConfig.clientListId
+      : ""
+  );
+  const [audienceCards, setAudienceCards] = useState<CampaignAudienceCard[]>([]);
+  const [savedClientLists, setSavedClientLists] = useState<SavedClientList[]>([]);
+  const [audienceSearch, setAudienceSearch] = useState("");
+  const [audienceLoading, setAudienceLoading] = useState(!isRecommendedMode);
   const [showTemplates, setShowTemplates] = useState(!initialRecommendation && !initialCampaign);
 
   function applyTemplate(tpl: CampaignTemplate) {
@@ -1577,6 +1621,9 @@ function CreateCampaignForm({
       setTriggerType(tpl.triggerType);
     }
     setTargetSegment(tpl.targetSegment);
+    setAudienceMode("SEGMENT");
+    setSelectedCardIds([]);
+    setSelectedListId("");
     if (tpl.triggerType === "MILESTONE") setRemainingBeforeReward(1);
     setShowTemplates(false);
     setCampaignStep(1);
@@ -1611,16 +1658,33 @@ function CreateCampaignForm({
   const defaultBgColor = isHexColor(notificationDefaults.bgColor)
     ? notificationDefaults.bgColor
     : "";
-  const isRecommendedMode = Boolean(initialRecommendation);
-  const exactAudienceCount =
+  const recommendedAudienceCount =
     initialRecommendation?.targetCardIds?.length || initialRecommendation?.potentialCount || 0;
   const exactAudience = initialRecommendation?.audience || [];
-  const hiddenAudienceCount = Math.max(0, exactAudienceCount - exactAudience.length);
+  const hiddenAudienceCount = Math.max(0, recommendedAudienceCount - exactAudience.length);
   const exactTargetCardIds =
-    initialRecommendation?.targetCardIds ||
-    initialRecommendation?.triggerConfig?.targetCardIds ||
-    [];
+    isRecommendedMode
+      ? initialRecommendation?.targetCardIds ||
+        initialRecommendation?.triggerConfig?.targetCardIds ||
+        []
+      : audienceMode === "SEGMENT"
+        ? []
+        : selectedCardIds;
+  const exactAudienceCount = isRecommendedMode
+    ? recommendedAudienceCount
+    : exactTargetCardIds.length;
   const exactTargetCardIdsKey = exactTargetCardIds.join("|");
+  const filteredAudienceCards = audienceCards.filter((card) => {
+    const query = audienceSearch.trim().toLowerCase();
+    if (!query) return true;
+    return [
+      card.client.firstName,
+      card.client.lastName || "",
+      card.client.email || "",
+      card.client.phone || "",
+    ].some((value) => value.toLowerCase().includes(query));
+  });
+  const selectedSavedList = savedClientLists.find((list) => list.id === selectedListId);
   const supportsCardOffer = triggerType === "IMMEDIATE" || triggerType === "SCHEDULED";
   const cardOfferEligible =
     supportsCardOffer && targetSegment === "ALL" && exactTargetCardIds.length === 0;
@@ -1636,7 +1700,9 @@ function CreateCampaignForm({
   const isReviewStep = campaignStep === lastWizardStep;
   const canGoNext =
     isObjectiveStep ||
-    (isAudienceStep && Boolean(programId)) ||
+    (isAudienceStep &&
+      Boolean(programId) &&
+      (isRecommendedMode || audienceMode === "SEGMENT" || exactTargetCardIds.length > 0)) ||
     (isMessageStep &&
       Boolean(notifTitle.trim()) &&
       Boolean(message.trim()) &&
@@ -1648,6 +1714,9 @@ function CreateCampaignForm({
     if (!notifTitle) setNotifTitle(selectedProgram?.name || "Nouvelle notification");
     setTriggerType("IMMEDIATE");
     setTargetSegment("ALL");
+    setAudienceMode("SEGMENT");
+    setSelectedCardIds([]);
+    setSelectedListId("");
     setShowTemplates(false);
     setCampaignStep(1);
   }
@@ -1678,6 +1747,60 @@ function CreateCampaignForm({
     }
     setError("Avancez étape par étape pour vérifier la campagne avant l'envoi.");
   }
+
+  function toggleAudienceCard(cardId: string) {
+    setSelectedCardIds((current) =>
+      current.includes(cardId)
+        ? current.filter((id) => id !== cardId)
+        : [...current, cardId]
+    );
+  }
+
+  function toggleVisibleAudienceCards() {
+    const visibleIds = filteredAudienceCards.map((card) => card.id);
+    const allVisibleSelected =
+      visibleIds.length > 0 && visibleIds.every((id) => selectedCardIds.includes(id));
+    setSelectedCardIds((current) =>
+      allVisibleSelected
+        ? current.filter((id) => !visibleIds.includes(id))
+        : [...new Set([...current, ...visibleIds])]
+    );
+  }
+
+  useEffect(() => {
+    if (isRecommendedMode) return;
+    fetch("/api/merchants/client-lists")
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Impossible de charger les listes.");
+        setSavedClientLists(data);
+      })
+      .catch(() => setSavedClientLists([]));
+  }, [isRecommendedMode]);
+
+  useEffect(() => {
+    if (isRecommendedMode || !programId) {
+      return;
+    }
+
+    const controller = new AbortController();
+    fetch(`/api/campaigns/audience?programId=${encodeURIComponent(programId)}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Impossible de charger les clients.");
+        setAudienceCards(data);
+        const allowedIds = new Set((data as CampaignAudienceCard[]).map((card) => card.id));
+        setSelectedCardIds((current) => current.filter((id) => allowedIds.has(id)));
+      })
+      .catch((loadError) => {
+        if (loadError?.name !== "AbortError") setAudienceCards([]);
+      })
+      .finally(() => setAudienceLoading(false));
+
+    return () => controller.abort();
+  }, [isRecommendedMode, programId]);
 
   useEffect(() => {
     if (!programId) {
@@ -1764,6 +1887,26 @@ function CreateCampaignForm({
       triggerConfig = { ...triggerConfig, daysBefore: birthdayDaysBefore };
     }
 
+    if (!isRecommendedMode) {
+      delete triggerConfig.targetCardIds;
+      delete triggerConfig.audienceMode;
+      delete triggerConfig.clientListId;
+      delete triggerConfig.clientListName;
+      if (audienceMode !== "SEGMENT") {
+        triggerConfig = {
+          ...triggerConfig,
+          targetCardIds: exactTargetCardIds,
+          audienceMode,
+          ...(audienceMode === "LIST" && selectedSavedList
+            ? {
+                clientListId: selectedSavedList.id,
+                clientListName: selectedSavedList.name,
+              }
+            : {}),
+        };
+      }
+    }
+
     const saveCampaign = (replaceActiveOffer: boolean) =>
       fetch("/api/campaigns", {
         method: isEditing ? "PATCH" : "POST",
@@ -1779,7 +1922,7 @@ function CreateCampaignForm({
             ...triggerConfig,
             notifTitle: trimmedTitle,
           },
-          targetSegment,
+          targetSegment: audienceMode === "SEGMENT" || isRecommendedMode ? targetSegment : "ALL",
           showOnNewCards: effectiveShowOnNewCards,
           offerEndsAt,
           replaceActiveOffer,
@@ -1945,7 +2088,13 @@ function CreateCampaignForm({
                     <select
                       className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                       value={programId}
-                      onChange={(e) => setProgramId(e.target.value)}
+                      onChange={(event) => {
+                        setProgramId(event.target.value);
+                        setAudienceLoading(true);
+                        setSelectedCardIds([]);
+                        setSelectedListId("");
+                        setAudienceSearch("");
+                      }}
                       disabled={isRecommendedMode}
                     >
                       {programs.map((p) => (
@@ -1958,21 +2107,138 @@ function CreateCampaignForm({
 
                   {!isRecommendedMode && (
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Clients ciblés</label>
+                      <label className="text-sm font-medium">Mode de sélection</label>
                       <select
                         className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
-                        value={targetSegment}
-                        onChange={(e) => setTargetSegment(e.target.value)}
+                        value={audienceMode}
+                        onChange={(event) => {
+                          const mode = event.target.value as AudienceMode;
+                          setAudienceMode(mode);
+                          setSelectedCardIds([]);
+                          setSelectedListId("");
+                          setAudienceSearch("");
+                        }}
                       >
-                        <option value="ALL">Tous les clients</option>
-                        <option value="ACTIVE">Clients actifs</option>
-                        <option value="DORMANT">Clients dormants</option>
-                        <option value="NEW">Nouveaux clients</option>
-                        <option value="VIP">Clients VIP</option>
+                        <option value="SEGMENT">Segment de clients</option>
+                        <option value="MANUAL">Sélection manuelle</option>
+                        <option value="LIST">Liste enregistrée</option>
                       </select>
                     </div>
                   )}
                 </div>
+
+                {!isRecommendedMode && audienceMode === "SEGMENT" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Clients ciblés</label>
+                    <select
+                      className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                      value={targetSegment}
+                      onChange={(event) => setTargetSegment(event.target.value)}
+                    >
+                      <option value="ALL">Tous les clients</option>
+                      <option value="ACTIVE">Clients actifs</option>
+                      <option value="DORMANT">Clients dormants</option>
+                      <option value="NEW">Nouveaux clients</option>
+                      <option value="VIP">Clients VIP</option>
+                    </select>
+                  </div>
+                )}
+
+                {!isRecommendedMode && audienceMode === "MANUAL" && (
+                  <div className="rounded-lg border p-3" style={{ borderColor: "rgb(var(--ovr) / 0.14)" }}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <strong className="text-sm text-gray-900">Sélection manuelle</strong>
+                        <p className="text-xs text-gray-500">
+                          {selectedCardIds.length} client{selectedCardIds.length !== 1 ? "s" : ""} sélectionné{selectedCardIds.length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={toggleVisibleAudienceCards} disabled={audienceLoading || filteredAudienceCards.length === 0}>
+                        {filteredAudienceCards.length > 0 && filteredAudienceCards.every((card) => selectedCardIds.includes(card.id))
+                          ? "Tout désélectionner"
+                          : "Tout sélectionner"}
+                      </Button>
+                    </div>
+                    <div className="relative mt-3">
+                      <Input
+                        value={audienceSearch}
+                        onChange={(event) => setAudienceSearch(event.target.value)}
+                        placeholder="Rechercher un client..."
+                      />
+                    </div>
+                    <div className="mt-2 max-h-64 overflow-y-auto rounded-lg border" style={{ borderColor: "rgb(var(--ovr) / 0.1)" }}>
+                      {audienceLoading ? (
+                        <p className="p-4 text-center text-sm text-gray-500">Chargement des clients...</p>
+                      ) : filteredAudienceCards.length === 0 ? (
+                        <p className="p-4 text-center text-sm text-gray-500">Aucun client actif pour ce programme.</p>
+                      ) : (
+                        filteredAudienceCards.map((card) => (
+                          <label key={card.id} className="flex cursor-pointer items-center gap-3 border-b px-3 py-2 last:border-b-0">
+                            <input
+                              type="checkbox"
+                              checked={selectedCardIds.includes(card.id)}
+                              onChange={() => toggleAudienceCard(card.id)}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <strong className="block truncate text-sm text-gray-900">
+                                {card.client.firstName}{card.client.lastName ? ` ${card.client.lastName}` : ""}
+                              </strong>
+                              <small className="block truncate text-gray-500">
+                                {card.client.email || card.client.phone || `${card.totalVisits} visite${card.totalVisits !== 1 ? "s" : ""}`}
+                              </small>
+                            </span>
+                          </label>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {!isRecommendedMode && audienceMode === "LIST" && (
+                  <div className="rounded-lg border p-3" style={{ borderColor: "rgb(var(--ovr) / 0.14)" }}>
+                    <label className="text-sm font-medium">Liste enregistrée</label>
+                    {savedClientLists.length === 0 ? (
+                      <div className="mt-2 rounded-lg border border-dashed p-4 text-sm text-gray-500">
+                        Aucune liste. Créez-en une depuis la page Clients.
+                      </div>
+                    ) : (
+                      <>
+                        <select
+                          className="mt-2 flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                          value={selectedListId}
+                          onChange={(event) => {
+                            const listId = event.target.value;
+                            const list = savedClientLists.find((item) => item.id === listId);
+                            const clientIds = new Set(
+                              list?.members.map((member) => member.clientId) || []
+                            );
+                            setSelectedListId(listId);
+                            setSelectedCardIds(
+                              audienceCards
+                                .filter((card) => clientIds.has(card.clientId))
+                                .map((card) => card.id)
+                            );
+                          }}
+                        >
+                          <option value="">Choisir une liste</option>
+                          {savedClientLists.map((list) => (
+                            <option key={list.id} value={list.id}>
+                              {list.name} ({list._count.members})
+                            </option>
+                          ))}
+                        </select>
+                        {selectedSavedList && (
+                          <div className="mt-3 rounded-lg px-3 py-2 text-sm" style={{ background: "rgba(212, 255, 78, 0.12)" }}>
+                            <strong>{selectedCardIds.length} destinataire{selectedCardIds.length !== 1 ? "s" : ""} éligible{selectedCardIds.length !== 1 ? "s" : ""}</strong>
+                            <p className="text-xs text-gray-500">
+                              Sur {selectedSavedList._count.members} client{selectedSavedList._count.members !== 1 ? "s" : ""} dans la liste, selon le programme et les cartes actives.
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {(spamWarningLoading || (spamWarning && spamWarning.riskyCount > 0)) && (
                   <div
@@ -2251,7 +2517,11 @@ function CreateCampaignForm({
                     <p className="font-medium text-gray-900">
                       {isRecommendedMode
                         ? `${exactAudienceCount} clients ciblés`
-                        : segmentLabels[targetSegment]}
+                        : audienceMode === "MANUAL"
+                          ? `${exactAudienceCount} clients sélectionnés`
+                          : audienceMode === "LIST"
+                            ? `${selectedSavedList?.name || "Liste enregistrée"} · ${exactAudienceCount} clients`
+                            : segmentLabels[targetSegment]}
                     </p>
                   </div>
                   <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -2337,7 +2607,7 @@ function CreateCampaignForm({
                       ? isEditing ? "Enregistrement..." : "Envoi..."
                       : isEditing
                         ? "Enregistrer les modifications"
-                        : isRecommendedMode
+                        : isRecommendedMode || audienceMode !== "SEGMENT"
                         ? `Envoyer aux ${exactAudienceCount} clients ciblés`
                         : triggerType === "IMMEDIATE"
                           ? "Envoyer maintenant"

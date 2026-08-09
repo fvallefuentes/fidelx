@@ -13,6 +13,7 @@ import {
   expireProgramCardOffers,
 } from "@/lib/card-offers";
 import type { Prisma } from "@/generated/prisma/client";
+import { getExactTargetCardIds } from "@/lib/campaign-targeting";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -30,6 +31,7 @@ type AutomationConfig = {
   lastAbTestAt?: string | null;
   lastAbTestVariantIds?: string[];
   notifTitle?: string;
+  targetCardIds?: string[];
   frequencyDays?: number;
   cooldownDays?: number;
   minAudience?: number;
@@ -130,14 +132,25 @@ export async function GET(req: Request) {
           endsAt: offerEndsAt,
         });
       }
-      const r = await notifyAllCardsInProgram(
-        c.programId!,
-        c.message,
-        c.targetSegment,
-        notifTitle,
-        c.id,
-        { offerEndsAt }
-      );
+      const targetCardIds = getExactTargetCardIds(config);
+      const r = targetCardIds.length > 0
+        ? await notifyCardsInProgram(
+            c.programId!,
+            targetCardIds,
+            c.message,
+            notifTitle,
+            0,
+            c.id,
+            { offerEndsAt }
+          )
+        : await notifyAllCardsInProgram(
+            c.programId!,
+            c.message,
+            c.targetSegment,
+            notifTitle,
+            c.id,
+            { offerEndsAt }
+          );
       await prisma.notificationCampaign.update({
         where: { id: c.id },
         data: {

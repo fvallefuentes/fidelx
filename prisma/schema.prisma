@@ -283,6 +283,7 @@ model User {
   establishments Establishment[]
   programs       LoyaltyProgram[]
   campaigns      NotificationCampaign[]
+  clientLists    ClientList[]
 
   // Parrainage B2B (merchant → merchant)
   merchantReferralLink        MerchantReferralLink?        @relation("MerchantReferrer")
@@ -429,11 +430,36 @@ model Client {
 
   cards         LoyaltyCard[]
   referralLinks ReferralLink[]
+  listMemberships ClientListMember[]
 
   createdAt DateTime @default(now())
 
   @@index([email])
   @@index([phone])
+}
+
+model ClientList {
+  id         String             @id @default(cuid())
+  merchantId String
+  name       String
+  merchant   User               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  members    ClientListMember[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@unique([merchantId, name])
+  @@index([merchantId])
+}
+
+model ClientListMember {
+  listId    String
+  clientId  String
+  list      ClientList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  client    Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@id([listId, clientId])
+  @@index([clientId])
 }
 
 // =============================================
