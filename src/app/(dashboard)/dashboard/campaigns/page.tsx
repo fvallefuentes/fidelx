@@ -414,17 +414,19 @@ function CampaignSentCountBadge({ count }: { count: number }) {
 }
 
 function CampaignStatusBadge({ status, triggerType }: { status: string; triggerType: string }) {
-  const isActiveEventCampaign =
+  const isActiveRecurringCampaign =
     status === "SCHEDULED" &&
-    (triggerType === "POST_STAMP" || triggerType === "MILESTONE");
+    (triggerType === "POST_STAMP" ||
+      triggerType === "MILESTONE" ||
+      triggerType === "BIRTHDAY");
   const states: Record<string, { label: string; background: string; color: string; dot: string }> = {
     SENT: { label: "Envoyé", background: "#effbd0", color: "#5d7d13", dot: "#739c12" },
     SCHEDULED: { label: "Programmé", background: "#fff2d6", color: "#a16207", dot: "#d97706" },
     DRAFT: { label: "Brouillon", background: "#efefeb", color: "#797a72", dot: "#989891" },
     CANCELLED: { label: "Annulé", background: "#fee9eb", color: "#db3a42", dot: "#ef4444" },
   };
-  const state = isActiveEventCampaign
-    ? { label: "Active", background: "#effbd0", color: "#5d7d13", dot: "#739c12" }
+  const state = isActiveRecurringCampaign
+    ? { ...states.SCHEDULED, label: "Actif" }
     : states[status] ?? { label: status, background: "#efefeb", color: "#797a72", dot: "#989891" };
 
   return (
