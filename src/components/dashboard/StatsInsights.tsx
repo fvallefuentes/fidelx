@@ -21,19 +21,41 @@ const BORDER = "rgb(var(--ovr) / 0.08)";
 const CARD_BG = "var(--card-surface)";
 const VAL_COLOR = "rgb(var(--ovr) / 0.92)";
 
-export function StatsInsights({ isFree }: { isFree: boolean }) {
+export function StatsInsights({
+  isFree,
+  programId,
+}: {
+  isFree: boolean;
+  programId: string | null;
+}) {
   const t = useTranslations("Dashboard.statsInsights");
   const [data, setData] = useState<InsightsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    fetch("/api/merchants/stats/insights")
-      .then((r) => r.json())
+    const controller = new AbortController();
+    const params = new URLSearchParams();
+    if (programId) params.set("programId", programId);
+    const query = params.toString();
+
+    setLoading(true);
+    setData(null);
+    fetch(`/api/merchants/stats/insights${query ? `?${query}` : ""}`, {
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Impossible de charger les analyses");
+        return response.json() as Promise<InsightsResponse>;
+      })
       .then(setData)
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [programId]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   if (loading) return null;

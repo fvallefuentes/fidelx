@@ -91,13 +91,14 @@ function deltaPct(current: number, previous: number): number | null {
   return Math.round(((current - previous) / previous) * 1000) / 10;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
   const merchantId =
     (session.user as { merchantId?: string }).merchantId ?? session.user.id;
+  const requestedProgramId = new URL(request.url).searchParams.get("programId")?.trim() || null;
 
   const user = await prisma.user.findUnique({
     where: { id: merchantId },
@@ -111,7 +112,15 @@ export async function GET() {
     where: { merchantId },
     select: { id: true },
   });
-  const programIds = programs.map((p) => p.id);
+  const selectedProgram = requestedProgramId
+    ? programs.find((program) => program.id === requestedProgramId)
+    : null;
+  if (requestedProgramId && !selectedProgram) {
+    return NextResponse.json({ error: "Programme introuvable" }, { status: 404 });
+  }
+  const programIds = selectedProgram
+    ? [selectedProgram.id]
+    : programs.map((program) => program.id);
 
   const now = new Date();
   const today = startOfDay(now);

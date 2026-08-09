@@ -2652,6 +2652,41 @@ html, body { overflow-x: clip; }
 }
 
 /* Stats page variants using the dashboard visual system */
+.stats-page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.stats-program-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: min(100%, 320px);
+  flex: 0 0 320px;
+}
+.stats-program-filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink-3);
+  font-family: var(--font-geist-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.stats-program-filter-label svg {
+  color: var(--accent-ink);
+}
+.dashboard .stats-program-filter select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 38px 0 13px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
 .stats-kpi-grid,
 .stats-charts-grid {
   margin-bottom: 28px;
@@ -4008,6 +4043,15 @@ html, body { overflow-x: clip; }
   .dx-stats-grid { grid-template-columns: 1fr 1fr; }
   .dx-stat-value { font-size: 26px; }
   .dx-page-title { font-size: 24px; }
+  .stats-page-head {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .stats-program-filter {
+    width: 100%;
+    flex-basis: auto;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════

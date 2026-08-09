@@ -38,6 +38,12 @@ export interface ProgramStat {
   avgProgressionPct: number | null;
 }
 
+export interface StatsProgramOption {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
 interface ProgramStatRow {
   id: string;
   name: string;
@@ -56,6 +62,8 @@ interface ProgramStatRow {
 
 export interface FullStatsResponse {
   plan: string;
+  availablePrograms: StatsProgramOption[];
+  selectedProgramId: string | null;
   // FREE+
   totalClients: number;
   activeCards: number;
@@ -143,13 +151,14 @@ function round1(n: number): number {
 }
 
 /* ─── Route ───────────────────────────────────────────────── */
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
   const merchantId = session.user.id;
+  const requestedProgramId = new URL(request.url).searchParams.get("programId")?.trim() || null;
 
   // Get current plan from DB (authoritative)
   const dbUser = await prisma.user.findUnique({
@@ -163,12 +172,26 @@ export async function GET() {
   const isGrowth = planState === "TEST" || plan === "GROWTH" || plan === "MULTI_SITE";
   const isMultiSite = planState === "TEST" || plan === "MULTI_SITE";
 
-  // Get all program IDs for this merchant
+  // Keep the complete list for the selector, then scope every metric if requested.
   const programs = await prisma.loyaltyProgram.findMany({
     where: { merchantId },
-    select: { id: true },
+    select: { id: true, name: true, isActive: true },
+    orderBy: { createdAt: "asc" },
   });
-  const programIds = programs.map((p) => p.id);
+  const selectedProgram = requestedProgramId
+    ? programs.find((program) => program.id === requestedProgramId)
+    : null;
+  if (requestedProgramId && !selectedProgram) {
+    return NextResponse.json({ error: "Programme introuvable" }, { status: 404 });
+  }
+  const programIds = selectedProgram
+    ? [selectedProgram.id]
+    : programs.map((program) => program.id);
+  const availablePrograms: StatsProgramOption[] = programs.map((program) => ({
+    id: program.id,
+    name: program.name,
+    isActive: program.isActive,
+  }));
 
   const now = new Date();
   const start7 = startOfDay(addDays(now, -6));
@@ -178,6 +201,8 @@ export async function GET() {
   // Empty response defaults
   const defaults: FullStatsResponse = {
     plan,
+    availablePrograms,
+    selectedProgramId: selectedProgram?.id ?? null,
     totalClients: 0,
     activeCards: 0,
     totalStamps: 0,
@@ -326,7 +351,9 @@ export async function GET() {
   }
 
   const activityLast7 = bucketDays(activityLast7Rows.map((t) => t.createdAt), 7);
-  const programStats: ProgramStat[] = programStatRows.map((program) => ({
+  const programStats: ProgramStat[] = programStatRows
+    .filter((program) => programIds.includes(program.id))
+    .map((program) => ({
     id: program.id,
     name: program.name,
     type: program.type,
@@ -349,7 +376,7 @@ export async function GET() {
       program.avgProgressionPct === null
         ? null
         : round1(Number(program.avgProgressionPct)),
-  }));
+    }));
 
   const result: FullStatsResponse = {
     ...defaults,
@@ -469,9 +496,17 @@ export async function GET() {
         },
       },
     }),
-    prisma.notificationCampaign.count({ where: { merchantId } }),
+    prisma.notificationCampaign.count({
+      where: {
+        merchantId,
+        ...(selectedProgram ? { programId: selectedProgram.id } : {}),
+      },
+    }),
     prisma.notificationCampaign.findMany({
-      where: { merchantId },
+      where: {
+        merchantId,
+        ...(selectedProgram ? { programId: selectedProgram.id } : {}),
+      },
       select: { id: true, name: true, sentCount: true },
       orderBy: { createdAt: "desc" },
       take: 5,
@@ -486,7 +521,10 @@ export async function GET() {
     }),
     // campaign performance: top 5 campaigns with delivered log count
     prisma.notificationCampaign.findMany({
-      where: { merchantId },
+      where: {
+        merchantId,
+        ...(selectedProgram ? { programId: selectedProgram.id } : {}),
+      },
       select: {
         id: true,
         name: true,
@@ -600,7 +638,12 @@ export async function GET() {
 
   /* ── MULTI_SITE queries ── */
   const establishmentList = await prisma.establishment.findMany({
-    where: { merchantId },
+    where: {
+      merchantId,
+      ...(selectedProgram
+        ? { programs: { some: { id: selectedProgram.id } } }
+        : {}),
+    },
     select: { id: true, name: true },
   });
 

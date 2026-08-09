@@ -33,6 +33,7 @@ import {
   MailOpen,
   Clock,
   ArrowUpRight,
+  ListFilter,
 } from "lucide-react";
 import type { FullStatsResponse } from "@/app/api/merchants/stats/full/route";
 import { StatsInsights } from "@/components/dashboard/StatsInsights";
@@ -665,31 +666,77 @@ function MultiSiteSection({ stats }: { stats: FullStatsResponse }) {
 export default function StatsPage() {
   const { data: session } = useSession();
   const [stats, setStats] = useState<FullStatsResponse | null>(null);
+  const [selectedProgramId, setSelectedProgramId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/merchants/stats/full")
+    const controller = new AbortController();
+    const params = new URLSearchParams();
+    if (selectedProgramId) params.set("programId", selectedProgramId);
+    const query = params.toString();
+
+    fetch(`/api/merchants/stats/full${query ? `?${query}` : ""}`, {
+      signal: controller.signal,
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Erreur lors du chargement des statistiques");
         return res.json() as Promise<FullStatsResponse>;
       })
       .then(setStats)
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Erreur inconnue"))
-      .finally(() => setLoading(false));
-  }, []);
+      .catch((err: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : "Erreur inconnue");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [selectedProgramId]);
 
   const plan = stats?.plan ?? session?.user?.plan ?? "FREE";
   const planLevel = PLAN_ORDER[plan] ?? 0;
+  const selectedProgram = stats?.availablePrograms.find(
+    (program) => program.id === selectedProgramId
+  );
 
   return (
     <div className="dx-page">
-      <div className="dx-page-head">
-        <h1 className="dx-page-title">Statistiques</h1>
-        <p className="dx-page-sub">
-          Analyse détaillée —{" "}
-          <span className="stats-plan-accent">{PLAN_LABELS[plan] ?? plan}</span>
-        </p>
+      <div className="stats-page-head">
+        <div className="dx-page-head">
+          <h1 className="dx-page-title">Statistiques</h1>
+          <p className="dx-page-sub">
+            {selectedProgram
+              ? `Données du programme ${selectedProgram.name}`
+              : "Vue consolidée de tous les programmes"}{" "}
+            — <span className="stats-plan-accent">{PLAN_LABELS[plan] ?? plan}</span>
+          </p>
+        </div>
+
+        <label className="stats-program-filter">
+          <span className="stats-program-filter-label">
+            <ListFilter size={14} aria-hidden="true" />
+            Programme analysé
+          </span>
+          <select
+            value={selectedProgramId}
+            onChange={(event) => {
+              setLoading(true);
+              setError(null);
+              setSelectedProgramId(event.target.value);
+            }}
+            aria-label="Sélectionner un programme à analyser"
+          >
+            <option value="">Tous les programmes</option>
+            {(stats?.availablePrograms ?? []).map((program) => (
+              <option key={program.id} value={program.id}>
+                {program.name}{program.isActive ? "" : " (inactif)"}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       {loading && <Spinner />}
@@ -706,7 +753,10 @@ export default function StatsPage() {
 
           {/* Insights avancés : delta période + heatmap + cohorts. */}
           <div className="stats-insights-wrap">
-            <StatsInsights isFree={plan === "FREE"} />
+            <StatsInsights
+              isFree={plan === "FREE"}
+              programId={selectedProgramId || null}
+            />
           </div>
 
           {planLevel >= PLAN_ORDER.ESSENTIAL && <EssentialSection stats={stats} />}
