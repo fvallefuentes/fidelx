@@ -1,6 +1,7 @@
 import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isStaffAllowedPath } from "@/lib/staff-access";
 
 
 /* ─── IP block cache (TTL 60s, partagé entre requêtes du même worker) ─── */
@@ -78,17 +79,9 @@ export async function middleware(req: NextRequest) {
 
   const role = (token.role as string) ?? "USER";
 
-  // STAFF : limité à /dashboard/scan et /api/transactions/stamp
+  // STAFF : limite au scanner et aux API strictement necessaires a son fonctionnement.
   if (role === "STAFF") {
-    const allowed =
-      pathname === "/dashboard/scan" ||
-      pathname === "/dashboard" ||
-      pathname.startsWith("/api/transactions/stamp") ||
-      pathname.startsWith("/api/programs") ||
-      pathname.startsWith("/api/auth") ||
-      pathname.startsWith("/_next") ||
-      pathname.startsWith("/favicon");
-    if (!allowed) {
+    if (!isStaffAllowedPath(pathname)) {
       return NextResponse.redirect(new URL("/dashboard/scan", req.url));
     }
   }
