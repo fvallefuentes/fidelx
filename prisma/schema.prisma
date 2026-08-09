@@ -361,6 +361,13 @@ model LoyaltyProgram {
   campaigns     NotificationCampaign[]
   referralLinks ReferralLink[]
 
+  // Offre temporaire actuellement visible sur les cartes du programme.
+  activeOfferCampaignId String?
+  activeOfferTitle      String?
+  activeOfferMessage    String?
+  activeOfferStartsAt   DateTime?
+  activeOfferEndsAt     DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -452,6 +459,7 @@ model LoyaltyCard {
   lastVisitAt        DateTime?
   lastMessage        String? // dernière notification reçue (campagne) — affichée au verso du pass
   lastMessageAt      DateTime?
+  lastMessageExpiresAt DateTime? // défini seulement si le message est une offre temporaire
   lastCampaignLogo   String?            @db.Text // data URL (base64) du logo override pour la dernière campagne
   merchantNotes      String?            @db.Text // notes libres du commerçant sur ce client (drill-down)
   client             Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -588,6 +596,8 @@ model NotificationCampaign {
   sentCount     Int            @default(0)
   scheduledAt   DateTime?
   sentAt        DateTime?
+  showOnNewCards Boolean       @default(false)
+  offerEndsAt   DateTime?
 
   merchant User              @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   program  LoyaltyProgram?   @relation(fields: [programId], references: [id])

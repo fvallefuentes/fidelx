@@ -65,7 +65,11 @@ export async function POST(
 
   await prisma.loyaltyCard.update({
     where: { id: card.id },
-    data: { lastMessage: message.trim(), lastMessageAt: sentAt },
+    data: {
+      lastMessage: message.trim(),
+      lastMessageAt: sentAt,
+      lastMessageExpiresAt: null,
+    },
   });
 
   try {

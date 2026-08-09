@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildCampaignRecommendations, type CampaignMessageVariant } from "@/lib/campaign-recommendations";
-import { notifyAllCardsInProgram, notifyCardsInProgram } from "@/lib/wallet/push";
+import {
+  notifyAllCardsInProgram,
+  notifyCardsInProgram,
+  notifyPassUpdate,
+} from "@/lib/wallet/push";
 import { createMerchantNotification } from "@/lib/notifications/merchant";
 import { requireCronSecret } from "@/lib/api/validation";
+import {
+  activateProgramCardOffer,
+  expireProgramCardOffers,
+} from "@/lib/card-offers";
 import type { Prisma } from "@/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +66,12 @@ export async function GET(req: Request) {
   if (cronAuthError) return cronAuthError;
 
   const now = new Date();
+  const expiredOffers = await expireProgramCardOffers(now);
+  await Promise.allSettled(
+    expiredOffers.flatMap((program) =>
+      program.cardIds.map((cardId) => notifyPassUpdate(cardId))
+    )
+  );
 
   const due = await prisma.notificationCampaign.findMany({
     where: {
@@ -70,7 +84,11 @@ export async function GET(req: Request) {
   });
 
   if (due.length === 0) {
-    return NextResponse.json({ ok: true, due: 0 });
+    return NextResponse.json({
+      ok: true,
+      due: 0,
+      expiredOffers: expiredOffers.length,
+    });
   }
 
   const results: Array<{
@@ -97,12 +115,28 @@ export async function GET(req: Request) {
     try {
       const config = c.triggerConfig as AutomationConfig | null;
       const notifTitle = config?.notifTitle || c.name;
+      const offerEndsAt =
+        c.showOnNewCards && c.offerEndsAt && c.offerEndsAt > now
+          ? c.offerEndsAt
+          : null;
+      if (offerEndsAt) {
+        await activateProgramCardOffer({
+          merchantId: c.merchantId,
+          programId: c.programId!,
+          campaignId: c.id,
+          title: notifTitle,
+          message: c.message,
+          startsAt: now,
+          endsAt: offerEndsAt,
+        });
+      }
       const r = await notifyAllCardsInProgram(
         c.programId!,
         c.message,
         c.targetSegment,
         notifTitle,
-        c.id
+        c.id,
+        { offerEndsAt }
       );
       await prisma.notificationCampaign.update({
         where: { id: c.id },
@@ -129,6 +163,16 @@ export async function GET(req: Request) {
         where: { id: c.id },
         data: { status: "FAILED" },
       });
+      await prisma.loyaltyProgram.updateMany({
+        where: { activeOfferCampaignId: c.id },
+        data: {
+          activeOfferCampaignId: null,
+          activeOfferTitle: null,
+          activeOfferMessage: null,
+          activeOfferStartsAt: null,
+          activeOfferEndsAt: null,
+        },
+      });
       results.push({
         id: c.id,
         name: c.name,
@@ -139,7 +183,12 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ ok: true, due: due.length, results });
+  return NextResponse.json({
+    ok: true,
+    due: due.length,
+    expiredOffers: expiredOffers.length,
+    results,
+  });
 }
 
 async function runAutomationRule(campaign: {

@@ -141,7 +141,11 @@ export async function GET(req: Request) {
     try {
       await prisma.loyaltyCard.update({
         where: { id: card.id },
-        data: { lastMessage: campaign.message, lastMessageAt: now },
+        data: {
+          lastMessage: campaign.message,
+          lastMessageAt: now,
+          lastMessageExpiresAt: null,
+        },
       });
       const deliveryResult = await notifyPassUpdate(card.id, {
         header:

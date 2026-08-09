@@ -12,6 +12,10 @@ type GoogleVisibleMessage = {
   body: string;
 };
 
+type WalletMessageOptions = {
+  offerEndsAt?: Date | null;
+};
+
 export type WalletDeliveryResult = {
   appleRegistrations: number;
   applePushSent: boolean;
@@ -222,7 +226,8 @@ export async function notifyCardInProgram(
   cardId: string,
   message: string,
   title: string,
-  campaignId?: string
+  campaignId?: string,
+  options?: WalletMessageOptions
 ) {
   const card = await prisma.loyaltyCard.findFirst({
     where: {
@@ -249,7 +254,11 @@ export async function notifyCardInProgram(
 
   await prisma.loyaltyCard.update({
     where: { id: card.id },
-    data: { lastMessage: message, lastMessageAt: deliveredAt },
+    data: {
+      lastMessage: message,
+      lastMessageAt: deliveredAt,
+      lastMessageExpiresAt: options?.offerEndsAt || null,
+    },
   });
 
   const result = await notifyPassUpdate(card.id, {
@@ -278,7 +287,8 @@ export async function notifyAllCardsInProgram(
   message: string,
   segment?: string,
   title?: string,
-  campaignId?: string
+  campaignId?: string,
+  options?: WalletMessageOptions
 ) {
   const cards = await prisma.loyaltyCard.findMany({
     where: buildCampaignAudienceWhere(programId, segment as CampaignSegment),
@@ -305,7 +315,11 @@ export async function notifyAllCardsInProgram(
         : null;
       await prisma.loyaltyCard.update({
         where: { id: card.id },
-        data: { lastMessage: message, lastMessageAt: deliveredAt },
+        data: {
+          lastMessage: message,
+          lastMessageAt: deliveredAt,
+          lastMessageExpiresAt: options?.offerEndsAt || null,
+        },
       });
       const result = await notifyPassUpdate(card.id, {
           header: title || card.program.name,
@@ -338,7 +352,8 @@ export async function notifyCardsInProgram(
   message: string,
   title?: string,
   cooldownDays = 0,
-  campaignId?: string
+  campaignId?: string,
+  options?: WalletMessageOptions
 ) {
   const uniqueCardIds = [...new Set(cardIds)].filter(Boolean);
   if (uniqueCardIds.length === 0) {
@@ -378,7 +393,11 @@ export async function notifyCardsInProgram(
         : null;
       await prisma.loyaltyCard.update({
         where: { id: card.id },
-        data: { lastMessage: message, lastMessageAt: deliveredAt },
+        data: {
+          lastMessage: message,
+          lastMessageAt: deliveredAt,
+          lastMessageExpiresAt: options?.offerEndsAt || null,
+        },
       });
       const result = await notifyPassUpdate(card.id, {
           header: title || card.program.name,

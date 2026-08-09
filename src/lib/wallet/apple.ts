@@ -9,6 +9,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { resolveVisibleCardOffer } from "@/lib/card-offers";
 
 /**
  * Décode une data URL "data:image/...;base64,XXX" en Buffer,
@@ -73,6 +74,7 @@ interface PassData {
   labelColor?: string;
   description: string;
   lastMessage?: string | null;
+  notificationMessage?: string | null;
   logoData?: string | null; // data URL "data:image/png;base64,..."
   notificationIconData?: string | null;
   heroImage?: string | null; // data URL — pour POINTS, remplace le strip à pastilles
@@ -148,7 +150,12 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     stampBgImage: (design.stampBgImage as string) || null,
     labelColor: (design.labelColor as string) || undefined,
     description: (design.description as string) || card.program.name,
-    lastMessage: card.lastMessage,
+    lastMessage: resolveVisibleCardOffer({
+      program: card.program,
+      lastMessage: card.lastMessage,
+      lastMessageExpiresAt: card.lastMessageExpiresAt,
+    }),
+    notificationMessage: card.lastMessage,
     // Le logo de la carte vient TOUJOURS du programme. Le logo
     // d'une campagne ne sert qu'à l'aperçu côté merchant — iOS
     // utilise toujours sa propre icône Wallet pour les notifications.
@@ -250,9 +257,9 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     altText: passData.serialNumber,
   });
 
-  // Sous le strip : progression à gauche, dernière offre à droite.
-  // Le champ offer conserve changeMessage : c'est lui qui fournit le texte
-  // de la notification Apple Wallet lors d'une campagne.
+  // Sous le strip : progression à gauche, offre active à droite.
+  // Les notifications utilisent un champ séparé au verso afin qu'une
+  // actualité ponctuelle ne remplace pas l'offre temporaire du programme.
   const isPointsProgram = passData.programType === "POINTS";
   if (isPointsProgram) {
     pass.secondaryFields.push({
@@ -275,7 +282,6 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     key: "offer",
     label: "OFFRE",
     value: passData.lastMessage || "",
-    changeMessage: "%@",
     textAlignment: "PKTextAlignmentRight",
   });
 
@@ -294,6 +300,13 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
     key: "merchant",
     label: "Commerce",
     value: passData.merchantName,
+  });
+
+  pass.backFields.push({
+    key: "notification_message",
+    label: "Dernière notification",
+    value: passData.notificationMessage || "",
+    ...(passData.notificationMessage ? { changeMessage: "%@" } : {}),
   });
 
   pass.backFields.push({

@@ -8,6 +8,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
+import { resolveActiveCardOffer } from "@/lib/card-offers";
 import jwt from "jsonwebtoken";
 
 const GOOGLE_WALLET_ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID || "";
@@ -50,6 +51,7 @@ interface LoyaltyObjectData {
    *  EXPIRED = carte caduque (programme archivé), INACTIVE = revoquée par admin. */
   cardState?: "ACTIVE" | "EXPIRED" | "INACTIVE";
   merchantLocations?: { latitude: number; longitude: number }[];
+  offerMessage?: string | null;
 }
 
 function hasValidLocation(location?: {
@@ -99,6 +101,7 @@ export function buildLoyaltyClass(data: LoyaltyClassData) {
  * (un objet par client)
  */
 export function buildLoyaltyObject(data: LoyaltyObjectData) {
+  const textModulesData: Array<{ id: string; header: string; body: string }> = [];
   const object: Record<string, unknown> = {
     id: `${GOOGLE_WALLET_ISSUER_ID}.${data.serialNumber}`,
     classId: data.classId,
@@ -146,13 +149,11 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
           mainImage: stampImage,
         },
       ];
-      object.textModulesData = [
-        {
-          id: "stamp_progress",
-          header: "Progression",
-          body: `${data.currentStamps}/${data.maxStamps} tampons valides`,
-        },
-      ];
+      textModulesData.push({
+        id: "stamp_progress",
+        header: "Progression",
+        body: `${data.currentStamps}/${data.maxStamps} tampons valides`,
+      });
     }
   } else if (data.programType === "POINTS") {
     object.loyaltyPoints = {
@@ -178,6 +179,18 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
         },
       };
     }
+  }
+
+  if (data.offerMessage) {
+    textModulesData.push({
+      id: "active_offer",
+      header: "Offre en cours",
+      body: data.offerMessage,
+    });
+  }
+
+  if (textModulesData.length > 0) {
+    object.textModulesData = textModulesData;
   }
 
   if (data.merchantLocations?.length) {
@@ -257,6 +270,7 @@ export async function generateGoogleWalletLink(
     appUrl,
     designVersion: String(card.program.updatedAt.getTime()),
     hasHeroImage: typeof design.heroImage === "string" && design.heroImage.length > 0,
+    offerMessage: resolveActiveCardOffer(card.program)?.message,
     cardState:
       (card.status as string) === "EXPIRED"
         ? "EXPIRED"
@@ -562,6 +576,7 @@ export async function updateGoogleWalletObject(
     appUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     designVersion: String(card.program.updatedAt.getTime()),
     hasHeroImage: typeof design.heroImage === "string" && design.heroImage.length > 0,
+    offerMessage: resolveActiveCardOffer(card.program)?.message,
     cardState:
       (card.status as string) === "EXPIRED"
         ? "EXPIRED"

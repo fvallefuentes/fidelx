@@ -44,6 +44,8 @@ interface Campaign {
   sentCount: number;
   scheduledAt: string | null;
   sentAt: string | null;
+  showOnNewCards: boolean;
+  offerEndsAt: string | null;
   createdAt: string;
   program?: { name: string } | null;
   _count: { logs: number };
@@ -660,6 +662,13 @@ function CampaignHistory({
                   </div>
                   {campaign.sentCount > 0 && (
                     <CampaignSentCountBadge count={campaign.sentCount} />
+                  )}
+                  {campaign.showOnNewCards && campaign.offerEndsAt && (
+                    <span className="rounded-full border border-lime-200 bg-lime-50 px-2.5 py-1 text-xs font-medium text-lime-800">
+                      {new Date(campaign.offerEndsAt) > new Date()
+                        ? `Offre carte jusqu'au ${new Intl.DateTimeFormat("fr-CH").format(new Date(campaign.offerEndsAt))}`
+                        : "Offre carte expirée"}
+                    </span>
                   )}
                   <CampaignStatusBadge status={campaign.status} triggerType={campaign.triggerType} />
                   {canEdit && (
@@ -1504,6 +1513,22 @@ function getLocalScheduleParts(value?: string | null) {
   };
 }
 
+function getDateInputValue(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function getDefaultOfferEndDate(scheduleDate?: string) {
+  const base = scheduleDate
+    ? new Date(`${scheduleDate}T12:00:00`)
+    : new Date();
+  base.setDate(base.getDate() + 7);
+  return getDateInputValue(base.toISOString());
+}
+
 function CreateCampaignForm({
   programs,
   isFree,
@@ -1568,6 +1593,12 @@ function CreateCampaignForm({
   const [birthdayDaysBefore, setBirthdayDaysBefore] = useState(
     initialRecommendation?.triggerConfig?.daysBefore || 0
   );
+  const [showOnNewCards, setShowOnNewCards] = useState(
+    initialCampaign?.showOnNewCards || false
+  );
+  const [offerEndDate, setOfferEndDate] = useState(
+    getDateInputValue(initialCampaign?.offerEndsAt)
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [spamWarning, setSpamWarning] = useState<SpamWarning | null>(null);
@@ -1588,6 +1619,10 @@ function CreateCampaignForm({
     initialRecommendation?.triggerConfig?.targetCardIds ||
     [];
   const exactTargetCardIdsKey = exactTargetCardIds.join("|");
+  const supportsCardOffer = triggerType === "IMMEDIATE" || triggerType === "SCHEDULED";
+  const cardOfferEligible =
+    supportsCardOffer && targetSegment === "ALL" && exactTargetCardIds.length === 0;
+  const effectiveShowOnNewCards = showOnNewCards && cardOfferEligible;
   const [campaignStep, setCampaignStep] = useState(isEditing ? 2 : 0);
   const wizardSteps = isRecommendedMode
     ? ["Audience", "Message", "Vérifier"]
@@ -1600,7 +1635,10 @@ function CreateCampaignForm({
   const canGoNext =
     isObjectiveStep ||
     (isAudienceStep && Boolean(programId)) ||
-    (isMessageStep && Boolean(notifTitle.trim()) && Boolean(message.trim())) ||
+    (isMessageStep &&
+      Boolean(notifTitle.trim()) &&
+      Boolean(message.trim()) &&
+      (!effectiveShowOnNewCards || Boolean(offerEndDate))) ||
     isReviewStep;
 
   function startFreeMessage() {
@@ -1689,6 +1727,19 @@ function CreateCampaignForm({
       setError("Le titre de la notification est obligatoire.");
       return;
     }
+    const offerEndsAt = effectiveShowOnNewCards && offerEndDate
+      ? new Date(`${offerEndDate}T23:59:59`).toISOString()
+      : null;
+    if (effectiveShowOnNewCards) {
+      const activationAt =
+        triggerType === "SCHEDULED" && scheduledDate && scheduledTime
+          ? new Date(`${scheduledDate}T${scheduledTime}:00`)
+          : new Date();
+      if (!offerEndsAt || new Date(offerEndsAt) <= activationAt) {
+        setError("La date de fin de l'offre doit être postérieure à son envoi.");
+        return;
+      }
+    }
     setSaving(true);
     setError("");
 
@@ -1711,23 +1762,52 @@ function CreateCampaignForm({
       triggerConfig = { ...triggerConfig, daysBefore: birthdayDaysBefore };
     }
 
-    const res = await fetch("/api/campaigns", {
-      method: isEditing ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: initialCampaign?.id,
-        programId,
-        name,
-        message,
-        reviewConfirmed,
-        triggerType,
-        triggerConfig: {
-          ...triggerConfig,
-          notifTitle: trimmedTitle,
-        },
-        targetSegment,
-      }),
-    });
+    const saveCampaign = (replaceActiveOffer: boolean) =>
+      fetch("/api/campaigns", {
+        method: isEditing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: initialCampaign?.id,
+          programId,
+          name,
+          message,
+          reviewConfirmed,
+          triggerType,
+          triggerConfig: {
+            ...triggerConfig,
+            notifTitle: trimmedTitle,
+          },
+          targetSegment,
+          showOnNewCards: effectiveShowOnNewCards,
+          offerEndsAt,
+          replaceActiveOffer,
+        }),
+      });
+
+    let res = await saveCampaign(false);
+
+    if (res.status === 409) {
+      const conflict = await res.json();
+      if (conflict.errorCode === "ACTIVE_CARD_OFFER_CONFLICT") {
+        const endLabel = conflict.activeOffer?.endsAt
+          ? new Intl.DateTimeFormat("fr-CH", { dateStyle: "medium" }).format(
+              new Date(conflict.activeOffer.endsAt)
+            )
+          : null;
+        const confirmed = window.confirm(
+          `${conflict.activeOffer?.title || "Une offre"} est déjà active${endLabel ? ` jusqu'au ${endLabel}` : ""}. Cette nouvelle offre la remplacera sur les cartes. Continuer ?`
+        );
+        if (!confirmed) {
+          setSaving(false);
+          return;
+        }
+        res = await saveCampaign(true);
+      } else {
+        setError(conflict.error || "Erreur");
+        setSaving(false);
+        return;
+      }
+    }
 
     if (!res.ok) {
       const data = await res.json();
@@ -2007,6 +2087,69 @@ function CreateCampaignForm({
                   </div>
                 )}
 
+                {supportsCardOffer && (
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          Afficher l&apos;offre aux futurs clients
+                        </p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Les cartes ajoutées après l&apos;envoi afficheront aussi cette offre, sans nouvelle notification.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={effectiveShowOnNewCards}
+                        disabled={!cardOfferEligible}
+                        onClick={() => {
+                          const nextValue = !showOnNewCards;
+                          setShowOnNewCards(nextValue);
+                          if (nextValue && !offerEndDate) {
+                            setOfferEndDate(getDefaultOfferEndDate(scheduledDate));
+                          }
+                        }}
+                        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                          effectiveShowOnNewCards ? "bg-[#9eea22]" : "bg-gray-300"
+                        } disabled:cursor-not-allowed disabled:opacity-50`}
+                        aria-label="Afficher l'offre aux futurs clients"
+                      >
+                        <span
+                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                            effectiveShowOnNewCards ? "translate-x-5" : "translate-x-0.5"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {!cardOfferEligible && (
+                      <p className="mt-3 text-xs font-medium text-amber-700">
+                        Cette option nécessite une campagne manuelle destinée à « Tous les clients ».
+                      </p>
+                    )}
+
+                    {effectiveShowOnNewCards && (
+                      <div className="mt-4 max-w-sm space-y-2">
+                        <label className="text-sm font-medium" htmlFor="offer-end-date">
+                          Afficher jusqu&apos;au
+                        </label>
+                        <Input
+                          id="offer-end-date"
+                          type="date"
+                          value={offerEndDate}
+                          min={scheduledDate || getDateInputValue(new Date().toISOString())}
+                          onChange={(event) => setOfferEndDate(event.target.value)}
+                          required
+                        />
+                        <p className="text-xs text-gray-500">
+                          Une seule offre peut être active par programme. Une nouvelle offre remplacera l&apos;ancienne après confirmation.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {triggerType === "INACTIVITY" && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Jours d&apos;inactivité</label>
@@ -2136,6 +2279,18 @@ function CreateCampaignForm({
                   <p className="text-xs text-gray-400">Message</p>
                   <p className="mt-1 text-sm text-gray-800">{message || "À compléter"}</p>
                 </div>
+                {effectiveShowOnNewCards && offerEndDate && (
+                  <div className="rounded-lg border border-lime-200 bg-lime-50 p-3">
+                    <p className="text-xs font-medium uppercase text-lime-700">
+                      Offre visible sur les nouvelles cartes
+                    </p>
+                    <p className="mt-1 text-sm text-gray-900">
+                      Jusqu&apos;au {new Intl.DateTimeFormat("fr-CH", { dateStyle: "long" }).format(
+                        new Date(`${offerEndDate}T12:00:00`)
+                      )}
+                    </p>
+                  </div>
+                )}
                 <label className="campaign-review-confirmation">
                   <input
                     type="checkbox"
