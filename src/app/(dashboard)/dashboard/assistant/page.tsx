@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,6 +17,8 @@ import {
   TrendingUp,
   Wand2,
 } from "lucide-react";
+import { CAMPAIGN_RECOMMENDATION_DRAFT_KEY } from "@/lib/campaign-draft";
+import type { WeeklyCampaignSummary } from "@/lib/campaign-weekly-summary";
 
 interface CampaignImpact {
   returnedClients: number;
@@ -47,6 +49,13 @@ interface CampaignRecommendation {
   name: string;
   notifTitle: string;
   message: string;
+  triggerType: string;
+  triggerConfig?: {
+    daysInactive?: number;
+    remainingBeforeReward?: number;
+    daysBefore?: number;
+    targetCardIds?: string[];
+  };
   messageVariants?: CampaignMessageVariant[];
   targetSegment: string;
   priorityScore?: number;
@@ -142,34 +151,7 @@ interface CampaignAutomation {
   }>;
 }
 
-interface WeeklySummary {
-  periodStart: string;
-  periodEnd: string;
-  stats: {
-    messagesSent: number;
-    returnedClients: number;
-    generatedVisits: number;
-    rewardsUnlocked: number;
-    campaignsSent: number;
-    automationsActive: number;
-    abTestsRun: number;
-  };
-  bestCampaign: {
-    name: string;
-    programName: string;
-    sentCount: number;
-    returnedClients: number;
-    conversionRate: number;
-  } | null;
-  topOpportunity: {
-    title: string;
-    reason: string;
-    programName: string;
-    potentialCount: number;
-  } | null;
-  highlights: string[];
-  nextActions: string[];
-}
+type WeeklySummary = WeeklyCampaignSummary;
 
 export default function AssistantPage() {
   const [recommendations, setRecommendations] = useState<CampaignRecommendation[]>([]);
@@ -179,6 +161,7 @@ export default function AssistantPage() {
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [selectedVariantIds, setSelectedVariantIds] = useState<Record<string, string>>({});
+  const handledEmailAction = useRef(false);
 
   async function loadData() {
     const [recs, autos, sentCampaigns, weekly] = await Promise.all([
@@ -231,6 +214,44 @@ export default function AssistantPage() {
       }
     );
   }
+
+  function prepareManualCampaign(rec: CampaignRecommendation) {
+    const variant = getSelectedVariant(rec);
+    window.sessionStorage.setItem(
+      CAMPAIGN_RECOMMENDATION_DRAFT_KEY,
+      JSON.stringify({
+        ...rec,
+        notifTitle: variant.notifTitle,
+        message: variant.message,
+      })
+    );
+    window.location.href = "/dashboard/campaigns";
+  }
+
+  useEffect(() => {
+    if (loading || handledEmailAction.current) return;
+    const recommendationId = new URLSearchParams(window.location.search).get(
+      "prepare"
+    );
+    if (!recommendationId) return;
+
+    handledEmailAction.current = true;
+    const recommendation = recommendations.find(
+      (item) => item.id === recommendationId
+    );
+    if (!recommendation) return;
+
+    const variant = recommendation.messageVariants?.[0];
+    window.sessionStorage.setItem(
+      CAMPAIGN_RECOMMENDATION_DRAFT_KEY,
+      JSON.stringify({
+        ...recommendation,
+        notifTitle: variant?.notifTitle || recommendation.notifTitle,
+        message: variant?.message || recommendation.message,
+      })
+    );
+    window.location.replace("/dashboard/campaigns");
+  }, [loading, recommendations]);
 
   async function automateRecommendation(rec: CampaignRecommendation) {
     const variant = getSelectedVariant(rec);
@@ -444,9 +465,7 @@ export default function AssistantPage() {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => {
-                            window.location.href = "/dashboard/campaigns";
-                          }}
+                          onClick={() => prepareManualCampaign(rec)}
                         >
                           Campagne manuelle
                           <ArrowRight className="h-4 w-4 ml-2" />
@@ -680,12 +699,16 @@ function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
         <div className="assistant-weekly-side">
           <div className="assistant-weekly-stats">
             <span>
-              <strong>{summary.stats.messagesSent}</strong>
-              messages
+              <strong>{summary.stats.notificationsDelivered}</strong>
+              notifications livrées
             </span>
             <span>
-              <strong>{summary.stats.returnedClients}</strong>
-              clients revenus
+              <strong>
+                {summary.stats.returnedClients === 0
+                  ? "Aucun"
+                  : summary.stats.returnedClients}
+              </strong>
+              retour après notification
             </span>
             <span>
               <strong>{summary.stats.abTestsRun}</strong>
@@ -693,7 +716,11 @@ function WeeklySummaryCard({ summary }: { summary: WeeklySummary }) {
             </span>
           </div>
           <div className="assistant-weekly-actions">
-            <strong>Cette semaine</strong>
+            <strong>
+              {summary.attribution.resultsAreProvisional
+                ? "Résultats encore en cours"
+                : "Cette semaine"}
+            </strong>
             {summary.nextActions.map((action) => (
               <p key={action}>{action}</p>
             ))}
@@ -709,9 +736,11 @@ function buildWeeklyTitle(summary: WeeklySummary) {
     return `${summary.stats.returnedClients} client${summary.stats.returnedClients > 1 ? "s" : ""} revenu${summary.stats.returnedClients > 1 ? "s" : ""} cette semaine`;
   }
   if (summary.stats.messagesSent > 0) {
-    return `${summary.stats.messagesSent} message${summary.stats.messagesSent > 1 ? "s" : ""} envoye${summary.stats.messagesSent > 1 ? "s" : ""}`;
+    return summary.attribution.resultsAreProvisional
+      ? "Aucun retour mesurable pour le moment"
+      : `${summary.stats.notificationsDelivered} notification${summary.stats.notificationsDelivered > 1 ? "s" : ""} livrée${summary.stats.notificationsDelivered > 1 ? "s" : ""}`;
   }
-  return "Aucune campagne envoyee cette semaine";
+  return "Aucune campagne envoyée cette semaine";
 }
 
 function MetricCard({

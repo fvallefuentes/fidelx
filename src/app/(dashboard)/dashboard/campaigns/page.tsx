@@ -23,6 +23,7 @@ import {
 import { ExportCsvButton } from "@/components/dashboard/ExportCsvButton";
 import { CAMPAIGN_TEMPLATES, type CampaignTemplate } from "@/lib/campaign-templates";
 import { MAX_BIRTHDAY_DAYS_BEFORE } from "@/lib/birthday-campaign";
+import { CAMPAIGN_RECOMMENDATION_DRAFT_KEY } from "@/lib/campaign-draft";
 
 interface Campaign {
   id: string;
@@ -141,6 +142,30 @@ interface CampaignRecommendationAudience {
   scoreReasons?: string[];
 }
 
+function takeStoredCampaignRecommendation(): CampaignRecommendation | null {
+  const raw = window.sessionStorage.getItem(CAMPAIGN_RECOMMENDATION_DRAFT_KEY);
+  if (!raw) return null;
+  window.sessionStorage.removeItem(CAMPAIGN_RECOMMENDATION_DRAFT_KEY);
+
+  try {
+    const value = JSON.parse(raw) as Partial<CampaignRecommendation>;
+    if (
+      typeof value.id !== "string" ||
+      typeof value.programId !== "string" ||
+      typeof value.name !== "string" ||
+      typeof value.notifTitle !== "string" ||
+      typeof value.message !== "string" ||
+      typeof value.triggerType !== "string" ||
+      typeof value.targetSegment !== "string"
+    ) {
+      return null;
+    }
+    return value as CampaignRecommendation;
+  } catch {
+    return null;
+  }
+}
+
 interface CampaignAutomation {
   id: string;
   name: string;
@@ -219,6 +244,8 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [draftRecommendation, setDraftRecommendation] =
+    useState<CampaignRecommendation | null>(null);
   const [activeTab, setActiveTab] = useState<CampaignTab>("send");
 
   useEffect(() => {
@@ -246,6 +273,12 @@ export default function CampaignsPage() {
             : "",
       });
       setEstablishments(Array.isArray(settings?.establishments) ? settings.establishments : []);
+      const storedRecommendation = takeStoredCampaignRecommendation();
+      if (storedRecommendation) {
+        setDraftRecommendation(storedRecommendation);
+        setActiveTab("send");
+        setShowForm(true);
+      }
       setLoading(false);
     });
   }, []);
@@ -264,12 +297,14 @@ export default function CampaignsPage() {
 
   function startBlankCampaign() {
     setEditingCampaign(null);
+    setDraftRecommendation(null);
     setActiveTab("send");
     setShowForm(true);
   }
 
   function startEditingCampaign(campaign: Campaign) {
     setEditingCampaign(campaign);
+    setDraftRecommendation(null);
     setActiveTab("send");
     setShowForm(true);
   }
@@ -341,6 +376,7 @@ export default function CampaignsPage() {
           if (tab !== "send") {
             setShowForm(false);
             setEditingCampaign(null);
+            setDraftRecommendation(null);
           }
         }}
       />
@@ -348,20 +384,28 @@ export default function CampaignsPage() {
       {activeTab === "send" && (
         showForm ? (
           <CreateCampaignForm
-            key={editingCampaign?.id ?? "blank"}
+            key={
+              editingCampaign?.id ||
+              (draftRecommendation
+                ? `recommendation:${draftRecommendation.id}`
+                : "blank")
+            }
             programs={programs}
             isFree={isFree}
             notificationDefaults={notificationDefaults}
             initialCampaign={editingCampaign}
+            initialRecommendation={draftRecommendation}
             onSuccess={() => {
               setShowForm(false);
               setEditingCampaign(null);
+              setDraftRecommendation(null);
               fetchCampaigns();
               setActiveTab("history");
             }}
             onCancel={() => {
               setShowForm(false);
               setEditingCampaign(null);
+              setDraftRecommendation(null);
             }}
           />
         ) : (
