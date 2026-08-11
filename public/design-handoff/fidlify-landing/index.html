@@ -2658,6 +2658,14 @@ document.addEventListener('DOMContentLoaded', async function() {
       link.textContent = 'Tarifs';
       ref.parentNode.insertBefore(link, ref.nextSibling);
 
+      // Le blog existe (/blog) mais n'a jamais ete relie depuis la landing.
+      var blogLink = ref.cloneNode(true);
+      blogLink.setAttribute('href', '/blog');
+      blogLink.removeAttribute('data-fidlify-nav-pricing');
+      blogLink.setAttribute('data-fidlify-nav-blog', '1');
+      blogLink.textContent = 'Blog';
+      link.parentNode.insertBefore(blogLink, link.nextSibling);
+
       // "Comment ca marche" pointait vers #adoption, section renommee depuis
       // en #fidlify-how-it-works : le lien ne faisait plus rien du tout.
       // Le bouton "Demander une demo" vit dans le template du bundle : on ne
