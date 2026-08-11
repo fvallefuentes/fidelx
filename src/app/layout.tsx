@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono, JetBrains_Mono, Instrument_Sans } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import "./globals.css";
@@ -31,6 +31,11 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
   weight: ["500", "600", "700"],
+  display: "swap",
+});
+const instrumentSans = Instrument_Sans({
+  subsets: ["latin"],
+  variable: "--font-instrument-sans",
   display: "swap",
 });
 
@@ -111,7 +116,7 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`h-full ${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable}`}
+      className={`h-full ${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${instrumentSans.variable}`}
     >
       <body className="h-full antialiased">
         <OrganizationJsonLd />

@@ -405,30 +405,34 @@ body {
    ═══════════════════════════════════════════════════════════ */
 
 .landing {
-  --ovr: 255 255 255;
-  --bg: #070707;
-  --bg-2: #0c0d0c;
-  --bg-3: #121413;
-  --ink: #f4f5f1;
-  --ink-2: #c9ccc3;
-  --ink-3: #8a8e84;
-  --ink-4: #565a52;
+  /* Palette calquee sur le theme clair par defaut de la landing bundlee
+     (fidlify.com/), pour que /blog et les pages legales ne jurent plus
+     avec elle. Valeurs extraites du DOM en direct (getComputedStyle sur
+     #fyroot), pas du code source de ce bundle qu'on ne peut pas lire. */
+  --ovr: 14 17 22;
+  --bg: #f4f5ee;
+  --bg-2: #f8f9f4;
+  --bg-3: #ffffff;
+  --ink: #0e1116;
+  --ink-2: #40453c;
+  --ink-3: #5d6355;
+  --ink-4: #9a9f92;
   --line: rgb(var(--ovr) / 0.07);
   --line-2: rgb(var(--ovr) / 0.12);
-  --accent: #d4ff4e;
+  --accent: #d9ff3c;
   --accent-2: #b7ee2a;
-  --accent-soft: rgba(212, 255, 78, 0.14);
-  --accent-glow: rgba(212, 255, 78, 0.45);
+  --accent-soft: rgba(217, 255, 60, 0.14);
+  --accent-glow: rgba(217, 255, 60, 0.45);
   --danger: #ff7a6b;
   --warn: #ffd66b;
   --radius: 14px;
   --radius-lg: 22px;
   --radius-xl: 32px;
-  --shadow-card: 0 1px 0 rgb(var(--ovr) / 0.04) inset, 0 30px 60px -30px rgba(0,0,0,0.7);
+  --shadow-card: 0 1px 0 rgb(var(--ovr) / 0.04) inset, 0 30px 60px -30px rgba(14,17,22,0.12);
 
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-geist-sans, "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
+  font-family: var(--font-instrument-sans, "Instrument Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);
   font-feature-settings: "ss01", "cv11";
   /* NO overflow-x: hidden here — it kills position: sticky on descendants
      (e.g. .journey-sticky, .hcc-sticky). Apply to body instead. */
