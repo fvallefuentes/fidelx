@@ -4,6 +4,7 @@ description: "Comparatif détaillé Apple Wallet vs Google Wallet pour les carte
 date: "2026-06-01"
 author: "Fidlify"
 tags: ["apple-wallet", "google-wallet", "comparatif", "fidélité"]
+image: "/blog/img/apple-google-wallet.jpg"
 ---
 
 Si vous envisagez une carte de fidélité digitale pour votre commerce, vous vous demandez peut-être : **Apple Wallet ou Google Wallet ?** La réponse simple : **les deux, en même temps**. Voici pourquoi, et comment chacun fonctionne en pratique.

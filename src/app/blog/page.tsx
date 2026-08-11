@@ -54,6 +54,12 @@ export default async function BlogIndexPage() {
               {posts.map((post) => (
                 <li key={post.slug} className="blog-card">
                   <Link href={`/blog/${post.slug}`} className="blog-card-link-wrap">
+                    {post.image && (
+                      <div className="blog-card-image">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={post.image} alt="" loading="lazy" />
+                      </div>
+                    )}
                     <article>
                       <div className="blog-card-meta">
                         <time dateTime={post.date}>

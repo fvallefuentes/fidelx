@@ -4,6 +4,7 @@ description: "Comment les cafés, restaurants, salons et boutiques genevois fid�
 date: "2026-08-11"
 author: "Fidlify"
 tags: ["geneve", "carte-fidelite", "commerce-local", "suisse-romande"]
+image: "/blog/img/geneve-jet-deau.jpg"
 ---
 
 Loyer au mètre carré parmi les plus élevés de Suisse, concurrence dense entre la Vieille-Ville, les Eaux-Vives, Plainpalais ou Carouge, clientèle mêlant frontaliers, résidents et touristes de passage : à Genève, un commerce de proximité ne peut pas se permettre de perdre un client faute d'avoir su le faire revenir. C'est précisément ce que change une carte de fidélité digitale.

@@ -145,6 +145,13 @@ export default async function BlogPostPage({
               )}
             </div>
 
+            {post.image && (
+              <div className="blog-article-cover">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={post.image} alt="" />
+              </div>
+            )}
+
             <div
               className="blog-prose"
               dangerouslySetInnerHTML={{ __html: post.contentHtml }}
