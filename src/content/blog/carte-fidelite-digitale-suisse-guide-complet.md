@@ -43,9 +43,9 @@ Contrairement à ce qu'on pourrait croire, **mettre en place une carte de fidél
 
 | Plan typique | Coût mensuel | Cible |
 |---|---|---|
-| Gratuit | 0 CHF | Tester la solution, jusqu'à 50 clients actifs |
+| Essai | 0 CHF pendant 30 jours | Tester la solution en conditions réelles, sans carte bancaire |
 | Essentiel | ~39 CHF/mois | Commerce indépendant (café, salon, boutique) |
-| Growth | ~89 CHF/mois | Volume important (>500 clients actifs, campagnes) |
+| Croissance | ~59 CHF/mois | Volume important (statistiques avancées, segmentation, multi-paliers) |
 | Multi-sites | sur mesure | Chaînes, franchisés |
 
 À titre de comparaison : **imprimer 500 cartes papier** chez un imprimeur suisse coûte facilement **60-100 CHF**, avec une durée de vie de quelques mois seulement.
@@ -112,4 +112,4 @@ Oui — vous êtes responsable de traitement au sens LPD/RGPD. La plateforme est
 
 La carte de fidélité digitale n'est plus un luxe réservé aux grandes chaînes. En 2026, c'est devenu **l'outil standard** pour fidéliser dans le commerce de proximité — et la Suisse romande commence à rattraper son retard.
 
-Si vous êtes commerçant en Suisse et que vous tamponnez encore des cartes papier, c'est probablement le bon moment pour tester. [Démarrez gratuitement](https://www.fidlify.com/register) — vous n'avez rien à perdre.
+Si vous êtes commerçant en Suisse et que vous tamponnez encore des cartes papier, c'est probablement le bon moment pour tester. [Essayez 30 jours, sans carte bancaire](https://www.fidlify.com/register) — vous n'avez rien à perdre.
