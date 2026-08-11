@@ -2566,26 +2566,76 @@ document.addEventListener('DOMContentLoaded', async function() {
           background:transparent;color:var(--ink,#0E1116);cursor:pointer;padding:0;
         }
         #fdl-burger:focus-visible{outline:3px solid #D9FF3C;outline-offset:2px}
+
+        #fdl-voile{
+          position:fixed;inset:0;z-index:9997;
+          background:rgba(0,0,0,.5);
+          opacity:0;pointer-events:none;transition:opacity .3s;
+        }
+        #fdl-voile.is-open{opacity:1;pointer-events:auto}
+
         #fdl-menu{
-          position:fixed;left:0;right:0;z-index:9998;display:none;
-          flex-direction:column;padding:6px 18px 18px;
+          position:fixed;top:0;right:0;bottom:0;z-index:9998;
+          width:min(86vw,360px);
           background:var(--card,#fff);
-          border-bottom:1px solid var(--line,rgba(14,17,22,.12));
-          box-shadow:0 22px 44px rgba(24,30,10,.16);
+          box-shadow:-30px 0 80px -10px rgba(0,0,0,.25);
+          transform:translateX(100%);
+          transition:transform .35s cubic-bezier(.2,.7,.2,1);
+          display:flex;flex-direction:column;
+          padding:22px 22px 26px;
           font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
         }
-        #fdl-menu.is-open{display:flex}
-        #fdl-menu a{
-          display:block;padding:15px 2px;font-size:16.5px;font-weight:600;
-          color:var(--ink,#0E1116);text-decoration:none;
+        #fdl-menu.is-open{transform:translateX(0)}
+
+        #fdl-menu-head{
+          display:flex;align-items:center;justify-content:space-between;
+          padding-bottom:20px;margin-bottom:14px;
           border-bottom:1px solid var(--line,rgba(14,17,22,.09));
         }
-        #fdl-menu a:last-child{border-bottom:0}
-        #fdl-voile{
-          position:fixed;inset:0;z-index:9997;display:none;
-          background:rgba(14,17,22,.34);
+        #fdl-menu-close{
+          width:38px;height:38px;flex:0 0 38px;border-radius:10px;
+          border:1px solid var(--line2,rgba(14,17,22,.14));
+          background:transparent;color:var(--ink,#0E1116);
+          display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;
+          transition:border-color .2s,color .2s;
         }
-        #fdl-voile.is-open{display:block}
+        #fdl-menu-close:hover{border-color:#D9FF3C;color:#0E1116}
+
+        #fdl-menu-links{display:flex;flex-direction:column;gap:0;margin-bottom:auto}
+        #fdl-menu-links a{
+          display:block;padding:14px 4px;font-size:16.5px;font-weight:600;
+          color:var(--ink,#0E1116);text-decoration:none;
+          border-bottom:1px solid var(--line,rgba(14,17,22,.07));
+        }
+        #fdl-menu-links a:last-child{border-bottom:0}
+
+        #fdl-menu-cta{
+          display:flex;flex-direction:column;gap:10px;
+          padding-top:18px;margin-top:18px;
+          border-top:1px solid var(--line,rgba(14,17,22,.09));
+        }
+        #fdl-menu-login{
+          text-decoration:none;text-align:center;padding:12px;
+          font-size:15px;font-weight:500;color:var(--ink,#0E1116);
+          border:1px solid var(--line2,rgba(14,17,22,.14));border-radius:10px;
+        }
+        #fdl-menu-signup{
+          text-decoration:none;text-align:center;padding:13px 18px;
+          font-size:15px;font-weight:600;color:#0E1116;background:#D9FF3C;
+          border-radius:10px;
+        }
+
+        /* --card est translucide en mode sombre (rgba(255,255,255,.02)) :
+           combine au voile derriere, le panneau deviendrait quasi invisible.
+           Valeurs pleines dediees pour le mode sombre uniquement. */
+        #fyroot[data-fy="dark"] #fdl-menu{ background:#16181c }
+        #fyroot[data-fy="dark"] #fdl-menu-head{ border-bottom-color:rgba(255,255,255,.09) }
+        #fyroot[data-fy="dark"] #fdl-menu-close{ border-color:rgba(255,255,255,.14); color:#fff }
+        #fyroot[data-fy="dark"] #fdl-menu-close:hover{ border-color:#D9FF3C; color:#D9FF3C }
+        #fyroot[data-fy="dark"] #fdl-menu-links a{ color:#fff; border-bottom-color:rgba(255,255,255,.07) }
+        #fyroot[data-fy="dark"] #fdl-menu-cta{ border-top-color:rgba(255,255,255,.09) }
+        #fyroot[data-fy="dark"] #fdl-menu-login{ color:#fff; border-color:rgba(255,255,255,.14) }
+
         @media (max-width: 860px){ #fdl-burger{display:inline-flex} }
         @media (min-width: 861px){ #fdl-menu,#fdl-voile,#fdl-voir-carte{display:none !important} }
       `;
@@ -2606,42 +2656,85 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       var menu = document.createElement('div');
       menu.id = 'fdl-menu';
+      menu.setAttribute('role', 'dialog');
+      menu.setAttribute('aria-label', 'Navigation');
+
+      var head = document.createElement('div');
+      head.id = 'fdl-menu-head';
+      var marque = document.querySelector('#fyroot nav a[href="#top"]');
+      if (marque) head.appendChild(marque.cloneNode(true));
+      var close = document.createElement('button');
+      close.id = 'fdl-menu-close';
+      close.type = 'button';
+      close.setAttribute('aria-label', 'Fermer le menu');
+      close.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' stroke-width="2" stroke-linecap="round" aria-hidden="true">'
+        + '<path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+      head.appendChild(close);
+      menu.appendChild(head);
+
+      var linksWrap = document.createElement('div');
+      linksWrap.id = 'fdl-menu-links';
       Array.prototype.forEach.call(liens.querySelectorAll('a'), function (a) {
         var c = a.cloneNode(true);
         c.removeAttribute('style');
         c.className = '';
-        menu.appendChild(c);
+        linksWrap.appendChild(c);
       });
+      menu.appendChild(linksWrap);
+
+      var ctaWrap = document.createElement('div');
+      ctaWrap.id = 'fdl-menu-cta';
       var login = document.querySelector('#fyroot nav a[href="/login"]');
       if (login) {
         var cl = login.cloneNode(true);
         cl.removeAttribute('style');
         cl.className = '';
-        menu.appendChild(cl);
+        cl.id = 'fdl-menu-login';
+        ctaWrap.appendChild(cl);
       }
+      var signup = Array.prototype.filter.call(
+        document.querySelectorAll('#fyroot nav a'),
+        function (a) { return (a.textContent || '').trim() === 'Essayer gratuitement'; }
+      )[0];
+      if (signup) {
+        var cs = signup.cloneNode(true);
+        cs.removeAttribute('style');
+        cs.className = '';
+        cs.id = 'fdl-menu-signup';
+        ctaWrap.appendChild(cs);
+      }
+      menu.appendChild(ctaWrap);
 
       function ouvrir(oui) {
         menu.classList.toggle('is-open', oui);
         voile.classList.toggle('is-open', oui);
         btn.setAttribute('aria-expanded', oui ? 'true' : 'false');
         btn.setAttribute('aria-label', oui ? 'Fermer le menu' : 'Ouvrir le menu');
-        if (oui) menu.style.top = Math.round(nav.getBoundingClientRect().bottom) + 'px';
+        document.body.style.overflow = oui ? 'hidden' : '';
       }
 
       btn.addEventListener('click', function () {
         ouvrir(!menu.classList.contains('is-open'));
       });
+      close.addEventListener('click', function () { ouvrir(false); });
       voile.addEventListener('click', function () { ouvrir(false); });
       menu.addEventListener('click', function (e) {
-        if (e.target.tagName === 'A') ouvrir(false);
+        if (e.target.closest('a')) ouvrir(false);
       });
       document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') ouvrir(false);
       });
 
       nav.appendChild(btn);
-      document.body.appendChild(voile);
-      document.body.appendChild(menu);
+      // Ajoute au meme conteneur que le nav (#fyroot) plutot qu'a
+      // document.body : herite ainsi les variables de theme (--bg,
+      // --card, --ink...) qui ne sont definies que sur #fyroot. Verifie
+      // qu'aucun ancetre entre #fyroot et <body> n'a de transform/filter/
+      // perspective (ce qui casserait position:fixed) : aucun ici.
+      var conteneur = document.getElementById('fyroot') || document.body;
+      conteneur.appendChild(voile);
+      conteneur.appendChild(menu);
     }
 
     function injectPricingNavLink() {
