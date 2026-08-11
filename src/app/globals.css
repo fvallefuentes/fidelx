@@ -410,6 +410,7 @@ body {
      avec elle. Valeurs extraites du DOM en direct (getComputedStyle sur
      #fyroot), pas du code source de ce bundle qu'on ne peut pas lire. */
   --ovr: 14 17 22;
+  --bg-rgb: 244 245 238;
   --bg: #f4f5ee;
   --bg-2: #f8f9f4;
   --bg-3: #ffffff;
@@ -530,7 +531,7 @@ html, body { overflow-x: clip; }
   position: sticky; top: 0; z-index: 50;
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
-  background: rgba(7,7,7,0.6); border-bottom: 1px solid var(--line);
+  background: rgb(var(--bg-rgb) / 0.72); border-bottom: 1px solid var(--line);
 }
 .landing .nav-inner {
   display: flex; align-items: center; justify-content: space-between; height: 76px;
