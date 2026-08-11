@@ -568,6 +568,10 @@ html, body { overflow-x: clip; }
   padding-top: 13px; padding-bottom: 13px;
   font-size: 15px;
 }
+.landing .nav-drawer-cta .nav-btn-login {
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+}
 
 /* ── Cards / surfaces ── */
 .landing .card {
