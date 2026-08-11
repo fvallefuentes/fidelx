@@ -537,6 +537,38 @@ html, body { overflow-x: clip; }
 }
 .landing .btn-ghost:hover { background: rgb(var(--ovr) / 0.06); border-color: rgb(var(--ovr) / 0.2); }
 
+/* ── Connexion / Essayer gratuitement dans la nav — reproduit tel quel le
+   style de la landing bundlee (plus sobre que .btn-primary/.btn-ghost,
+   reserves aux CTA de page). Scope volontairement etroit : uniquement
+   Nav.tsx, pas les autres usages de .btn-primary/.btn-ghost. ── */
+.landing .nav-btn-login {
+  display: inline-flex; align-items: center;
+  color: var(--ink);
+  font-size: 14.5px; font-weight: 400;
+  text-decoration: none;
+  transition: opacity .2s;
+}
+.landing .nav-btn-login:hover { opacity: 0.65; }
+
+.landing .nav-btn-cta {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #0e1116;
+  font-size: 14.5px; font-weight: 600;
+  text-decoration: none;
+  transition: transform .2s;
+}
+.landing .nav-btn-cta:hover { transform: translateY(-1px); }
+
+.landing .nav-drawer-cta .nav-btn-login,
+.landing .nav-drawer-cta .nav-btn-cta {
+  width: 100%; justify-content: center;
+  padding-top: 13px; padding-bottom: 13px;
+  font-size: 15px;
+}
+
 /* ── Cards / surfaces ── */
 .landing .card {
   background: linear-gradient(180deg, rgb(var(--ovr) / 0.03), rgb(var(--ovr) / 0.01)), var(--bg-2);

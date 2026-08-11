@@ -82,20 +82,11 @@ export default function Nav() {
                 {dark ? <Sun size={18} /> : <Moon size={18} />}
               </button>
               <LanguageSwitcher compact />
-              <Link
-                href="/login"
-                className="btn btn-ghost"
-                style={{ height: 40, padding: "0 18px", fontSize: 14 }}
-              >
+              <Link href="/login" className="nav-btn-login">
                 {t("login")}
               </Link>
-              <Link
-                href="/register"
-                className="btn btn-primary"
-                style={{ height: 40, padding: "0 18px", fontSize: 14 }}
-              >
+              <Link href="/register" className="nav-btn-cta">
                 {t("tryFree")}
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
               </Link>
             </div>
 
@@ -164,12 +155,11 @@ export default function Nav() {
 
         <div className="nav-drawer-cta">
           <LanguageSwitcher />
-          <Link href="/login" className="btn btn-ghost" onClick={close} style={{ width: "100%", justifyContent: "center" }}>
+          <Link href="/login" className="nav-btn-login" onClick={close}>
             {t("login")}
           </Link>
-          <Link href="/register" className="btn btn-primary" onClick={close} style={{ width: "100%", justifyContent: "center" }}>
+          <Link href="/register" className="nav-btn-cta" onClick={close}>
             {t("tryFree")}
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m13 5 7 7-7 7"/></svg>
           </Link>
         </div>
       </aside>
