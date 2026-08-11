@@ -8163,7 +8163,7 @@ html, body { overflow-x: clip; }
 }
 
 .landing .blog-hero-title {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-instrument-sans), system-ui, sans-serif;
   font-size: clamp(40px, 6vw, 64px);
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -8338,7 +8338,7 @@ html, body { overflow-x: clip; }
 }
 
 .landing .blog-article-title {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-instrument-sans), system-ui, sans-serif;
   font-size: clamp(32px, 5vw, 48px);
   font-weight: 700;
   letter-spacing: -0.025em;
@@ -8370,7 +8370,7 @@ html, body { overflow-x: clip; }
 }
 
 .landing .blog-prose h2 {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-instrument-sans), system-ui, sans-serif;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -8380,7 +8380,7 @@ html, body { overflow-x: clip; }
 }
 
 .landing .blog-prose h3 {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-instrument-sans), system-ui, sans-serif;
   font-size: 21px;
   font-weight: 600;
   letter-spacing: -0.015em;
@@ -8560,7 +8560,7 @@ html, body { overflow-x: clip; }
 }
 
 .landing .blog-article-cta h3 {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-instrument-sans), system-ui, sans-serif;
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.015em;
