@@ -439,6 +439,24 @@ body {
      (e.g. .journey-sticky, .hcc-sticky). Apply to body instead. */
 }
 
+/* Variante sombre, activee via [data-theme="dark"] sur <html> (voir le
+   script d'init dans layout.tsx). Meme cle localStorage "fidlify-theme"
+   que le bouton clair/sombre de la landing bundlee et celui du dashboard :
+   basculer l'un met a jour les deux au prochain chargement. Valeurs
+   extraites en direct du DOM (mode sombre de la landing bundlee). */
+html[data-theme="dark"] .landing {
+  --ovr: 255 255 255;
+  --bg-rgb: 11 13 16;
+  --bg: #0b0d10;
+  --bg-2: #101215;
+  --bg-3: #16181c;
+  --ink: #ffffff;
+  --ink-2: #c9ccc3;
+  --ink-3: #8a8e84;
+  --ink-4: #565a52;
+  --shadow-card: 0 1px 0 rgb(var(--ovr) / 0.04) inset, 0 30px 60px -30px rgba(0,0,0,0.7);
+}
+
 /* Hide horizontal overflow on the page root, NOT on .landing,
    so sticky positioning still works inside .landing. */
 html, body { overflow-x: clip; }
@@ -638,6 +656,23 @@ html, body { overflow-x: clip; }
 .landing .nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .landing .nav-burger.open span:nth-child(2) { opacity: 0; }
 .landing .nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Bouton clair/sombre ── */
+.landing .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  background: rgb(var(--ovr) / 0.04);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+  flex: 0 0 auto;
+  transition: background .2s, border-color .2s;
+}
+.landing .theme-toggle:hover { background: rgb(var(--ovr) / 0.07); border-color: rgb(var(--ovr) / 0.2); }
 
 /* ── Drawer backdrop ── */
 .nav-backdrop {

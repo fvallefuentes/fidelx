@@ -45,7 +45,10 @@
       "tryFree": "Essayer gratuitement",
       "openMenu": "Ouvrir le menu",
       "closeMenu": "Fermer le menu",
-      "navigation": "Navigation"
+      "navigation": "Navigation",
+      "darkMode": "Passer en mode sombre",
+      "lightMode": "Passer en mode clair",
+      "themeToggle": "Mode clair / sombre"
     },
     "hero": {
       "eyebrow": "FIDLIFY · FAITES DÉFILER",

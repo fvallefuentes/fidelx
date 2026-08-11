@@ -3,12 +3,35 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { Moon, Sun } from "lucide-react";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import LogoMark from "./LogoMark";
 
+const THEME_KEY = "fidlify-theme";
+
 export default function Nav() {
   const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState(false);
   const t = useTranslations("Landing.nav");
+
+  // Lu une fois montee : la valeur reelle vient du script d'init dans
+  // layout.tsx (evite le flash), on se contente ici de refleter l'etat.
+  useEffect(() => {
+    setDark(document.documentElement.getAttribute("data-theme") === "dark");
+  }, []);
+
+  const toggleTheme = () => {
+    setDark((prev) => {
+      const next = !prev;
+      document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
+      try {
+        localStorage.setItem(THEME_KEY, next ? "dark" : "light");
+      } catch {
+        /* localStorage indispo (mode prive strict) — le choix ne persiste pas */
+      }
+      return next;
+    });
+  };
 
   // Close drawer on Escape, lock body scroll while open
   useEffect(() => {
@@ -49,6 +72,15 @@ export default function Nav() {
 
             {/* Desktop CTAs */}
             <div className="nav-cta">
+              <button
+                type="button"
+                className="theme-toggle"
+                onClick={toggleTheme}
+                aria-label={dark ? t("lightMode") : t("darkMode")}
+                title={t("themeToggle")}
+              >
+                {dark ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
               <LanguageSwitcher compact />
               <Link
                 href="/login"
@@ -100,14 +132,25 @@ export default function Nav() {
             <LogoMark size={36} />
             <span>FIDLIFY</span>
           </Link>
-          <button
-            type="button"
-            className="nav-drawer-close"
-            aria-label={t("closeMenu")}
-            onClick={close}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={dark ? t("lightMode") : t("darkMode")}
+              title={t("themeToggle")}
+            >
+              {dark ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              type="button"
+              className="nav-drawer-close"
+              aria-label={t("closeMenu")}
+              onClick={close}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
         </div>
 
         <nav className="nav-drawer-links">

@@ -45,7 +45,10 @@
       "tryFree": "Kostenlos testen",
       "openMenu": "Menü öffnen",
       "closeMenu": "Menü schließen",
-      "navigation": "Navigation"
+      "navigation": "Navigation",
+      "darkMode": "Dunklen Modus aktivieren",
+      "lightMode": "Hellen Modus aktivieren",
+      "themeToggle": "Heller / dunkler Modus"
     },
     "hero": {
       "eyebrow": "FIDLIFY · SCROLLEN",

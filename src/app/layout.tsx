@@ -119,6 +119,15 @@ export default async function RootLayout({
       className={`h-full ${geistSans.variable} ${geistMono.variable} ${jetbrainsMono.variable} ${instrumentSans.variable}`}
     >
       <body className="h-full antialiased">
+        {/* Applique le theme sombre avant le premier rendu (evite le flash
+            clair -> sombre). Meme cle que le toggle de la landing bundlee
+            et celui du dashboard : "fidlify-theme". */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('fidlify-theme')==='dark'){document.documentElement.setAttribute('data-theme','dark')}}catch(e){}",
+          }}
+        />
         <OrganizationJsonLd />
         <SoftwareApplicationJsonLd />
         <NextIntlClientProvider>

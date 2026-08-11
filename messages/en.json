@@ -45,7 +45,10 @@
       "tryFree": "Try for free",
       "openMenu": "Open menu",
       "closeMenu": "Close menu",
-      "navigation": "Navigation"
+      "navigation": "Navigation",
+      "darkMode": "Switch to dark mode",
+      "lightMode": "Switch to light mode",
+      "themeToggle": "Light / dark mode"
     },
     "hero": {
       "eyebrow": "FIDLIFY · SCROLL",
