@@ -3156,6 +3156,10 @@ document.addEventListener('DOMContentLoaded', async function() {
       else root.appendChild(section);
     }
 
+    // Nav de base deja presente des le depliage : pas besoin d'attendre
+    // les 900ms des sections lourdes pour afficher Tarifs/Blog.
+    window.setTimeout(injectPricingNavLink, 10);
+
     window.setTimeout(function() {
       restoreSeoHead();
       surveillerAlt();
