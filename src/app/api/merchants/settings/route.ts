@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateGoogleWalletClass } from "@/lib/wallet/google";
-import { notifyPassUpdate } from "@/lib/wallet/push";
 import {
   countStampsThisMonth,
   getEffectiveMaxCampaignsPerMonth,
@@ -118,6 +117,29 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Couleur de notification invalide" }, { status: 400 });
   }
 
+  const currentAppearance = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      notificationDefaultLogo: true,
+      notificationDefaultBgColor: true,
+    },
+  });
+  if (!currentAppearance) {
+    return NextResponse.json({ error: "Compte introuvable" }, { status: 404 });
+  }
+
+  const nextNotificationLogo =
+    typeof notificationDefaultLogo === "string"
+      ? notificationDefaultLogo || null
+      : currentAppearance.notificationDefaultLogo;
+  const nextNotificationBgColor =
+    typeof notificationDefaultBgColor === "string"
+      ? notificationDefaultBgColor || null
+      : currentAppearance.notificationDefaultBgColor;
+  const notificationAppearanceChanged =
+    nextNotificationLogo !== currentAppearance.notificationDefaultLogo ||
+    nextNotificationBgColor !== currentAppearance.notificationDefaultBgColor;
+
   const user = await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -134,28 +156,17 @@ export async function PUT(req: Request) {
     },
   });
 
-  if (
-    typeof notificationDefaultLogo === "string" ||
-    typeof notificationDefaultBgColor === "string"
-  ) {
-    const [programs, cards] = await Promise.all([
-      prisma.loyaltyProgram.findMany({
-        where: { merchantId: session.user.id, isActive: true },
-        select: { id: true },
-      }),
-      prisma.loyaltyCard.findMany({
-        where: {
-          program: { merchantId: session.user.id },
-          status: { in: ["ACTIVE", "REWARD_PENDING"] },
-        },
-        select: { id: true },
-      }),
-    ]);
+  if (notificationAppearanceChanged) {
+    const programs = await prisma.loyaltyProgram.findMany({
+      where: { merchantId: session.user.id, isActive: true },
+      select: { id: true },
+    });
+
+    // Ne jamais pousser toutes les cartes Apple pour un changement visuel :
+    // Wallet peut alors rejouer le changeMessage mémorisé comme notification.
+    // L'icône Apple sera récupérée à la prochaine vraie mise à jour du pass.
     void Promise.allSettled(
-      [
-        ...programs.map((program) => updateGoogleWalletClass(program.id)),
-        ...cards.map((card) => notifyPassUpdate(card.id)),
-      ]
+      programs.map((program) => updateGoogleWalletClass(program.id))
     ).catch(() => {});
   }
 
