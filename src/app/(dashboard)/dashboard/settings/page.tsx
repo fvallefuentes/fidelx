@@ -79,7 +79,13 @@ export default function SettingsPage() {
   useEffect(() => {
     fetch("/api/merchants/settings")
       .then((r) => r.json())
-      .then(setSettings)
+      .then((data: MerchantSettings) =>
+        setSettings({
+          ...data,
+          notificationDefaultBgColor:
+            data.notificationDefaultBgColor || "#ffffff",
+        })
+      )
       .finally(() => setLoading(false));
     fetch("/api/merchants/staff")
       .then((r) => r.json())
@@ -103,7 +109,8 @@ export default function SettingsPage() {
         currency: settings.currency,
         weeklySummaryEmailEnabled: settings.weeklySummaryEmailEnabled,
         notificationDefaultLogo: settings.notificationDefaultLogo || "",
-        notificationDefaultBgColor: settings.notificationDefaultBgColor || "",
+        notificationDefaultBgColor:
+          settings.notificationDefaultBgColor || "#ffffff",
       }),
     });
 
@@ -280,8 +287,6 @@ export default function SettingsPage() {
     MULTI_SITE: "bg-orange-100 text-orange-800",
   };
   const effectivePlan = settings?.planState || settings?.plan || "FREE";
-  const transparentPreviewBackground =
-    "linear-gradient(45deg, #e5e7eb 25%, transparent 25%), linear-gradient(-45deg, #e5e7eb 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e7eb 75%), linear-gradient(-45deg, transparent 75%, #e5e7eb 75%)";
   const planDetails: Record<
     string,
     { price: string; description: string; highlights: string[] }
@@ -500,11 +505,7 @@ export default function SettingsPage() {
                       alt="Logo notification"
                       className="h-14 w-14 rounded-lg border object-contain p-1"
                       style={{
-                        background:
-                          settings.notificationDefaultBgColor || transparentPreviewBackground,
                         backgroundColor: settings.notificationDefaultBgColor || "#ffffff",
-                        backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0",
-                        backgroundSize: settings.notificationDefaultBgColor ? undefined : "12px 12px",
                       }}
                     />
                   )}
@@ -542,7 +543,7 @@ export default function SettingsPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <input
                     type="color"
-                    value={settings?.notificationDefaultBgColor || "#1a1a2e"}
+                    value={settings?.notificationDefaultBgColor || "#ffffff"}
                     onChange={(e) =>
                       setSettings((s) =>
                         s ? { ...s, notificationDefaultBgColor: e.target.value } : s
@@ -552,7 +553,7 @@ export default function SettingsPage() {
                     aria-label="Couleur de fond de l'icône Apple Wallet"
                   />
                   <Input
-                    value={settings?.notificationDefaultBgColor || ""}
+                    value={settings?.notificationDefaultBgColor || "#ffffff"}
                     onChange={(e) =>
                       setSettings((s) =>
                         s ? { ...s, notificationDefaultBgColor: e.target.value } : s
@@ -564,30 +565,16 @@ export default function SettingsPage() {
                   />
                   <Button
                     type="button"
-                    variant={!settings?.notificationDefaultBgColor ? "default" : "outline"}
+                    variant="outline"
                     size="sm"
                     onClick={() =>
                       setSettings((s) =>
-                        s ? { ...s, notificationDefaultBgColor: null } : s
+                        s ? { ...s, notificationDefaultBgColor: "#ffffff" } : s
                       )
                     }
                   >
-                    Fond transparent
+                    Réinitialiser en blanc
                   </Button>
-                  {settings?.notificationDefaultBgColor && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setSettings((s) =>
-                          s ? { ...s, notificationDefaultBgColor: "#1a1a2e" } : s
-                        )
-                      }
-                    >
-                      Réinitialiser
-                    </Button>
-                  )}
                 </div>
                 <p className="text-xs text-gray-400">
                   Apple conserve la forme arrondie et le fond de la bannière. Cette couleur s&apos;applique uniquement derrière le logo.
@@ -633,7 +620,7 @@ export default function SettingsPage() {
                         style={{
                           borderRadius: 12,
                           backgroundColor:
-                            settings?.notificationDefaultBgColor || "transparent",
+                            settings?.notificationDefaultBgColor || "#ffffff",
                         }}
                       >
                         {settings?.notificationDefaultLogo ? (
@@ -678,7 +665,7 @@ export default function SettingsPage() {
                           className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-[#202124]"
                           style={{
                             backgroundColor:
-                              settings?.notificationDefaultBgColor || "#e7eaf0",
+                              settings?.notificationDefaultBgColor || "#ffffff",
                           }}
                         >
                           {settings?.notificationDefaultLogo ? (

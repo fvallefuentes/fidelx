@@ -370,7 +370,7 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
           passData.notificationIconBgColor || ""
         )
           ? passData.notificationIconBgColor!
-          : { r: 0, g: 0, b: 0, alpha: 0 };
+          : "#ffffff";
         const { isOpaque } = await sharp(iconBuf).stats();
 
         const renderNotificationIcon = async (size: number) => {
@@ -378,9 +378,13 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
           // l'arrondi appliqué par iOS. Une image opaque conserve son cadrage.
           const inset = isOpaque ? 0 : Math.max(2, Math.round(size * 0.12));
           const foreground = await sharp(iconBuf)
+            // Aplatir avant le redimensionnement évite que les pixels RVB
+            // cachés des zones transparentes créent des traits sombres.
+            .flatten({ background: iconBgColor })
             .resize(size - inset * 2, size - inset * 2, {
               fit: isOpaque ? "cover" : "contain",
               position: "center",
+              background: iconBgColor,
             })
             .png()
             .toBuffer();
