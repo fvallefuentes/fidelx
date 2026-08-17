@@ -100,7 +100,7 @@ export default async function BlogPostPage({
       <div className="ambient" />
       <div className="grid-overlay" />
       <div style={{ position: "relative", zIndex: 1 }}>
-        <Nav />
+        <Nav variant="handoff" />
 
         <article className="blog-article">
           <div className="wrap">

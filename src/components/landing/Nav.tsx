@@ -9,15 +9,38 @@ import LogoMark from "./LogoMark";
 
 const THEME_KEY = "fidlify-theme";
 
-export default function Nav() {
+type NavVariant = "default" | "handoff";
+
+export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const t = useTranslations("Landing.nav");
+  const isHandoff = variant === "handoff";
+  const handoffLanding = "/design-handoff/fidlify-landing/index.html";
+  const links = isHandoff
+    ? [
+        { href: `${handoffLanding}#editeur`, label: t("personalization") },
+        { href: `${handoffLanding}#adoption`, label: t("howItWorks") },
+        { href: `${handoffLanding}#features`, label: t("features") },
+        { href: `${handoffLanding}#pricing`, label: t("pricing") },
+        { href: "/blog", label: t("blog") },
+      ]
+    : [
+        { href: "/#solution", label: t("solution") },
+        { href: "/#features", label: t("features") },
+        { href: "/#demo", label: t("demo") },
+        { href: "/#pricing", label: t("pricing") },
+        { href: "/#faq", label: "FAQ" },
+        { href: "/blog", label: t("blog") },
+      ];
 
   // Lu une fois montee : la valeur reelle vient du script d'init dans
   // layout.tsx (evite le flash), on se contente ici de refleter l'etat.
   useEffect(() => {
-    setDark(document.documentElement.getAttribute("data-theme") === "dark");
+    const frame = window.requestAnimationFrame(() => {
+      setDark(document.documentElement.getAttribute("data-theme") === "dark");
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const toggleTheme = () => {
@@ -52,22 +75,19 @@ export default function Nav() {
 
   return (
     <>
-      <nav className="nav">
+      <nav className={`nav${isHandoff ? " nav-handoff" : ""}`}>
         <div className="wrap">
           <div className="nav-inner">
-            <Link href="/" className="brand" onClick={close}>
-              <LogoMark size={40} />
-              <span>FIDLIFY</span>
+            <Link href={isHandoff ? handoffLanding : "/"} className="brand" onClick={close}>
+              <LogoMark size={isHandoff ? 30 : 40} />
+              <span>{isHandoff ? "Fidlify" : "FIDLIFY"}</span>
             </Link>
 
             {/* Desktop links — URLs absolues pour fonctionner depuis /blog aussi */}
             <div className="nav-links">
-              <Link href="/#solution">{t("solution")}</Link>
-              <Link href="/#features">{t("features")}</Link>
-              <Link href="/#demo">{t("demo")}</Link>
-              <Link href="/#pricing">{t("pricing")}</Link>
-              <Link href="/#faq">FAQ</Link>
-              <Link href="/blog">{t("blog")}</Link>
+              {links.map((link) => (
+                <Link key={link.href} href={link.href}>{link.label}</Link>
+              ))}
             </div>
 
             {/* Desktop CTAs */}
@@ -119,9 +139,9 @@ export default function Nav() {
         aria-label={t("navigation")}
       >
         <div className="nav-drawer-head">
-          <Link href="/" className="brand" onClick={close}>
+          <Link href={isHandoff ? handoffLanding : "/"} className="brand" onClick={close}>
             <LogoMark size={36} />
-            <span>FIDLIFY</span>
+            <span>{isHandoff ? "Fidlify" : "FIDLIFY"}</span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <button
@@ -145,12 +165,9 @@ export default function Nav() {
         </div>
 
         <nav className="nav-drawer-links">
-          <Link href="/#solution" onClick={close}>{t("solution")}</Link>
-          <Link href="/#features" onClick={close}>{t("features")}</Link>
-          <Link href="/#demo" onClick={close}>{t("demo")}</Link>
-          <Link href="/#pricing" onClick={close}>{t("pricing")}</Link>
-          <Link href="/#faq" onClick={close}>FAQ</Link>
-          <Link href="/blog" onClick={close}>{t("blog")}</Link>
+          {links.map((link) => (
+            <Link key={link.href} href={link.href} onClick={close}>{link.label}</Link>
+          ))}
         </nav>
 
         <div className="nav-drawer-cta">

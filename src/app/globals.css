@@ -607,6 +607,15 @@ html, body { overflow-x: clip; }
 .landing .nav-links a { color: var(--ink-2); font-size: 14px; transition: color .2s; }
 .landing .nav-links a:hover { color: var(--ink); }
 .landing .nav-cta { display: flex; align-items: center; gap: 12px; }
+.landing .nav-handoff .wrap { max-width: none; padding: 0 44px; }
+.landing .nav-handoff .nav-inner { height: 70px; }
+.landing .nav-handoff .brand {
+  gap: 9px;
+  font-family: var(--font-instrument-sans, ui-sans-serif, system-ui, sans-serif);
+  font-size: 18px;
+  letter-spacing: 0;
+}
+.landing .nav-handoff .nav-links { gap: 34px; }
 
 .language-switcher {
   display: inline-flex;
@@ -792,6 +801,7 @@ html, body { overflow-x: clip; }
   .landing .nav-links { display: none; }
   .landing .nav-cta { display: none; }
   .landing .nav-burger { display: flex; }
+  .landing .nav-handoff .wrap { padding: 0 18px; }
 }
 
 /* ── Section head ── */

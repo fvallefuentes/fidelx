@@ -36,6 +36,8 @@
   "Landing": {
     "nav": {
       "solution": "Solution",
+      "personalization": "Personalization",
+      "howItWorks": "How it works",
       "features": "Features",
       "demo": "Demo",
       "pricing": "Pricing",

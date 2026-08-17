@@ -27,7 +27,7 @@ export default async function BlogIndexPage() {
       <div className="ambient" />
       <div className="grid-overlay" />
       <div style={{ position: "relative", zIndex: 1 }}>
-        <Nav />
+        <Nav variant="handoff" />
 
         <section className="blog-hero">
           <div className="wrap">
