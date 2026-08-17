@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, MapPin, Mail, Bell } from "lucide-react";
+import { Check, Building2, Globe, CreditCard, TrendingUp, Users, Trash2, MapPin, Mail, Bell, WalletCards } from "lucide-react";
 import { PLAN_LABELS } from "@/lib/plan-labels";
 import { LocationMap, LocationPicker } from "@/components/settings/LocationPicker";
 
@@ -53,6 +53,7 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [notificationLogoError, setNotificationLogoError] = useState("");
+  const [walletIconPreview, setWalletIconPreview] = useState<"APPLE" | "GOOGLE">("APPLE");
 
   // Establishment form
   const [estName, setEstName] = useState("");
@@ -479,7 +480,7 @@ export default function SettingsPage() {
               Notifications Wallet
             </CardTitle>
             <CardDescription>
-              Définissez l&apos;apparence utilisée par défaut dans vos campagnes.
+              Configurez l&apos;icône affichée dans les notifications Apple Wallet.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -490,7 +491,7 @@ export default function SettingsPage() {
                 </div>
               )}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Logo par défaut</label>
+                <label className="text-sm font-medium">Logo de l&apos;icône</label>
                 <div className="flex flex-wrap items-center gap-3">
                   {settings?.notificationDefaultLogo && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -532,12 +533,12 @@ export default function SettingsPage() {
                   <p className="text-xs text-red-500">{notificationLogoError}</p>
                 )}
                 <p className="text-xs text-gray-400">
-                  PNG / JPG / SVG / WebP, max 500 KB. Utilisé automatiquement par les nouvelles campagnes.
+                  PNG transparent recommandé, max 500 KB. Le logo de la carte n&apos;est pas modifié.
                 </p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Fond par défaut</label>
+                <label className="text-sm font-medium">Fond derrière le logo</label>
                 <div className="flex flex-wrap items-center gap-3">
                   <input
                     type="color"
@@ -548,7 +549,7 @@ export default function SettingsPage() {
                       )
                     }
                     className="h-10 w-14 cursor-pointer rounded-lg border border-gray-300 bg-white p-1"
-                    aria-label="Couleur de fond par défaut des notifications"
+                    aria-label="Couleur de fond de l'icône Apple Wallet"
                   />
                   <Input
                     value={settings?.notificationDefaultBgColor || ""}
@@ -580,7 +581,7 @@ export default function SettingsPage() {
                       size="sm"
                       onClick={() =>
                         setSettings((s) =>
-                          s ? { ...s, notificationDefaultBgColor: null } : s
+                          s ? { ...s, notificationDefaultBgColor: "#1a1a2e" } : s
                         )
                       }
                     >
@@ -589,7 +590,135 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <p className="text-xs text-gray-400">
-                  Chaque campagne reprend ce fond, sauf si vous choisissez une couleur spécifique dans la campagne.
+                  Apple conserve la forme arrondie et le fond de la bannière. Cette couleur s&apos;applique uniquement derrière le logo.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div
+                  className="grid grid-cols-2 rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-white/10 dark:bg-white/5"
+                  role="group"
+                  aria-label="Type d'aperçu Wallet"
+                >
+                  {(["APPLE", "GOOGLE"] as const).map((wallet) => (
+                    <button
+                      key={wallet}
+                      type="button"
+                      onClick={() => setWalletIconPreview(wallet)}
+                      className={`h-9 rounded-md text-xs font-semibold transition-colors ${
+                        walletIconPreview === wallet
+                          ? "bg-[#D4FF4E] text-black"
+                          : "text-gray-500 hover:text-black dark:text-gray-400 dark:hover:text-white"
+                      }`}
+                    >
+                      {wallet === "APPLE" ? "Apple Wallet" : "Google Wallet"}
+                    </button>
+                  ))}
+                </div>
+
+                {walletIconPreview === "APPLE" ? (
+                  <div
+                    className="rounded-lg bg-[#25262b] p-4"
+                    style={{ color: "#ffffff" }}
+                  >
+                    <div
+                      className="mb-3 text-[11px] font-medium uppercase tracking-wider"
+                      style={{ color: "rgba(255,255,255,0.58)" }}
+                    >
+                      Notification Apple
+                    </div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <div
+                        className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden"
+                        style={{
+                          borderRadius: 12,
+                          backgroundColor:
+                            settings?.notificationDefaultBgColor || "transparent",
+                        }}
+                      >
+                        {settings?.notificationDefaultLogo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={settings.notificationDefaultLogo}
+                            alt="Aperçu de l'icône Apple Wallet"
+                            className="h-[76%] w-[76%] object-contain"
+                          />
+                        ) : (
+                          <Bell className="h-6 w-6 text-white/70" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-3 text-[11px] text-white/55">
+                          <span>WALLET</span>
+                          <span>maintenant</span>
+                        </div>
+                        <div
+                          className="truncate text-sm font-semibold"
+                          style={{ color: "#ffffff" }}
+                        >
+                          {settings?.name || "Votre commerce"}
+                        </div>
+                        <div
+                          className="truncate text-sm"
+                          style={{ color: "rgba(255,255,255,0.76)" }}
+                        >
+                          Votre notification apparaîtra ici.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-center rounded-lg bg-[#e9edf3] p-4 dark:bg-[#202126]">
+                    <div
+                      className="w-full max-w-[360px] rounded-lg border border-[#d7dbe2] bg-white p-4 shadow-sm"
+                      style={{ color: "#17191d" }}
+                    >
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div
+                          className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-[#202124]"
+                          style={{
+                            backgroundColor:
+                              settings?.notificationDefaultBgColor || "#e7eaf0",
+                          }}
+                        >
+                          {settings?.notificationDefaultLogo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={settings.notificationDefaultLogo}
+                              alt="Aperçu du logo dans la notification Google Wallet"
+                              className="h-[78%] w-[78%] object-contain"
+                            />
+                          ) : (
+                            <WalletCards className="h-6 w-6" aria-hidden="true" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className="flex items-center justify-between gap-3 text-xs"
+                            style={{ color: "#5f6368" }}
+                          >
+                            <span>Google Wallet</span>
+                            <span>maintenant</span>
+                          </div>
+                          <div className="mt-1 truncate text-base font-semibold">
+                            {settings?.name || "Votre commerce"}
+                          </div>
+                          <div
+                            className="mt-1 text-sm"
+                            style={{ color: "#3c4043" }}
+                          >
+                            Votre notification apparaîtra ici.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-xs text-gray-400">
+                  {walletIconPreview === "APPLE"
+                    ? "Apple utilise cette icône pour les notifications Wallet."
+                    : "Aperçu indicatif : Google Wallet peut adapter ou remplacer cette icône selon Android."}
                 </p>
               </div>
 
@@ -602,7 +731,7 @@ export default function SettingsPage() {
                 ) : saving ? (
                   "Enregistrement..."
                 ) : (
-                  "Enregistrer l'apparence"
+                  "Enregistrer l'icône"
                 )}
               </Button>
             </form>

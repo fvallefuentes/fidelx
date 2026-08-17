@@ -77,6 +77,7 @@ interface PassData {
   notificationMessage?: string | null;
   logoData?: string | null; // data URL "data:image/png;base64,..."
   notificationIconData?: string | null;
+  notificationIconBgColor?: string | null;
   heroImage?: string | null; // data URL — pour POINTS, remplace le strip à pastilles
   programType?: string;
   pointsTarget?: number; // pour POINTS : seuil pour la récompense
@@ -101,6 +102,7 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
               plan: true,
               testMode: true,
               notificationDefaultLogo: true,
+              notificationDefaultBgColor: true,
             },
           },
           establishment: true,
@@ -161,6 +163,8 @@ export async function generateApplePass(cardId: string): Promise<Buffer | null> 
     // utilise toujours sa propre icône Wallet pour les notifications.
     logoData: (design.logoData as string) || null,
     notificationIconData: card.program.merchant.notificationDefaultLogo || null,
+    notificationIconBgColor:
+      card.program.merchant.notificationDefaultBgColor || null,
     heroImage: (design.heroImage as string) || null,
     programType: card.program.type,
     pointsTarget:
@@ -362,9 +366,43 @@ async function generateSignedPass(passData: PassData): Promise<Buffer> {
 
     if (iconBuf) {
       try {
-        const icon1x = await sharp(iconBuf).resize(29, 29, { fit: "cover", position: "center" }).png().toBuffer();
-        const icon2x = await sharp(iconBuf).resize(58, 58, { fit: "cover", position: "center" }).png().toBuffer();
-        const icon3x = await sharp(iconBuf).resize(87, 87, { fit: "cover", position: "center" }).png().toBuffer();
+        const iconBgColor = /^#[0-9a-f]{6}$/i.test(
+          passData.notificationIconBgColor || ""
+        )
+          ? passData.notificationIconBgColor!
+          : { r: 0, g: 0, b: 0, alpha: 0 };
+        const { isOpaque } = await sharp(iconBuf).stats();
+
+        const renderNotificationIcon = async (size: number) => {
+          // Un logo transparent est légèrement inset pour rester lisible après
+          // l'arrondi appliqué par iOS. Une image opaque conserve son cadrage.
+          const inset = isOpaque ? 0 : Math.max(2, Math.round(size * 0.12));
+          const foreground = await sharp(iconBuf)
+            .resize(size - inset * 2, size - inset * 2, {
+              fit: isOpaque ? "cover" : "contain",
+              position: "center",
+            })
+            .png()
+            .toBuffer();
+
+          return sharp({
+            create: {
+              width: size,
+              height: size,
+              channels: 4,
+              background: iconBgColor,
+            },
+          })
+            .composite([{ input: foreground, gravity: "center" }])
+            .png()
+            .toBuffer();
+        };
+
+        const [icon1x, icon2x, icon3x] = await Promise.all([
+          renderNotificationIcon(29),
+          renderNotificationIcon(58),
+          renderNotificationIcon(87),
+        ]);
         pass.addBuffer("icon.png", icon1x);
         pass.addBuffer("icon@2x.png", icon2x);
         pass.addBuffer("icon@3x.png", icon3x);
