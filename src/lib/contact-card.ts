@@ -66,7 +66,7 @@ export function buildVCard(card: {
   address: string | null;
   whatsapp: string | null;
   bookingUrl: string | null;
-}) {
+}, photo?: { base64: string; type: "JPEG" | "PNG" }) {
   const lines = [
     "BEGIN:VCARD",
     "VERSION:3.0",
@@ -76,6 +76,9 @@ export function buildVCard(card: {
   ];
 
   if (card.jobTitle) lines.push(`TITLE:${escapeVCard(card.jobTitle)}`);
+  if (photo?.base64) {
+    lines.push(`PHOTO;ENCODING=b;TYPE=${photo.type}:${photo.base64}`);
+  }
   if (card.phone) lines.push(`TEL;TYPE=WORK,VOICE:${escapeVCard(card.phone)}`);
   if (card.email) lines.push(`EMAIL;TYPE=WORK:${escapeVCard(card.email)}`);
   if (card.website) lines.push(`URL:${escapeVCard(normalizeWebUrl(card.website))}`);
@@ -89,5 +92,14 @@ export function buildVCard(card: {
   }
 
   lines.push("END:VCARD");
-  return `${lines.join("\r\n")}\r\n`;
+  return `${lines.map(foldVCardLine).join("\r\n")}\r\n`;
+}
+
+function foldVCardLine(line: string) {
+  if (line.length <= 75) return line;
+  const chunks: string[] = [];
+  for (let index = 0; index < line.length; index += 74) {
+    chunks.push(`${index === 0 ? "" : " "}${line.slice(index, index + 74)}`);
+  }
+  return chunks.join("\r\n");
 }

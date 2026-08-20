@@ -33,11 +33,12 @@ describe("contact card", () => {
       address: "Rue du Lac 1; Lausanne",
       whatsapp: "+41 79 123 45 67",
       bookingUrl: null,
-    });
+    }, { base64: "YWJj", type: "JPEG" });
 
     expect(vcard).toContain("BEGIN:VCARD\r\nVERSION:3.0");
     expect(vcard).toContain("ORG:Atelier\\, Léa");
     expect(vcard).toContain("URL:https://atelier-lea.ch/");
+    expect(vcard).toContain("PHOTO;ENCODING=b;TYPE=JPEG:YWJj");
     expect(vcard).toContain(`https://wa.me/${digitsOnly("+41 79 123 45 67")}`);
     expect(vcard.endsWith("END:VCARD\r\n")).toBe(true);
   });

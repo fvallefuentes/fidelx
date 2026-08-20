@@ -304,7 +304,7 @@ export default function ContactCardPage() {
             <span><strong>Identité visuelle</strong><small>Logo recommandé, portrait facultatif</small></span>
           </div>
           <ImageField label="Logo du commerce" value={card.logoData} onChange={(value) => change("logoData", value)} hint="PNG, JPG ou WebP, 500 Ko maximum" />
-          <ImageField label="Portrait ou photo" value={card.photoData} onChange={(value) => change("photoData", value)} hint="Optionnel, cadrage carré recommandé" />
+          <ImageField label="Photo de contact" value={card.photoData} onChange={(value) => change("photoData", value)} hint="Portrait carré recommandé. Visible dans Wallet et dans la fiche Contacts." />
 
           <div className="contact-color-row">
             {([

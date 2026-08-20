@@ -9073,8 +9073,9 @@ html, body { overflow-x: clip; }
 .public-contact-logo { width: 44px; height: 44px; display: grid; place-items: center; padding: 5px; flex: 0 0 auto; border-radius: 8px; background: rgba(255,255,255,.94); color: #171a13; overflow: hidden; }
 .public-contact-logo img { width: 100%; height: 100%; object-fit: contain; }
 .public-contact-logo svg { width: 19px; height: 19px; }
-.public-contact-photo { width: 100%; height: 185px; object-fit: cover; display: block; }
 .public-contact-pass-body { position: relative; z-index: 1; padding: 36px 26px 28px; }
+.public-contact-photo { position: absolute; top: 30px; right: 24px; width: 92px; height: 92px; object-fit: cover; display: block; border: 3px solid rgba(255,255,255,.72); border-radius: 8px; box-shadow: 0 12px 26px -16px rgba(0,0,0,.7); }
+.public-contact-pass-body.has-photo > span, .public-contact-pass-body.has-photo h1 { max-width: calc(100% - 112px); }
 .public-contact-pass-body > span { font-family: var(--font-jetbrains-mono, monospace); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; }
 .public-contact-pass-body h1 { margin: 8px 0 30px; max-width: 95%; color: inherit; font-size: 34px; line-height: 1.05; letter-spacing: 0; overflow-wrap: anywhere; }
 .public-contact-details { display: flex; flex-direction: column; gap: 12px; }

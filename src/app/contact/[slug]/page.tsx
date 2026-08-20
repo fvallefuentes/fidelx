@@ -47,11 +47,11 @@ export default async function PublicContactCardPage({ params }: { params: Promis
             </span>
             <span>{card.companyName}</span>
           </div>
-          {card.photoData && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="public-contact-photo" src={card.photoData} alt={card.displayName} />
-          )}
-          <div className="public-contact-pass-body">
+          <div className={`public-contact-pass-body ${card.photoData ? "has-photo" : ""}`}>
+            {card.photoData && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="public-contact-photo" src={card.photoData} alt={card.displayName} />
+            )}
             {card.jobTitle && <span style={{ color: card.accentColor }}>{card.jobTitle}</span>}
             <h1>{card.displayName}</h1>
             <div className="public-contact-details">
