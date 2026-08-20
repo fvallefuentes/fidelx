@@ -16,6 +16,7 @@ import {
   LogOut,
   X,
   BarChart2,
+  ContactRound,
 } from "lucide-react";
 import LogoMark from "@/components/landing/LogoMark";
 
@@ -28,6 +29,7 @@ const navigation = [
   { key: "assistant", href: "/dashboard/assistant", icon: Bot },
   { key: "campaigns", href: "/dashboard/campaigns", icon: Bell },
   { key: "qrcode", href: "/dashboard/qrcode", icon: QrCode },
+  { key: "contactCard", href: "/dashboard/contact-card", icon: ContactRound },
   { key: "settings", href: "/dashboard/settings", icon: Settings },
 ];
 

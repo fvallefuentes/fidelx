@@ -284,6 +284,7 @@ model User {
   programs       LoyaltyProgram[]
   campaigns      NotificationCampaign[]
   clientLists    ClientList[]
+  contactCard    ContactCard?
 
   // Parrainage B2B (merchant → merchant)
   merchantReferralLink        MerchantReferralLink?        @relation("MerchantReferrer")
@@ -307,6 +308,69 @@ enum Plan {
   ESSENTIAL
   GROWTH
   MULTI_SITE
+}
+
+// =============================================
+// CARTE DE CONTACT DIGITALE
+// =============================================
+
+/// Fiche publique du commerçant, distribuée sans formulaire via QR code.
+/// Elle est indépendante des programmes de fidélité et peut être ajoutée
+/// dans Apple Wallet, Google Wallet ou les Contacts du téléphone.
+model ContactCard {
+  id          String  @id @default(cuid())
+  merchantId  String  @unique
+  slug        String  @unique
+  displayName String
+  companyName String
+  jobTitle    String?
+  email       String?
+  phone       String?
+  website     String?
+  address     String?
+  whatsapp    String?
+  bookingUrl  String?
+  instagram   String?
+  linkedin    String?
+  logoData    String? @db.Text
+  photoData   String? @db.Text
+  bgColor     String  @default("#14160f")
+  textColor   String  @default("#ffffff")
+  accentColor String  @default("#d4ff4e")
+  isActive    Boolean @default(true)
+
+  merchant User               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  events   ContactCardEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model ContactCardEvent {
+  id        String               @id @default(cuid())
+  cardId    String
+  type      ContactCardEventType
+  createdAt DateTime             @default(now())
+
+  card ContactCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([cardId, createdAt])
+  @@index([type, createdAt])
+}
+
+enum ContactCardEventType {
+  VIEW
+  APPLE_WALLET
+  GOOGLE_WALLET
+  CONTACT_DOWNLOAD
+  PHONE_CLICK
+  EMAIL_CLICK
+  WEBSITE_CLICK
+  WHATSAPP_CLICK
+  DIRECTIONS_CLICK
+  BOOKING_CLICK
 }
 
 // =============================================

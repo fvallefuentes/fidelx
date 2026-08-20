@@ -321,6 +321,7 @@
         "assistant": "Assistant",
         "campaigns": "Campagnes",
         "qrcode": "QR Code",
+        "contactCard": "Carte de contact",
         "referral": "Parrainage",
         "settings": "Paramètres"
       },
@@ -346,6 +347,7 @@
         "campaigns": "Campagnes",
         "scan": "Scanner",
         "qrcode": "QR Code",
+        "contactCard": "Carte de contact",
         "stats": "Statistiques",
         "settings": "Paramètres"
       }

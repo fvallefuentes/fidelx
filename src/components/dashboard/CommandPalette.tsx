@@ -17,6 +17,7 @@ import {
   QrCode,
   Bell,
   Bot,
+  ContactRound,
 } from "lucide-react";
 
 /**
@@ -45,7 +46,7 @@ type SearchResult = {
 };
 
 type NavItem = {
-  key: "dashboard" | "clients" | "programs" | "campaigns" | "assistant" | "scan" | "qrcode" | "stats" | "settings";
+  key: "dashboard" | "clients" | "programs" | "campaigns" | "assistant" | "scan" | "qrcode" | "contactCard" | "stats" | "settings";
   href: string;
   icon: typeof LayoutDashboard;
   keywords: string[];
@@ -59,6 +60,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: "campaigns", href: "/dashboard/campaigns", icon: Megaphone, keywords: ["campagnes", "campaigns", "kampagnen", "notifications"] },
   { key: "scan", href: "/dashboard/scan", icon: ScanLine, keywords: ["scan", "scanner", "qr"] },
   { key: "qrcode", href: "/dashboard/qrcode", icon: QrCode, keywords: ["qr", "qrcode"] },
+  { key: "contactCard", href: "/dashboard/contact-card", icon: ContactRound, keywords: ["carte de contact", "carte de visite", "contact", "vcard", "wallet"] },
   { key: "stats", href: "/dashboard/stats", icon: BarChart2, keywords: ["stats", "statistiques", "statistics", "berichte"] },
   { key: "settings", href: "/dashboard/settings", icon: Settings, keywords: ["paramètres", "settings", "einstellungen", "compte"] },
 ];
