@@ -161,6 +161,25 @@ export default function ContactCardPage() {
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
   const sharePreviewQrRef = useRef<HTMLCanvasElement>(null);
 
+  const qrTargetUrl = useMemo(() => {
+    if (!publicUrl || !card) return publicUrl;
+    if (cardKind !== "share") return publicUrl;
+
+    try {
+      const origin = new URL(publicUrl).origin;
+      return preview === "apple"
+        ? `${origin}/api/wallet/apple/contact/${card.slug}/share.pkpass`
+        : `${origin}/api/wallet/google/contact/${card.slug}/share`;
+    } catch {
+      return publicUrl;
+    }
+  }, [card, cardKind, preview, publicUrl]);
+
+  const qrTitle = cardKind === "share" ? "QR d'ajout Wallet" : "QR de partage";
+  const qrHint = cardKind === "share"
+    ? `À scanner pour ajouter votre carte de partage ${preview === "apple" ? "Apple" : "Google"} Wallet`
+    : "À placer au comptoir, sur une facture ou une affiche";
+
   useEffect(() => {
     fetch("/api/contact-card")
       .then(async (response) => {
@@ -178,13 +197,22 @@ export default function ContactCardPage() {
   }, []);
 
   useEffect(() => {
+    if (!qrTargetUrl) return;
+    const options = {
+      width: 280,
+      margin: 2,
+      color: { dark: "#11140e", light: "#ffffff" },
+    };
+    if (qrCanvasRef.current) void QRCode.toCanvas(qrCanvasRef.current, qrTargetUrl, options);
+  }, [qrTargetUrl]);
+
+  useEffect(() => {
     if (!publicUrl) return;
     const options = {
       width: 280,
       margin: 2,
       color: { dark: "#11140e", light: "#ffffff" },
     };
-    if (qrCanvasRef.current) void QRCode.toCanvas(qrCanvasRef.current, publicUrl, options);
     if (sharePreviewQrRef.current) void QRCode.toCanvas(sharePreviewQrRef.current, publicUrl, options);
   }, [publicUrl, cardKind, preview]);
 
@@ -225,7 +253,7 @@ export default function ContactCardPage() {
   }
 
   async function copyLink() {
-    await navigator.clipboard.writeText(publicUrl);
+    await navigator.clipboard.writeText(qrTargetUrl);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }
@@ -384,15 +412,19 @@ export default function ContactCardPage() {
           <div className="contact-share-block">
             <div className="contact-section-title compact">
               <div><QrCode /></div>
-              <span><strong>QR de partage</strong><small>À placer au comptoir, sur une facture ou une affiche</small></span>
+              <span><strong>{qrTitle}</strong><small>{qrHint}</small></span>
             </div>
             <div className="contact-qr-layout">
               <canvas ref={qrCanvasRef} />
               <div>
-                <p>{publicUrl}</p>
+                <p>{qrTargetUrl}</p>
                 <Button variant="outline" onClick={copyLink}>{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? "Copié" : "Copier le lien"}</Button>
                 <Button variant="outline" onClick={downloadQr}><Download className="h-4 w-4" />Télécharger le QR</Button>
-                <Button variant="ghost" asChild><a href={publicUrl} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" />Voir la page publique</a></Button>
+                <Button variant="ghost" asChild>
+                  <a href={qrTargetUrl} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-4 w-4" />{cardKind === "share" ? "Tester l'ajout Wallet" : "Voir la page publique"}
+                  </a>
+                </Button>
               </div>
             </div>
           </div>
