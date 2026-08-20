@@ -6,7 +6,12 @@ const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID || "";
 const serviceEmail = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL || "";
 const serviceKey = (process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || "").replace(/\\n/g, "\n");
 
-export async function generateContactGoogleWalletLink(slug: string) {
+export type ContactGoogleWalletMode = "recipient" | "share";
+
+export async function generateContactGoogleWalletLink(
+  slug: string,
+  mode: ContactGoogleWalletMode = "recipient"
+) {
   if (!issuerId || !serviceEmail || !serviceKey) return null;
 
   const card = await prisma.contactCard.findUnique({ where: { slug } });
@@ -14,7 +19,9 @@ export async function generateContactGoogleWalletLink(slug: string) {
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
   const classId = `${issuerId}.contact_${card.id}`;
-  const objectId = `${issuerId}.contact_${card.id}`;
+  const objectId = mode === "share"
+    ? `${issuerId}.contact_share_${card.id}`
+    : `${issuerId}.contact_${card.id}`;
   const logoUrl = `${appUrl}/api/contact-card/${card.slug}/logo?v=${card.updatedAt.getTime()}`;
   const links: Array<{ uri: string; description: string; id: string }> = [];
   if (card.phone) links.push({ uri: `tel:${card.phone}`, description: "Appeler", id: "phone" });
@@ -43,6 +50,13 @@ export async function generateContactGoogleWalletLink(slug: string) {
     header: { defaultValue: { language: "fr", value: card.displayName } },
     subheader: card.jobTitle
       ? { defaultValue: { language: "fr", value: card.jobTitle } }
+      : undefined,
+    barcode: mode === "share"
+      ? {
+          type: "QR_CODE",
+          value: `${appUrl}/contact/${card.slug}`,
+          alternateText: "Scanner pour enregistrer le contact",
+        }
       : undefined,
     hexBackgroundColor: card.bgColor,
     logo: {

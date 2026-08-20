@@ -9032,6 +9032,7 @@ html, body { overflow-x: clip; }
 .contact-wallet-preview { width: min(100%, 390px); min-height: 240px; margin: 0 auto; border-radius: 18px; overflow: hidden; padding: 20px; position: relative; box-shadow: 0 24px 45px -28px #000; }
 .contact-wallet-preview.apple { min-height: 510px; border-radius: 14px; }
 .contact-wallet-preview.google { min-height: 280px; border-radius: 22px; }
+.contact-wallet-preview.google.share { min-height: 460px; }
 .contact-wallet-brand { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 10px; position: relative; z-index: 2; }
 .contact-wallet-brand strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: inherit; }
 .contact-wallet-brand small { opacity: .68; font-size: 8px; font-weight: 700; }
