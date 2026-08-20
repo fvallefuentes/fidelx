@@ -15,6 +15,7 @@ import {
   Mail,
   MapPin,
   Phone,
+  QrCode,
   Save,
   Smartphone,
   Trash2,
@@ -151,12 +152,14 @@ export default function ContactCardPage() {
   const [publicUrl, setPublicUrl] = useState("");
   const [stats, setStats] = useState<ContactResponse["stats"]>(emptyStats);
   const [preview, setPreview] = useState<"apple" | "google">("apple");
+  const [appleCardKind, setAppleCardKind] = useState<"recipient" | "share">("recipient");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const qrCanvasRef = useRef<HTMLCanvasElement>(null);
+  const sharePreviewQrRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     fetch("/api/contact-card")
@@ -175,12 +178,14 @@ export default function ContactCardPage() {
   }, []);
 
   useEffect(() => {
-    if (!publicUrl || !qrCanvasRef.current) return;
-    void QRCode.toCanvas(qrCanvasRef.current, publicUrl, {
+    if (!publicUrl) return;
+    const options = {
       width: 280,
       margin: 2,
       color: { dark: "#11140e", light: "#ffffff" },
-    });
+    };
+    if (qrCanvasRef.current) void QRCode.toCanvas(qrCanvasRef.current, publicUrl, options);
+    if (sharePreviewQrRef.current) void QRCode.toCanvas(sharePreviewQrRef.current, publicUrl, options);
   }, [publicUrl]);
 
   const distributionTotal = useMemo(
@@ -324,7 +329,14 @@ export default function ContactCardPage() {
             </div>
           </div>
 
-          <div className={`contact-wallet-preview ${preview}`} style={{ background: card.bgColor, color: card.textColor }}>
+          {preview === "apple" && (
+            <div className="contact-apple-kind-tabs" aria-label="Type de carte Apple Wallet">
+              <button className={appleCardKind === "recipient" ? "active" : ""} onClick={() => setAppleCardKind("recipient")}>Carte client</button>
+              <button className={appleCardKind === "share" ? "active" : ""} onClick={() => setAppleCardKind("share")}><QrCode />Carte de partage</button>
+            </div>
+          )}
+
+          <div className={`contact-wallet-preview ${preview} ${preview === "apple" ? appleCardKind : ""}`} style={{ background: card.bgColor, color: card.textColor }}>
             <div className="contact-wallet-brand">
               <span className="contact-wallet-logo">
                 {card.logoData ? (
@@ -333,7 +345,7 @@ export default function ContactCardPage() {
                 ) : <Building2 />}
               </span>
               <strong>{card.companyName || "Votre commerce"}</strong>
-              <small>{preview === "apple" ? "CONTACT" : "Google Wallet"}</small>
+              <small>{preview === "apple" ? (appleCardKind === "share" ? "PARTAGER" : "CONTACT") : "Google Wallet"}</small>
             </div>
             {card.photoData && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -347,11 +359,31 @@ export default function ContactCardPage() {
                 {card.email && <p><Mail />{card.email}</p>}
               </div>
             </div>
+            {preview === "apple" && appleCardKind === "share" && (
+              <div className="contact-wallet-share-qr">
+                <canvas ref={sharePreviewQrRef} aria-label="QR code vers la carte publique" />
+                <span>Scanner pour enregistrer le contact</span>
+              </div>
+            )}
           </div>
+
+          {preview === "apple" && appleCardKind === "share" && (
+            <div className="contact-owner-pass-cta">
+              <div>
+                <strong>Votre carte de partage</strong>
+                <span>Ajoutez-la à votre iPhone, puis présentez son QR à vos clients.</span>
+              </div>
+              <Button asChild>
+                <a href={`/api/wallet/apple/contact/${card.slug}/share.pkpass`}>
+                  <WalletCards className="h-4 w-4" />Ajouter à Apple Wallet
+                </a>
+              </Button>
+            </div>
+          )}
 
           <div className="contact-share-block">
             <div className="contact-section-title compact">
-              <div><QrCodeIcon /></div>
+              <div><QrCode /></div>
               <span><strong>QR de partage</strong><small>À placer au comptoir, sur une facture ou une affiche</small></span>
             </div>
             <div className="contact-qr-layout">
@@ -368,8 +400,4 @@ export default function ContactCardPage() {
       </div>
     </div>
   );
-}
-
-function QrCodeIcon() {
-  return <ContactRound />;
 }

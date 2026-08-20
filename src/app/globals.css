@@ -9025,7 +9025,12 @@ html, body { overflow-x: clip; }
 .contact-wallet-tabs { display: grid; grid-template-columns: 1fr 1fr; width: 138px; padding: 3px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); }
 .contact-wallet-tabs button { height: 28px; border: 0; border-radius: 5px; background: transparent; color: var(--ink-3); font-size: 10px; font-weight: 700; cursor: pointer; }
 .contact-wallet-tabs button.active { background: var(--accent); color: #11140e; }
+.contact-apple-kind-tabs { width: min(100%, 390px); display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: -6px auto 0; padding: 4px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); }
+.contact-apple-kind-tabs button { min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 5px; background: transparent; color: var(--ink-3); font-size: 11px; font-weight: 700; cursor: pointer; }
+.contact-apple-kind-tabs button svg { width: 14px; height: 14px; }
+.contact-apple-kind-tabs button.active { background: var(--accent-soft); color: var(--ink); }
 .contact-wallet-preview { width: min(100%, 390px); min-height: 240px; margin: 0 auto; border-radius: 18px; overflow: hidden; padding: 20px; position: relative; box-shadow: 0 24px 45px -28px #000; }
+.contact-wallet-preview.apple { min-height: 510px; border-radius: 14px; }
 .contact-wallet-preview.google { min-height: 280px; border-radius: 22px; }
 .contact-wallet-brand { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 10px; position: relative; z-index: 2; }
 .contact-wallet-brand strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: inherit; }
@@ -9034,12 +9039,21 @@ html, body { overflow-x: clip; }
 .contact-wallet-logo img { width: 100%; height: 100%; object-fit: contain; }
 .contact-wallet-logo svg { width: 17px; height: 17px; }
 .contact-wallet-photo { position: absolute; right: 18px; bottom: 18px; width: 78px; height: 78px; object-fit: cover; border-radius: 8px; border: 2px solid rgba(255,255,255,.7); }
+.contact-wallet-preview.apple .contact-wallet-photo { top: 116px; bottom: auto; }
 .contact-wallet-main { margin-top: 46px; max-width: calc(100% - 20px); }
 .contact-wallet-main > span { font-family: var(--font-jetbrains-mono, monospace); font-size: 9px; font-weight: 700; letter-spacing: .08em; }
 .contact-wallet-main h2 { margin: 5px 0 18px; max-width: 85%; color: inherit; font-size: 24px; line-height: 1.08; letter-spacing: 0; overflow-wrap: anywhere; }
 .contact-wallet-main > div { display: flex; flex-wrap: wrap; gap: 8px 18px; }
 .contact-wallet-main p { display: flex; align-items: center; gap: 6px; margin: 0; color: inherit; opacity: .82; font-size: 10px; }
 .contact-wallet-main p svg { width: 12px; height: 12px; }
+.contact-wallet-share-qr { position: absolute; left: 50%; bottom: 24px; display: flex; flex-direction: column; align-items: center; gap: 8px; transform: translateX(-50%); }
+.contact-wallet-share-qr canvas { width: 132px !important; height: 132px !important; border: 7px solid #fff; border-radius: 8px; background: #fff; }
+.contact-wallet-share-qr span { width: 220px; overflow: hidden; color: inherit; opacity: .8; font-size: 9px; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.contact-owner-pass-cta { width: min(100%, 390px); display: flex; flex-direction: column; gap: 12px; margin: -4px auto 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-2); }
+.contact-owner-pass-cta > div { display: flex; flex-direction: column; gap: 3px; }
+.contact-owner-pass-cta strong { color: var(--ink); font-size: 12px; }
+.contact-owner-pass-cta span { color: var(--ink-3); font-size: 10px; line-height: 1.45; }
+.contact-owner-pass-cta a { width: 100%; gap: 8px; }
 .contact-share-block { border-top: 1px solid var(--line); padding-top: 18px; }
 .contact-qr-layout { display: grid; grid-template-columns: 150px 1fr; gap: 15px; align-items: center; margin-top: 14px; }
 .contact-qr-layout canvas { width: 150px !important; height: 150px !important; border-radius: 7px; }

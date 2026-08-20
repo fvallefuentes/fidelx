@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { contactCardPublicUrl } from "@/lib/contact-card";
+
+export type ContactApplePassMode = "recipient" | "share";
 
 function decodeDataUrl(dataUrl?: string | null) {
   const match = dataUrl?.match(/^data:image\/[\w+.-]+;base64,(.+)$/);
@@ -10,20 +13,25 @@ function decodeDataUrl(dataUrl?: string | null) {
   }
 }
 
-export async function generateContactApplePass(slug: string) {
+export async function generateContactApplePass(
+  slug: string,
+  mode: ContactApplePassMode = "recipient"
+) {
   const card = await prisma.contactCard.findUnique({ where: { slug } });
   if (!card || !card.isActive) return null;
 
   if (!process.env.APPLE_PASS_TYPE_ID) {
     return Buffer.from(JSON.stringify({
       type: "generic",
-      serialNumber: `contact-${card.id}`,
+      mode,
+      serialNumber: mode === "share" ? `contact-share-${card.id}` : `contact-${card.id}`,
       displayName: card.displayName,
       companyName: card.companyName,
       jobTitle: card.jobTitle,
       phone: card.phone,
       email: card.email,
       website: card.website,
+      barcode: mode === "share" ? contactCardPublicUrl(card.slug) : null,
     }, null, 2));
   }
 
@@ -42,11 +50,13 @@ export async function generateContactApplePass(slug: string) {
     },
     {
       formatVersion: 1,
-      serialNumber: `contact-${card.id}`,
+      serialNumber: mode === "share" ? `contact-share-${card.id}` : `contact-${card.id}`,
       passTypeIdentifier: process.env.APPLE_PASS_TYPE_ID,
       teamIdentifier: process.env.APPLE_TEAM_ID!,
       organizationName: card.companyName,
-      description: `Carte de contact de ${card.displayName}`,
+      description: mode === "share"
+        ? `Carte de partage de ${card.displayName}`
+        : `Carte de contact de ${card.displayName}`,
       logoText: card.companyName,
       backgroundColor: card.bgColor,
       foregroundColor: card.textColor,
@@ -56,19 +66,16 @@ export async function generateContactApplePass(slug: string) {
 
   pass.type = "generic";
   pass.headerFields.push({
-    key: "company",
-    label: "ENTREPRISE",
-    value: card.companyName,
+    key: "card_type",
+    label: "",
+    value: mode === "share" ? "PARTAGER" : "CONTACT",
     textAlignment: "PKTextAlignmentRight",
   });
   pass.primaryFields.push({
     key: "name",
-    label: card.jobTitle ? "CONTACT" : "CARTE DE CONTACT",
+    label: card.jobTitle || "CARTE DE CONTACT",
     value: card.displayName,
   });
-  if (card.jobTitle) {
-    pass.secondaryFields.push({ key: "role", label: "FONCTION", value: card.jobTitle });
-  }
   if (card.phone) {
     pass.auxiliaryFields.push({ key: "phone", label: "TÉLÉPHONE", value: card.phone });
   }
@@ -86,6 +93,21 @@ export async function generateContactApplePass(slug: string) {
   if (card.instagram) backFields.push({ key: "instagram", label: "Instagram", value: card.instagram });
   if (card.linkedin) backFields.push({ key: "linkedin", label: "LinkedIn", value: card.linkedin });
   pass.backFields.push(...backFields);
+
+  if (mode === "share") {
+    const publicUrl = contactCardPublicUrl(card.slug);
+    pass.setBarcodes({
+      format: "PKBarcodeFormatQR",
+      message: publicUrl,
+      messageEncoding: "iso-8859-1",
+      altText: "Scanner pour enregistrer le contact",
+    });
+    pass.backFields.push({
+      key: "share_help",
+      label: "Partager cette carte",
+      value: "Présentez le QR code. La personne pourra ajouter votre carte à son Wallet ou à ses contacts, sans formulaire.",
+    });
+  }
 
   const fallbackLogo = readFileSync(join(process.cwd(), "src/lib/wallet/fidlify_logo_black.svg"));
   const logoBuffer = decodeDataUrl(card.logoData) || fallbackLogo;
