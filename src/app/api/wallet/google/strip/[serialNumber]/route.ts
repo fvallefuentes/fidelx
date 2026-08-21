@@ -5,6 +5,7 @@ import {
   getStampAreaRadius,
   stampIconSvg,
 } from "@/lib/wallet/stamp-icons";
+import { getGoogleStampGridLayout } from "@/lib/wallet/google-stamp-grid";
 
 export async function GET(
   _req: Request,
@@ -50,24 +51,25 @@ export async function GET(
   const stampBgColor2 = design.stampBgColor2 as string | undefined;
   const stampBgImage = design.stampBgImage as string | undefined;
 
-  const rows = maxStamps <= 5 ? 1 : 2;
-  const perRow = Math.ceil(maxStamps / rows);
-  const padding = areaInset + 32;
-  const availW = W - padding * 2;
-  const availH = H - padding * 2;
-  const cellW = availW / perRow;
-  const cellH = availH / rows;
-  // Espacement : un rayon plus petit laisse plus de vide entre les ronds.
-  const radiusFactor =
-    stampSpacing === "tight" ? 0.42 : stampSpacing === "wide" ? 0.28 : 0.36;
-  const radius = Math.min(cellW, cellH) * radiusFactor;
+  const {
+    perRow,
+    horizontalPadding,
+    verticalPadding,
+    cellWidth,
+    cellHeight,
+    radius,
+  } = getGoogleStampGridLayout({
+    maxStamps,
+    stampAreaInset: design.stampAreaInset,
+    stampSpacing,
+  });
 
   let circles = "";
   for (let i = 0; i < maxStamps; i++) {
     const col = i % perRow;
     const row = Math.floor(i / perRow);
-    const cx = padding + cellW * col + cellW / 2;
-    const cy = padding + cellH * row + cellH / 2;
+    const cx = horizontalPadding + cellWidth * col + cellWidth / 2;
+    const cy = verticalPadding + cellHeight * row + cellHeight / 2;
     const filled = i < currentStamps;
     const sw = Math.max(3, radius * 0.1);
 

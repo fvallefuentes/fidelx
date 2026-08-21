@@ -19,6 +19,7 @@ const GOOGLE_WALLET_SERVICE_ACCOUNT_KEY = (
   process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_KEY || ""
 ).replace(/\\n/g, "\n");
 const GOOGLE_USAGE_CACHE_TTL_MS = 5 * 60 * 1000;
+const GOOGLE_STAMP_GRID_RENDER_VERSION = "2";
 const googleUsageCache = new Map<
   string,
   { hasUsers: boolean; expiresAt: number }
@@ -130,7 +131,7 @@ export function buildLoyaltyObject(data: LoyaltyObjectData) {
       const version = data.designVersion
         ? `${data.currentStamps}-${data.designVersion}`
         : `${data.currentStamps}`;
-      const stripUrl = `${data.appUrl.replace(/\/$/, "")}/api/wallet/google/strip/${data.serialNumber}?v=${version}`;
+      const stripUrl = `${data.appUrl.replace(/\/$/, "")}/api/wallet/google/strip/${data.serialNumber}?v=${version}-grid${GOOGLE_STAMP_GRID_RENDER_VERSION}`;
       const stampImage = {
         sourceUri: { uri: stripUrl },
         contentDescription: {
